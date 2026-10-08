@@ -17,13 +17,16 @@ import (
 	"github.com/liliang-cn/noted/internal/ai"
 	"github.com/liliang-cn/noted/internal/auth"
 	"github.com/liliang-cn/noted/internal/config"
+	"github.com/liliang-cn/noted/internal/mcpserver"
 	"github.com/liliang-cn/noted/internal/reminder"
 	"github.com/liliang-cn/noted/internal/server"
 	"github.com/liliang-cn/noted/internal/store"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/metadata"
 )
 
 var version = "dev"
@@ -35,6 +38,7 @@ Usage:
   noted user add <name> [-config ...]       create a user and print its first token
   noted user list [-config ...]
   noted token new <user> [-label text]      issue another token for an existing user
+  noted mcp [-addr host:port] [-token T]    MCP server on stdio, backed by a running noted server
   noted health [-addr host:port]            exit 0 if a server answers (for container healthchecks)
   noted version
 
@@ -55,6 +59,8 @@ func main() {
 		err = userCmd(os.Args[2:])
 	case "token":
 		err = tokenCmd(os.Args[2:])
+	case "mcp":
+		err = mcpCmd(os.Args[2:])
 	case "health":
 		err = health(os.Args[2:])
 	case "version", "-v", "--version":
@@ -303,4 +309,53 @@ func health(argv []string) error {
 		return fmt.Errorf("server is %s", resp.Status)
 	}
 	return nil
+}
+
+func envOr(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
+}
+
+// mcpCmd serves MCP over stdio for clients such as Claude Desktop/Code. It is
+// a gRPC client of a running noted server, so it needs that server's address
+// and a user token. Stdout carries the protocol; logs go to stderr.
+func mcpCmd(argv []string) error {
+	fs := flag.NewFlagSet("mcp", flag.ExitOnError)
+	addr := fs.String("addr", envOr("NOTED_ADDR", "127.0.0.1:43872"), "noted server address (env NOTED_ADDR)")
+	token := fs.String("token", os.Getenv("NOTED_TOKEN"), "user token (env NOTED_TOKEN); omit if auth is disabled")
+	useTLS := fs.Bool("tls", false, "connect to the server with TLS")
+	tz := fs.String("tz", envOr("NOTED_TIME_ZONE", "Local"), "zone for times given without an offset")
+	fs.Parse(argv)
+
+	loc, err := time.LoadLocation(*tz)
+	if err != nil {
+		return fmt.Errorf("-tz %q: %w", *tz, err)
+	}
+	creds := insecure.NewCredentials()
+	if *useTLS {
+		creds = credentials.NewTLS(nil)
+	}
+	conn, err := grpc.NewClient(*addr, grpc.WithTransportCredentials(creds),
+		grpc.WithChainUnaryInterceptor(func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, inv grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+			if *token != "" {
+				ctx = metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+*token)
+			}
+			return inv(ctx, method, req, reply, cc, opts...)
+		}))
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	probe, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	srv, err := mcpserver.New(probe, conn, loc, version)
+	if err != nil {
+		return err
+	}
+	return srv.Run(ctx, &mcp.StdioTransport{})
 }
