@@ -1,0 +1,300 @@
+syntax = "proto3";
+
+package noted.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+// ---------------------------------------------------------------- notes ----
+
+message Note {
+  string id = 1;
+  string title = 2;
+  string content = 3; // Markdown
+  repeated string tags = 4;
+  bool pinned = 5;
+  bool archived = 6;
+  google.protobuf.Timestamp create_time = 7;
+  google.protobuf.Timestamp update_time = 8;
+}
+
+message CreateNoteRequest {
+  Note note = 1; // id, create_time and update_time are ignored
+}
+
+message GetNoteRequest {
+  string id = 1;
+}
+
+message UpdateNoteRequest {
+  Note note = 1; // note.id selects the note
+  // Fields to change: title, content, tags, pinned, archived.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message DeleteNoteRequest {
+  string id = 1;
+}
+
+message ListNotesRequest {
+  int32 page_size = 1; // default 50, max 200
+  string page_token = 2;
+  string tag = 3;
+  bool pinned_only = 4;
+  bool include_archived = 5;
+}
+
+message ListNotesResponse {
+  repeated Note notes = 1;
+  string next_page_token = 2;
+}
+
+message SearchNotesRequest {
+  string query = 1;
+  int32 limit = 2; // default 20, max 100
+  // Ask for semantic (vector) ranking. Only honoured when AI embeddings are
+  // configured; otherwise the server falls back to full-text search and says
+  // so in SearchNotesResponse.mode.
+  bool semantic = 3;
+  bool include_archived = 4;
+}
+
+message NoteHit {
+  Note note = 1;
+  string snippet = 2;
+  double score = 3;
+}
+
+message SearchNotesResponse {
+  repeated NoteHit hits = 1;
+  string mode = 2; // "fulltext" or "semantic"
+}
+
+service NoteService {
+  rpc CreateNote(CreateNoteRequest) returns (Note);
+  rpc GetNote(GetNoteRequest) returns (Note);
+  rpc UpdateNote(UpdateNoteRequest) returns (Note);
+  rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty);
+  rpc ListNotes(ListNotesRequest) returns (ListNotesResponse);
+  rpc SearchNotes(SearchNotesRequest) returns (SearchNotesResponse);
+}
+
+// ------------------------------------------------------------- calendar ----
+
+message Event {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+  string location = 4;
+  google.protobuf.Timestamp start_time = 5;
+  google.protobuf.Timestamp end_time = 6;
+  bool all_day = 7;
+  string time_zone = 8; // IANA name; recurrence is expanded in this zone
+  // Recurrence, an RFC 5545 RRULE subset: FREQ (DAILY|WEEKLY|MONTHLY|YEARLY),
+  // INTERVAL, COUNT, UNTIL, BYDAY (weekly only). Empty means one-off.
+  string rrule = 9;
+  optional int32 remind_before_minutes = 10; // unset: no reminder
+  google.protobuf.Timestamp create_time = 11;
+  google.protobuf.Timestamp update_time = 12;
+}
+
+message CreateEventRequest {
+  Event event = 1;
+}
+
+message GetEventRequest {
+  string id = 1;
+}
+
+message UpdateEventRequest {
+  Event event = 1;
+  // title, description, location, start_time, end_time, all_day, time_zone,
+  // rrule, remind_before_minutes
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message DeleteEventRequest {
+  string id = 1;
+}
+
+message ListEventsRequest {
+  google.protobuf.Timestamp from = 1; // inclusive
+  google.protobuf.Timestamp to = 2;   // exclusive; at most 366 days after from
+}
+
+// One concrete instance of an event inside the requested window.
+message Occurrence {
+  Event event = 1;
+  google.protobuf.Timestamp start_time = 2;
+  google.protobuf.Timestamp end_time = 3;
+}
+
+message ListEventsResponse {
+  repeated Occurrence occurrences = 1; // ordered by start_time
+}
+
+enum Priority {
+  PRIORITY_UNSPECIFIED = 0;
+  PRIORITY_LOW = 1;
+  PRIORITY_MEDIUM = 2;
+  PRIORITY_HIGH = 3;
+}
+
+message Task {
+  string id = 1;
+  string title = 2;
+  string notes = 3;
+  google.protobuf.Timestamp due_time = 4;
+  Priority priority = 5;
+  bool completed = 6;
+  google.protobuf.Timestamp complete_time = 7;
+  google.protobuf.Timestamp remind_time = 8;
+  repeated string tags = 9;
+  google.protobuf.Timestamp create_time = 10;
+  google.protobuf.Timestamp update_time = 11;
+}
+
+message CreateTaskRequest {
+  Task task = 1;
+}
+
+message GetTaskRequest {
+  string id = 1;
+}
+
+message UpdateTaskRequest {
+  Task task = 1;
+  // title, notes, due_time, priority, completed, remind_time, tags
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message DeleteTaskRequest {
+  string id = 1;
+}
+
+message ListTasksRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  enum Filter {
+    FILTER_UNSPECIFIED = 0; // same as FILTER_OPEN
+    FILTER_OPEN = 1;
+    FILTER_COMPLETED = 2;
+    FILTER_ALL = 3;
+  }
+  Filter filter = 3;
+  string tag = 4;
+  google.protobuf.Timestamp due_before = 5;
+}
+
+message ListTasksResponse {
+  repeated Task tasks = 1;
+  string next_page_token = 2;
+}
+
+message Reminder {
+  string id = 1;
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    KIND_EVENT = 1;
+    KIND_TASK = 2;
+  }
+  Kind kind = 2;
+  string ref_id = 3;  // event or task id
+  string title = 4;
+  google.protobuf.Timestamp due_time = 5;  // when the event starts / task is due
+  google.protobuf.Timestamp fire_time = 6; // when the reminder fired
+}
+
+message WatchRemindersRequest {}
+
+message ListRemindersRequest {
+  google.protobuf.Timestamp since = 1; // default: last 24h
+  int32 limit = 2;                     // default 100
+}
+
+message ListRemindersResponse {
+  repeated Reminder reminders = 1;
+}
+
+service CalendarService {
+  rpc CreateEvent(CreateEventRequest) returns (Event);
+  rpc GetEvent(GetEventRequest) returns (Event);
+  rpc UpdateEvent(UpdateEventRequest) returns (Event);
+  rpc DeleteEvent(DeleteEventRequest) returns (google.protobuf.Empty);
+  rpc ListEvents(ListEventsRequest) returns (ListEventsResponse);
+
+  rpc CreateTask(CreateTaskRequest) returns (Task);
+  rpc GetTask(GetTaskRequest) returns (Task);
+  rpc UpdateTask(UpdateTaskRequest) returns (Task);
+  rpc DeleteTask(DeleteTaskRequest) returns (google.protobuf.Empty);
+  rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
+
+  // Live stream of reminders as they fire. Reminders that fired while no
+  // client was connected are available from ListReminders.
+  rpc WatchReminders(WatchRemindersRequest) returns (stream Reminder);
+  rpc ListReminders(ListRemindersRequest) returns (ListRemindersResponse);
+}
+
+// ------------------------------------------------------------------- ai ----
+
+// Every AIService method except GetStatus returns FAILED_PRECONDITION when AI
+// is disabled. Notes and calendar never depend on it.
+
+message GetStatusRequest {}
+
+message GetStatusResponse {
+  bool enabled = 1;
+  bool chat = 2;            // an LLM is configured (Ask, summaries, tags, briefing)
+  bool semantic_search = 3; // an embedding model is configured
+  string model = 4;
+}
+
+message AskRequest {
+  string message = 1;
+  // Conversation id; empty starts a new one. Returned in the response.
+  string session_id = 2;
+}
+
+message AskResponse {
+  string reply = 1;
+  string session_id = 2;
+  repeated string tools_used = 3; // e.g. create_event, search_notes
+}
+
+message SummarizeNoteRequest {
+  string note_id = 1;
+}
+
+message SummarizeNoteResponse {
+  string summary = 1;
+}
+
+message SuggestTagsRequest {
+  string note_id = 1;
+  bool apply = 2; // also merge the suggested tags into the note
+}
+
+message SuggestTagsResponse {
+  repeated string tags = 1;
+}
+
+message DailyBriefingRequest {
+  // Local day to brief on; only the date matters. Default: today.
+  google.protobuf.Timestamp day = 1;
+  string time_zone = 2; // IANA name; default: the server's configured zone
+}
+
+message DailyBriefingResponse {
+  string briefing = 1;
+}
+
+service AIService {
+  rpc GetStatus(GetStatusRequest) returns (GetStatusResponse);
+  // Natural-language assistant that can read and write notes, events and
+  // tasks on the caller's behalf.
+  rpc Ask(AskRequest) returns (AskResponse);
+  rpc SummarizeNote(SummarizeNoteRequest) returns (SummarizeNoteResponse);
+  rpc SuggestTags(SuggestTagsRequest) returns (SuggestTagsResponse);
+  rpc DailyBriefing(DailyBriefingRequest) returns (DailyBriefingResponse);
+}

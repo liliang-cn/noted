@@ -1,0 +1,46 @@
+# noted configuration. Every key is optional; `noted serve` runs with none of
+# this. Environment variables override the file (NOTED_LISTEN, NOTED_DATA_DIR,
+# NOTED_TIME_ZONE, NOTED_AUTH_DISABLED, NOTED_AI_ENABLED, NOTED_AI_LLM_*,
+# NOTED_AI_EMBEDDING_*, NOTED_WEBHOOK_URL).
+
+# Default zone for daily briefings and for the assistant's date math.
+time_zone = "UTC"
+
+[server]
+listen = "127.0.0.1:43872"   # use 0.0.0.0:43872 to accept remote clients
+reflection = true            # gRPC reflection, so grpcurl/Postman can discover the API
+# tls_cert = "/etc/noted/tls.crt"
+# tls_key  = "/etc/noted/tls.key"
+
+[storage]
+data_dir = "./data"          # noted.db lives here; back it up by copying the directory
+
+[auth]
+# Create users with `noted user add <name>`; clients send
+#   authorization: Bearer <token>
+# Set disabled = true for single-user use on localhost only.
+disabled = false
+
+[notify]
+# Every fired reminder is also POSTed here as JSON (retried 3 times).
+# webhook_url = "https://example.com/hooks/noted"
+
+# ---------------------------------------------------------------------------
+# AI is optional and off by default. Notes, calendar and reminders never
+# depend on it. Any OpenAI-compatible endpoint works (OpenAI, DeepSeek,
+# DashScope, Ollama, vLLM, ...).
+# ---------------------------------------------------------------------------
+[ai]
+enabled = false
+
+[ai.llm]                      # assistant (Ask), summaries, tags, daily briefing
+# base_url = "https://api.openai.com/v1"
+# api_key  = "${OPENAI_API_KEY}"   # ${VAR} is read from the environment
+# model    = "gpt-5.4-mini"
+
+[ai.embedding]                # optional: adds semantic note search
+# base_url = "https://api.openai.com/v1"
+# api_key  = "${OPENAI_API_KEY}"
+# model    = "text-embedding-3-small"
+# Changing the embedding model later? Delete <data_dir>/ai/index.db and restart;
+# notes are re-indexed in the background.
