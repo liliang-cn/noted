@@ -60,7 +60,7 @@ func (s *Calendar) UpdateEvent(ctx context.Context, req *pb.UpdateEventRequest) 
 		return nil, status.Error(codes.InvalidArgument, "event.id is required")
 	}
 	paths, err := maskPaths(req.UpdateMask, "title", "description", "location", "start_time", "end_time",
-		"all_day", "time_zone", "rrule", "remind_before_minutes")
+		"all_day", "time_zone", "rrule", "remind_before_minutes", "project_id", "space")
 	if err != nil {
 		return nil, err
 	}
@@ -99,6 +99,15 @@ func (s *Calendar) UpdateEvent(ctx context.Context, req *pb.UpdateEventRequest) 
 	if paths["remind_before_minutes"] {
 		p.RemindBefore = &e.RemindBefore // nil clears the reminder
 	}
+	if paths["project_id"] {
+		p.ProjectID = &e.ProjectID
+	}
+	if paths["space"] {
+		if e.Space == "" {
+			return nil, status.Error(codes.InvalidArgument, "space must be WORK or LIFE")
+		}
+		p.Space = &e.Space
+	}
 	out, err := s.Store.UpdateEvent(ctx, u, in.Id, p)
 	if err != nil {
 		return nil, toStatus(err)
@@ -125,7 +134,7 @@ func (s *Calendar) ListEvents(ctx context.Context, req *pb.ListEventsRequest) (*
 	if req.From == nil || req.To == nil {
 		return nil, status.Error(codes.InvalidArgument, "from and to are required")
 	}
-	occ, err := s.Store.ListEvents(ctx, u, req.From.AsTime(), req.To.AsTime())
+	occ, err := s.Store.ListEvents(ctx, u, req.From.AsTime(), req.To.AsTime(), spaceIn(req.Space))
 	if err != nil {
 		return nil, toStatus(err)
 	}
@@ -152,6 +161,7 @@ func (s *Calendar) CreateTask(ctx context.Context, req *pb.CreateTaskRequest) (*
 	t, err := s.Store.CreateTask(ctx, store.Task{
 		UserID: u, Title: in.Title, Notes: in.Notes, Due: timePtr(in.DueTime), Priority: int(in.Priority),
 		Done: in.Completed, Remind: timePtr(in.RemindTime), Tags: in.Tags,
+		ProjectID: in.ProjectId, Space: spaceIn(in.Space),
 	})
 	if err != nil {
 		return nil, toStatus(err)
@@ -180,7 +190,7 @@ func (s *Calendar) UpdateTask(ctx context.Context, req *pb.UpdateTaskRequest) (*
 	if in.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "task.id is required")
 	}
-	paths, err := maskPaths(req.UpdateMask, "title", "notes", "due_time", "priority", "completed", "remind_time", "tags")
+	paths, err := maskPaths(req.UpdateMask, "title", "notes", "due_time", "priority", "completed", "remind_time", "tags", "project_id", "space")
 	if err != nil {
 		return nil, err
 	}
@@ -208,6 +218,16 @@ func (s *Calendar) UpdateTask(ctx context.Context, req *pb.UpdateTaskRequest) (*
 	}
 	if paths["tags"] {
 		p.Tags = &in.Tags
+	}
+	if paths["project_id"] {
+		p.ProjectID = &in.ProjectId
+	}
+	if paths["space"] {
+		sp := spaceIn(in.Space)
+		if sp == "" {
+			return nil, status.Error(codes.InvalidArgument, "space must be WORK or LIFE")
+		}
+		p.Space = &sp
 	}
 	t, err := s.Store.UpdateTask(ctx, u, in.Id, p)
 	if err != nil {
@@ -244,7 +264,8 @@ func (s *Calendar) ListTasks(ctx context.Context, req *pb.ListTasksRequest) (*pb
 		state = "all"
 	}
 	tasks, err := s.Store.ListTasks(ctx, u, store.TaskFilter{
-		State: state, Tag: req.Tag, DueBefore: timePtr(req.DueBefore), Limit: limit + 1, Offset: offset,
+		State: state, Tag: req.Tag, DueBefore: timePtr(req.DueBefore), ProjectID: req.ProjectId,
+		Space: spaceIn(req.Space), Limit: limit + 1, Offset: offset,
 	})
 	if err != nil {
 		return nil, toStatus(err)
@@ -261,7 +282,7 @@ func (s *Calendar) ListTasks(ctx context.Context, req *pb.ListTasksRequest) (*pb
 
 // ---- reminders ----
 
-func (s *Calendar) WatchReminders(_ *pb.WatchRemindersRequest, stream pb.CalendarService_WatchRemindersServer) error {
+func (s *Calendar) WatchReminders(req *pb.WatchRemindersRequest, stream pb.CalendarService_WatchRemindersServer) error {
 	u, err := uid(stream.Context())
 	if err != nil {
 		return err
@@ -273,6 +294,9 @@ func (s *Calendar) WatchReminders(_ *pb.WatchRemindersRequest, stream pb.Calenda
 		case <-stream.Context().Done():
 			return nil
 		case r := <-ch:
+			if sp := spaceIn(req.GetSpace()); sp != "" && r.Space != sp {
+				continue
+			}
 			if err := stream.Send(reminderToPB(r)); err != nil {
 				return err
 			}
@@ -293,7 +317,7 @@ func (s *Calendar) ListReminders(ctx context.Context, req *pb.ListRemindersReque
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
-	rs, err := s.Store.ListReminders(ctx, u, since, limit)
+	rs, err := s.Store.ListReminders(ctx, u, since, limit, spaceIn(req.Space))
 	if err != nil {
 		return nil, toStatus(err)
 	}

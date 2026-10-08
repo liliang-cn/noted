@@ -13,30 +13,36 @@ import (
 )
 
 type Note struct {
-	ID       string
-	UserID   string
-	Title    string
-	Content  string
-	Tags     []string
-	Pinned   bool
-	Archived bool
-	Created  time.Time
-	Updated  time.Time
+	ID        string
+	UserID    string
+	Title     string
+	Content   string
+	Tags      []string
+	Pinned    bool
+	Archived  bool
+	ProjectID string
+	Space     string
+	Created   time.Time
+	Updated   time.Time
 }
 
 // NotePatch carries the fields an update changes; nil leaves a field alone.
 type NotePatch struct {
-	Title    *string
-	Content  *string
-	Tags     *[]string
-	Pinned   *bool
-	Archived *bool
+	Title     *string
+	Content   *string
+	Tags      *[]string
+	Pinned    *bool
+	Archived  *bool
+	ProjectID *string
+	Space     *string
 }
 
 type NoteFilter struct {
 	Tag             string
 	PinnedOnly      bool
 	IncludeArchived bool
+	ProjectID       string
+	Space           string
 	Limit           int
 	Offset          int
 }
@@ -99,11 +105,17 @@ func (s *Store) CreateNote(ctx context.Context, n Note) (Note, error) {
 	}
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	n.ID, n.Created, n.Updated = uuid.NewString(), now, now
+	if err := s.checkProject(ctx, n.UserID, n.ProjectID); err != nil {
+		return Note{}, err
+	}
+	if n.Space, err = s.resolveSpace(ctx, n.UserID, n.Space, n.ProjectID); err != nil {
+		return Note{}, err
+	}
 	err = s.tx(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `
-			INSERT INTO notes(id, user_id, title, content, pinned, archived, created_ms, updated_ms)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-			n.ID, n.UserID, n.Title, n.Content, b2i(n.Pinned), b2i(n.Archived), ms(n.Created), ms(n.Updated))
+			INSERT INTO notes(id, user_id, title, content, pinned, archived, project_id, space, created_ms, updated_ms)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			n.ID, n.UserID, n.Title, n.Content, b2i(n.Pinned), b2i(n.Archived), n.ProjectID, n.Space, ms(n.Created), ms(n.Updated))
 		if err != nil {
 			return err
 		}
@@ -129,7 +141,7 @@ func writeNoteIndex(ctx context.Context, tx *sql.Tx, n Note) error {
 	return err
 }
 
-const noteCols = `id, user_id, title, content, pinned, archived, created_ms, updated_ms`
+const noteCols = `id, user_id, title, content, pinned, archived, project_id, space, created_ms, updated_ms`
 
 type scanner interface{ Scan(...any) error }
 
@@ -137,7 +149,7 @@ func scanNote(r scanner) (Note, error) {
 	var n Note
 	var pinned, archived int
 	var created, updated int64
-	if err := r.Scan(&n.ID, &n.UserID, &n.Title, &n.Content, &pinned, &archived, &created, &updated); err != nil {
+	if err := r.Scan(&n.ID, &n.UserID, &n.Title, &n.Content, &pinned, &archived, &n.ProjectID, &n.Space, &created, &updated); err != nil {
 		return Note{}, err
 	}
 	n.Pinned, n.Archived = pinned != 0, archived != 0
@@ -159,7 +171,7 @@ func (s *Store) loadTags(ctx context.Context, table, col string, ids []string) (
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var id, tag string
 		if err := rows.Scan(&id, &tag); err != nil {
@@ -222,15 +234,27 @@ func (s *Store) UpdateNote(ctx context.Context, userID, id string, p NotePatch) 
 	if p.Archived != nil {
 		n.Archived = *p.Archived
 	}
+	if p.ProjectID != nil {
+		n.ProjectID = *p.ProjectID
+		if err := s.checkProject(ctx, userID, n.ProjectID); err != nil {
+			return Note{}, err
+		}
+	}
+	if p.Space != nil {
+		if *p.Space != SpaceWork && *p.Space != SpaceLife {
+			return Note{}, invalid("space must be work or life")
+		}
+		n.Space = *p.Space
+	}
 	if err := checkNote(n); err != nil {
 		return Note{}, err
 	}
 	n.Updated = time.Now().UTC().Truncate(time.Millisecond)
 	err = s.tx(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `
-			UPDATE notes SET title = ?, content = ?, pinned = ?, archived = ?, updated_ms = ?
+			UPDATE notes SET title = ?, content = ?, pinned = ?, archived = ?, project_id = ?, space = ?, updated_ms = ?
 			WHERE id = ? AND user_id = ?`,
-			n.Title, n.Content, b2i(n.Pinned), b2i(n.Archived), ms(n.Updated), n.ID, userID)
+			n.Title, n.Content, b2i(n.Pinned), b2i(n.Archived), n.ProjectID, n.Space, ms(n.Updated), n.ID, userID)
 		if err != nil {
 			return err
 		}
@@ -267,13 +291,21 @@ func (s *Store) ListNotes(ctx context.Context, userID string, f NoteFilter) ([]N
 		q += ` AND EXISTS (SELECT 1 FROM note_tags t WHERE t.note_id = n.id AND t.tag = ?)`
 		args = append(args, strings.ToLower(f.Tag))
 	}
+	if f.ProjectID != "" {
+		q += ` AND project_id = ?`
+		args = append(args, f.ProjectID)
+	}
+	if err := checkSpaceFilter(f.Space); err != nil {
+		return nil, err
+	}
+	q, args = spaceClause(q, args, "space", f.Space)
 	q += ` ORDER BY pinned DESC, updated_ms DESC, id LIMIT ? OFFSET ?`
 	args = append(args, f.Limit, f.Offset)
 	rows, err := s.db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []Note
 	for rows.Next() {
 		n, err := scanNote(rows)
@@ -285,7 +317,7 @@ func (s *Store) ListNotes(ctx context.Context, userID string, f NoteFilter) ([]N
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	rows.Close()
+	_ = rows.Close()
 	return out, s.withNoteTags(ctx, out)
 }
 
@@ -313,7 +345,10 @@ func likeEscape(s string) string {
 // SearchNotes does full-text search. The trigram index handles any term of
 // three or more characters in any script (including CJK); shorter terms fall
 // back to a substring scan.
-func (s *Store) SearchNotes(ctx context.Context, userID, query string, limit int, includeArchived bool) ([]NoteHit, error) {
+func (s *Store) SearchNotes(ctx context.Context, userID, query string, limit int, includeArchived bool, space string) ([]NoteHit, error) {
+	if err := checkSpaceFilter(space); err != nil {
+		return nil, err
+	}
 	terms := strings.Fields(query)
 	if len(terms) == 0 {
 		return nil, invalid("query is empty")
@@ -327,9 +362,9 @@ func (s *Store) SearchNotes(ctx context.Context, userID, query string, limit int
 	var hits []NoteHit
 	var err error
 	if short {
-		hits, err = s.searchLike(ctx, userID, terms, limit, includeArchived)
+		hits, err = s.searchLike(ctx, userID, terms, limit, includeArchived, space)
 	} else {
-		hits, err = s.searchFTS(ctx, userID, terms, limit, includeArchived)
+		hits, err = s.searchFTS(ctx, userID, terms, limit, includeArchived, space)
 	}
 	if err != nil {
 		return nil, err
@@ -347,25 +382,27 @@ func (s *Store) SearchNotes(ctx context.Context, userID, query string, limit int
 	return hits, nil
 }
 
-func (s *Store) searchFTS(ctx context.Context, userID string, terms []string, limit int, includeArchived bool) ([]NoteHit, error) {
+func (s *Store) searchFTS(ctx context.Context, userID string, terms []string, limit int, includeArchived bool, space string) ([]NoteHit, error) {
 	quoted := make([]string, len(terms))
 	for i, t := range terms {
 		quoted[i] = `"` + strings.ReplaceAll(t, `"`, `""`) + `"`
 	}
 	q := `
-		SELECT n.id, n.user_id, n.title, n.content, n.pinned, n.archived, n.created_ms, n.updated_ms,
+		SELECT n.id, n.user_id, n.title, n.content, n.pinned, n.archived, n.project_id, n.space, n.created_ms, n.updated_ms,
 		       snippet(notes_fts, 3, '[', ']', '…', 16), bm25(notes_fts)
 		FROM notes_fts JOIN notes n ON n.id = notes_fts.note_id
 		WHERE notes_fts MATCH ? AND notes_fts.user_id = ?`
+	args := []any{strings.Join(quoted, " AND "), userID}
 	if !includeArchived {
 		q += ` AND n.archived = 0`
 	}
+	q, args = spaceClause(q, args, "n.space", space)
 	q += ` ORDER BY bm25(notes_fts) LIMIT ?`
-	rows, err := s.db.QueryContext(ctx, q, strings.Join(quoted, " AND "), userID, limit)
+	rows, err := s.db.QueryContext(ctx, q, append(args, limit)...)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []NoteHit
 	for rows.Next() {
 		var n Note
@@ -373,7 +410,7 @@ func (s *Store) searchFTS(ctx context.Context, userID string, terms []string, li
 		var created, updated int64
 		var snip string
 		var rank float64
-		if err := rows.Scan(&n.ID, &n.UserID, &n.Title, &n.Content, &pinned, &archived, &created, &updated, &snip, &rank); err != nil {
+		if err := rows.Scan(&n.ID, &n.UserID, &n.Title, &n.Content, &pinned, &archived, &n.ProjectID, &n.Space, &created, &updated, &snip, &rank); err != nil {
 			return nil, err
 		}
 		n.Pinned, n.Archived = pinned != 0, archived != 0
@@ -383,12 +420,13 @@ func (s *Store) searchFTS(ctx context.Context, userID string, terms []string, li
 	return out, rows.Err()
 }
 
-func (s *Store) searchLike(ctx context.Context, userID string, terms []string, limit int, includeArchived bool) ([]NoteHit, error) {
+func (s *Store) searchLike(ctx context.Context, userID string, terms []string, limit int, includeArchived bool, space string) ([]NoteHit, error) {
 	q := `SELECT ` + noteCols + ` FROM notes n WHERE user_id = ?`
 	args := []any{userID}
 	if !includeArchived {
 		q += ` AND archived = 0`
 	}
+	q, args = spaceClause(q, args, "space", space)
 	for _, t := range terms {
 		q += ` AND (title LIKE ? ESCAPE '\' OR content LIKE ? ESCAPE '\'
 			OR EXISTS (SELECT 1 FROM note_tags g WHERE g.note_id = n.id AND g.tag LIKE ? ESCAPE '\'))`
@@ -401,7 +439,7 @@ func (s *Store) searchLike(ctx context.Context, userID string, terms []string, l
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []NoteHit
 	for rows.Next() {
 		n, err := scanNote(rows)
@@ -456,7 +494,7 @@ func (s *Store) NotesNeedingIndex(ctx context.Context, limit int) ([]Note, error
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []Note
 	for rows.Next() {
 		n, err := scanNote(rows)
@@ -468,7 +506,7 @@ func (s *Store) NotesNeedingIndex(ctx context.Context, limit int) ([]Note, error
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	rows.Close()
+	_ = rows.Close()
 	return out, s.withNoteTags(ctx, out)
 }
 

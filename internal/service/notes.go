@@ -38,6 +38,7 @@ func (s *Notes) CreateNote(ctx context.Context, req *pb.CreateNoteRequest) (*pb.
 	}
 	n, err := s.Store.CreateNote(ctx, store.Note{
 		UserID: u, Title: in.Title, Content: in.Content, Tags: in.Tags, Pinned: in.Pinned, Archived: in.Archived,
+		ProjectID: in.ProjectId, Space: spaceIn(in.Space),
 	})
 	if err != nil {
 		return nil, toStatus(err)
@@ -67,7 +68,7 @@ func (s *Notes) UpdateNote(ctx context.Context, req *pb.UpdateNoteRequest) (*pb.
 	if in.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "note.id is required")
 	}
-	paths, err := maskPaths(req.UpdateMask, "title", "content", "tags", "pinned", "archived")
+	paths, err := maskPaths(req.UpdateMask, "title", "content", "tags", "pinned", "archived", "project_id", "space")
 	if err != nil {
 		return nil, err
 	}
@@ -86,6 +87,16 @@ func (s *Notes) UpdateNote(ctx context.Context, req *pb.UpdateNoteRequest) (*pb.
 	}
 	if paths["archived"] {
 		p.Archived = &in.Archived
+	}
+	if paths["project_id"] {
+		p.ProjectID = &in.ProjectId
+	}
+	if paths["space"] {
+		sp := spaceIn(in.Space)
+		if sp == "" {
+			return nil, status.Error(codes.InvalidArgument, "space must be WORK or LIFE")
+		}
+		p.Space = &sp
 	}
 	n, err := s.Store.UpdateNote(ctx, u, in.Id, p)
 	if err != nil {
@@ -126,7 +137,7 @@ func (s *Notes) ListNotes(ctx context.Context, req *pb.ListNotesRequest) (*pb.Li
 	}
 	notes, err := s.Store.ListNotes(ctx, u, store.NoteFilter{
 		Tag: req.Tag, PinnedOnly: req.PinnedOnly, IncludeArchived: req.IncludeArchived,
-		Limit: limit + 1, Offset: offset,
+		ProjectID: req.ProjectId, Space: spaceIn(req.Space), Limit: limit + 1, Offset: offset,
 	})
 	if err != nil {
 		return nil, toStatus(err)
@@ -159,7 +170,7 @@ func (s *Notes) SearchNotes(ctx context.Context, req *pb.SearchNotesRequest) (*p
 			slog.Warn("semantic search failed; falling back to full-text", "err", err)
 		}
 	}
-	hits, err := s.Store.SearchNotes(ctx, u, req.Query, limit, req.IncludeArchived)
+	hits, err := s.Store.SearchNotes(ctx, u, req.Query, limit, req.IncludeArchived, spaceIn(req.Space))
 	if err != nil {
 		return nil, toStatus(err)
 	}
@@ -186,10 +197,20 @@ func (s *Notes) semantic(ctx context.Context, userID string, req *pb.SearchNotes
 	if err != nil {
 		return nil, err
 	}
+	acc, err := s.Store.GetAIAccess(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
 	var hits []*pb.NoteHit
 	for _, n := range notes {
 		if n.Archived && !req.IncludeArchived {
 			continue
+		}
+		if sp := spaceIn(req.Space); sp != "" && n.Space != sp {
+			continue
+		}
+		if !acc.Allows(n.Space) {
+			continue // not meant to be in the index; never show it as an AI result
 		}
 		hits = append(hits, &pb.NoteHit{Note: noteToPB(n), Snippet: store.Snippet(n.Content, req.Query, 80), Score: score[n.ID]})
 		if len(hits) == limit {

@@ -845,6 +845,12 @@ const (
 	AIService_SummarizeNote_FullMethodName = "/noted.v1.AIService/SummarizeNote"
 	AIService_SuggestTags_FullMethodName   = "/noted.v1.AIService/SuggestTags"
 	AIService_DailyBriefing_FullMethodName = "/noted.v1.AIService/DailyBriefing"
+	AIService_PlanFromText_FullMethodName  = "/noted.v1.AIService/PlanFromText"
+	AIService_ExtractTasks_FullMethodName  = "/noted.v1.AIService/ExtractTasks"
+	AIService_GetAIAccess_FullMethodName   = "/noted.v1.AIService/GetAIAccess"
+	AIService_SetAIAccess_FullMethodName   = "/noted.v1.AIService/SetAIAccess"
+	AIService_GetAIFeatures_FullMethodName = "/noted.v1.AIService/GetAIFeatures"
+	AIService_SetAIFeatures_FullMethodName = "/noted.v1.AIService/SetAIFeatures"
 )
 
 // AIServiceClient is the client API for AIService service.
@@ -858,6 +864,23 @@ type AIServiceClient interface {
 	SummarizeNote(ctx context.Context, in *SummarizeNoteRequest, opts ...grpc.CallOption) (*SummarizeNoteResponse, error)
 	SuggestTags(ctx context.Context, in *SuggestTagsRequest, opts ...grpc.CallOption) (*SuggestTagsResponse, error)
 	DailyBriefing(ctx context.Context, in *DailyBriefingRequest, opts ...grpc.CallOption) (*DailyBriefingResponse, error)
+	// Break "next month I'm going to X, I need A, B and C" into a project with tasks.
+	// Returns a pending proposal; nothing is created until it is accepted. A start date
+	// the user did not give comes back as an input to fill in, not as a guess.
+	PlanFromText(ctx context.Context, in *PlanFromTextRequest, opts ...grpc.CallOption) (*Proposal, error)
+	// Find the to-dos written inside a note and propose them as tasks.
+	ExtractTasks(ctx context.Context, in *ExtractTasksRequest, opts ...grpc.CallOption) (*Proposal, error)
+	// Which spaces the assistant may read. Content of a space that is off is
+	// never sent to a language or embedding model: the assistant cannot see it,
+	// its notes are removed from the semantic index, and no summary, tag or
+	// to-do extraction runs on them. Both are on until the user turns one off.
+	// Works whether or not AI is enabled on the server.
+	GetAIAccess(ctx context.Context, in *GetAIAccessRequest, opts ...grpc.CallOption) (*AIAccess, error)
+	SetAIAccess(ctx context.Context, in *SetAIAccessRequest, opts ...grpc.CallOption) (*AIAccess, error)
+	// Which features are on. All are on until turned off. A feature that is off
+	// answers FAILED_PRECONDITION (or, for suggestions, lists nothing).
+	GetAIFeatures(ctx context.Context, in *GetAIFeaturesRequest, opts ...grpc.CallOption) (*AIFeatures, error)
+	SetAIFeatures(ctx context.Context, in *SetAIFeaturesRequest, opts ...grpc.CallOption) (*AIFeatures, error)
 }
 
 type aIServiceClient struct {
@@ -918,6 +941,66 @@ func (c *aIServiceClient) DailyBriefing(ctx context.Context, in *DailyBriefingRe
 	return out, nil
 }
 
+func (c *aIServiceClient) PlanFromText(ctx context.Context, in *PlanFromTextRequest, opts ...grpc.CallOption) (*Proposal, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Proposal)
+	err := c.cc.Invoke(ctx, AIService_PlanFromText_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aIServiceClient) ExtractTasks(ctx context.Context, in *ExtractTasksRequest, opts ...grpc.CallOption) (*Proposal, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Proposal)
+	err := c.cc.Invoke(ctx, AIService_ExtractTasks_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aIServiceClient) GetAIAccess(ctx context.Context, in *GetAIAccessRequest, opts ...grpc.CallOption) (*AIAccess, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AIAccess)
+	err := c.cc.Invoke(ctx, AIService_GetAIAccess_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aIServiceClient) SetAIAccess(ctx context.Context, in *SetAIAccessRequest, opts ...grpc.CallOption) (*AIAccess, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AIAccess)
+	err := c.cc.Invoke(ctx, AIService_SetAIAccess_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aIServiceClient) GetAIFeatures(ctx context.Context, in *GetAIFeaturesRequest, opts ...grpc.CallOption) (*AIFeatures, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AIFeatures)
+	err := c.cc.Invoke(ctx, AIService_GetAIFeatures_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aIServiceClient) SetAIFeatures(ctx context.Context, in *SetAIFeaturesRequest, opts ...grpc.CallOption) (*AIFeatures, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AIFeatures)
+	err := c.cc.Invoke(ctx, AIService_SetAIFeatures_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AIServiceServer is the server API for AIService service.
 // All implementations must embed UnimplementedAIServiceServer
 // for forward compatibility.
@@ -929,6 +1012,23 @@ type AIServiceServer interface {
 	SummarizeNote(context.Context, *SummarizeNoteRequest) (*SummarizeNoteResponse, error)
 	SuggestTags(context.Context, *SuggestTagsRequest) (*SuggestTagsResponse, error)
 	DailyBriefing(context.Context, *DailyBriefingRequest) (*DailyBriefingResponse, error)
+	// Break "next month I'm going to X, I need A, B and C" into a project with tasks.
+	// Returns a pending proposal; nothing is created until it is accepted. A start date
+	// the user did not give comes back as an input to fill in, not as a guess.
+	PlanFromText(context.Context, *PlanFromTextRequest) (*Proposal, error)
+	// Find the to-dos written inside a note and propose them as tasks.
+	ExtractTasks(context.Context, *ExtractTasksRequest) (*Proposal, error)
+	// Which spaces the assistant may read. Content of a space that is off is
+	// never sent to a language or embedding model: the assistant cannot see it,
+	// its notes are removed from the semantic index, and no summary, tag or
+	// to-do extraction runs on them. Both are on until the user turns one off.
+	// Works whether or not AI is enabled on the server.
+	GetAIAccess(context.Context, *GetAIAccessRequest) (*AIAccess, error)
+	SetAIAccess(context.Context, *SetAIAccessRequest) (*AIAccess, error)
+	// Which features are on. All are on until turned off. A feature that is off
+	// answers FAILED_PRECONDITION (or, for suggestions, lists nothing).
+	GetAIFeatures(context.Context, *GetAIFeaturesRequest) (*AIFeatures, error)
+	SetAIFeatures(context.Context, *SetAIFeaturesRequest) (*AIFeatures, error)
 	mustEmbedUnimplementedAIServiceServer()
 }
 
@@ -953,6 +1053,24 @@ func (UnimplementedAIServiceServer) SuggestTags(context.Context, *SuggestTagsReq
 }
 func (UnimplementedAIServiceServer) DailyBriefing(context.Context, *DailyBriefingRequest) (*DailyBriefingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DailyBriefing not implemented")
+}
+func (UnimplementedAIServiceServer) PlanFromText(context.Context, *PlanFromTextRequest) (*Proposal, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PlanFromText not implemented")
+}
+func (UnimplementedAIServiceServer) ExtractTasks(context.Context, *ExtractTasksRequest) (*Proposal, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExtractTasks not implemented")
+}
+func (UnimplementedAIServiceServer) GetAIAccess(context.Context, *GetAIAccessRequest) (*AIAccess, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAIAccess not implemented")
+}
+func (UnimplementedAIServiceServer) SetAIAccess(context.Context, *SetAIAccessRequest) (*AIAccess, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetAIAccess not implemented")
+}
+func (UnimplementedAIServiceServer) GetAIFeatures(context.Context, *GetAIFeaturesRequest) (*AIFeatures, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAIFeatures not implemented")
+}
+func (UnimplementedAIServiceServer) SetAIFeatures(context.Context, *SetAIFeaturesRequest) (*AIFeatures, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetAIFeatures not implemented")
 }
 func (UnimplementedAIServiceServer) mustEmbedUnimplementedAIServiceServer() {}
 func (UnimplementedAIServiceServer) testEmbeddedByValue()                   {}
@@ -1065,6 +1183,114 @@ func _AIService_DailyBriefing_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AIService_PlanFromText_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PlanFromTextRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AIServiceServer).PlanFromText(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AIService_PlanFromText_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AIServiceServer).PlanFromText(ctx, req.(*PlanFromTextRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AIService_ExtractTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExtractTasksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AIServiceServer).ExtractTasks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AIService_ExtractTasks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AIServiceServer).ExtractTasks(ctx, req.(*ExtractTasksRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AIService_GetAIAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAIAccessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AIServiceServer).GetAIAccess(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AIService_GetAIAccess_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AIServiceServer).GetAIAccess(ctx, req.(*GetAIAccessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AIService_SetAIAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetAIAccessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AIServiceServer).SetAIAccess(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AIService_SetAIAccess_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AIServiceServer).SetAIAccess(ctx, req.(*SetAIAccessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AIService_GetAIFeatures_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAIFeaturesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AIServiceServer).GetAIFeatures(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AIService_GetAIFeatures_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AIServiceServer).GetAIFeatures(ctx, req.(*GetAIFeaturesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AIService_SetAIFeatures_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetAIFeaturesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AIServiceServer).SetAIFeatures(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AIService_SetAIFeatures_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AIServiceServer).SetAIFeatures(ctx, req.(*SetAIFeaturesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AIService_ServiceDesc is the grpc.ServiceDesc for AIService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1091,6 +1317,1342 @@ var AIService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DailyBriefing",
 			Handler:    _AIService_DailyBriefing_Handler,
+		},
+		{
+			MethodName: "PlanFromText",
+			Handler:    _AIService_PlanFromText_Handler,
+		},
+		{
+			MethodName: "ExtractTasks",
+			Handler:    _AIService_ExtractTasks_Handler,
+		},
+		{
+			MethodName: "GetAIAccess",
+			Handler:    _AIService_GetAIAccess_Handler,
+		},
+		{
+			MethodName: "SetAIAccess",
+			Handler:    _AIService_SetAIAccess_Handler,
+		},
+		{
+			MethodName: "GetAIFeatures",
+			Handler:    _AIService_GetAIFeatures_Handler,
+		},
+		{
+			MethodName: "SetAIFeatures",
+			Handler:    _AIService_SetAIFeatures_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "noted/v1/noted.proto",
+}
+
+const (
+	GoalService_CreateGoal_FullMethodName       = "/noted.v1.GoalService/CreateGoal"
+	GoalService_GetGoal_FullMethodName          = "/noted.v1.GoalService/GetGoal"
+	GoalService_UpdateGoal_FullMethodName       = "/noted.v1.GoalService/UpdateGoal"
+	GoalService_DeleteGoal_FullMethodName       = "/noted.v1.GoalService/DeleteGoal"
+	GoalService_ListGoals_FullMethodName        = "/noted.v1.GoalService/ListGoals"
+	GoalService_RecordCheckIn_FullMethodName    = "/noted.v1.GoalService/RecordCheckIn"
+	GoalService_DeleteCheckIn_FullMethodName    = "/noted.v1.GoalService/DeleteCheckIn"
+	GoalService_ListCheckIns_FullMethodName     = "/noted.v1.GoalService/ListCheckIns"
+	GoalService_SetMilestoneDone_FullMethodName = "/noted.v1.GoalService/SetMilestoneDone"
+)
+
+// GoalServiceClient is the client API for GoalService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type GoalServiceClient interface {
+	CreateGoal(ctx context.Context, in *CreateGoalRequest, opts ...grpc.CallOption) (*Goal, error)
+	GetGoal(ctx context.Context, in *GetGoalRequest, opts ...grpc.CallOption) (*Goal, error)
+	UpdateGoal(ctx context.Context, in *UpdateGoalRequest, opts ...grpc.CallOption) (*Goal, error)
+	DeleteGoal(ctx context.Context, in *DeleteGoalRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListGoals(ctx context.Context, in *ListGoalsRequest, opts ...grpc.CallOption) (*ListGoalsResponse, error)
+	RecordCheckIn(ctx context.Context, in *RecordCheckInRequest, opts ...grpc.CallOption) (*RecordCheckInResponse, error)
+	// Undo a check-in; returns the goal with fresh progress.
+	DeleteCheckIn(ctx context.Context, in *DeleteCheckInRequest, opts ...grpc.CallOption) (*Goal, error)
+	ListCheckIns(ctx context.Context, in *ListCheckInsRequest, opts ...grpc.CallOption) (*ListCheckInsResponse, error)
+	SetMilestoneDone(ctx context.Context, in *SetMilestoneDoneRequest, opts ...grpc.CallOption) (*Goal, error)
+}
+
+type goalServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewGoalServiceClient(cc grpc.ClientConnInterface) GoalServiceClient {
+	return &goalServiceClient{cc}
+}
+
+func (c *goalServiceClient) CreateGoal(ctx context.Context, in *CreateGoalRequest, opts ...grpc.CallOption) (*Goal, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Goal)
+	err := c.cc.Invoke(ctx, GoalService_CreateGoal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *goalServiceClient) GetGoal(ctx context.Context, in *GetGoalRequest, opts ...grpc.CallOption) (*Goal, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Goal)
+	err := c.cc.Invoke(ctx, GoalService_GetGoal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *goalServiceClient) UpdateGoal(ctx context.Context, in *UpdateGoalRequest, opts ...grpc.CallOption) (*Goal, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Goal)
+	err := c.cc.Invoke(ctx, GoalService_UpdateGoal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *goalServiceClient) DeleteGoal(ctx context.Context, in *DeleteGoalRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, GoalService_DeleteGoal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *goalServiceClient) ListGoals(ctx context.Context, in *ListGoalsRequest, opts ...grpc.CallOption) (*ListGoalsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListGoalsResponse)
+	err := c.cc.Invoke(ctx, GoalService_ListGoals_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *goalServiceClient) RecordCheckIn(ctx context.Context, in *RecordCheckInRequest, opts ...grpc.CallOption) (*RecordCheckInResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RecordCheckInResponse)
+	err := c.cc.Invoke(ctx, GoalService_RecordCheckIn_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *goalServiceClient) DeleteCheckIn(ctx context.Context, in *DeleteCheckInRequest, opts ...grpc.CallOption) (*Goal, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Goal)
+	err := c.cc.Invoke(ctx, GoalService_DeleteCheckIn_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *goalServiceClient) ListCheckIns(ctx context.Context, in *ListCheckInsRequest, opts ...grpc.CallOption) (*ListCheckInsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCheckInsResponse)
+	err := c.cc.Invoke(ctx, GoalService_ListCheckIns_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *goalServiceClient) SetMilestoneDone(ctx context.Context, in *SetMilestoneDoneRequest, opts ...grpc.CallOption) (*Goal, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Goal)
+	err := c.cc.Invoke(ctx, GoalService_SetMilestoneDone_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// GoalServiceServer is the server API for GoalService service.
+// All implementations must embed UnimplementedGoalServiceServer
+// for forward compatibility.
+type GoalServiceServer interface {
+	CreateGoal(context.Context, *CreateGoalRequest) (*Goal, error)
+	GetGoal(context.Context, *GetGoalRequest) (*Goal, error)
+	UpdateGoal(context.Context, *UpdateGoalRequest) (*Goal, error)
+	DeleteGoal(context.Context, *DeleteGoalRequest) (*emptypb.Empty, error)
+	ListGoals(context.Context, *ListGoalsRequest) (*ListGoalsResponse, error)
+	RecordCheckIn(context.Context, *RecordCheckInRequest) (*RecordCheckInResponse, error)
+	// Undo a check-in; returns the goal with fresh progress.
+	DeleteCheckIn(context.Context, *DeleteCheckInRequest) (*Goal, error)
+	ListCheckIns(context.Context, *ListCheckInsRequest) (*ListCheckInsResponse, error)
+	SetMilestoneDone(context.Context, *SetMilestoneDoneRequest) (*Goal, error)
+	mustEmbedUnimplementedGoalServiceServer()
+}
+
+// UnimplementedGoalServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedGoalServiceServer struct{}
+
+func (UnimplementedGoalServiceServer) CreateGoal(context.Context, *CreateGoalRequest) (*Goal, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateGoal not implemented")
+}
+func (UnimplementedGoalServiceServer) GetGoal(context.Context, *GetGoalRequest) (*Goal, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetGoal not implemented")
+}
+func (UnimplementedGoalServiceServer) UpdateGoal(context.Context, *UpdateGoalRequest) (*Goal, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateGoal not implemented")
+}
+func (UnimplementedGoalServiceServer) DeleteGoal(context.Context, *DeleteGoalRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteGoal not implemented")
+}
+func (UnimplementedGoalServiceServer) ListGoals(context.Context, *ListGoalsRequest) (*ListGoalsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListGoals not implemented")
+}
+func (UnimplementedGoalServiceServer) RecordCheckIn(context.Context, *RecordCheckInRequest) (*RecordCheckInResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RecordCheckIn not implemented")
+}
+func (UnimplementedGoalServiceServer) DeleteCheckIn(context.Context, *DeleteCheckInRequest) (*Goal, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteCheckIn not implemented")
+}
+func (UnimplementedGoalServiceServer) ListCheckIns(context.Context, *ListCheckInsRequest) (*ListCheckInsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListCheckIns not implemented")
+}
+func (UnimplementedGoalServiceServer) SetMilestoneDone(context.Context, *SetMilestoneDoneRequest) (*Goal, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetMilestoneDone not implemented")
+}
+func (UnimplementedGoalServiceServer) mustEmbedUnimplementedGoalServiceServer() {}
+func (UnimplementedGoalServiceServer) testEmbeddedByValue()                     {}
+
+// UnsafeGoalServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to GoalServiceServer will
+// result in compilation errors.
+type UnsafeGoalServiceServer interface {
+	mustEmbedUnimplementedGoalServiceServer()
+}
+
+func RegisterGoalServiceServer(s grpc.ServiceRegistrar, srv GoalServiceServer) {
+	// If the following call pancis, it indicates UnimplementedGoalServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&GoalService_ServiceDesc, srv)
+}
+
+func _GoalService_CreateGoal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateGoalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GoalServiceServer).CreateGoal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GoalService_CreateGoal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GoalServiceServer).CreateGoal(ctx, req.(*CreateGoalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GoalService_GetGoal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetGoalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GoalServiceServer).GetGoal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GoalService_GetGoal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GoalServiceServer).GetGoal(ctx, req.(*GetGoalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GoalService_UpdateGoal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateGoalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GoalServiceServer).UpdateGoal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GoalService_UpdateGoal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GoalServiceServer).UpdateGoal(ctx, req.(*UpdateGoalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GoalService_DeleteGoal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteGoalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GoalServiceServer).DeleteGoal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GoalService_DeleteGoal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GoalServiceServer).DeleteGoal(ctx, req.(*DeleteGoalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GoalService_ListGoals_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListGoalsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GoalServiceServer).ListGoals(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GoalService_ListGoals_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GoalServiceServer).ListGoals(ctx, req.(*ListGoalsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GoalService_RecordCheckIn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RecordCheckInRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GoalServiceServer).RecordCheckIn(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GoalService_RecordCheckIn_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GoalServiceServer).RecordCheckIn(ctx, req.(*RecordCheckInRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GoalService_DeleteCheckIn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteCheckInRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GoalServiceServer).DeleteCheckIn(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GoalService_DeleteCheckIn_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GoalServiceServer).DeleteCheckIn(ctx, req.(*DeleteCheckInRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GoalService_ListCheckIns_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCheckInsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GoalServiceServer).ListCheckIns(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GoalService_ListCheckIns_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GoalServiceServer).ListCheckIns(ctx, req.(*ListCheckInsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GoalService_SetMilestoneDone_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetMilestoneDoneRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GoalServiceServer).SetMilestoneDone(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GoalService_SetMilestoneDone_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GoalServiceServer).SetMilestoneDone(ctx, req.(*SetMilestoneDoneRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// GoalService_ServiceDesc is the grpc.ServiceDesc for GoalService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var GoalService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "noted.v1.GoalService",
+	HandlerType: (*GoalServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateGoal",
+			Handler:    _GoalService_CreateGoal_Handler,
+		},
+		{
+			MethodName: "GetGoal",
+			Handler:    _GoalService_GetGoal_Handler,
+		},
+		{
+			MethodName: "UpdateGoal",
+			Handler:    _GoalService_UpdateGoal_Handler,
+		},
+		{
+			MethodName: "DeleteGoal",
+			Handler:    _GoalService_DeleteGoal_Handler,
+		},
+		{
+			MethodName: "ListGoals",
+			Handler:    _GoalService_ListGoals_Handler,
+		},
+		{
+			MethodName: "RecordCheckIn",
+			Handler:    _GoalService_RecordCheckIn_Handler,
+		},
+		{
+			MethodName: "DeleteCheckIn",
+			Handler:    _GoalService_DeleteCheckIn_Handler,
+		},
+		{
+			MethodName: "ListCheckIns",
+			Handler:    _GoalService_ListCheckIns_Handler,
+		},
+		{
+			MethodName: "SetMilestoneDone",
+			Handler:    _GoalService_SetMilestoneDone_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "noted/v1/noted.proto",
+}
+
+const (
+	ProjectService_CreateProject_FullMethodName = "/noted.v1.ProjectService/CreateProject"
+	ProjectService_GetProject_FullMethodName    = "/noted.v1.ProjectService/GetProject"
+	ProjectService_UpdateProject_FullMethodName = "/noted.v1.ProjectService/UpdateProject"
+	ProjectService_DeleteProject_FullMethodName = "/noted.v1.ProjectService/DeleteProject"
+	ProjectService_ListProjects_FullMethodName  = "/noted.v1.ProjectService/ListProjects"
+)
+
+// ProjectServiceClient is the client API for ProjectService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type ProjectServiceClient interface {
+	CreateProject(ctx context.Context, in *CreateProjectRequest, opts ...grpc.CallOption) (*Project, error)
+	GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*ProjectDetail, error)
+	UpdateProject(ctx context.Context, in *UpdateProjectRequest, opts ...grpc.CallOption) (*Project, error)
+	DeleteProject(ctx context.Context, in *DeleteProjectRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error)
+}
+
+type projectServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewProjectServiceClient(cc grpc.ClientConnInterface) ProjectServiceClient {
+	return &projectServiceClient{cc}
+}
+
+func (c *projectServiceClient) CreateProject(ctx context.Context, in *CreateProjectRequest, opts ...grpc.CallOption) (*Project, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Project)
+	err := c.cc.Invoke(ctx, ProjectService_CreateProject_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) GetProject(ctx context.Context, in *GetProjectRequest, opts ...grpc.CallOption) (*ProjectDetail, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ProjectDetail)
+	err := c.cc.Invoke(ctx, ProjectService_GetProject_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) UpdateProject(ctx context.Context, in *UpdateProjectRequest, opts ...grpc.CallOption) (*Project, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Project)
+	err := c.cc.Invoke(ctx, ProjectService_UpdateProject_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) DeleteProject(ctx context.Context, in *DeleteProjectRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, ProjectService_DeleteProject_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *projectServiceClient) ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListProjectsResponse)
+	err := c.cc.Invoke(ctx, ProjectService_ListProjects_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ProjectServiceServer is the server API for ProjectService service.
+// All implementations must embed UnimplementedProjectServiceServer
+// for forward compatibility.
+type ProjectServiceServer interface {
+	CreateProject(context.Context, *CreateProjectRequest) (*Project, error)
+	GetProject(context.Context, *GetProjectRequest) (*ProjectDetail, error)
+	UpdateProject(context.Context, *UpdateProjectRequest) (*Project, error)
+	DeleteProject(context.Context, *DeleteProjectRequest) (*emptypb.Empty, error)
+	ListProjects(context.Context, *ListProjectsRequest) (*ListProjectsResponse, error)
+	mustEmbedUnimplementedProjectServiceServer()
+}
+
+// UnimplementedProjectServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedProjectServiceServer struct{}
+
+func (UnimplementedProjectServiceServer) CreateProject(context.Context, *CreateProjectRequest) (*Project, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateProject not implemented")
+}
+func (UnimplementedProjectServiceServer) GetProject(context.Context, *GetProjectRequest) (*ProjectDetail, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProject not implemented")
+}
+func (UnimplementedProjectServiceServer) UpdateProject(context.Context, *UpdateProjectRequest) (*Project, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateProject not implemented")
+}
+func (UnimplementedProjectServiceServer) DeleteProject(context.Context, *DeleteProjectRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteProject not implemented")
+}
+func (UnimplementedProjectServiceServer) ListProjects(context.Context, *ListProjectsRequest) (*ListProjectsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListProjects not implemented")
+}
+func (UnimplementedProjectServiceServer) mustEmbedUnimplementedProjectServiceServer() {}
+func (UnimplementedProjectServiceServer) testEmbeddedByValue()                        {}
+
+// UnsafeProjectServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ProjectServiceServer will
+// result in compilation errors.
+type UnsafeProjectServiceServer interface {
+	mustEmbedUnimplementedProjectServiceServer()
+}
+
+func RegisterProjectServiceServer(s grpc.ServiceRegistrar, srv ProjectServiceServer) {
+	// If the following call pancis, it indicates UnimplementedProjectServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&ProjectService_ServiceDesc, srv)
+}
+
+func _ProjectService_CreateProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateProjectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).CreateProject(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_CreateProject_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).CreateProject(ctx, req.(*CreateProjectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_GetProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProjectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).GetProject(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_GetProject_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).GetProject(ctx, req.(*GetProjectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_UpdateProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateProjectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).UpdateProject(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_UpdateProject_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).UpdateProject(ctx, req.(*UpdateProjectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_DeleteProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteProjectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).DeleteProject(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_DeleteProject_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).DeleteProject(ctx, req.(*DeleteProjectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProjectService_ListProjects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListProjectsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProjectServiceServer).ListProjects(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProjectService_ListProjects_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProjectServiceServer).ListProjects(ctx, req.(*ListProjectsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ProjectService_ServiceDesc is the grpc.ServiceDesc for ProjectService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ProjectService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "noted.v1.ProjectService",
+	HandlerType: (*ProjectServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateProject",
+			Handler:    _ProjectService_CreateProject_Handler,
+		},
+		{
+			MethodName: "GetProject",
+			Handler:    _ProjectService_GetProject_Handler,
+		},
+		{
+			MethodName: "UpdateProject",
+			Handler:    _ProjectService_UpdateProject_Handler,
+		},
+		{
+			MethodName: "DeleteProject",
+			Handler:    _ProjectService_DeleteProject_Handler,
+		},
+		{
+			MethodName: "ListProjects",
+			Handler:    _ProjectService_ListProjects_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "noted/v1/noted.proto",
+}
+
+const (
+	FocusService_GetFocus_FullMethodName = "/noted.v1.FocusService/GetFocus"
+)
+
+// FocusServiceClient is the client API for FocusService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type FocusServiceClient interface {
+	GetFocus(ctx context.Context, in *GetFocusRequest, opts ...grpc.CallOption) (*GetFocusResponse, error)
+}
+
+type focusServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewFocusServiceClient(cc grpc.ClientConnInterface) FocusServiceClient {
+	return &focusServiceClient{cc}
+}
+
+func (c *focusServiceClient) GetFocus(ctx context.Context, in *GetFocusRequest, opts ...grpc.CallOption) (*GetFocusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetFocusResponse)
+	err := c.cc.Invoke(ctx, FocusService_GetFocus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// FocusServiceServer is the server API for FocusService service.
+// All implementations must embed UnimplementedFocusServiceServer
+// for forward compatibility.
+type FocusServiceServer interface {
+	GetFocus(context.Context, *GetFocusRequest) (*GetFocusResponse, error)
+	mustEmbedUnimplementedFocusServiceServer()
+}
+
+// UnimplementedFocusServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedFocusServiceServer struct{}
+
+func (UnimplementedFocusServiceServer) GetFocus(context.Context, *GetFocusRequest) (*GetFocusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFocus not implemented")
+}
+func (UnimplementedFocusServiceServer) mustEmbedUnimplementedFocusServiceServer() {}
+func (UnimplementedFocusServiceServer) testEmbeddedByValue()                      {}
+
+// UnsafeFocusServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to FocusServiceServer will
+// result in compilation errors.
+type UnsafeFocusServiceServer interface {
+	mustEmbedUnimplementedFocusServiceServer()
+}
+
+func RegisterFocusServiceServer(s grpc.ServiceRegistrar, srv FocusServiceServer) {
+	// If the following call pancis, it indicates UnimplementedFocusServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&FocusService_ServiceDesc, srv)
+}
+
+func _FocusService_GetFocus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFocusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FocusServiceServer).GetFocus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FocusService_GetFocus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FocusServiceServer).GetFocus(ctx, req.(*GetFocusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// FocusService_ServiceDesc is the grpc.ServiceDesc for FocusService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var FocusService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "noted.v1.FocusService",
+	HandlerType: (*FocusServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetFocus",
+			Handler:    _FocusService_GetFocus_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "noted/v1/noted.proto",
+}
+
+const (
+	PreferenceService_GetPreference_FullMethodName    = "/noted.v1.PreferenceService/GetPreference"
+	PreferenceService_SetPreference_FullMethodName    = "/noted.v1.PreferenceService/SetPreference"
+	PreferenceService_DeletePreference_FullMethodName = "/noted.v1.PreferenceService/DeletePreference"
+	PreferenceService_ListPreferences_FullMethodName  = "/noted.v1.PreferenceService/ListPreferences"
+)
+
+// PreferenceServiceClient is the client API for PreferenceService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type PreferenceServiceClient interface {
+	GetPreference(ctx context.Context, in *GetPreferenceRequest, opts ...grpc.CallOption) (*Preference, error)
+	SetPreference(ctx context.Context, in *SetPreferenceRequest, opts ...grpc.CallOption) (*Preference, error)
+	DeletePreference(ctx context.Context, in *DeletePreferenceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListPreferences(ctx context.Context, in *ListPreferencesRequest, opts ...grpc.CallOption) (*ListPreferencesResponse, error)
+}
+
+type preferenceServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewPreferenceServiceClient(cc grpc.ClientConnInterface) PreferenceServiceClient {
+	return &preferenceServiceClient{cc}
+}
+
+func (c *preferenceServiceClient) GetPreference(ctx context.Context, in *GetPreferenceRequest, opts ...grpc.CallOption) (*Preference, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Preference)
+	err := c.cc.Invoke(ctx, PreferenceService_GetPreference_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *preferenceServiceClient) SetPreference(ctx context.Context, in *SetPreferenceRequest, opts ...grpc.CallOption) (*Preference, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Preference)
+	err := c.cc.Invoke(ctx, PreferenceService_SetPreference_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *preferenceServiceClient) DeletePreference(ctx context.Context, in *DeletePreferenceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, PreferenceService_DeletePreference_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *preferenceServiceClient) ListPreferences(ctx context.Context, in *ListPreferencesRequest, opts ...grpc.CallOption) (*ListPreferencesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPreferencesResponse)
+	err := c.cc.Invoke(ctx, PreferenceService_ListPreferences_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// PreferenceServiceServer is the server API for PreferenceService service.
+// All implementations must embed UnimplementedPreferenceServiceServer
+// for forward compatibility.
+type PreferenceServiceServer interface {
+	GetPreference(context.Context, *GetPreferenceRequest) (*Preference, error)
+	SetPreference(context.Context, *SetPreferenceRequest) (*Preference, error)
+	DeletePreference(context.Context, *DeletePreferenceRequest) (*emptypb.Empty, error)
+	ListPreferences(context.Context, *ListPreferencesRequest) (*ListPreferencesResponse, error)
+	mustEmbedUnimplementedPreferenceServiceServer()
+}
+
+// UnimplementedPreferenceServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedPreferenceServiceServer struct{}
+
+func (UnimplementedPreferenceServiceServer) GetPreference(context.Context, *GetPreferenceRequest) (*Preference, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPreference not implemented")
+}
+func (UnimplementedPreferenceServiceServer) SetPreference(context.Context, *SetPreferenceRequest) (*Preference, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetPreference not implemented")
+}
+func (UnimplementedPreferenceServiceServer) DeletePreference(context.Context, *DeletePreferenceRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeletePreference not implemented")
+}
+func (UnimplementedPreferenceServiceServer) ListPreferences(context.Context, *ListPreferencesRequest) (*ListPreferencesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListPreferences not implemented")
+}
+func (UnimplementedPreferenceServiceServer) mustEmbedUnimplementedPreferenceServiceServer() {}
+func (UnimplementedPreferenceServiceServer) testEmbeddedByValue()                           {}
+
+// UnsafePreferenceServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to PreferenceServiceServer will
+// result in compilation errors.
+type UnsafePreferenceServiceServer interface {
+	mustEmbedUnimplementedPreferenceServiceServer()
+}
+
+func RegisterPreferenceServiceServer(s grpc.ServiceRegistrar, srv PreferenceServiceServer) {
+	// If the following call pancis, it indicates UnimplementedPreferenceServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&PreferenceService_ServiceDesc, srv)
+}
+
+func _PreferenceService_GetPreference_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPreferenceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PreferenceServiceServer).GetPreference(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PreferenceService_GetPreference_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PreferenceServiceServer).GetPreference(ctx, req.(*GetPreferenceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PreferenceService_SetPreference_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetPreferenceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PreferenceServiceServer).SetPreference(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PreferenceService_SetPreference_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PreferenceServiceServer).SetPreference(ctx, req.(*SetPreferenceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PreferenceService_DeletePreference_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeletePreferenceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PreferenceServiceServer).DeletePreference(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PreferenceService_DeletePreference_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PreferenceServiceServer).DeletePreference(ctx, req.(*DeletePreferenceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PreferenceService_ListPreferences_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPreferencesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PreferenceServiceServer).ListPreferences(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PreferenceService_ListPreferences_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PreferenceServiceServer).ListPreferences(ctx, req.(*ListPreferencesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// PreferenceService_ServiceDesc is the grpc.ServiceDesc for PreferenceService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var PreferenceService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "noted.v1.PreferenceService",
+	HandlerType: (*PreferenceServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetPreference",
+			Handler:    _PreferenceService_GetPreference_Handler,
+		},
+		{
+			MethodName: "SetPreference",
+			Handler:    _PreferenceService_SetPreference_Handler,
+		},
+		{
+			MethodName: "DeletePreference",
+			Handler:    _PreferenceService_DeletePreference_Handler,
+		},
+		{
+			MethodName: "ListPreferences",
+			Handler:    _PreferenceService_ListPreferences_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "noted/v1/noted.proto",
+}
+
+const (
+	SuggestionService_ListProposals_FullMethodName   = "/noted.v1.SuggestionService/ListProposals"
+	SuggestionService_AcceptProposal_FullMethodName  = "/noted.v1.SuggestionService/AcceptProposal"
+	SuggestionService_DismissProposal_FullMethodName = "/noted.v1.SuggestionService/DismissProposal"
+	SuggestionService_ProposeSchedule_FullMethodName = "/noted.v1.SuggestionService/ProposeSchedule"
+	SuggestionService_GetWeeklyReview_FullMethodName = "/noted.v1.SuggestionService/GetWeeklyReview"
+	SuggestionService_ListChanges_FullMethodName     = "/noted.v1.SuggestionService/ListChanges"
+	SuggestionService_UndoChange_FullMethodName      = "/noted.v1.SuggestionService/UndoChange"
+)
+
+// SuggestionServiceClient is the client API for SuggestionService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type SuggestionServiceClient interface {
+	ListProposals(ctx context.Context, in *ListProposalsRequest, opts ...grpc.CallOption) (*ListProposalsResponse, error)
+	AcceptProposal(ctx context.Context, in *AcceptProposalRequest, opts ...grpc.CallOption) (*AcceptProposalResponse, error)
+	DismissProposal(ctx context.Context, in *DismissProposalRequest, opts ...grpc.CallOption) (*Proposal, error)
+	// Fit tasks into free stretches of the calendar. Stored as a pending proposal.
+	ProposeSchedule(ctx context.Context, in *ProposeScheduleRequest, opts ...grpc.CallOption) (*Proposal, error)
+	GetWeeklyReview(ctx context.Context, in *GetWeeklyReviewRequest, opts ...grpc.CallOption) (*WeeklyReview, error)
+	ListChanges(ctx context.Context, in *ListChangesRequest, opts ...grpc.CallOption) (*ListChangesResponse, error)
+	UndoChange(ctx context.Context, in *UndoChangeRequest, opts ...grpc.CallOption) (*Change, error)
+}
+
+type suggestionServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewSuggestionServiceClient(cc grpc.ClientConnInterface) SuggestionServiceClient {
+	return &suggestionServiceClient{cc}
+}
+
+func (c *suggestionServiceClient) ListProposals(ctx context.Context, in *ListProposalsRequest, opts ...grpc.CallOption) (*ListProposalsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListProposalsResponse)
+	err := c.cc.Invoke(ctx, SuggestionService_ListProposals_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *suggestionServiceClient) AcceptProposal(ctx context.Context, in *AcceptProposalRequest, opts ...grpc.CallOption) (*AcceptProposalResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AcceptProposalResponse)
+	err := c.cc.Invoke(ctx, SuggestionService_AcceptProposal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *suggestionServiceClient) DismissProposal(ctx context.Context, in *DismissProposalRequest, opts ...grpc.CallOption) (*Proposal, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Proposal)
+	err := c.cc.Invoke(ctx, SuggestionService_DismissProposal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *suggestionServiceClient) ProposeSchedule(ctx context.Context, in *ProposeScheduleRequest, opts ...grpc.CallOption) (*Proposal, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Proposal)
+	err := c.cc.Invoke(ctx, SuggestionService_ProposeSchedule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *suggestionServiceClient) GetWeeklyReview(ctx context.Context, in *GetWeeklyReviewRequest, opts ...grpc.CallOption) (*WeeklyReview, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(WeeklyReview)
+	err := c.cc.Invoke(ctx, SuggestionService_GetWeeklyReview_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *suggestionServiceClient) ListChanges(ctx context.Context, in *ListChangesRequest, opts ...grpc.CallOption) (*ListChangesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListChangesResponse)
+	err := c.cc.Invoke(ctx, SuggestionService_ListChanges_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *suggestionServiceClient) UndoChange(ctx context.Context, in *UndoChangeRequest, opts ...grpc.CallOption) (*Change, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Change)
+	err := c.cc.Invoke(ctx, SuggestionService_UndoChange_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// SuggestionServiceServer is the server API for SuggestionService service.
+// All implementations must embed UnimplementedSuggestionServiceServer
+// for forward compatibility.
+type SuggestionServiceServer interface {
+	ListProposals(context.Context, *ListProposalsRequest) (*ListProposalsResponse, error)
+	AcceptProposal(context.Context, *AcceptProposalRequest) (*AcceptProposalResponse, error)
+	DismissProposal(context.Context, *DismissProposalRequest) (*Proposal, error)
+	// Fit tasks into free stretches of the calendar. Stored as a pending proposal.
+	ProposeSchedule(context.Context, *ProposeScheduleRequest) (*Proposal, error)
+	GetWeeklyReview(context.Context, *GetWeeklyReviewRequest) (*WeeklyReview, error)
+	ListChanges(context.Context, *ListChangesRequest) (*ListChangesResponse, error)
+	UndoChange(context.Context, *UndoChangeRequest) (*Change, error)
+	mustEmbedUnimplementedSuggestionServiceServer()
+}
+
+// UnimplementedSuggestionServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedSuggestionServiceServer struct{}
+
+func (UnimplementedSuggestionServiceServer) ListProposals(context.Context, *ListProposalsRequest) (*ListProposalsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListProposals not implemented")
+}
+func (UnimplementedSuggestionServiceServer) AcceptProposal(context.Context, *AcceptProposalRequest) (*AcceptProposalResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AcceptProposal not implemented")
+}
+func (UnimplementedSuggestionServiceServer) DismissProposal(context.Context, *DismissProposalRequest) (*Proposal, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DismissProposal not implemented")
+}
+func (UnimplementedSuggestionServiceServer) ProposeSchedule(context.Context, *ProposeScheduleRequest) (*Proposal, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProposeSchedule not implemented")
+}
+func (UnimplementedSuggestionServiceServer) GetWeeklyReview(context.Context, *GetWeeklyReviewRequest) (*WeeklyReview, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetWeeklyReview not implemented")
+}
+func (UnimplementedSuggestionServiceServer) ListChanges(context.Context, *ListChangesRequest) (*ListChangesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListChanges not implemented")
+}
+func (UnimplementedSuggestionServiceServer) UndoChange(context.Context, *UndoChangeRequest) (*Change, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UndoChange not implemented")
+}
+func (UnimplementedSuggestionServiceServer) mustEmbedUnimplementedSuggestionServiceServer() {}
+func (UnimplementedSuggestionServiceServer) testEmbeddedByValue()                           {}
+
+// UnsafeSuggestionServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to SuggestionServiceServer will
+// result in compilation errors.
+type UnsafeSuggestionServiceServer interface {
+	mustEmbedUnimplementedSuggestionServiceServer()
+}
+
+func RegisterSuggestionServiceServer(s grpc.ServiceRegistrar, srv SuggestionServiceServer) {
+	// If the following call pancis, it indicates UnimplementedSuggestionServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&SuggestionService_ServiceDesc, srv)
+}
+
+func _SuggestionService_ListProposals_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListProposalsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SuggestionServiceServer).ListProposals(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SuggestionService_ListProposals_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SuggestionServiceServer).ListProposals(ctx, req.(*ListProposalsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SuggestionService_AcceptProposal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AcceptProposalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SuggestionServiceServer).AcceptProposal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SuggestionService_AcceptProposal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SuggestionServiceServer).AcceptProposal(ctx, req.(*AcceptProposalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SuggestionService_DismissProposal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DismissProposalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SuggestionServiceServer).DismissProposal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SuggestionService_DismissProposal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SuggestionServiceServer).DismissProposal(ctx, req.(*DismissProposalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SuggestionService_ProposeSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProposeScheduleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SuggestionServiceServer).ProposeSchedule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SuggestionService_ProposeSchedule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SuggestionServiceServer).ProposeSchedule(ctx, req.(*ProposeScheduleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SuggestionService_GetWeeklyReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetWeeklyReviewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SuggestionServiceServer).GetWeeklyReview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SuggestionService_GetWeeklyReview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SuggestionServiceServer).GetWeeklyReview(ctx, req.(*GetWeeklyReviewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SuggestionService_ListChanges_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListChangesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SuggestionServiceServer).ListChanges(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SuggestionService_ListChanges_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SuggestionServiceServer).ListChanges(ctx, req.(*ListChangesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SuggestionService_UndoChange_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UndoChangeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SuggestionServiceServer).UndoChange(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SuggestionService_UndoChange_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SuggestionServiceServer).UndoChange(ctx, req.(*UndoChangeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// SuggestionService_ServiceDesc is the grpc.ServiceDesc for SuggestionService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var SuggestionService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "noted.v1.SuggestionService",
+	HandlerType: (*SuggestionServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ListProposals",
+			Handler:    _SuggestionService_ListProposals_Handler,
+		},
+		{
+			MethodName: "AcceptProposal",
+			Handler:    _SuggestionService_AcceptProposal_Handler,
+		},
+		{
+			MethodName: "DismissProposal",
+			Handler:    _SuggestionService_DismissProposal_Handler,
+		},
+		{
+			MethodName: "ProposeSchedule",
+			Handler:    _SuggestionService_ProposeSchedule_Handler,
+		},
+		{
+			MethodName: "GetWeeklyReview",
+			Handler:    _SuggestionService_GetWeeklyReview_Handler,
+		},
+		{
+			MethodName: "ListChanges",
+			Handler:    _SuggestionService_ListChanges_Handler,
+		},
+		{
+			MethodName: "UndoChange",
+			Handler:    _SuggestionService_UndoChange_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

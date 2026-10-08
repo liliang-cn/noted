@@ -31,8 +31,6 @@ func (a args) str(k string) string {
 	return strings.TrimSpace(s)
 }
 
-func (a args) has(k string) bool { _, ok := a[k]; return ok }
-
 func (a args) integer(k string) (int, bool) {
 	switch v := a[k].(type) {
 	case float64:
@@ -134,7 +132,6 @@ func strList(desc string) map[string]any {
 
 func (a *Agent) registerTools() {
 	read := agent.ToolMetadata{ReadOnly: true, ConcurrencySafe: true, InterruptBehavior: agent.InterruptBehaviorCancel}
-	write := agent.ToolMetadata{InterruptBehavior: agent.InterruptBehaviorBlock}
 
 	agent.RegisterDateTimeTool(a.svc)
 
@@ -163,18 +160,20 @@ func (a *Agent) registerTools() {
 						return fail(err), nil
 					}
 					for _, n := range notes {
-						if !n.Archived {
+						if !n.Archived && a.visible(ctx, n.Space) {
+							remember(ctx, Ref{Kind: "note", ID: n.ID, Title: n.Title})
 							out = append(out, a.noteView(n, store.Snippet(n.Content, q.str("query"), 80)))
 						}
 					}
 				}
 			}
 			if len(out) == 0 { // no index, or nothing semantic: keyword search
-				hits, err := a.store.SearchNotes(ctx, u.ID, q.str("query"), limit, false)
+				hits, err := a.store.SearchNotes(ctx, u.ID, q.str("query"), limit, false, ctxSpace(ctx))
 				if err != nil {
 					return fail(err), nil
 				}
 				for _, h := range hits {
+					remember(ctx, Ref{Kind: "note", ID: h.Note.ID, Title: h.Note.Title})
 					out = append(out, a.noteView(h.Note, h.Snippet))
 				}
 			}
@@ -189,28 +188,17 @@ func (a *Agent) registerTools() {
 				return nil, err
 			}
 			n, err := a.store.GetNote(ctx, u.ID, args(in).str("id"))
+			if err == nil && !a.visible(ctx, n.Space) {
+				err = store.ErrNotFound
+			}
 			if err != nil {
 				return fail(err), nil
 			}
+			remember(ctx, Ref{Kind: "note", ID: n.ID, Title: n.Title})
 			v := a.noteView(n, "")
 			v["content"] = n.Content
 			return ok(v), nil
 		}, read)
-
-	a.svc.AddToolWithMetadata("create_note", "Save a new note.",
-		schema(map[string]any{"title": str("Short title"), "content": str("Markdown body"), "tags": strList("Topic tags")}, "content"),
-		func(ctx context.Context, in map[string]any) (any, error) {
-			u, err := callerOf(ctx)
-			if err != nil {
-				return nil, err
-			}
-			q := args(in)
-			n, err := a.store.CreateNote(ctx, store.Note{UserID: u.ID, Title: q.str("title"), Content: q.str("content"), Tags: q.strs("tags")})
-			if err != nil {
-				return fail(err), nil
-			}
-			return ok(a.noteView(n, "")), nil
-		}, write)
 
 	a.svc.AddToolWithMetadata("list_events",
 		"List calendar events (recurring ones expanded) that overlap a time window.",
@@ -229,112 +217,21 @@ func (a *Agent) registerTools() {
 			if err != nil {
 				return fail(err), nil
 			}
-			occ, err := a.store.ListEvents(ctx, u.ID, from, to)
+			occ, err := a.store.ListEvents(ctx, u.ID, from, to, ctxSpace(ctx))
 			if err != nil {
 				return fail(err), nil
 			}
 			out := make([]map[string]any, 0, len(occ))
 			for _, o := range occ {
+				st := o.Start
+				remember(ctx, Ref{Kind: "event", ID: o.Event.ID, Title: o.Event.Title, Time: &st})
 				out = append(out, a.eventView(o.Event, o.Start, o.End))
 			}
 			return ok(out), nil
 		}, read)
 
-	eventProps := map[string]any{
-		"title":                 str("Event title"),
-		"start":                 str("Start, RFC 3339 (from resolve_datetime)"),
-		"end":                   str("End, RFC 3339; default one hour after start"),
-		"location":              str("Where"),
-		"description":           str("Details"),
-		"all_day":               flag("All-day event"),
-		"rrule":                 str("Repeat rule, e.g. FREQ=WEEKLY;BYDAY=MO,WE or FREQ=DAILY;COUNT=5"),
-		"remind_before_minutes": num("Remind this many minutes before the start"),
-	}
-
-	a.svc.AddToolWithMetadata("create_event", "Create a calendar event.",
-		schema(eventProps, "title", "start"),
-		func(ctx context.Context, in map[string]any) (any, error) {
-			u, err := callerOf(ctx)
-			if err != nil {
-				return nil, err
-			}
-			q := args(in)
-			start, err := parseTime(q.str("start"), a.loc)
-			if err != nil {
-				return fail(err), nil
-			}
-			e := store.Event{UserID: u.ID, Title: q.str("title"), Start: start, Location: q.str("location"),
-				Description: q.str("description"), AllDay: q.boolean("all_day"), RRule: q.str("rrule"), TimeZone: a.loc.String()}
-			if s := q.str("end"); s != "" {
-				if e.End, err = parseTime(s, a.loc); err != nil {
-					return fail(err), nil
-				}
-			}
-			if m, has := q.integer("remind_before_minutes"); has {
-				e.RemindBefore = &m
-			}
-			out, err := a.store.CreateEvent(ctx, e)
-			if err != nil {
-				return fail(err), nil
-			}
-			return ok(a.eventView(out, out.Start, out.End)), nil
-		}, write)
-
-	updateProps := map[string]any{"id": str("Event id (from list_events)")}
-	for k, v := range eventProps {
-		updateProps[k] = v
-	}
-	a.svc.AddToolWithMetadata("update_event",
-		"Change fields of an existing event (reschedule, rename, move). Only pass the fields to change; moving start keeps the duration unless end is also given.",
-		schema(updateProps, "id"),
-		func(ctx context.Context, in map[string]any) (any, error) {
-			u, err := callerOf(ctx)
-			if err != nil {
-				return nil, err
-			}
-			q := args(in)
-			var p store.EventPatch
-			set := func(k string, dst **string) {
-				if q.has(k) {
-					s := q.str(k)
-					*dst = &s
-				}
-			}
-			set("title", &p.Title)
-			set("location", &p.Location)
-			set("description", &p.Description)
-			set("rrule", &p.RRule)
-			if q.has("all_day") {
-				b := q.boolean("all_day")
-				p.AllDay = &b
-			}
-			if q.has("start") {
-				t, err := parseTime(q.str("start"), a.loc)
-				if err != nil {
-					return fail(err), nil
-				}
-				p.Start = &t
-			}
-			if q.has("end") {
-				t, err := parseTime(q.str("end"), a.loc)
-				if err != nil {
-					return fail(err), nil
-				}
-				p.End = &t
-			}
-			if m, has := q.integer("remind_before_minutes"); has {
-				mp := &m
-				p.RemindBefore = &mp
-			}
-			out, err := a.store.UpdateEvent(ctx, u.ID, q.str("id"), p)
-			if err != nil {
-				return fail(err), nil
-			}
-			return ok(a.eventView(out, out.Start, out.End)), nil
-		}, write)
-
 	a.svc.AddToolWithMetadata("list_tasks", "List the user's to-do items.",
-		schema(map[string]any{"include_done": flag("Also include completed tasks"), "tag": str("Only tasks with this tag")}),
+		schema(map[string]any{"include_done": flag("Also include completed tasks"), "tag": str("Only tasks with this tag"), "project_id": str("Only tasks of this project")}),
 		func(ctx context.Context, in map[string]any) (any, error) {
 			u, err := callerOf(ctx)
 			if err != nil {
@@ -345,68 +242,50 @@ func (a *Agent) registerTools() {
 			if q.boolean("include_done") {
 				state = "all"
 			}
-			ts, err := a.store.ListTasks(ctx, u.ID, store.TaskFilter{State: state, Tag: q.str("tag"), Limit: 50})
+			ts, err := a.store.ListTasks(ctx, u.ID, store.TaskFilter{State: state, Tag: q.str("tag"), ProjectID: q.str("project_id"), Space: ctxSpace(ctx), Limit: 50})
 			if err != nil {
 				return fail(err), nil
 			}
 			out := make([]map[string]any, 0, len(ts))
 			for _, t := range ts {
+				remember(ctx, Ref{Kind: "task", ID: t.ID, Title: t.Title, Time: t.Due})
 				out = append(out, a.taskView(t))
 			}
 			return ok(out), nil
 		}, read)
 
-	a.svc.AddToolWithMetadata("create_task", "Create a to-do item, optionally with a due time and a reminder.",
-		schema(map[string]any{
-			"title":     str("What to do"),
-			"due":       str("Due time, RFC 3339"),
-			"remind_at": str("When to be reminded, RFC 3339"),
-			"priority":  num("1 low, 2 medium, 3 high"),
-			"tags":      strList("Tags"),
-		}, "title"),
-		func(ctx context.Context, in map[string]any) (any, error) {
-			u, err := callerOf(ctx)
-			if err != nil {
-				return nil, err
-			}
-			q := args(in)
-			t := store.Task{UserID: u.ID, Title: q.str("title"), Tags: q.strs("tags")}
-			if s := q.str("due"); s != "" {
-				d, err := parseTime(s, a.loc)
-				if err != nil {
-					return fail(err), nil
-				}
-				t.Due = &d
-			}
-			if s := q.str("remind_at"); s != "" {
-				r, err := parseTime(s, a.loc)
-				if err != nil {
-					return fail(err), nil
-				}
-				t.Remind = &r
-			}
-			if p, has := q.integer("priority"); has {
-				t.Priority = p
-			}
-			out, err := a.store.CreateTask(ctx, t)
-			if err != nil {
-				return fail(err), nil
-			}
-			return ok(a.taskView(out)), nil
-		}, write)
+}
 
-	a.svc.AddToolWithMetadata("complete_task", "Mark a to-do item as done.",
-		schema(map[string]any{"id": str("Task id (from list_tasks)")}, "id"),
-		func(ctx context.Context, in map[string]any) (any, error) {
-			u, err := callerOf(ctx)
-			if err != nil {
-				return nil, err
-			}
-			done := true
-			out, err := a.store.UpdateTask(ctx, u.ID, args(in).str("id"), store.TaskPatch{Done: &done})
-			if err != nil {
-				return fail(err), nil
-			}
-			return ok(a.taskView(out)), nil
-		}, write)
+type spaceKey struct{}
+
+// withSpace records the app's current mode for the duration of one assistant run.
+func withSpace(ctx context.Context, space string) context.Context {
+	return context.WithValue(ctx, spaceKey{}, space)
+}
+
+func ctxSpace(ctx context.Context) string {
+	s, _ := ctx.Value(spaceKey{}).(string)
+	return s
+}
+
+// spaceArg is the space a created item gets: what the model said, else the
+// current mode. Empty lets the store inherit from the project or fall back to life.
+func spaceArg(ctx context.Context, q args) string {
+	if s := q.str("space"); s != "" {
+		return s
+	}
+	return ctxSpace(ctx)
+}
+
+const (
+	spaceDesc   = "work or life; omit to use the current mode"
+	projectDesc = "Id of the project this belongs to (from list_projects)"
+)
+
+// visible reports whether the assistant may look at something in the given
+// space during this run. The scope was set by the service from the user's
+// AI-access setting; a read by id must honour it exactly like a list does.
+func (a *Agent) visible(ctx context.Context, space string) bool {
+	f := ctxSpace(ctx)
+	return f == "" || f == space
 }

@@ -135,7 +135,7 @@ func (s *Scheduler) post(r store.Reminder) {
 	for attempt := 0; attempt < 3; attempt++ {
 		resp, err := s.client.Post(s.WebhookURL, "application/json", bytes.NewReader(body))
 		if err == nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			if resp.StatusCode < 300 {
 				return
 			}

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/liliang-cn/noted/internal/plan"
 	"github.com/liliang-cn/noted/internal/store"
 )
 
@@ -27,10 +28,23 @@ type Match struct {
 	Score  float64
 }
 
+// Ref is something the assistant read during a reply.
+type Ref struct {
+	Kind  string // event, task, note, project, goal
+	ID    string
+	Title string
+	Time  *time.Time
+}
+
 type Reply struct {
 	Text      string
 	SessionID string
 	ToolsUsed []string
+	// Ops are the changes the assistant wants to make. It has made none of them:
+	// they are staged, and take effect only when the user accepts them.
+	Ops []plan.Op
+	// Refs are what the assistant looked at that its reply mentions.
+	Refs []Ref
 }
 
 type Engine interface {
@@ -44,10 +58,17 @@ type Engine interface {
 
 	// Ask runs the assistant, which can read and write the user's notes,
 	// events and tasks through tools.
-	Ask(ctx context.Context, user store.User, sessionID, message string) (Reply, error)
+	// space is the app's current mode ("work", "life" or "" for both). It scopes what
+	// the assistant reads and is the default for what it creates.
+	Ask(ctx context.Context, user store.User, sessionID, message, space string) (Reply, error)
+	// Plan breaks a request like "next month I'm going to X, I need A, B and C" into a
+	// project with tasks. Dates are kept only when the user stated them.
+	Plan(ctx context.Context, user store.User, text, space string) (plan.PlanSpec, error)
+	// Extract finds the to-dos written inside a note.
+	Extract(ctx context.Context, user store.User, n store.Note) ([]plan.ExtractSpec, error)
 	Summarize(ctx context.Context, n store.Note) (string, error)
 	SuggestTags(ctx context.Context, n store.Note) ([]string, error)
-	Briefing(ctx context.Context, user store.User, day time.Time, loc *time.Location) (string, error)
+	Briefing(ctx context.Context, user store.User, day time.Time, loc *time.Location, space string) (string, error)
 
 	Close() error
 }

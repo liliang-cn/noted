@@ -34,6 +34,8 @@ func toStatus(err error) error {
 		return nil
 	case errors.Is(err, store.ErrNotFound):
 		return status.Error(codes.NotFound, "not found")
+	case errors.Is(err, store.ErrConflict):
+		return status.Error(codes.Aborted, "the value changed since you read it; read it again and retry")
 	case errors.Is(err, store.ErrInvalid):
 		msg := strings.TrimPrefix(err.Error(), store.ErrInvalid.Error()+": ")
 		return status.Error(codes.InvalidArgument, msg)

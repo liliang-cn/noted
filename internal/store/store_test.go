@@ -64,7 +64,7 @@ func TestNotesAreIsolatedPerUser(t *testing.T) {
 	if err := s.DeleteNote(ctx, bob.ID, n.ID); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("bob deleted alice's note: %v", err)
 	}
-	hits, err := s.SearchNotes(ctx, bob.ID, "secret", 10, false)
+	hits, err := s.SearchNotes(ctx, bob.ID, "secret", 10, false, "")
 	if err != nil || len(hits) != 0 {
 		t.Fatalf("bob search: %v %v", hits, err)
 	}
@@ -89,7 +89,7 @@ func TestSearchFullTextAndCJK(t *testing.T) {
 		{"nonexistent", 0},
 		{`"quoted" OR (weird`, 0}, // operators in user input must not break the query
 	} {
-		hits, err := s.SearchNotes(ctx, uid, tc.q, 10, false)
+		hits, err := s.SearchNotes(ctx, uid, tc.q, 10, false, "")
 		if err != nil {
 			t.Fatalf("%q: %v", tc.q, err)
 		}
@@ -97,7 +97,7 @@ func TestSearchFullTextAndCJK(t *testing.T) {
 			t.Errorf("%q: got %d hits, want %d", tc.q, len(hits), tc.want)
 		}
 	}
-	hits, _ := s.SearchNotes(ctx, uid, "cluster", 10, false)
+	hits, _ := s.SearchNotes(ctx, uid, "cluster", 10, false, "")
 	if hits[0].Snippet == "" {
 		t.Error("empty snippet")
 	}
@@ -115,7 +115,7 @@ func TestArchivedHiddenFromListAndSearch(t *testing.T) {
 	if l, _ := s.ListNotes(ctx, uid, NoteFilter{Limit: 10, IncludeArchived: true}); len(l) != 1 {
 		t.Fatal("archived note missing with include_archived")
 	}
-	if h, _ := s.SearchNotes(ctx, uid, "legacy", 10, false); len(h) != 0 {
+	if h, _ := s.SearchNotes(ctx, uid, "legacy", 10, false, ""); len(h) != 0 {
 		t.Fatal("archived note searchable")
 	}
 }
@@ -163,14 +163,14 @@ func TestEventValidationAndRange(t *testing.T) {
 	}
 	s.CreateEvent(ctx, Event{UserID: uid, Title: "Standup", Start: start, End: start.Add(15 * time.Minute), RRule: "FREQ=DAILY;COUNT=10"})
 
-	occ, err := s.ListEvents(ctx, uid, time.Date(2026, 5, 4, 0, 0, 0, 0, time.UTC), time.Date(2026, 5, 7, 0, 0, 0, 0, time.UTC))
+	occ, err := s.ListEvents(ctx, uid, time.Date(2026, 5, 4, 0, 0, 0, 0, time.UTC), time.Date(2026, 5, 7, 0, 0, 0, 0, time.UTC), "")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(occ) != 4 { // dentist + standup on 4th, 5th, 6th
 		t.Fatalf("got %d occurrences", len(occ))
 	}
-	if _, err := s.ListEvents(ctx, uid, start, start.AddDate(5, 0, 0)); !errors.Is(err, ErrInvalid) {
+	if _, err := s.ListEvents(ctx, uid, start, start.AddDate(5, 0, 0), ""); !errors.Is(err, ErrInvalid) {
 		t.Fatalf("huge range: %v", err)
 	}
 }
@@ -180,7 +180,7 @@ func TestEventOverlappingWindowStart(t *testing.T) {
 	s, uid := newStore(t)
 	start := time.Date(2026, 5, 4, 22, 0, 0, 0, time.UTC)
 	s.CreateEvent(ctx, Event{UserID: uid, Title: "Night shift", Start: start, End: start.Add(8 * time.Hour)})
-	occ, _ := s.ListEvents(ctx, uid, time.Date(2026, 5, 5, 0, 0, 0, 0, time.UTC), time.Date(2026, 5, 6, 0, 0, 0, 0, time.UTC))
+	occ, _ := s.ListEvents(ctx, uid, time.Date(2026, 5, 5, 0, 0, 0, 0, time.UTC), time.Date(2026, 5, 6, 0, 0, 0, 0, time.UTC), "")
 	if len(occ) != 1 {
 		t.Fatalf("event spanning midnight missing from next day: %d", len(occ))
 	}
@@ -272,7 +272,7 @@ func TestEventReminderFiresOncePerOccurrence(t *testing.T) {
 	if next, _ := s.CollectDueReminders(ctx, now.Add(24*time.Hour)); len(next) != 1 {
 		t.Fatal("did not fire for the next occurrence")
 	}
-	if l, _ := s.ListReminders(ctx, uid, start, 10); len(l) != 2 {
+	if l, _ := s.ListReminders(ctx, uid, start, 10, ""); len(l) != 2 {
 		t.Fatalf("history = %d", len(l))
 	}
 }

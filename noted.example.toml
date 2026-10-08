@@ -6,6 +6,9 @@
 # Default zone for daily briefings and for the assistant's date math.
 time_zone = "UTC"
 
+# Language of the sentences the server writes itself (suggestions, review): "zh" or "en".
+language = "zh"
+
 [server]
 listen = "127.0.0.1:43872"   # use 0.0.0.0:43872 to accept remote clients
 reflection = true            # gRPC reflection, so grpcurl/Postman can discover the API

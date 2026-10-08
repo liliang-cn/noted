@@ -26,6 +26,7 @@ import (
 type fakeProvider struct {
 	mu       sync.Mutex
 	chatReqs []map[string]any
+	embedded []string // everything the embedding endpoint was sent
 	script   func(req map[string]any) (content string, toolCalls []map[string]any)
 }
 
@@ -91,6 +92,9 @@ func (f *fakeProvider) handler() http.Handler {
 				inputs = append(inputs, fmt.Sprint(x))
 			}
 		}
+		f.mu.Lock()
+		f.embedded = append(f.embedded, inputs...)
+		f.mu.Unlock()
 		data := make([]map[string]any, len(inputs))
 		for i, s := range inputs {
 			data[i] = map[string]any{"object": "embedding", "index": i, "embedding": embed(s)}
@@ -199,6 +203,16 @@ func TestAskCreatesEventForTheCallerOnly(t *testing.T) {
 	}
 	from := time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)
 	rng := &pb.ListEventsRequest{From: timestamppb.New(from), To: timestamppb.New(from.AddDate(0, 0, 7))}
+	// The assistant only prepared it: nothing is on the calendar until the user accepts.
+	if none, _ := cal.ListEvents(as(e.alice), rng); len(none.Occurrences) != 0 {
+		t.Fatalf("the assistant wrote to the calendar without confirmation: %+v", none)
+	}
+	if resp.Proposal == nil || resp.Proposal.Kind != "ask" || resp.Proposal.Source != "ai" || len(resp.Proposal.Operations) != 1 {
+		t.Fatalf("want a pending proposal with one operation: %+v", resp.Proposal)
+	}
+	if _, err := pb.NewSuggestionServiceClient(conn).AcceptProposal(as(e.alice), &pb.AcceptProposalRequest{Id: resp.Proposal.Id}); err != nil {
+		t.Fatal(err)
+	}
 	mine, _ := cal.ListEvents(as(e.alice), rng)
 	if len(mine.Occurrences) != 1 || mine.Occurrences[0].Event.Title != "Dentist" ||
 		mine.Occurrences[0].Event.GetRemindBeforeMinutes() != 30 {
@@ -393,4 +407,17 @@ func TestUpstreamFailureDoesNotLeakDetails(t *testing.T) {
 	if strings.Contains(err.Error(), "SECRET") || code(err) != codes.Unavailable {
 		t.Fatalf("upstream detail leaked or wrong code: %v", err)
 	}
+}
+
+// everythingSentToModels is all text the fake provider received, chat and embedding.
+func (f *fakeProvider) everythingSentToModels() string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	b, _ := json.Marshal(f.chatReqs)
+	return string(b) + "\n" + strings.Join(f.embedded, "\n")
+}
+
+func jsonString(v any) (string, error) {
+	b, err := json.Marshal(v)
+	return string(b), err
 }
