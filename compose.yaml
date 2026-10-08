@@ -1,0 +1,22 @@
+services:
+  noted:
+    build: .
+    ports:
+      - "43872:43872"
+    volumes:
+      - noted-data:/data
+    environment:
+      NOTED_TIME_ZONE: Asia/Shanghai
+      # Optional AI (any OpenAI-compatible endpoint):
+      # NOTED_AI_ENABLED: "true"
+      # NOTED_AI_LLM_BASE_URL: https://api.openai.com/v1
+      # NOTED_AI_LLM_API_KEY: ${OPENAI_API_KEY}
+      # NOTED_AI_LLM_MODEL: gpt-5.4-mini
+      # NOTED_AI_EMBEDDING_BASE_URL: https://api.openai.com/v1
+      # NOTED_AI_EMBEDDING_API_KEY: ${OPENAI_API_KEY}
+      # NOTED_AI_EMBEDDING_MODEL: text-embedding-3-small
+    restart: unless-stopped
+
+volumes:
+  noted-data:
+# First run:  docker compose run --rm noted user add alice
