@@ -165,6 +165,11 @@ func TestMCPOffersAITools(t *testing.T) {
 	}
 }
 
+var (
+	doneRE   = regexp.MustCompile(`"done":\s*20`)
+	pinnedRE = regexp.MustCompile(`"pinned":\s*true`)
+)
+
 var idRE = regexp.MustCompile(`"id":\s*"([^"]+)"`)
 
 // firstID pulls the first "id" out of protojson output, whose whitespace is
@@ -174,4 +179,165 @@ func firstID(s string) string {
 		return m[1]
 	}
 	return ""
+}
+
+func TestMCPProjectsGoalsAndOverview(t *testing.T) {
+	e := start(t, nil, false)
+	cs := mcpSession(t, e, e.alice)
+
+	names := toolNames(t, cs)
+	for _, want := range []string{"get_overview", "list_projects", "get_project", "create_project", "update_project", "list_goals", "create_goal", "check_in"} {
+		if !names[want] {
+			t.Errorf("missing tool %s", want)
+		}
+	}
+
+	out, isErr := call(t, cs, "create_project", map[string]any{"title": "Philippines trip", "pinned": true, "space": "life", "start": "2030-11-20"})
+	if isErr {
+		t.Fatalf("create_project: %s", out)
+	}
+	pid := firstID(out)
+	out, isErr = call(t, cs, "create_task", map[string]any{"title": "Apply for visa", "project_id": pid, "due": "2030-10-18"})
+	if isErr || !strings.Contains(out, "SPACE_LIFE") {
+		t.Fatalf("a task should join the project and inherit its space: %v %s", isErr, out)
+	}
+	call(t, cs, "create_task", map[string]any{"title": "Ship release", "space": "work"})
+
+	out, _ = call(t, cs, "get_project", map[string]any{"id": pid})
+	if !strings.Contains(out, "Apply for visa") || !strings.Contains(out, "tasksTotal") {
+		t.Fatalf("get_project: %s", out)
+	}
+	work, _ := call(t, cs, "list_tasks", map[string]any{"space": "work"})
+	life, _ := call(t, cs, "list_tasks", map[string]any{"space": "life"})
+	if !strings.Contains(work, "Ship release") || strings.Contains(work, "Apply for visa") ||
+		!strings.Contains(life, "Apply for visa") || strings.Contains(life, "Ship release") {
+		t.Fatalf("space filter over MCP:\nwork=%s\nlife=%s", work, life)
+	}
+	if _, isErr := call(t, cs, "list_tasks", map[string]any{"space": "play"}); !isErr {
+		t.Fatal("a bad space should be a tool error")
+	}
+
+	// Pin state changes through update_project.
+	out, isErr = call(t, cs, "update_project", map[string]any{"id": pid, "pinned": false})
+	if isErr || pinnedRE.MatchString(out) {
+		t.Fatalf("update_project: %v %s", isErr, out)
+	}
+	if _, isErr := call(t, cs, "update_project", map[string]any{"id": pid}); !isErr {
+		t.Fatal("an empty update should be a tool error")
+	}
+
+	// Goals.
+	out, isErr = call(t, cs, "create_goal", map[string]any{"title": "German", "period": "week", "target": 140, "unit": "minutes",
+		"milestones": []string{"A1", "A2"}})
+	if isErr {
+		t.Fatalf("create_goal: %s", out)
+	}
+	gid := firstID(out)
+	out, isErr = call(t, cs, "check_in", map[string]any{"goal_id": gid, "amount": 20})
+	if isErr || !doneRE.MatchString(out) {
+		t.Fatalf("check_in: %v %s", isErr, out)
+	}
+	if _, isErr := call(t, cs, "create_goal", map[string]any{"title": "x", "period": "year", "target": 1}); !isErr {
+		t.Fatal("a bad period should be a tool error")
+	}
+
+	// The overview ties it together.
+	out, isErr = call(t, cs, "get_overview", map[string]any{"horizon": "upcoming"})
+	if isErr || !strings.Contains(out, "German") {
+		t.Fatalf("get_overview: %v %s", isErr, out)
+	}
+	if _, isErr := call(t, cs, "get_overview", map[string]any{"horizon": "decade"}); !isErr {
+		t.Fatal("a bad horizon should be a tool error")
+	}
+
+	// Another user sees none of it.
+	other := mcpSession(t, e, e.bob)
+	if out, _ := call(t, other, "list_projects", map[string]any{}); strings.Contains(out, "Philippines") {
+		t.Fatalf("project leaked over MCP: %s", out)
+	}
+}
+
+func TestMCPSuggestionsAcceptAndUndo(t *testing.T) {
+	e := start(t, nil, false)
+	cs := mcpSession(t, e, e.alice)
+	for _, want := range []string{"list_suggestions", "accept_suggestion", "dismiss_suggestion", "undo_change", "list_changes", "weekly_review"} {
+		if !toolNames(t, cs)[want] {
+			t.Errorf("missing tool %s", want)
+		}
+	}
+	if toolNames(t, cs)["plan_from_text"] {
+		t.Error("plan_from_text needs a language model and must not be offered when AI is off")
+	}
+
+	out, _ := call(t, cs, "create_task", map[string]any{"title": "Pay rent", "due": time.Now().UTC().AddDate(0, 0, -3).Format("2006-01-02") + "T17:00:00Z"})
+	taskID := firstID(out)
+
+	out, isErr := call(t, cs, "list_suggestions", map[string]any{})
+	if isErr || !strings.Contains(out, "Pay rent") || !strings.Contains(out, "overdue") {
+		t.Fatalf("list_suggestions: %v %s", isErr, out)
+	}
+	sid := firstID(out)
+	if got, _ := call(t, cs, "get_overview", map[string]any{}); !strings.Contains(got, "Pay rent") {
+		t.Fatalf("overview: %s", got)
+	}
+
+	out, isErr = call(t, cs, "accept_suggestion", map[string]any{"id": sid})
+	if isErr || !strings.Contains(out, "accepted") {
+		t.Fatalf("accept_suggestion: %v %s", isErr, out)
+	}
+	changes, _ := call(t, cs, "list_changes", map[string]any{})
+	cid := firstID(changes)
+	if _, isErr := call(t, cs, "undo_change", map[string]any{"id": cid}); isErr {
+		t.Fatal("undo_change failed")
+	}
+	if _, isErr := call(t, cs, "undo_change", map[string]any{"id": cid}); !isErr {
+		t.Fatal("a second undo should be a tool error")
+	}
+	if _, isErr := call(t, cs, "accept_suggestion", map[string]any{"id": "nope"}); !isErr {
+		t.Fatal("an unknown suggestion should be a tool error")
+	}
+	_ = taskID
+
+	if out, isErr := call(t, cs, "weekly_review", map[string]any{}); isErr || !strings.Contains(out, "tasksTotal") && !strings.Contains(out, "from") {
+		t.Fatalf("weekly_review: %v %s", isErr, out)
+	}
+	// Another user's assistant tools never see these.
+	other := mcpSession(t, e, e.bob)
+	if out, _ := call(t, other, "list_suggestions", map[string]any{}); strings.Contains(out, "Pay rent") {
+		t.Fatalf("suggestions leaked: %s", out)
+	}
+}
+
+func TestMCPOffersAIPlanningWhenAIIsOn(t *testing.T) {
+	f := &fakeProvider{script: answerJSON("break it into ONE project", `{"project":"Trip","tasks":[{"title":"Visa"}]}`)}
+	e, _ := startWithAI(t, f, false)
+	cs := mcpSession(t, e, e.alice)
+	if !toolNames(t, cs)["plan_from_text"] || !toolNames(t, cs)["extract_tasks"] {
+		t.Fatal("AI planning tools missing")
+	}
+	out, isErr := call(t, cs, "plan_from_text", map[string]any{"text": "going on a trip, need a visa"})
+	if isErr || !strings.Contains(out, "Visa") || !strings.Contains(out, `"pending"`) {
+		t.Fatalf("%v %s", isErr, out)
+	}
+	if list, _ := call(t, cs, "list_projects", map[string]any{}); strings.Contains(list, "Trip") {
+		t.Fatalf("planning must not create the project: %s", list)
+	}
+}
+
+func TestMCPGoalWithACounter(t *testing.T) {
+	e := start(t, nil, false)
+	cs := mcpSession(t, e, e.alice)
+	out, isErr := call(t, cs, "create_goal", map[string]any{"title": "German", "period": "week", "target": 140, "unit": "minutes",
+		"counter_unit": "lessons", "counter_target": 40})
+	if isErr || !strings.Contains(out, "lessons") {
+		t.Fatalf("%v %s", isErr, out)
+	}
+	gid := firstID(out)
+	out, isErr = call(t, cs, "check_in", map[string]any{"goal_id": gid, "amount": 20, "count": 1})
+	if isErr || !regexp.MustCompile(`"counterDone":\s*1`).MatchString(out) {
+		t.Fatalf("%v %s", isErr, out)
+	}
+	if _, isErr := call(t, cs, "create_goal", map[string]any{"title": "x", "period": "week", "target": 1, "counter_target": 5}); !isErr {
+		t.Fatal("a counter target without a unit should be a tool error")
+	}
 }

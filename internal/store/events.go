@@ -25,6 +25,8 @@ type Event struct {
 	TimeZone     string
 	RRule        string
 	RemindBefore *int // minutes; nil: no reminder
+	ProjectID    string
+	Space        string
 	Created      time.Time
 	Updated      time.Time
 }
@@ -35,6 +37,8 @@ type EventPatch struct {
 	AllDay                       *bool
 	TimeZone, RRule              *string
 	RemindBefore                 **int // non-nil: set; *RemindBefore == nil clears
+	ProjectID                    *string
+	Space                        *string
 }
 
 type Occurrence struct {
@@ -127,12 +131,19 @@ func (s *Store) CreateEvent(ctx context.Context, e Event) (Event, error) {
 	}
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	e.ID, e.Created, e.Updated = uuid.NewString(), now, now
-	_, err := s.db.ExecContext(ctx, `
+	if err := s.checkProject(ctx, e.UserID, e.ProjectID); err != nil {
+		return Event{}, err
+	}
+	var err error
+	if e.Space, err = s.resolveSpace(ctx, e.UserID, e.Space, e.ProjectID); err != nil {
+		return Event{}, err
+	}
+	_, err = s.db.ExecContext(ctx, `
 		INSERT INTO events(id, user_id, title, description, location, start_ms, end_ms, all_day, tz, rrule,
-		                   remind_before, created_ms, updated_ms)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		                   remind_before, project_id, space, created_ms, updated_ms)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		e.ID, e.UserID, e.Title, e.Description, e.Location, ms(e.Start), ms(e.End), b2i(e.AllDay), e.TimeZone, e.RRule,
-		nullInt(e.RemindBefore), ms(e.Created), ms(e.Updated))
+		nullInt(e.RemindBefore), e.ProjectID, e.Space, ms(e.Created), ms(e.Updated))
 	return e, err
 }
 
@@ -143,7 +154,7 @@ func nullInt(p *int) any {
 	return *p
 }
 
-const eventCols = `id, user_id, title, description, location, start_ms, end_ms, all_day, tz, rrule, remind_before, created_ms, updated_ms`
+const eventCols = `id, user_id, title, description, location, start_ms, end_ms, all_day, tz, rrule, remind_before, project_id, space, created_ms, updated_ms`
 
 func scanEvent(r scanner) (Event, error) {
 	var e Event
@@ -151,7 +162,7 @@ func scanEvent(r scanner) (Event, error) {
 	var allDay int
 	var remind sql.NullInt64
 	if err := r.Scan(&e.ID, &e.UserID, &e.Title, &e.Description, &e.Location, &start, &end, &allDay,
-		&e.TimeZone, &e.RRule, &remind, &created, &updated); err != nil {
+		&e.TimeZone, &e.RRule, &remind, &e.ProjectID, &e.Space, &created, &updated); err != nil {
 		return Event{}, err
 	}
 	e.Start, e.End, e.AllDay = fromMS(start), fromMS(end), allDay != 0
@@ -199,6 +210,18 @@ func (s *Store) UpdateEvent(ctx context.Context, userID, id string, p EventPatch
 	if p.RemindBefore != nil {
 		e.RemindBefore = *p.RemindBefore
 	}
+	if p.ProjectID != nil {
+		e.ProjectID = *p.ProjectID
+		if err := s.checkProject(ctx, userID, e.ProjectID); err != nil {
+			return Event{}, err
+		}
+	}
+	if p.Space != nil {
+		if *p.Space != SpaceWork && *p.Space != SpaceLife {
+			return Event{}, invalid("space must be work or life")
+		}
+		e.Space = *p.Space
+	}
 	if p.Start != nil {
 		e.Start = *p.Start
 		if p.End == nil { // moving the start keeps the duration
@@ -215,27 +238,34 @@ func (s *Store) UpdateEvent(ctx context.Context, userID, id string, p EventPatch
 	// Rescheduling re-arms the reminder.
 	_, err = s.db.ExecContext(ctx, `
 		UPDATE events SET title = ?, description = ?, location = ?, start_ms = ?, end_ms = ?, all_day = ?, tz = ?,
-		                  rrule = ?, remind_before = ?, updated_ms = ?,
+		                  rrule = ?, remind_before = ?, project_id = ?, space = ?, updated_ms = ?,
 		                  reminded_for_ms = CASE WHEN start_ms = ? THEN reminded_for_ms ELSE NULL END
 		WHERE id = ? AND user_id = ?`,
 		e.Title, e.Description, e.Location, ms(e.Start), ms(e.End), b2i(e.AllDay), e.TimeZone,
-		e.RRule, nullInt(e.RemindBefore), ms(e.Updated), ms(oldStart), id, userID)
+		e.RRule, nullInt(e.RemindBefore), e.ProjectID, e.Space, ms(e.Updated), ms(oldStart), id, userID)
 	return e, err
 }
 
 func (s *Store) DeleteEvent(ctx context.Context, userID, id string) error {
-	res, err := s.db.ExecContext(ctx, `DELETE FROM events WHERE id = ? AND user_id = ?`, id, userID)
-	if err != nil {
+	return s.tx(ctx, func(tx *sql.Tx) error {
+		res, err := tx.ExecContext(ctx, `DELETE FROM events WHERE id = ? AND user_id = ?`, id, userID)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return ErrNotFound
+		}
+		// A goal scheduled by this event keeps going, just unscheduled.
+		_, err = tx.ExecContext(ctx, `UPDATE goals SET event_id = '' WHERE event_id = ? AND user_id = ?`, id, userID)
 		return err
-	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return ErrNotFound
-	}
-	return nil
+	})
 }
 
 // ListEvents returns every occurrence overlapping [from, to), ordered by start.
-func (s *Store) ListEvents(ctx context.Context, userID string, from, to time.Time) ([]Occurrence, error) {
+func (s *Store) ListEvents(ctx context.Context, userID string, from, to time.Time, space string) ([]Occurrence, error) {
+	if err := checkSpaceFilter(space); err != nil {
+		return nil, err
+	}
 	if !to.After(from) {
 		return nil, invalid("to must be after from")
 	}
@@ -244,13 +274,15 @@ func (s *Store) ListEvents(ctx context.Context, userID string, from, to time.Tim
 	}
 	// Recurring events can start long before the window, so they are always
 	// candidates; one-offs are pre-filtered in SQL.
-	rows, err := s.db.QueryContext(ctx, `SELECT `+eventCols+` FROM events
-		WHERE user_id = ? AND start_ms < ? AND (rrule <> '' OR end_ms > ? OR (end_ms = start_ms AND start_ms >= ?))`,
-		userID, ms(to), ms(from), ms(from))
+	q := `SELECT ` + eventCols + ` FROM events
+		WHERE user_id = ? AND start_ms < ? AND (rrule <> '' OR end_ms > ? OR (end_ms = start_ms AND start_ms >= ?))`
+	args := []any{userID, ms(to), ms(from), ms(from)}
+	q, args = spaceClause(q, args, "space", space)
+	rows, err := s.db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []Occurrence
 	for rows.Next() {
 		e, err := scanEvent(rows)

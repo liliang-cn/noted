@@ -76,3 +76,17 @@ func TestExampleConfigLoads(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestLanguage(t *testing.T) {
+	c, err := Load("")
+	if err != nil || c.Language != "zh" {
+		t.Fatalf("default language: %q %v", c.Language, err)
+	}
+	if _, err := Load(write(t, "language = \"fr\"\n")); err == nil {
+		t.Fatal("an unsupported language should be rejected")
+	}
+	t.Setenv("NOTED_LANGUAGE", "en")
+	if c, err := Load(""); err != nil || c.Language != "en" {
+		t.Fatalf("env override: %q %v", c.Language, err)
+	}
+}

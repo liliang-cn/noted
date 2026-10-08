@@ -4,9 +4,15 @@
 
 - **笔记**:Markdown、标签、置顶、归档、全文搜索(中文可搜)
 - **日程**:事件(时区、全天、周期规则、提前提醒)、待办(优先级、截止、提醒)
+- **项目**:一件有终点的事(比如一次旅行),下面挂待办、日程和笔记,有进度、倒计时和置顶
+- **目标**:周期性的目标(每周运动 3 次、每周学 140 分钟德语),打卡、连续周期数、是否落后于节奏、可选的里程碑路径,还可以带一个不限周期的累计计数器(课时 19/40),打卡时用 `amount` 记分钟、用 `count` 记课时
+- **工作 / 生活**:每条内容属于其一,所有列表、搜索、概览都能按空间过滤,不指定就是全部
+- **概览**:`GetFocus` 一次返回 今天 / 接下来 / 这周 / 这个月 的日程、待办、目标和置顶项目
+- **建议**:目标落后、项目缺日期、日程冲突、任务逾期、排进空档、每周回顾,**用固定规则算,不需要大模型**;你采纳了才写入,每次写入都能撤销
 - **提醒**:gRPC 流式推送、历史查询、可选 webhook
 - **多用户**:Bearer token,数据按用户隔离
-- **AI(可选)**:自然语言助手、笔记摘要、自动标签、每日简报、语义搜索,基于 [Agent-Go](https://github.com/liliang-cn/agent-go) 和 [CortexDB](https://github.com/liliang-cn/cortexdb),接任意 OpenAI 兼容接口
+- **偏好**:每用户的小型 JSON(主题、页面布局),多设备同步
+- **AI(可选)**:自然语言助手、一句话拆成项目、笔记提取待办、摘要、自动标签、每日简报、语义搜索,基于 [Agent-Go](https://github.com/liliang-cn/agent-go) 和 [CortexDB](https://github.com/liliang-cn/cortexdb),接任意 OpenAI 兼容接口
 - **MCP**:`noted mcp` 把以上能力暴露为 MCP 工具
 
 ## 部署
@@ -40,6 +46,7 @@ make build                       # 纯 Go,无需 CGO,产物 bin/noted
 | `NOTED_LISTEN` | 监听地址,默认 `127.0.0.1:43872` |
 | `NOTED_DATA_DIR` | 数据目录,默认 `./data` |
 | `NOTED_TIME_ZONE` | 简报和助手日期计算用的默认时区 |
+| `NOTED_LANGUAGE` | 服务器自己写的句子(建议、回顾)用 `zh` 还是 `en`,默认 `zh` |
 | `NOTED_AUTH_DISABLED` | `true` 时免 token,所有调用者是用户 `default`,只适合本机 |
 | `NOTED_WEBHOOK_URL` | 每条触发的提醒会 POST 一份 JSON 到这里(失败重试 3 次) |
 | `NOTED_AI_ENABLED` | `true` 开启 AI |
@@ -64,7 +71,7 @@ noted user list
 
 ### 健康检查
 
-标准 gRPC health 协议。容器内可用 `noted health -addr 127.0.0.1:43872`,镜像已内置 `HEALTHCHECK`。
+标准 gRPC health 协议。容器内可用 `noted health -addr 127.0.0.1:43872`,镜像已内置 `HEALTHCHECK`。服务启用了 TLS 时探针要加 `-tls`(`noted health -tls`),并在 compose 里覆盖 `healthcheck`,否则默认的明文探针会判为不健康。
 
 ## 使用
 
@@ -113,13 +120,16 @@ model    = "text-embedding-3-small"
 
 | 能力 | 需要 |
 | --- | --- |
-| `Ask` 助手(能查、建笔记/事件/待办,不能删除)、`SummarizeNote`、`SuggestTags`、`DailyBriefing` | LLM |
+| `Ask` 助手(能查,能**准备**笔记、日程、待办、项目、打卡,不能删除)、`PlanFromText`(一句话拆成项目)、`ExtractTasks`(笔记提取待办)、`SummarizeNote`、`SuggestTags`、`DailyBriefing` | LLM |
 | `SearchNotes` 的 `semantic: true` | embedding |
 
 - 没开 AI 时,`AIService` 除 `GetStatus` 外都返回 `FAILED_PRECONDITION`;请求语义搜索会自动退回全文搜索,响应里的 `mode` 会写明。
 - 启动时会检查 LLM/embedding 地址,key 写错立刻报错,不会等到第一次请求。
 - 开 embedding 后,后台会自动给已有笔记建索引。**换了 embedding 模型**需要删除 `<data_dir>/ai/index.db` 后重启,会自动重建。
 - 助手每条消息最多调用 8 轮工具,用来限制成本。
+- **按空间控制 AI 能读什么。** `AIService.SetAIAccess` 可以分别关掉「工作」或「生活」,默认两边都开。关掉的空间:助手看不到它的任何内容(列表、搜索、按 id 读取都一样);它的笔记不会发给 embedding 服务,已建的索引会被清掉;摘要、标签、提取待办、简报都不处理它;关闭前的旧对话不会再被带给模型。重新打开后会自动补建索引。这些在服务端强制执行,不依赖客户端。该设置只能通过 `SetAIAccess` 修改,普通偏好接口改不了。
+- **助手不会直接改你的数据。** 它调用的写工具只是"暂存",结果作为一个待确认的提案(`Proposal`)随回复返回;你调用 `SuggestionService.AcceptProposal` 才真正写入,并产生一条可 `UndoChange` 撤销的改动记录。`Ask` 的 `auto_apply` 用于自己另有确认步骤的调用方(MCP 就是这样)。
+- `PlanFromText` 只保留你明确说出的日期。"下个月去"不是确切日期,出发日期会作为必填项返回让你填,而不是猜一个。
 
 ## MCP
 
@@ -160,9 +170,13 @@ claude mcp add noted -e NOTED_ADDR=127.0.0.1:43872 -e NOTED_TOKEN=<token> -- /pa
 | 日程 | `list_events` `create_event` `update_event` `delete_event` |
 | 待办 | `list_tasks` `create_task` `complete_task` `delete_task` |
 | 提醒 | `list_reminders` |
-| AI | `ask_assistant` `summarize_note` `daily_briefing`(仅服务端开了 AI 时才出现) |
+| 概览 | `get_overview`(今天 / 接下来 / 这周 / 这个月) |
+| 项目 | `list_projects` `get_project` `create_project` `update_project` |
+| 目标 | `list_goals` `create_goal` `check_in` |
+| 建议 | `list_suggestions` `accept_suggestion` `dismiss_suggestion` `weekly_review` `list_changes` `undo_change` |
+| AI | `ask_assistant` `summarize_note` `daily_briefing` `plan_from_text` `extract_tasks`(仅服务端开了 AI 时才出现) |
 
-时间一律用 RFC 3339,例如 `2026-03-05T15:00:00+08:00`;"下周五"这类相对日期由调用方的模型先换算。删除类工具带 destructive 标注,客户端通常会弹确认。出错时作为工具错误返回,模型可以读到原因并重试。
+带 `space` 参数的工具可传 `work` 或 `life`,不传就是两边都看;`create_task` 等传 `project_id` 就加进项目。时间一律用 RFC 3339,例如 `2026-03-05T15:00:00+08:00`;"下周五"这类相对日期由调用方的模型先换算。删除类工具带 destructive 标注,客户端通常会弹确认。出错时作为工具错误返回,模型可以读到原因并重试。
 
 ## 开发
 

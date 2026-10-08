@@ -11,6 +11,7 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
@@ -23,6 +24,58 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
+
+// Space is the work/life dimension. Every note, event, task, goal and project
+// belongs to one. In filters, UNSPECIFIED means both ("combined" mode); when
+// writing, UNSPECIFIED means "inherit from the project, else LIFE".
+type Space int32
+
+const (
+	Space_SPACE_UNSPECIFIED Space = 0
+	Space_SPACE_WORK        Space = 1
+	Space_SPACE_LIFE        Space = 2
+)
+
+// Enum value maps for Space.
+var (
+	Space_name = map[int32]string{
+		0: "SPACE_UNSPECIFIED",
+		1: "SPACE_WORK",
+		2: "SPACE_LIFE",
+	}
+	Space_value = map[string]int32{
+		"SPACE_UNSPECIFIED": 0,
+		"SPACE_WORK":        1,
+		"SPACE_LIFE":        2,
+	}
+)
+
+func (x Space) Enum() *Space {
+	p := new(Space)
+	*p = x
+	return p
+}
+
+func (x Space) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Space) Descriptor() protoreflect.EnumDescriptor {
+	return file_noted_v1_noted_proto_enumTypes[0].Descriptor()
+}
+
+func (Space) Type() protoreflect.EnumType {
+	return &file_noted_v1_noted_proto_enumTypes[0]
+}
+
+func (x Space) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Space.Descriptor instead.
+func (Space) EnumDescriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{0}
+}
 
 type Priority int32
 
@@ -60,11 +113,11 @@ func (x Priority) String() string {
 }
 
 func (Priority) Descriptor() protoreflect.EnumDescriptor {
-	return file_noted_v1_noted_proto_enumTypes[0].Descriptor()
+	return file_noted_v1_noted_proto_enumTypes[1].Descriptor()
 }
 
 func (Priority) Type() protoreflect.EnumType {
-	return &file_noted_v1_noted_proto_enumTypes[0]
+	return &file_noted_v1_noted_proto_enumTypes[1]
 }
 
 func (x Priority) Number() protoreflect.EnumNumber {
@@ -73,7 +126,114 @@ func (x Priority) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Priority.Descriptor instead.
 func (Priority) EnumDescriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{0}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{1}
+}
+
+type GoalPeriod int32
+
+const (
+	GoalPeriod_GOAL_PERIOD_UNSPECIFIED GoalPeriod = 0
+	GoalPeriod_GOAL_PERIOD_DAY         GoalPeriod = 1
+	GoalPeriod_GOAL_PERIOD_WEEK        GoalPeriod = 2 // weeks start on Monday
+	GoalPeriod_GOAL_PERIOD_MONTH       GoalPeriod = 3
+)
+
+// Enum value maps for GoalPeriod.
+var (
+	GoalPeriod_name = map[int32]string{
+		0: "GOAL_PERIOD_UNSPECIFIED",
+		1: "GOAL_PERIOD_DAY",
+		2: "GOAL_PERIOD_WEEK",
+		3: "GOAL_PERIOD_MONTH",
+	}
+	GoalPeriod_value = map[string]int32{
+		"GOAL_PERIOD_UNSPECIFIED": 0,
+		"GOAL_PERIOD_DAY":         1,
+		"GOAL_PERIOD_WEEK":        2,
+		"GOAL_PERIOD_MONTH":       3,
+	}
+)
+
+func (x GoalPeriod) Enum() *GoalPeriod {
+	p := new(GoalPeriod)
+	*p = x
+	return p
+}
+
+func (x GoalPeriod) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (GoalPeriod) Descriptor() protoreflect.EnumDescriptor {
+	return file_noted_v1_noted_proto_enumTypes[2].Descriptor()
+}
+
+func (GoalPeriod) Type() protoreflect.EnumType {
+	return &file_noted_v1_noted_proto_enumTypes[2]
+}
+
+func (x GoalPeriod) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use GoalPeriod.Descriptor instead.
+func (GoalPeriod) EnumDescriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{2}
+}
+
+type Horizon int32
+
+const (
+	Horizon_HORIZON_UNSPECIFIED Horizon = 0 // same as TODAY
+	Horizon_HORIZON_TODAY       Horizon = 1 // today, plus open tasks that are overdue
+	Horizon_HORIZON_UPCOMING    Horizon = 2 // tomorrow through the next 14 days
+	Horizon_HORIZON_WEEK        Horizon = 3 // Monday to Sunday of the current week
+	Horizon_HORIZON_MONTH       Horizon = 4 // the 1st to the end of the current month
+)
+
+// Enum value maps for Horizon.
+var (
+	Horizon_name = map[int32]string{
+		0: "HORIZON_UNSPECIFIED",
+		1: "HORIZON_TODAY",
+		2: "HORIZON_UPCOMING",
+		3: "HORIZON_WEEK",
+		4: "HORIZON_MONTH",
+	}
+	Horizon_value = map[string]int32{
+		"HORIZON_UNSPECIFIED": 0,
+		"HORIZON_TODAY":       1,
+		"HORIZON_UPCOMING":    2,
+		"HORIZON_WEEK":        3,
+		"HORIZON_MONTH":       4,
+	}
+)
+
+func (x Horizon) Enum() *Horizon {
+	p := new(Horizon)
+	*p = x
+	return p
+}
+
+func (x Horizon) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Horizon) Descriptor() protoreflect.EnumDescriptor {
+	return file_noted_v1_noted_proto_enumTypes[3].Descriptor()
+}
+
+func (Horizon) Type() protoreflect.EnumType {
+	return &file_noted_v1_noted_proto_enumTypes[3]
+}
+
+func (x Horizon) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Horizon.Descriptor instead.
+func (Horizon) EnumDescriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{3}
 }
 
 type ListTasksRequest_Filter int32
@@ -112,11 +272,11 @@ func (x ListTasksRequest_Filter) String() string {
 }
 
 func (ListTasksRequest_Filter) Descriptor() protoreflect.EnumDescriptor {
-	return file_noted_v1_noted_proto_enumTypes[1].Descriptor()
+	return file_noted_v1_noted_proto_enumTypes[4].Descriptor()
 }
 
 func (ListTasksRequest_Filter) Type() protoreflect.EnumType {
-	return &file_noted_v1_noted_proto_enumTypes[1]
+	return &file_noted_v1_noted_proto_enumTypes[4]
 }
 
 func (x ListTasksRequest_Filter) Number() protoreflect.EnumNumber {
@@ -161,11 +321,11 @@ func (x Reminder_Kind) String() string {
 }
 
 func (Reminder_Kind) Descriptor() protoreflect.EnumDescriptor {
-	return file_noted_v1_noted_proto_enumTypes[2].Descriptor()
+	return file_noted_v1_noted_proto_enumTypes[5].Descriptor()
 }
 
 func (Reminder_Kind) Type() protoreflect.EnumType {
-	return &file_noted_v1_noted_proto_enumTypes[2]
+	return &file_noted_v1_noted_proto_enumTypes[5]
 }
 
 func (x Reminder_Kind) Number() protoreflect.EnumNumber {
@@ -187,6 +347,8 @@ type Note struct {
 	Archived      bool                   `protobuf:"varint,6,opt,name=archived,proto3" json:"archived,omitempty"`
 	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	UpdateTime    *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	ProjectId     string                 `protobuf:"bytes,9,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"` // optional: the project this note belongs to
+	Space         Space                  `protobuf:"varint,10,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -275,6 +437,20 @@ func (x *Note) GetUpdateTime() *timestamppb.Timestamp {
 		return x.UpdateTime
 	}
 	return nil
+}
+
+func (x *Note) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *Note) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
 }
 
 type CreateNoteRequest struct {
@@ -368,7 +544,7 @@ func (x *GetNoteRequest) GetId() string {
 type UpdateNoteRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Note  *Note                  `protobuf:"bytes,1,opt,name=note,proto3" json:"note,omitempty"` // note.id selects the note
-	// Fields to change: title, content, tags, pinned, archived.
+	// Fields to change: title, content, tags, pinned, archived, project_id, space.
 	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -469,6 +645,8 @@ type ListNotesRequest struct {
 	Tag             string                 `protobuf:"bytes,3,opt,name=tag,proto3" json:"tag,omitempty"`
 	PinnedOnly      bool                   `protobuf:"varint,4,opt,name=pinned_only,json=pinnedOnly,proto3" json:"pinned_only,omitempty"`
 	IncludeArchived bool                   `protobuf:"varint,5,opt,name=include_archived,json=includeArchived,proto3" json:"include_archived,omitempty"`
+	ProjectId       string                 `protobuf:"bytes,6,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"` // only notes of this project
+	Space           Space                  `protobuf:"varint,7,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`     // UNSPECIFIED: both
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -538,6 +716,20 @@ func (x *ListNotesRequest) GetIncludeArchived() bool {
 	return false
 }
 
+func (x *ListNotesRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *ListNotesRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
 type ListNotesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Notes         []*Note                `protobuf:"bytes,1,rep,name=notes,proto3" json:"notes,omitempty"`
@@ -597,8 +789,9 @@ type SearchNotesRequest struct {
 	// Ask for semantic (vector) ranking. Only honoured when AI embeddings are
 	// configured; otherwise the server falls back to full-text search and says
 	// so in SearchNotesResponse.mode.
-	Semantic        bool `protobuf:"varint,3,opt,name=semantic,proto3" json:"semantic,omitempty"`
-	IncludeArchived bool `protobuf:"varint,4,opt,name=include_archived,json=includeArchived,proto3" json:"include_archived,omitempty"`
+	Semantic        bool  `protobuf:"varint,3,opt,name=semantic,proto3" json:"semantic,omitempty"`
+	IncludeArchived bool  `protobuf:"varint,4,opt,name=include_archived,json=includeArchived,proto3" json:"include_archived,omitempty"`
+	Space           Space `protobuf:"varint,5,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"` // UNSPECIFIED: both
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -659,6 +852,13 @@ func (x *SearchNotesRequest) GetIncludeArchived() bool {
 		return x.IncludeArchived
 	}
 	return false
+}
+
+func (x *SearchNotesRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
 }
 
 type NoteHit struct {
@@ -789,6 +989,8 @@ type Event struct {
 	RemindBeforeMinutes *int32                 `protobuf:"varint,10,opt,name=remind_before_minutes,json=remindBeforeMinutes,proto3,oneof" json:"remind_before_minutes,omitempty"` // unset: no reminder
 	CreateTime          *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	UpdateTime          *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	ProjectId           string                 `protobuf:"bytes,13,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"` // optional: the project this event belongs to
+	Space               Space                  `protobuf:"varint,14,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -907,6 +1109,20 @@ func (x *Event) GetUpdateTime() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *Event) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *Event) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
 type CreateEventRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Event         *Event                 `protobuf:"bytes,1,opt,name=event,proto3" json:"event,omitempty"`
@@ -999,7 +1215,7 @@ type UpdateEventRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Event *Event                 `protobuf:"bytes,1,opt,name=event,proto3" json:"event,omitempty"`
 	// title, description, location, start_time, end_time, all_day, time_zone,
-	// rrule, remind_before_minutes
+	// rrule, remind_before_minutes, project_id, space
 	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1095,8 +1311,9 @@ func (x *DeleteEventRequest) GetId() string {
 
 type ListEventsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	From          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"` // inclusive
-	To            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`     // exclusive; at most 366 days after from
+	From          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`                        // inclusive
+	To            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`                            // exclusive; at most 366 days after from
+	Space         Space                  `protobuf:"varint,3,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"` // UNSPECIFIED: both
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1143,6 +1360,13 @@ func (x *ListEventsRequest) GetTo() *timestamppb.Timestamp {
 		return x.To
 	}
 	return nil
+}
+
+func (x *ListEventsRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
 }
 
 // One concrete instance of an event inside the requested window.
@@ -1263,6 +1487,8 @@ type Task struct {
 	Tags          []string               `protobuf:"bytes,9,rep,name=tags,proto3" json:"tags,omitempty"`
 	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	UpdateTime    *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	ProjectId     string                 `protobuf:"bytes,12,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"` // optional: the project this task belongs to
+	Space         Space                  `protobuf:"varint,13,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1374,6 +1600,20 @@ func (x *Task) GetUpdateTime() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *Task) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *Task) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
 type CreateTaskRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Task          *Task                  `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
@@ -1465,7 +1705,7 @@ func (x *GetTaskRequest) GetId() string {
 type UpdateTaskRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Task  *Task                  `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
-	// title, notes, due_time, priority, completed, remind_time, tags
+	// title, notes, due_time, priority, completed, remind_time, tags, project_id, space
 	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1566,6 +1806,8 @@ type ListTasksRequest struct {
 	Filter        ListTasksRequest_Filter `protobuf:"varint,3,opt,name=filter,proto3,enum=noted.v1.ListTasksRequest_Filter" json:"filter,omitempty"`
 	Tag           string                  `protobuf:"bytes,4,opt,name=tag,proto3" json:"tag,omitempty"`
 	DueBefore     *timestamppb.Timestamp  `protobuf:"bytes,5,opt,name=due_before,json=dueBefore,proto3" json:"due_before,omitempty"`
+	ProjectId     string                  `protobuf:"bytes,6,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"` // only tasks of this project
+	Space         Space                   `protobuf:"varint,7,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`     // UNSPECIFIED: both
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1635,6 +1877,20 @@ func (x *ListTasksRequest) GetDueBefore() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *ListTasksRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *ListTasksRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
 type ListTasksResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Tasks         []*Task                `protobuf:"bytes,1,rep,name=tasks,proto3" json:"tasks,omitempty"`
@@ -1695,6 +1951,7 @@ type Reminder struct {
 	Title         string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
 	DueTime       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=due_time,json=dueTime,proto3" json:"due_time,omitempty"`    // when the event starts / task is due
 	FireTime      *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=fire_time,json=fireTime,proto3" json:"fire_time,omitempty"` // when the reminder fired
+	Space         Space                  `protobuf:"varint,7,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1771,8 +2028,16 @@ func (x *Reminder) GetFireTime() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *Reminder) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
 type WatchRemindersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Space         Space                  `protobuf:"varint,1,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"` // UNSPECIFIED: both
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1807,10 +2072,18 @@ func (*WatchRemindersRequest) Descriptor() ([]byte, []int) {
 	return file_noted_v1_noted_proto_rawDescGZIP(), []int{26}
 }
 
+func (x *WatchRemindersRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
 type ListRemindersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Since         *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=since,proto3" json:"since,omitempty"`  // default: last 24h
-	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"` // default 100
+	Since         *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=since,proto3" json:"since,omitempty"`                      // default: last 24h
+	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`                     // default 100
+	Space         Space                  `protobuf:"varint,3,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"` // UNSPECIFIED: both
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1857,6 +2130,13 @@ func (x *ListRemindersRequest) GetLimit() int32 {
 		return x.Limit
 	}
 	return 0
+}
+
+func (x *ListRemindersRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
 }
 
 type ListRemindersResponse struct {
@@ -2011,7 +2291,13 @@ type AskRequest struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Message string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
 	// Conversation id; empty starts a new one. Returned in the response.
-	SessionId     string `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	SessionId string `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	// The mode the app is in. Used as the default space for what the
+	// assistant creates when the message does not make it obvious.
+	Space Space `protobuf:"varint,3,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
+	// Carry out whatever the assistant prepared right away, instead of returning it for
+	// the user to confirm. For callers (such as MCP clients) that have their own confirmation step.
+	AutoApply     bool `protobuf:"varint,4,opt,name=auto_apply,json=autoApply,proto3" json:"auto_apply,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2060,11 +2346,31 @@ func (x *AskRequest) GetSessionId() string {
 	return ""
 }
 
+func (x *AskRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+func (x *AskRequest) GetAutoApply() bool {
+	if x != nil {
+		return x.AutoApply
+	}
+	return false
+}
+
 type AskResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Reply         string                 `protobuf:"bytes,1,opt,name=reply,proto3" json:"reply,omitempty"`
-	SessionId     string                 `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
-	ToolsUsed     []string               `protobuf:"bytes,3,rep,name=tools_used,json=toolsUsed,proto3" json:"tools_used,omitempty"` // e.g. create_event, search_notes
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Reply     string                 `protobuf:"bytes,1,opt,name=reply,proto3" json:"reply,omitempty"`
+	SessionId string                 `protobuf:"bytes,2,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	ToolsUsed []string               `protobuf:"bytes,3,rep,name=tools_used,json=toolsUsed,proto3" json:"tools_used,omitempty"` // e.g. create_event, search_notes
+	// What the assistant prepared. Nothing in it has been done yet, unless auto_apply was set.
+	Proposal *Proposal `protobuf:"bytes,4,opt,name=proposal,proto3" json:"proposal,omitempty"`
+	Change   *Change   `protobuf:"bytes,5,opt,name=change,proto3" json:"change,omitempty"` // set when auto_apply carried the proposal out
+	// The things the assistant looked at that its reply talks about, so the app can show
+	// them as real rows under the answer.
+	References    []*Reference `protobuf:"bytes,6,rep,name=references,proto3" json:"references,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2120,6 +2426,96 @@ func (x *AskResponse) GetToolsUsed() []string {
 	return nil
 }
 
+func (x *AskResponse) GetProposal() *Proposal {
+	if x != nil {
+		return x.Proposal
+	}
+	return nil
+}
+
+func (x *AskResponse) GetChange() *Change {
+	if x != nil {
+		return x.Change
+	}
+	return nil
+}
+
+func (x *AskResponse) GetReferences() []*Reference {
+	if x != nil {
+		return x.References
+	}
+	return nil
+}
+
+// Something the assistant read while answering.
+type Reference struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Kind          string                 `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"` // event, task, note, project or goal
+	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Time          *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=time,proto3" json:"time,omitempty"` // start time or due date, when it has one
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Reference) Reset() {
+	*x = Reference{}
+	mi := &file_noted_v1_noted_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Reference) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Reference) ProtoMessage() {}
+
+func (x *Reference) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Reference.ProtoReflect.Descriptor instead.
+func (*Reference) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *Reference) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *Reference) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Reference) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Reference) GetTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Time
+	}
+	return nil
+}
+
 type SummarizeNoteRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NoteId        string                 `protobuf:"bytes,1,opt,name=note_id,json=noteId,proto3" json:"note_id,omitempty"`
@@ -2129,7 +2525,7 @@ type SummarizeNoteRequest struct {
 
 func (x *SummarizeNoteRequest) Reset() {
 	*x = SummarizeNoteRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[33]
+	mi := &file_noted_v1_noted_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2141,7 +2537,7 @@ func (x *SummarizeNoteRequest) String() string {
 func (*SummarizeNoteRequest) ProtoMessage() {}
 
 func (x *SummarizeNoteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[33]
+	mi := &file_noted_v1_noted_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2154,7 +2550,7 @@ func (x *SummarizeNoteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SummarizeNoteRequest.ProtoReflect.Descriptor instead.
 func (*SummarizeNoteRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{33}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *SummarizeNoteRequest) GetNoteId() string {
@@ -2173,7 +2569,7 @@ type SummarizeNoteResponse struct {
 
 func (x *SummarizeNoteResponse) Reset() {
 	*x = SummarizeNoteResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[34]
+	mi := &file_noted_v1_noted_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2185,7 +2581,7 @@ func (x *SummarizeNoteResponse) String() string {
 func (*SummarizeNoteResponse) ProtoMessage() {}
 
 func (x *SummarizeNoteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[34]
+	mi := &file_noted_v1_noted_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2198,7 +2594,7 @@ func (x *SummarizeNoteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SummarizeNoteResponse.ProtoReflect.Descriptor instead.
 func (*SummarizeNoteResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{34}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *SummarizeNoteResponse) GetSummary() string {
@@ -2218,7 +2614,7 @@ type SuggestTagsRequest struct {
 
 func (x *SuggestTagsRequest) Reset() {
 	*x = SuggestTagsRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[35]
+	mi := &file_noted_v1_noted_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2230,7 +2626,7 @@ func (x *SuggestTagsRequest) String() string {
 func (*SuggestTagsRequest) ProtoMessage() {}
 
 func (x *SuggestTagsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[35]
+	mi := &file_noted_v1_noted_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2243,7 +2639,7 @@ func (x *SuggestTagsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SuggestTagsRequest.ProtoReflect.Descriptor instead.
 func (*SuggestTagsRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{35}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *SuggestTagsRequest) GetNoteId() string {
@@ -2269,7 +2665,7 @@ type SuggestTagsResponse struct {
 
 func (x *SuggestTagsResponse) Reset() {
 	*x = SuggestTagsResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[36]
+	mi := &file_noted_v1_noted_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2281,7 +2677,7 @@ func (x *SuggestTagsResponse) String() string {
 func (*SuggestTagsResponse) ProtoMessage() {}
 
 func (x *SuggestTagsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[36]
+	mi := &file_noted_v1_noted_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2294,7 +2690,7 @@ func (x *SuggestTagsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SuggestTagsResponse.ProtoReflect.Descriptor instead.
 func (*SuggestTagsResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{36}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *SuggestTagsResponse) GetTags() []string {
@@ -2309,13 +2705,14 @@ type DailyBriefingRequest struct {
 	// Local day to brief on; only the date matters. Default: today.
 	Day           *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=day,proto3" json:"day,omitempty"`
 	TimeZone      string                 `protobuf:"bytes,2,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"` // IANA name; default: the server's configured zone
+	Space         Space                  `protobuf:"varint,3,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`  // UNSPECIFIED: the whole day
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DailyBriefingRequest) Reset() {
 	*x = DailyBriefingRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[37]
+	mi := &file_noted_v1_noted_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2327,7 +2724,7 @@ func (x *DailyBriefingRequest) String() string {
 func (*DailyBriefingRequest) ProtoMessage() {}
 
 func (x *DailyBriefingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[37]
+	mi := &file_noted_v1_noted_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2340,7 +2737,7 @@ func (x *DailyBriefingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DailyBriefingRequest.ProtoReflect.Descriptor instead.
 func (*DailyBriefingRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{37}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *DailyBriefingRequest) GetDay() *timestamppb.Timestamp {
@@ -2357,6 +2754,13 @@ func (x *DailyBriefingRequest) GetTimeZone() string {
 	return ""
 }
 
+func (x *DailyBriefingRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
 type DailyBriefingResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Briefing      string                 `protobuf:"bytes,1,opt,name=briefing,proto3" json:"briefing,omitempty"`
@@ -2366,7 +2770,7 @@ type DailyBriefingResponse struct {
 
 func (x *DailyBriefingResponse) Reset() {
 	*x = DailyBriefingResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[38]
+	mi := &file_noted_v1_noted_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2378,7 +2782,7 @@ func (x *DailyBriefingResponse) String() string {
 func (*DailyBriefingResponse) ProtoMessage() {}
 
 func (x *DailyBriefingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[38]
+	mi := &file_noted_v1_noted_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2391,7 +2795,7 @@ func (x *DailyBriefingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DailyBriefingResponse.ProtoReflect.Descriptor instead.
 func (*DailyBriefingResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{38}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *DailyBriefingResponse) GetBriefing() string {
@@ -2401,11 +2805,3770 @@ func (x *DailyBriefingResponse) GetBriefing() string {
 	return ""
 }
 
+type AIFeatures struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DailyBriefing bool                   `protobuf:"varint,1,opt,name=daily_briefing,json=dailyBriefing,proto3" json:"daily_briefing,omitempty"`
+	Suggestions   bool                   `protobuf:"varint,2,opt,name=suggestions,proto3" json:"suggestions,omitempty"` // the suggestions list, including the next-week plan
+	WeeklyReview  bool                   `protobuf:"varint,3,opt,name=weekly_review,json=weeklyReview,proto3" json:"weekly_review,omitempty"`
+	NoteTools     bool                   `protobuf:"varint,4,opt,name=note_tools,json=noteTools,proto3" json:"note_tools,omitempty"` // summaries, suggested tags, to-dos found in a note
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AIFeatures) Reset() {
+	*x = AIFeatures{}
+	mi := &file_noted_v1_noted_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AIFeatures) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AIFeatures) ProtoMessage() {}
+
+func (x *AIFeatures) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AIFeatures.ProtoReflect.Descriptor instead.
+func (*AIFeatures) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *AIFeatures) GetDailyBriefing() bool {
+	if x != nil {
+		return x.DailyBriefing
+	}
+	return false
+}
+
+func (x *AIFeatures) GetSuggestions() bool {
+	if x != nil {
+		return x.Suggestions
+	}
+	return false
+}
+
+func (x *AIFeatures) GetWeeklyReview() bool {
+	if x != nil {
+		return x.WeeklyReview
+	}
+	return false
+}
+
+func (x *AIFeatures) GetNoteTools() bool {
+	if x != nil {
+		return x.NoteTools
+	}
+	return false
+}
+
+type GetAIFeaturesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAIFeaturesRequest) Reset() {
+	*x = GetAIFeaturesRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAIFeaturesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAIFeaturesRequest) ProtoMessage() {}
+
+func (x *GetAIFeaturesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAIFeaturesRequest.ProtoReflect.Descriptor instead.
+func (*GetAIFeaturesRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{41}
+}
+
+type SetAIFeaturesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DailyBriefing bool                   `protobuf:"varint,1,opt,name=daily_briefing,json=dailyBriefing,proto3" json:"daily_briefing,omitempty"`
+	Suggestions   bool                   `protobuf:"varint,2,opt,name=suggestions,proto3" json:"suggestions,omitempty"`
+	WeeklyReview  bool                   `protobuf:"varint,3,opt,name=weekly_review,json=weeklyReview,proto3" json:"weekly_review,omitempty"`
+	NoteTools     bool                   `protobuf:"varint,4,opt,name=note_tools,json=noteTools,proto3" json:"note_tools,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetAIFeaturesRequest) Reset() {
+	*x = SetAIFeaturesRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetAIFeaturesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetAIFeaturesRequest) ProtoMessage() {}
+
+func (x *SetAIFeaturesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetAIFeaturesRequest.ProtoReflect.Descriptor instead.
+func (*SetAIFeaturesRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *SetAIFeaturesRequest) GetDailyBriefing() bool {
+	if x != nil {
+		return x.DailyBriefing
+	}
+	return false
+}
+
+func (x *SetAIFeaturesRequest) GetSuggestions() bool {
+	if x != nil {
+		return x.Suggestions
+	}
+	return false
+}
+
+func (x *SetAIFeaturesRequest) GetWeeklyReview() bool {
+	if x != nil {
+		return x.WeeklyReview
+	}
+	return false
+}
+
+func (x *SetAIFeaturesRequest) GetNoteTools() bool {
+	if x != nil {
+		return x.NoteTools
+	}
+	return false
+}
+
+type AIAccess struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AllowWork     bool                   `protobuf:"varint,1,opt,name=allow_work,json=allowWork,proto3" json:"allow_work,omitempty"`
+	AllowLife     bool                   `protobuf:"varint,2,opt,name=allow_life,json=allowLife,proto3" json:"allow_life,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AIAccess) Reset() {
+	*x = AIAccess{}
+	mi := &file_noted_v1_noted_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AIAccess) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AIAccess) ProtoMessage() {}
+
+func (x *AIAccess) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AIAccess.ProtoReflect.Descriptor instead.
+func (*AIAccess) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *AIAccess) GetAllowWork() bool {
+	if x != nil {
+		return x.AllowWork
+	}
+	return false
+}
+
+func (x *AIAccess) GetAllowLife() bool {
+	if x != nil {
+		return x.AllowLife
+	}
+	return false
+}
+
+type GetAIAccessRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAIAccessRequest) Reset() {
+	*x = GetAIAccessRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAIAccessRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAIAccessRequest) ProtoMessage() {}
+
+func (x *GetAIAccessRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAIAccessRequest.ProtoReflect.Descriptor instead.
+func (*GetAIAccessRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{44}
+}
+
+type SetAIAccessRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AllowWork     bool                   `protobuf:"varint,1,opt,name=allow_work,json=allowWork,proto3" json:"allow_work,omitempty"`
+	AllowLife     bool                   `protobuf:"varint,2,opt,name=allow_life,json=allowLife,proto3" json:"allow_life,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetAIAccessRequest) Reset() {
+	*x = SetAIAccessRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetAIAccessRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetAIAccessRequest) ProtoMessage() {}
+
+func (x *SetAIAccessRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetAIAccessRequest.ProtoReflect.Descriptor instead.
+func (*SetAIAccessRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *SetAIAccessRequest) GetAllowWork() bool {
+	if x != nil {
+		return x.AllowWork
+	}
+	return false
+}
+
+func (x *SetAIAccessRequest) GetAllowLife() bool {
+	if x != nil {
+		return x.AllowLife
+	}
+	return false
+}
+
+type PlanFromTextRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
+	Space         Space                  `protobuf:"varint,2,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"` // the app's current mode; used when the text does not make it clear
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PlanFromTextRequest) Reset() {
+	*x = PlanFromTextRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlanFromTextRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlanFromTextRequest) ProtoMessage() {}
+
+func (x *PlanFromTextRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlanFromTextRequest.ProtoReflect.Descriptor instead.
+func (*PlanFromTextRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *PlanFromTextRequest) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+func (x *PlanFromTextRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+type ExtractTasksRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NoteId        string                 `protobuf:"bytes,1,opt,name=note_id,json=noteId,proto3" json:"note_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExtractTasksRequest) Reset() {
+	*x = ExtractTasksRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExtractTasksRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExtractTasksRequest) ProtoMessage() {}
+
+func (x *ExtractTasksRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExtractTasksRequest.ProtoReflect.Descriptor instead.
+func (*ExtractTasksRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *ExtractTasksRequest) GetNoteId() string {
+	if x != nil {
+		return x.NoteId
+	}
+	return ""
+}
+
+type Milestone struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Done          bool                   `protobuf:"varint,3,opt,name=done,proto3" json:"done,omitempty"`
+	DoneTime      *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=done_time,json=doneTime,proto3" json:"done_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Milestone) Reset() {
+	*x = Milestone{}
+	mi := &file_noted_v1_noted_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Milestone) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Milestone) ProtoMessage() {}
+
+func (x *Milestone) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Milestone.ProtoReflect.Descriptor instead.
+func (*Milestone) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{48}
+}
+
+func (x *Milestone) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Milestone) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Milestone) GetDone() bool {
+	if x != nil {
+		return x.Done
+	}
+	return false
+}
+
+func (x *Milestone) GetDoneTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.DoneTime
+	}
+	return nil
+}
+
+type DayTotal struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"` // YYYY-MM-DD in the goal's time zone
+	Amount        float64                `protobuf:"fixed64,2,opt,name=amount,proto3" json:"amount,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DayTotal) Reset() {
+	*x = DayTotal{}
+	mi := &file_noted_v1_noted_proto_msgTypes[49]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DayTotal) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DayTotal) ProtoMessage() {}
+
+func (x *DayTotal) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[49]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DayTotal.ProtoReflect.Descriptor instead.
+func (*DayTotal) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{49}
+}
+
+func (x *DayTotal) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *DayTotal) GetAmount() float64 {
+	if x != nil {
+		return x.Amount
+	}
+	return 0
+}
+
+// Computed by the server; ignored on input.
+type GoalProgress struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	PeriodStart *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=period_start,json=periodStart,proto3" json:"period_start,omitempty"`
+	PeriodEnd   *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=period_end,json=periodEnd,proto3" json:"period_end,omitempty"`
+	Done        float64                `protobuf:"fixed64,3,opt,name=done,proto3" json:"done,omitempty"` // sum of check-in amounts this period
+	Target      float64                `protobuf:"fixed64,4,opt,name=target,proto3" json:"target,omitempty"`
+	Remaining   float64                `protobuf:"fixed64,5,opt,name=remaining,proto3" json:"remaining,omitempty"` // max(target - done, 0)
+	Percent     float64                `protobuf:"fixed64,6,opt,name=percent,proto3" json:"percent,omitempty"`     // done / target; can exceed 1
+	Achieved    bool                   `protobuf:"varint,7,opt,name=achieved,proto3" json:"achieved,omitempty"`
+	// Behind the pace the target implies, counting only days before today.
+	Behind bool `protobuf:"varint,8,opt,name=behind,proto3" json:"behind,omitempty"`
+	// Consecutive achieved periods. The current period counts once achieved;
+	// until then the streak is the run of achieved periods before it.
+	Streak           int32       `protobuf:"varint,9,opt,name=streak,proto3" json:"streak,omitempty"`
+	Days             []*DayTotal `protobuf:"bytes,10,rep,name=days,proto3" json:"days,omitempty"`     // every day of the current period
+	Recent           []*DayTotal `protobuf:"bytes,11,rep,name=recent,proto3" json:"recent,omitempty"` // the last 14 days ending today, oldest first
+	MilestonesDone   int32       `protobuf:"varint,12,opt,name=milestones_done,json=milestonesDone,proto3" json:"milestones_done,omitempty"`
+	MilestonesTotal  int32       `protobuf:"varint,13,opt,name=milestones_total,json=milestonesTotal,proto3" json:"milestones_total,omitempty"`
+	MilestonePercent float64     `protobuf:"fixed64,14,opt,name=milestone_percent,json=milestonePercent,proto3" json:"milestone_percent,omitempty"` // milestones_done / milestones_total, 0 if none
+	CounterDone      float64     `protobuf:"fixed64,15,opt,name=counter_done,json=counterDone,proto3" json:"counter_done,omitempty"`                // the running total so far
+	CounterPercent   float64     `protobuf:"fixed64,16,opt,name=counter_percent,json=counterPercent,proto3" json:"counter_percent,omitempty"`       // counter_done / counter_target; 0 when there is no counter
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *GoalProgress) Reset() {
+	*x = GoalProgress{}
+	mi := &file_noted_v1_noted_proto_msgTypes[50]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GoalProgress) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GoalProgress) ProtoMessage() {}
+
+func (x *GoalProgress) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[50]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GoalProgress.ProtoReflect.Descriptor instead.
+func (*GoalProgress) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{50}
+}
+
+func (x *GoalProgress) GetPeriodStart() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PeriodStart
+	}
+	return nil
+}
+
+func (x *GoalProgress) GetPeriodEnd() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PeriodEnd
+	}
+	return nil
+}
+
+func (x *GoalProgress) GetDone() float64 {
+	if x != nil {
+		return x.Done
+	}
+	return 0
+}
+
+func (x *GoalProgress) GetTarget() float64 {
+	if x != nil {
+		return x.Target
+	}
+	return 0
+}
+
+func (x *GoalProgress) GetRemaining() float64 {
+	if x != nil {
+		return x.Remaining
+	}
+	return 0
+}
+
+func (x *GoalProgress) GetPercent() float64 {
+	if x != nil {
+		return x.Percent
+	}
+	return 0
+}
+
+func (x *GoalProgress) GetAchieved() bool {
+	if x != nil {
+		return x.Achieved
+	}
+	return false
+}
+
+func (x *GoalProgress) GetBehind() bool {
+	if x != nil {
+		return x.Behind
+	}
+	return false
+}
+
+func (x *GoalProgress) GetStreak() int32 {
+	if x != nil {
+		return x.Streak
+	}
+	return 0
+}
+
+func (x *GoalProgress) GetDays() []*DayTotal {
+	if x != nil {
+		return x.Days
+	}
+	return nil
+}
+
+func (x *GoalProgress) GetRecent() []*DayTotal {
+	if x != nil {
+		return x.Recent
+	}
+	return nil
+}
+
+func (x *GoalProgress) GetMilestonesDone() int32 {
+	if x != nil {
+		return x.MilestonesDone
+	}
+	return 0
+}
+
+func (x *GoalProgress) GetMilestonesTotal() int32 {
+	if x != nil {
+		return x.MilestonesTotal
+	}
+	return 0
+}
+
+func (x *GoalProgress) GetMilestonePercent() float64 {
+	if x != nil {
+		return x.MilestonePercent
+	}
+	return 0
+}
+
+func (x *GoalProgress) GetCounterDone() float64 {
+	if x != nil {
+		return x.CounterDone
+	}
+	return 0
+}
+
+func (x *GoalProgress) GetCounterPercent() float64 {
+	if x != nil {
+		return x.CounterPercent
+	}
+	return 0
+}
+
+type Goal struct {
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Id         string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title      string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Notes      string                 `protobuf:"bytes,3,opt,name=notes,proto3" json:"notes,omitempty"`
+	Period     GoalPeriod             `protobuf:"varint,4,opt,name=period,proto3,enum=noted.v1.GoalPeriod" json:"period,omitempty"`
+	Target     float64                `protobuf:"fixed64,5,opt,name=target,proto3" json:"target,omitempty"`                   // per period, in unit
+	Unit       string                 `protobuf:"bytes,6,opt,name=unit,proto3" json:"unit,omitempty"`                         // default "times"
+	TimeZone   string                 `protobuf:"bytes,7,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"` // IANA; period boundaries follow it (default UTC)
+	EventId    string                 `protobuf:"bytes,8,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`    // optional recurring event that schedules the sessions
+	Milestones []*Milestone           `protobuf:"bytes,9,rep,name=milestones,proto3" json:"milestones,omitempty"`
+	Archived   bool                   `protobuf:"varint,10,opt,name=archived,proto3" json:"archived,omitempty"`
+	CreateTime *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	UpdateTime *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	Progress   *GoalProgress          `protobuf:"bytes,13,opt,name=progress,proto3" json:"progress,omitempty"`
+	Space      Space                  `protobuf:"varint,14,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
+	// An optional running total next to the per-period target: 40 lessons, counted in
+	// counter_unit. Not tied to a period. Check-ins feed it through their count.
+	CounterUnit   string  `protobuf:"bytes,15,opt,name=counter_unit,json=counterUnit,proto3" json:"counter_unit,omitempty"`
+	CounterTarget float64 `protobuf:"fixed64,16,opt,name=counter_target,json=counterTarget,proto3" json:"counter_target,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Goal) Reset() {
+	*x = Goal{}
+	mi := &file_noted_v1_noted_proto_msgTypes[51]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Goal) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Goal) ProtoMessage() {}
+
+func (x *Goal) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[51]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Goal.ProtoReflect.Descriptor instead.
+func (*Goal) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{51}
+}
+
+func (x *Goal) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Goal) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Goal) GetNotes() string {
+	if x != nil {
+		return x.Notes
+	}
+	return ""
+}
+
+func (x *Goal) GetPeriod() GoalPeriod {
+	if x != nil {
+		return x.Period
+	}
+	return GoalPeriod_GOAL_PERIOD_UNSPECIFIED
+}
+
+func (x *Goal) GetTarget() float64 {
+	if x != nil {
+		return x.Target
+	}
+	return 0
+}
+
+func (x *Goal) GetUnit() string {
+	if x != nil {
+		return x.Unit
+	}
+	return ""
+}
+
+func (x *Goal) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
+}
+
+func (x *Goal) GetEventId() string {
+	if x != nil {
+		return x.EventId
+	}
+	return ""
+}
+
+func (x *Goal) GetMilestones() []*Milestone {
+	if x != nil {
+		return x.Milestones
+	}
+	return nil
+}
+
+func (x *Goal) GetArchived() bool {
+	if x != nil {
+		return x.Archived
+	}
+	return false
+}
+
+func (x *Goal) GetCreateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreateTime
+	}
+	return nil
+}
+
+func (x *Goal) GetUpdateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdateTime
+	}
+	return nil
+}
+
+func (x *Goal) GetProgress() *GoalProgress {
+	if x != nil {
+		return x.Progress
+	}
+	return nil
+}
+
+func (x *Goal) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+func (x *Goal) GetCounterUnit() string {
+	if x != nil {
+		return x.CounterUnit
+	}
+	return ""
+}
+
+func (x *Goal) GetCounterTarget() float64 {
+	if x != nil {
+		return x.CounterTarget
+	}
+	return 0
+}
+
+type CheckIn struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	GoalId        string                 `protobuf:"bytes,2,opt,name=goal_id,json=goalId,proto3" json:"goal_id,omitempty"`
+	Time          *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty"`
+	Amount        float64                `protobuf:"fixed64,4,opt,name=amount,proto3" json:"amount,omitempty"`
+	Note          string                 `protobuf:"bytes,5,opt,name=note,proto3" json:"note,omitempty"`
+	Count         float64                `protobuf:"fixed64,6,opt,name=count,proto3" json:"count,omitempty"` // added to the running total
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckIn) Reset() {
+	*x = CheckIn{}
+	mi := &file_noted_v1_noted_proto_msgTypes[52]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckIn) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckIn) ProtoMessage() {}
+
+func (x *CheckIn) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[52]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckIn.ProtoReflect.Descriptor instead.
+func (*CheckIn) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{52}
+}
+
+func (x *CheckIn) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *CheckIn) GetGoalId() string {
+	if x != nil {
+		return x.GoalId
+	}
+	return ""
+}
+
+func (x *CheckIn) GetTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Time
+	}
+	return nil
+}
+
+func (x *CheckIn) GetAmount() float64 {
+	if x != nil {
+		return x.Amount
+	}
+	return 0
+}
+
+func (x *CheckIn) GetNote() string {
+	if x != nil {
+		return x.Note
+	}
+	return ""
+}
+
+func (x *CheckIn) GetCount() float64 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+type CreateGoalRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Goal          *Goal                  `protobuf:"bytes,1,opt,name=goal,proto3" json:"goal,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateGoalRequest) Reset() {
+	*x = CreateGoalRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[53]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateGoalRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateGoalRequest) ProtoMessage() {}
+
+func (x *CreateGoalRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[53]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateGoalRequest.ProtoReflect.Descriptor instead.
+func (*CreateGoalRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{53}
+}
+
+func (x *CreateGoalRequest) GetGoal() *Goal {
+	if x != nil {
+		return x.Goal
+	}
+	return nil
+}
+
+type GetGoalRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetGoalRequest) Reset() {
+	*x = GetGoalRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[54]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetGoalRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetGoalRequest) ProtoMessage() {}
+
+func (x *GetGoalRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[54]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetGoalRequest.ProtoReflect.Descriptor instead.
+func (*GetGoalRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{54}
+}
+
+func (x *GetGoalRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type UpdateGoalRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Goal  *Goal                  `protobuf:"bytes,1,opt,name=goal,proto3" json:"goal,omitempty"`
+	// title, notes, period, target, unit, time_zone, event_id, archived, space,
+	// counter_unit, counter_target, milestones. Updating milestones replaces the list: entries that carry an
+	// existing id keep their done state, the rest are new.
+	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateGoalRequest) Reset() {
+	*x = UpdateGoalRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[55]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateGoalRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateGoalRequest) ProtoMessage() {}
+
+func (x *UpdateGoalRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[55]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateGoalRequest.ProtoReflect.Descriptor instead.
+func (*UpdateGoalRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{55}
+}
+
+func (x *UpdateGoalRequest) GetGoal() *Goal {
+	if x != nil {
+		return x.Goal
+	}
+	return nil
+}
+
+func (x *UpdateGoalRequest) GetUpdateMask() *fieldmaskpb.FieldMask {
+	if x != nil {
+		return x.UpdateMask
+	}
+	return nil
+}
+
+type DeleteGoalRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteGoalRequest) Reset() {
+	*x = DeleteGoalRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[56]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteGoalRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteGoalRequest) ProtoMessage() {}
+
+func (x *DeleteGoalRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[56]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteGoalRequest.ProtoReflect.Descriptor instead.
+func (*DeleteGoalRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{56}
+}
+
+func (x *DeleteGoalRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type ListGoalsRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	IncludeArchived bool                   `protobuf:"varint,1,opt,name=include_archived,json=includeArchived,proto3" json:"include_archived,omitempty"`
+	Space           Space                  `protobuf:"varint,2,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"` // UNSPECIFIED: both
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ListGoalsRequest) Reset() {
+	*x = ListGoalsRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[57]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListGoalsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListGoalsRequest) ProtoMessage() {}
+
+func (x *ListGoalsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[57]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListGoalsRequest.ProtoReflect.Descriptor instead.
+func (*ListGoalsRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{57}
+}
+
+func (x *ListGoalsRequest) GetIncludeArchived() bool {
+	if x != nil {
+		return x.IncludeArchived
+	}
+	return false
+}
+
+func (x *ListGoalsRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+type ListGoalsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Goals         []*Goal                `protobuf:"bytes,1,rep,name=goals,proto3" json:"goals,omitempty"` // goals that are behind pace first, then by title
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListGoalsResponse) Reset() {
+	*x = ListGoalsResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[58]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListGoalsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListGoalsResponse) ProtoMessage() {}
+
+func (x *ListGoalsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[58]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListGoalsResponse.ProtoReflect.Descriptor instead.
+func (*ListGoalsResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{58}
+}
+
+func (x *ListGoalsResponse) GetGoals() []*Goal {
+	if x != nil {
+		return x.Goals
+	}
+	return nil
+}
+
+type RecordCheckInRequest struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	GoalId string                 `protobuf:"bytes,1,opt,name=goal_id,json=goalId,proto3" json:"goal_id,omitempty"`
+	Amount float64                `protobuf:"fixed64,2,opt,name=amount,proto3" json:"amount,omitempty"` // default 1
+	Time   *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty"`       // default now; backfilling is allowed
+	Note   string                 `protobuf:"bytes,4,opt,name=note,proto3" json:"note,omitempty"`
+	// Added to the goal's running total (a finished lesson). Needs a counter_target on
+	// the goal. With neither amount nor count a check-in counts as 1 amount; with only
+	// a count it moves the running total alone.
+	Count         float64 `protobuf:"fixed64,5,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RecordCheckInRequest) Reset() {
+	*x = RecordCheckInRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[59]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecordCheckInRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecordCheckInRequest) ProtoMessage() {}
+
+func (x *RecordCheckInRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[59]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecordCheckInRequest.ProtoReflect.Descriptor instead.
+func (*RecordCheckInRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{59}
+}
+
+func (x *RecordCheckInRequest) GetGoalId() string {
+	if x != nil {
+		return x.GoalId
+	}
+	return ""
+}
+
+func (x *RecordCheckInRequest) GetAmount() float64 {
+	if x != nil {
+		return x.Amount
+	}
+	return 0
+}
+
+func (x *RecordCheckInRequest) GetTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Time
+	}
+	return nil
+}
+
+func (x *RecordCheckInRequest) GetNote() string {
+	if x != nil {
+		return x.Note
+	}
+	return ""
+}
+
+func (x *RecordCheckInRequest) GetCount() float64 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+type RecordCheckInResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CheckIn       *CheckIn               `protobuf:"bytes,1,opt,name=check_in,json=checkIn,proto3" json:"check_in,omitempty"`
+	Goal          *Goal                  `protobuf:"bytes,2,opt,name=goal,proto3" json:"goal,omitempty"` // with fresh progress
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RecordCheckInResponse) Reset() {
+	*x = RecordCheckInResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[60]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecordCheckInResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecordCheckInResponse) ProtoMessage() {}
+
+func (x *RecordCheckInResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[60]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecordCheckInResponse.ProtoReflect.Descriptor instead.
+func (*RecordCheckInResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{60}
+}
+
+func (x *RecordCheckInResponse) GetCheckIn() *CheckIn {
+	if x != nil {
+		return x.CheckIn
+	}
+	return nil
+}
+
+func (x *RecordCheckInResponse) GetGoal() *Goal {
+	if x != nil {
+		return x.Goal
+	}
+	return nil
+}
+
+type DeleteCheckInRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteCheckInRequest) Reset() {
+	*x = DeleteCheckInRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[61]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteCheckInRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteCheckInRequest) ProtoMessage() {}
+
+func (x *DeleteCheckInRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[61]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteCheckInRequest.ProtoReflect.Descriptor instead.
+func (*DeleteCheckInRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{61}
+}
+
+func (x *DeleteCheckInRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type ListCheckInsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GoalId        string                 `protobuf:"bytes,1,opt,name=goal_id,json=goalId,proto3" json:"goal_id,omitempty"`
+	From          *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=from,proto3" json:"from,omitempty"`
+	To            *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=to,proto3" json:"to,omitempty"`
+	Limit         int32                  `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"` // default 100, max 500
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCheckInsRequest) Reset() {
+	*x = ListCheckInsRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[62]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCheckInsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCheckInsRequest) ProtoMessage() {}
+
+func (x *ListCheckInsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[62]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCheckInsRequest.ProtoReflect.Descriptor instead.
+func (*ListCheckInsRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{62}
+}
+
+func (x *ListCheckInsRequest) GetGoalId() string {
+	if x != nil {
+		return x.GoalId
+	}
+	return ""
+}
+
+func (x *ListCheckInsRequest) GetFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.From
+	}
+	return nil
+}
+
+func (x *ListCheckInsRequest) GetTo() *timestamppb.Timestamp {
+	if x != nil {
+		return x.To
+	}
+	return nil
+}
+
+func (x *ListCheckInsRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+type ListCheckInsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CheckIns      []*CheckIn             `protobuf:"bytes,1,rep,name=check_ins,json=checkIns,proto3" json:"check_ins,omitempty"` // newest first
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCheckInsResponse) Reset() {
+	*x = ListCheckInsResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[63]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCheckInsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCheckInsResponse) ProtoMessage() {}
+
+func (x *ListCheckInsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[63]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCheckInsResponse.ProtoReflect.Descriptor instead.
+func (*ListCheckInsResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{63}
+}
+
+func (x *ListCheckInsResponse) GetCheckIns() []*CheckIn {
+	if x != nil {
+		return x.CheckIns
+	}
+	return nil
+}
+
+type SetMilestoneDoneRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GoalId        string                 `protobuf:"bytes,1,opt,name=goal_id,json=goalId,proto3" json:"goal_id,omitempty"`
+	MilestoneId   string                 `protobuf:"bytes,2,opt,name=milestone_id,json=milestoneId,proto3" json:"milestone_id,omitempty"`
+	Done          bool                   `protobuf:"varint,3,opt,name=done,proto3" json:"done,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetMilestoneDoneRequest) Reset() {
+	*x = SetMilestoneDoneRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[64]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetMilestoneDoneRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetMilestoneDoneRequest) ProtoMessage() {}
+
+func (x *SetMilestoneDoneRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[64]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetMilestoneDoneRequest.ProtoReflect.Descriptor instead.
+func (*SetMilestoneDoneRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{64}
+}
+
+func (x *SetMilestoneDoneRequest) GetGoalId() string {
+	if x != nil {
+		return x.GoalId
+	}
+	return ""
+}
+
+func (x *SetMilestoneDoneRequest) GetMilestoneId() string {
+	if x != nil {
+		return x.MilestoneId
+	}
+	return ""
+}
+
+func (x *SetMilestoneDoneRequest) GetDone() bool {
+	if x != nil {
+		return x.Done
+	}
+	return false
+}
+
+type ProjectProgress struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	TasksTotal     int32                  `protobuf:"varint,1,opt,name=tasks_total,json=tasksTotal,proto3" json:"tasks_total,omitempty"`
+	TasksDone      int32                  `protobuf:"varint,2,opt,name=tasks_done,json=tasksDone,proto3" json:"tasks_done,omitempty"`
+	Percent        float64                `protobuf:"fixed64,3,opt,name=percent,proto3" json:"percent,omitempty"` // tasks_done / tasks_total, 0 when there are no tasks
+	EventsUpcoming int32                  `protobuf:"varint,4,opt,name=events_upcoming,json=eventsUpcoming,proto3" json:"events_upcoming,omitempty"`
+	NotesCount     int32                  `protobuf:"varint,5,opt,name=notes_count,json=notesCount,proto3" json:"notes_count,omitempty"`
+	// Earliest open task due date or upcoming event, whichever is first.
+	NextTime  *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=next_time,json=nextTime,proto3" json:"next_time,omitempty"`
+	NextTitle string                 `protobuf:"bytes,7,opt,name=next_title,json=nextTitle,proto3" json:"next_title,omitempty"`
+	// Whole days from today to the project's start (or due) date; negative once
+	// past. Unset when the project has neither.
+	DaysLeft      *int32 `protobuf:"varint,8,opt,name=days_left,json=daysLeft,proto3,oneof" json:"days_left,omitempty"`
+	TasksOverdue  int32  `protobuf:"varint,9,opt,name=tasks_overdue,json=tasksOverdue,proto3" json:"tasks_overdue,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProjectProgress) Reset() {
+	*x = ProjectProgress{}
+	mi := &file_noted_v1_noted_proto_msgTypes[65]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectProgress) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectProgress) ProtoMessage() {}
+
+func (x *ProjectProgress) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[65]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectProgress.ProtoReflect.Descriptor instead.
+func (*ProjectProgress) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{65}
+}
+
+func (x *ProjectProgress) GetTasksTotal() int32 {
+	if x != nil {
+		return x.TasksTotal
+	}
+	return 0
+}
+
+func (x *ProjectProgress) GetTasksDone() int32 {
+	if x != nil {
+		return x.TasksDone
+	}
+	return 0
+}
+
+func (x *ProjectProgress) GetPercent() float64 {
+	if x != nil {
+		return x.Percent
+	}
+	return 0
+}
+
+func (x *ProjectProgress) GetEventsUpcoming() int32 {
+	if x != nil {
+		return x.EventsUpcoming
+	}
+	return 0
+}
+
+func (x *ProjectProgress) GetNotesCount() int32 {
+	if x != nil {
+		return x.NotesCount
+	}
+	return 0
+}
+
+func (x *ProjectProgress) GetNextTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.NextTime
+	}
+	return nil
+}
+
+func (x *ProjectProgress) GetNextTitle() string {
+	if x != nil {
+		return x.NextTitle
+	}
+	return ""
+}
+
+func (x *ProjectProgress) GetDaysLeft() int32 {
+	if x != nil && x.DaysLeft != nil {
+		return *x.DaysLeft
+	}
+	return 0
+}
+
+func (x *ProjectProgress) GetTasksOverdue() int32 {
+	if x != nil {
+		return x.TasksOverdue
+	}
+	return 0
+}
+
+type Project struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Notes         string                 `protobuf:"bytes,3,opt,name=notes,proto3" json:"notes,omitempty"`
+	Pinned        bool                   `protobuf:"varint,4,opt,name=pinned,proto3" json:"pinned,omitempty"`
+	Archived      bool                   `protobuf:"varint,5,opt,name=archived,proto3" json:"archived,omitempty"`
+	StartTime     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"` // e.g. the departure date
+	DueTime       *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=due_time,json=dueTime,proto3" json:"due_time,omitempty"`       // deadline or end date
+	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	UpdateTime    *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	Progress      *ProjectProgress       `protobuf:"bytes,10,opt,name=progress,proto3" json:"progress,omitempty"` // computed by the server
+	Space         Space                  `protobuf:"varint,11,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Project) Reset() {
+	*x = Project{}
+	mi := &file_noted_v1_noted_proto_msgTypes[66]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Project) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Project) ProtoMessage() {}
+
+func (x *Project) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[66]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Project.ProtoReflect.Descriptor instead.
+func (*Project) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{66}
+}
+
+func (x *Project) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Project) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Project) GetNotes() string {
+	if x != nil {
+		return x.Notes
+	}
+	return ""
+}
+
+func (x *Project) GetPinned() bool {
+	if x != nil {
+		return x.Pinned
+	}
+	return false
+}
+
+func (x *Project) GetArchived() bool {
+	if x != nil {
+		return x.Archived
+	}
+	return false
+}
+
+func (x *Project) GetStartTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.StartTime
+	}
+	return nil
+}
+
+func (x *Project) GetDueTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.DueTime
+	}
+	return nil
+}
+
+func (x *Project) GetCreateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreateTime
+	}
+	return nil
+}
+
+func (x *Project) GetUpdateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdateTime
+	}
+	return nil
+}
+
+func (x *Project) GetProgress() *ProjectProgress {
+	if x != nil {
+		return x.Progress
+	}
+	return nil
+}
+
+func (x *Project) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+type CreateProjectRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Project       *Project               `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateProjectRequest) Reset() {
+	*x = CreateProjectRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[67]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateProjectRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateProjectRequest) ProtoMessage() {}
+
+func (x *CreateProjectRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[67]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateProjectRequest.ProtoReflect.Descriptor instead.
+func (*CreateProjectRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{67}
+}
+
+func (x *CreateProjectRequest) GetProject() *Project {
+	if x != nil {
+		return x.Project
+	}
+	return nil
+}
+
+type GetProjectRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetProjectRequest) Reset() {
+	*x = GetProjectRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[68]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProjectRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProjectRequest) ProtoMessage() {}
+
+func (x *GetProjectRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[68]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProjectRequest.ProtoReflect.Descriptor instead.
+func (*GetProjectRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{68}
+}
+
+func (x *GetProjectRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type ProjectDetail struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Project       *Project               `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	Tasks         []*Task                `protobuf:"bytes,2,rep,name=tasks,proto3" json:"tasks,omitempty"`   // open first (by due date), then completed
+	Events        []*Event               `protobuf:"bytes,3,rep,name=events,proto3" json:"events,omitempty"` // by start time
+	Notes         []*Note                `protobuf:"bytes,4,rep,name=notes,proto3" json:"notes,omitempty"`   // newest first
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProjectDetail) Reset() {
+	*x = ProjectDetail{}
+	mi := &file_noted_v1_noted_proto_msgTypes[69]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectDetail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectDetail) ProtoMessage() {}
+
+func (x *ProjectDetail) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[69]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectDetail.ProtoReflect.Descriptor instead.
+func (*ProjectDetail) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{69}
+}
+
+func (x *ProjectDetail) GetProject() *Project {
+	if x != nil {
+		return x.Project
+	}
+	return nil
+}
+
+func (x *ProjectDetail) GetTasks() []*Task {
+	if x != nil {
+		return x.Tasks
+	}
+	return nil
+}
+
+func (x *ProjectDetail) GetEvents() []*Event {
+	if x != nil {
+		return x.Events
+	}
+	return nil
+}
+
+func (x *ProjectDetail) GetNotes() []*Note {
+	if x != nil {
+		return x.Notes
+	}
+	return nil
+}
+
+type UpdateProjectRequest struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Project *Project               `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
+	// title, notes, pinned, archived, start_time, due_time, space
+	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateProjectRequest) Reset() {
+	*x = UpdateProjectRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[70]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateProjectRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateProjectRequest) ProtoMessage() {}
+
+func (x *UpdateProjectRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[70]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateProjectRequest.ProtoReflect.Descriptor instead.
+func (*UpdateProjectRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{70}
+}
+
+func (x *UpdateProjectRequest) GetProject() *Project {
+	if x != nil {
+		return x.Project
+	}
+	return nil
+}
+
+func (x *UpdateProjectRequest) GetUpdateMask() *fieldmaskpb.FieldMask {
+	if x != nil {
+		return x.UpdateMask
+	}
+	return nil
+}
+
+type DeleteProjectRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Also delete the project's tasks, events and notes. By default they are
+	// kept and simply leave the project.
+	DeleteItems   bool `protobuf:"varint,2,opt,name=delete_items,json=deleteItems,proto3" json:"delete_items,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteProjectRequest) Reset() {
+	*x = DeleteProjectRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[71]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteProjectRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteProjectRequest) ProtoMessage() {}
+
+func (x *DeleteProjectRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[71]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteProjectRequest.ProtoReflect.Descriptor instead.
+func (*DeleteProjectRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{71}
+}
+
+func (x *DeleteProjectRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *DeleteProjectRequest) GetDeleteItems() bool {
+	if x != nil {
+		return x.DeleteItems
+	}
+	return false
+}
+
+type ListProjectsRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	IncludeArchived bool                   `protobuf:"varint,1,opt,name=include_archived,json=includeArchived,proto3" json:"include_archived,omitempty"`
+	PinnedOnly      bool                   `protobuf:"varint,2,opt,name=pinned_only,json=pinnedOnly,proto3" json:"pinned_only,omitempty"`
+	Space           Space                  `protobuf:"varint,3,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"` // UNSPECIFIED: both
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ListProjectsRequest) Reset() {
+	*x = ListProjectsRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[72]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListProjectsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListProjectsRequest) ProtoMessage() {}
+
+func (x *ListProjectsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[72]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListProjectsRequest.ProtoReflect.Descriptor instead.
+func (*ListProjectsRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{72}
+}
+
+func (x *ListProjectsRequest) GetIncludeArchived() bool {
+	if x != nil {
+		return x.IncludeArchived
+	}
+	return false
+}
+
+func (x *ListProjectsRequest) GetPinnedOnly() bool {
+	if x != nil {
+		return x.PinnedOnly
+	}
+	return false
+}
+
+func (x *ListProjectsRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+type ListProjectsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Projects      []*Project             `protobuf:"bytes,1,rep,name=projects,proto3" json:"projects,omitempty"` // pinned first, then nearest date, then newest
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListProjectsResponse) Reset() {
+	*x = ListProjectsResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[73]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListProjectsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListProjectsResponse) ProtoMessage() {}
+
+func (x *ListProjectsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[73]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListProjectsResponse.ProtoReflect.Descriptor instead.
+func (*ListProjectsResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{73}
+}
+
+func (x *ListProjectsResponse) GetProjects() []*Project {
+	if x != nil {
+		return x.Projects
+	}
+	return nil
+}
+
+type GetFocusRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Horizon       Horizon                `protobuf:"varint,1,opt,name=horizon,proto3,enum=noted.v1.Horizon" json:"horizon,omitempty"`
+	TimeZone      string                 `protobuf:"bytes,2,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"` // IANA; default: the server's configured zone
+	Space         Space                  `protobuf:"varint,3,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`  // UNSPECIFIED: both (combined mode)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFocusRequest) Reset() {
+	*x = GetFocusRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[74]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFocusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFocusRequest) ProtoMessage() {}
+
+func (x *GetFocusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[74]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFocusRequest.ProtoReflect.Descriptor instead.
+func (*GetFocusRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{74}
+}
+
+func (x *GetFocusRequest) GetHorizon() Horizon {
+	if x != nil {
+		return x.Horizon
+	}
+	return Horizon_HORIZON_UNSPECIFIED
+}
+
+func (x *GetFocusRequest) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
+}
+
+func (x *GetFocusRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+type FocusItem struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Item:
+	//
+	//	*FocusItem_Event
+	//	*FocusItem_Task
+	Item          isFocusItem_Item       `protobuf_oneof:"item"`
+	SortTime      *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=sort_time,json=sortTime,proto3" json:"sort_time,omitempty"` // start time, or the task's due time
+	Overdue       bool                   `protobuf:"varint,4,opt,name=overdue,proto3" json:"overdue,omitempty"`                  // an open task due before the window
+	ProjectId     string                 `protobuf:"bytes,5,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	ProjectTitle  string                 `protobuf:"bytes,6,opt,name=project_title,json=projectTitle,proto3" json:"project_title,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FocusItem) Reset() {
+	*x = FocusItem{}
+	mi := &file_noted_v1_noted_proto_msgTypes[75]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FocusItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FocusItem) ProtoMessage() {}
+
+func (x *FocusItem) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[75]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FocusItem.ProtoReflect.Descriptor instead.
+func (*FocusItem) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{75}
+}
+
+func (x *FocusItem) GetItem() isFocusItem_Item {
+	if x != nil {
+		return x.Item
+	}
+	return nil
+}
+
+func (x *FocusItem) GetEvent() *Occurrence {
+	if x != nil {
+		if x, ok := x.Item.(*FocusItem_Event); ok {
+			return x.Event
+		}
+	}
+	return nil
+}
+
+func (x *FocusItem) GetTask() *Task {
+	if x != nil {
+		if x, ok := x.Item.(*FocusItem_Task); ok {
+			return x.Task
+		}
+	}
+	return nil
+}
+
+func (x *FocusItem) GetSortTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.SortTime
+	}
+	return nil
+}
+
+func (x *FocusItem) GetOverdue() bool {
+	if x != nil {
+		return x.Overdue
+	}
+	return false
+}
+
+func (x *FocusItem) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *FocusItem) GetProjectTitle() string {
+	if x != nil {
+		return x.ProjectTitle
+	}
+	return ""
+}
+
+type isFocusItem_Item interface {
+	isFocusItem_Item()
+}
+
+type FocusItem_Event struct {
+	Event *Occurrence `protobuf:"bytes,1,opt,name=event,proto3,oneof"`
+}
+
+type FocusItem_Task struct {
+	Task *Task `protobuf:"bytes,2,opt,name=task,proto3,oneof"`
+}
+
+func (*FocusItem_Event) isFocusItem_Item() {}
+
+func (*FocusItem_Task) isFocusItem_Item() {}
+
+type GetFocusResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Horizon        Horizon                `protobuf:"varint,1,opt,name=horizon,proto3,enum=noted.v1.Horizon" json:"horizon,omitempty"`
+	From           *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=from,proto3" json:"from,omitempty"`
+	To             *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=to,proto3" json:"to,omitempty"`
+	Items          []*FocusItem           `protobuf:"bytes,4,rep,name=items,proto3" json:"items,omitempty"` // events and tasks, ordered by sort_time
+	Goals          []*Goal                `protobuf:"bytes,5,rep,name=goals,proto3" json:"goals,omitempty"` // active goals, behind pace first
+	PinnedProjects []*Project             `protobuf:"bytes,6,rep,name=pinned_projects,json=pinnedProjects,proto3" json:"pinned_projects,omitempty"`
+	Space          Space                  `protobuf:"varint,7,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *GetFocusResponse) Reset() {
+	*x = GetFocusResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[76]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFocusResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFocusResponse) ProtoMessage() {}
+
+func (x *GetFocusResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[76]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFocusResponse.ProtoReflect.Descriptor instead.
+func (*GetFocusResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{76}
+}
+
+func (x *GetFocusResponse) GetHorizon() Horizon {
+	if x != nil {
+		return x.Horizon
+	}
+	return Horizon_HORIZON_UNSPECIFIED
+}
+
+func (x *GetFocusResponse) GetFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.From
+	}
+	return nil
+}
+
+func (x *GetFocusResponse) GetTo() *timestamppb.Timestamp {
+	if x != nil {
+		return x.To
+	}
+	return nil
+}
+
+func (x *GetFocusResponse) GetItems() []*FocusItem {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *GetFocusResponse) GetGoals() []*Goal {
+	if x != nil {
+		return x.Goals
+	}
+	return nil
+}
+
+func (x *GetFocusResponse) GetPinnedProjects() []*Project {
+	if x != nil {
+		return x.PinnedProjects
+	}
+	return nil
+}
+
+func (x *GetFocusResponse) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+type Preference struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`      // a JSON document, at most 64 KiB
+	Version       int64                  `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"` // starts at 1 and increases by one on every write
+	UpdateTime    *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Preference) Reset() {
+	*x = Preference{}
+	mi := &file_noted_v1_noted_proto_msgTypes[77]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Preference) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Preference) ProtoMessage() {}
+
+func (x *Preference) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[77]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Preference.ProtoReflect.Descriptor instead.
+func (*Preference) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{77}
+}
+
+func (x *Preference) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *Preference) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+func (x *Preference) GetVersion() int64 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *Preference) GetUpdateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdateTime
+	}
+	return nil
+}
+
+type GetPreferenceRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPreferenceRequest) Reset() {
+	*x = GetPreferenceRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[78]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPreferenceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPreferenceRequest) ProtoMessage() {}
+
+func (x *GetPreferenceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[78]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPreferenceRequest.ProtoReflect.Descriptor instead.
+func (*GetPreferenceRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{78}
+}
+
+func (x *GetPreferenceRequest) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+type SetPreferenceRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Key   string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	// When set, the write succeeds only if the stored version equals it (0 means
+	// "the key must not exist yet"); otherwise ABORTED. Unset: last write wins.
+	IfVersion     *int64 `protobuf:"varint,3,opt,name=if_version,json=ifVersion,proto3,oneof" json:"if_version,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetPreferenceRequest) Reset() {
+	*x = SetPreferenceRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[79]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetPreferenceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetPreferenceRequest) ProtoMessage() {}
+
+func (x *SetPreferenceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[79]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetPreferenceRequest.ProtoReflect.Descriptor instead.
+func (*SetPreferenceRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{79}
+}
+
+func (x *SetPreferenceRequest) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *SetPreferenceRequest) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+func (x *SetPreferenceRequest) GetIfVersion() int64 {
+	if x != nil && x.IfVersion != nil {
+		return *x.IfVersion
+	}
+	return 0
+}
+
+type DeletePreferenceRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeletePreferenceRequest) Reset() {
+	*x = DeletePreferenceRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[80]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeletePreferenceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeletePreferenceRequest) ProtoMessage() {}
+
+func (x *DeletePreferenceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[80]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeletePreferenceRequest.ProtoReflect.Descriptor instead.
+func (*DeletePreferenceRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{80}
+}
+
+func (x *DeletePreferenceRequest) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+type ListPreferencesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Prefix        string                 `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"` // only keys starting with this
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPreferencesRequest) Reset() {
+	*x = ListPreferencesRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[81]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPreferencesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPreferencesRequest) ProtoMessage() {}
+
+func (x *ListPreferencesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[81]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPreferencesRequest.ProtoReflect.Descriptor instead.
+func (*ListPreferencesRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{81}
+}
+
+func (x *ListPreferencesRequest) GetPrefix() string {
+	if x != nil {
+		return x.Prefix
+	}
+	return ""
+}
+
+type ListPreferencesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Preferences   []*Preference          `protobuf:"bytes,1,rep,name=preferences,proto3" json:"preferences,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPreferencesResponse) Reset() {
+	*x = ListPreferencesResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[82]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPreferencesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPreferencesResponse) ProtoMessage() {}
+
+func (x *ListPreferencesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[82]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPreferencesResponse.ProtoReflect.Descriptor instead.
+func (*ListPreferencesResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{82}
+}
+
+func (x *ListPreferencesResponse) GetPreferences() []*Preference {
+	if x != nil {
+		return x.Preferences
+	}
+	return nil
+}
+
+type Operation struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// create_project, create_task, create_event, update_task, update_event,
+	// update_project or check_in.
+	Type          string           `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
+	Label         string           `protobuf:"bytes,2,opt,name=label,proto3" json:"label,omitempty"` // a sentence a person can read: what this step does
+	Args          *structpb.Struct `protobuf:"bytes,3,opt,name=args,proto3" json:"args,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Operation) Reset() {
+	*x = Operation{}
+	mi := &file_noted_v1_noted_proto_msgTypes[83]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Operation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Operation) ProtoMessage() {}
+
+func (x *Operation) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[83]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Operation.ProtoReflect.Descriptor instead.
+func (*Operation) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{83}
+}
+
+func (x *Operation) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *Operation) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *Operation) GetArgs() *structpb.Struct {
+	if x != nil {
+		return x.Args
+	}
+	return nil
+}
+
+// A value the proposal cannot know and the user has to give when accepting.
+type ProposalInput struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Label         string                 `protobuf:"bytes,2,opt,name=label,proto3" json:"label,omitempty"`
+	Type          string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"` // "date" or "text"
+	Required      bool                   `protobuf:"varint,4,opt,name=required,proto3" json:"required,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProposalInput) Reset() {
+	*x = ProposalInput{}
+	mi := &file_noted_v1_noted_proto_msgTypes[84]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProposalInput) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProposalInput) ProtoMessage() {}
+
+func (x *ProposalInput) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[84]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProposalInput.ProtoReflect.Descriptor instead.
+func (*ProposalInput) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{84}
+}
+
+func (x *ProposalInput) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ProposalInput) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *ProposalInput) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *ProposalInput) GetRequired() bool {
+	if x != nil {
+		return x.Required
+	}
+	return false
+}
+
+type Proposal struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// goal_slot, project_dates, conflict, overdue, schedule, weekly, plan,
+	// extract or ask.
+	Kind          string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"` // pending, accepted or dismissed
+	Title         string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
+	Reason        string                 `protobuf:"bytes,5,opt,name=reason,proto3" json:"reason,omitempty"`
+	Space         Space                  `protobuf:"varint,6,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
+	Source        string                 `protobuf:"bytes,7,opt,name=source,proto3" json:"source,omitempty"` // "rules" (no model involved) or "ai"
+	Operations    []*Operation           `protobuf:"bytes,8,rep,name=operations,proto3" json:"operations,omitempty"`
+	Inputs        []*ProposalInput       `protobuf:"bytes,9,rep,name=inputs,proto3" json:"inputs,omitempty"`
+	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	DecideTime    *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=decide_time,json=decideTime,proto3" json:"decide_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Proposal) Reset() {
+	*x = Proposal{}
+	mi := &file_noted_v1_noted_proto_msgTypes[85]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Proposal) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Proposal) ProtoMessage() {}
+
+func (x *Proposal) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[85]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Proposal.ProtoReflect.Descriptor instead.
+func (*Proposal) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{85}
+}
+
+func (x *Proposal) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Proposal) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *Proposal) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *Proposal) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Proposal) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *Proposal) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+func (x *Proposal) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *Proposal) GetOperations() []*Operation {
+	if x != nil {
+		return x.Operations
+	}
+	return nil
+}
+
+func (x *Proposal) GetInputs() []*ProposalInput {
+	if x != nil {
+		return x.Inputs
+	}
+	return nil
+}
+
+func (x *Proposal) GetCreateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreateTime
+	}
+	return nil
+}
+
+func (x *Proposal) GetDecideTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.DecideTime
+	}
+	return nil
+}
+
+type Change struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	ProposalId    string                 `protobuf:"bytes,2,opt,name=proposal_id,json=proposalId,proto3" json:"proposal_id,omitempty"`
+	Summary       string                 `protobuf:"bytes,3,opt,name=summary,proto3" json:"summary,omitempty"`
+	Entries       int32                  `protobuf:"varint,4,opt,name=entries,proto3" json:"entries,omitempty"` // how many things were created or modified
+	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	Undone        bool                   `protobuf:"varint,6,opt,name=undone,proto3" json:"undone,omitempty"`
+	UndoTime      *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=undo_time,json=undoTime,proto3" json:"undo_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Change) Reset() {
+	*x = Change{}
+	mi := &file_noted_v1_noted_proto_msgTypes[86]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Change) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Change) ProtoMessage() {}
+
+func (x *Change) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[86]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Change.ProtoReflect.Descriptor instead.
+func (*Change) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{86}
+}
+
+func (x *Change) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Change) GetProposalId() string {
+	if x != nil {
+		return x.ProposalId
+	}
+	return ""
+}
+
+func (x *Change) GetSummary() string {
+	if x != nil {
+		return x.Summary
+	}
+	return ""
+}
+
+func (x *Change) GetEntries() int32 {
+	if x != nil {
+		return x.Entries
+	}
+	return 0
+}
+
+func (x *Change) GetCreateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreateTime
+	}
+	return nil
+}
+
+func (x *Change) GetUndone() bool {
+	if x != nil {
+		return x.Undone
+	}
+	return false
+}
+
+func (x *Change) GetUndoTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UndoTime
+	}
+	return nil
+}
+
+type ListProposalsRequest struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Space  Space                  `protobuf:"varint,1,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"` // UNSPECIFIED: both
+	Status string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`                    // default "pending"
+	// Pending suggestions are recomputed from the user's data before listing, so
+	// they stay current. Set this to skip that and just read what is stored.
+	NoRefresh     bool `protobuf:"varint,3,opt,name=no_refresh,json=noRefresh,proto3" json:"no_refresh,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListProposalsRequest) Reset() {
+	*x = ListProposalsRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[87]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListProposalsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListProposalsRequest) ProtoMessage() {}
+
+func (x *ListProposalsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[87]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListProposalsRequest.ProtoReflect.Descriptor instead.
+func (*ListProposalsRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{87}
+}
+
+func (x *ListProposalsRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+func (x *ListProposalsRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ListProposalsRequest) GetNoRefresh() bool {
+	if x != nil {
+		return x.NoRefresh
+	}
+	return false
+}
+
+type ListProposalsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Proposals     []*Proposal            `protobuf:"bytes,1,rep,name=proposals,proto3" json:"proposals,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListProposalsResponse) Reset() {
+	*x = ListProposalsResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[88]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListProposalsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListProposalsResponse) ProtoMessage() {}
+
+func (x *ListProposalsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[88]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListProposalsResponse.ProtoReflect.Descriptor instead.
+func (*ListProposalsResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{88}
+}
+
+func (x *ListProposalsResponse) GetProposals() []*Proposal {
+	if x != nil {
+		return x.Proposals
+	}
+	return nil
+}
+
+type OperationSelection struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Indexes       []int32                `protobuf:"varint,1,rep,packed,name=indexes,proto3" json:"indexes,omitempty"` // positions in Proposal.operations
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OperationSelection) Reset() {
+	*x = OperationSelection{}
+	mi := &file_noted_v1_noted_proto_msgTypes[89]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OperationSelection) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OperationSelection) ProtoMessage() {}
+
+func (x *OperationSelection) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[89]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OperationSelection.ProtoReflect.Descriptor instead.
+func (*OperationSelection) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{89}
+}
+
+func (x *OperationSelection) GetIndexes() []int32 {
+	if x != nil {
+		return x.Indexes
+	}
+	return nil
+}
+
+type AcceptProposalRequest struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Id     string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Inputs map[string]string      `protobuf:"bytes,2,rep,name=inputs,proto3" json:"inputs,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // values for Proposal.inputs, by name
+	// Which operations to carry out. Unset: all of them. A selection that leaves
+	// out an operation another one depends on is rejected.
+	Selection     *OperationSelection `protobuf:"bytes,3,opt,name=selection,proto3" json:"selection,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AcceptProposalRequest) Reset() {
+	*x = AcceptProposalRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[90]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AcceptProposalRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AcceptProposalRequest) ProtoMessage() {}
+
+func (x *AcceptProposalRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[90]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AcceptProposalRequest.ProtoReflect.Descriptor instead.
+func (*AcceptProposalRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{90}
+}
+
+func (x *AcceptProposalRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *AcceptProposalRequest) GetInputs() map[string]string {
+	if x != nil {
+		return x.Inputs
+	}
+	return nil
+}
+
+func (x *AcceptProposalRequest) GetSelection() *OperationSelection {
+	if x != nil {
+		return x.Selection
+	}
+	return nil
+}
+
+type AcceptProposalResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Proposal      *Proposal              `protobuf:"bytes,1,opt,name=proposal,proto3" json:"proposal,omitempty"`
+	Change        *Change                `protobuf:"bytes,2,opt,name=change,proto3" json:"change,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AcceptProposalResponse) Reset() {
+	*x = AcceptProposalResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[91]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AcceptProposalResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AcceptProposalResponse) ProtoMessage() {}
+
+func (x *AcceptProposalResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[91]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AcceptProposalResponse.ProtoReflect.Descriptor instead.
+func (*AcceptProposalResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{91}
+}
+
+func (x *AcceptProposalResponse) GetProposal() *Proposal {
+	if x != nil {
+		return x.Proposal
+	}
+	return nil
+}
+
+func (x *AcceptProposalResponse) GetChange() *Change {
+	if x != nil {
+		return x.Change
+	}
+	return nil
+}
+
+type DismissProposalRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DismissProposalRequest) Reset() {
+	*x = DismissProposalRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[92]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DismissProposalRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DismissProposalRequest) ProtoMessage() {}
+
+func (x *DismissProposalRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[92]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DismissProposalRequest.ProtoReflect.Descriptor instead.
+func (*DismissProposalRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{92}
+}
+
+func (x *DismissProposalRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type ProposeScheduleRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	TaskIds         []string               `protobuf:"bytes,1,rep,name=task_ids,json=taskIds,proto3" json:"task_ids,omitempty"`
+	DurationMinutes int32                  `protobuf:"varint,2,opt,name=duration_minutes,json=durationMinutes,proto3" json:"duration_minutes,omitempty"` // per task, default 60
+	Days            int32                  `protobuf:"varint,3,opt,name=days,proto3" json:"days,omitempty"`                                              // how far ahead to look, default 5, max 14
+	TimeZone        string                 `protobuf:"bytes,4,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ProposeScheduleRequest) Reset() {
+	*x = ProposeScheduleRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[93]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProposeScheduleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProposeScheduleRequest) ProtoMessage() {}
+
+func (x *ProposeScheduleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[93]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProposeScheduleRequest.ProtoReflect.Descriptor instead.
+func (*ProposeScheduleRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{93}
+}
+
+func (x *ProposeScheduleRequest) GetTaskIds() []string {
+	if x != nil {
+		return x.TaskIds
+	}
+	return nil
+}
+
+func (x *ProposeScheduleRequest) GetDurationMinutes() int32 {
+	if x != nil {
+		return x.DurationMinutes
+	}
+	return 0
+}
+
+func (x *ProposeScheduleRequest) GetDays() int32 {
+	if x != nil {
+		return x.Days
+	}
+	return 0
+}
+
+func (x *ProposeScheduleRequest) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
+}
+
+type GetWeeklyReviewRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	WeekOf        *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=week_of,json=weekOf,proto3" json:"week_of,omitempty"` // any moment in the week; default now
+	Space         Space                  `protobuf:"varint,2,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
+	TimeZone      string                 `protobuf:"bytes,3,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetWeeklyReviewRequest) Reset() {
+	*x = GetWeeklyReviewRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[94]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetWeeklyReviewRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetWeeklyReviewRequest) ProtoMessage() {}
+
+func (x *GetWeeklyReviewRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[94]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetWeeklyReviewRequest.ProtoReflect.Descriptor instead.
+func (*GetWeeklyReviewRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{94}
+}
+
+func (x *GetWeeklyReviewRequest) GetWeekOf() *timestamppb.Timestamp {
+	if x != nil {
+		return x.WeekOf
+	}
+	return nil
+}
+
+func (x *GetWeeklyReviewRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+func (x *GetWeeklyReviewRequest) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
+}
+
+type WeeklyReview struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	From          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	To            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
+	TasksDone     int32                  `protobuf:"varint,3,opt,name=tasks_done,json=tasksDone,proto3" json:"tasks_done,omitempty"`
+	TasksTotal    int32                  `protobuf:"varint,4,opt,name=tasks_total,json=tasksTotal,proto3" json:"tasks_total,omitempty"`      // finished this week plus open ones that were due this week
+	Goals         []*Goal                `protobuf:"bytes,5,rep,name=goals,proto3" json:"goals,omitempty"`                                   // progress as it stood at the end of the week
+	CarriedTasks  []*Task                `protobuf:"bytes,6,rep,name=carried_tasks,json=carriedTasks,proto3" json:"carried_tasks,omitempty"` // open and due this week: they slipped
+	NextWeek      *Proposal              `protobuf:"bytes,7,opt,name=next_week,json=nextWeek,proto3" json:"next_week,omitempty"`             // stored as pending; unset when there is nothing to suggest
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WeeklyReview) Reset() {
+	*x = WeeklyReview{}
+	mi := &file_noted_v1_noted_proto_msgTypes[95]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WeeklyReview) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WeeklyReview) ProtoMessage() {}
+
+func (x *WeeklyReview) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[95]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WeeklyReview.ProtoReflect.Descriptor instead.
+func (*WeeklyReview) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{95}
+}
+
+func (x *WeeklyReview) GetFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.From
+	}
+	return nil
+}
+
+func (x *WeeklyReview) GetTo() *timestamppb.Timestamp {
+	if x != nil {
+		return x.To
+	}
+	return nil
+}
+
+func (x *WeeklyReview) GetTasksDone() int32 {
+	if x != nil {
+		return x.TasksDone
+	}
+	return 0
+}
+
+func (x *WeeklyReview) GetTasksTotal() int32 {
+	if x != nil {
+		return x.TasksTotal
+	}
+	return 0
+}
+
+func (x *WeeklyReview) GetGoals() []*Goal {
+	if x != nil {
+		return x.Goals
+	}
+	return nil
+}
+
+func (x *WeeklyReview) GetCarriedTasks() []*Task {
+	if x != nil {
+		return x.CarriedTasks
+	}
+	return nil
+}
+
+func (x *WeeklyReview) GetNextWeek() *Proposal {
+	if x != nil {
+		return x.NextWeek
+	}
+	return nil
+}
+
+type ListChangesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Limit         int32                  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"` // default 50, max 200
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListChangesRequest) Reset() {
+	*x = ListChangesRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[96]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListChangesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListChangesRequest) ProtoMessage() {}
+
+func (x *ListChangesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[96]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListChangesRequest.ProtoReflect.Descriptor instead.
+func (*ListChangesRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{96}
+}
+
+func (x *ListChangesRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+type ListChangesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Changes       []*Change              `protobuf:"bytes,1,rep,name=changes,proto3" json:"changes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListChangesResponse) Reset() {
+	*x = ListChangesResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[97]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListChangesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListChangesResponse) ProtoMessage() {}
+
+func (x *ListChangesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[97]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListChangesResponse.ProtoReflect.Descriptor instead.
+func (*ListChangesResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{97}
+}
+
+func (x *ListChangesResponse) GetChanges() []*Change {
+	if x != nil {
+		return x.Changes
+	}
+	return nil
+}
+
+type UndoChangeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UndoChangeRequest) Reset() {
+	*x = UndoChangeRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[98]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UndoChangeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UndoChangeRequest) ProtoMessage() {}
+
+func (x *UndoChangeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[98]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UndoChangeRequest.ProtoReflect.Descriptor instead.
+func (*UndoChangeRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{98}
+}
+
+func (x *UndoChangeRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
 var File_noted_v1_noted_proto protoreflect.FileDescriptor
 
 const file_noted_v1_noted_proto_rawDesc = "" +
 	"\n" +
-	"\x14noted/v1/noted.proto\x12\bnoted.v1\x1a\x1bgoogle/protobuf/empty.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x88\x02\n" +
+	"\x14noted/v1/noted.proto\x12\bnoted.v1\x1a\x1bgoogle/protobuf/empty.proto\x1a google/protobuf/field_mask.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xce\x02\n" +
 	"\x04Note\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
@@ -2416,7 +6579,11 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\vcreate_time\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"createTime\x12;\n" +
 	"\vupdate_time\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"updateTime\"7\n" +
+	"updateTime\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\t \x01(\tR\tprojectId\x12%\n" +
+	"\x05space\x18\n" +
+	" \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\"7\n" +
 	"\x11CreateNoteRequest\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.noted.v1.NoteR\x04note\" \n" +
 	"\x0eGetNoteRequest\x12\x0e\n" +
@@ -2426,7 +6593,7 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
 	"updateMask\"#\n" +
 	"\x11DeleteNoteRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\xac\x01\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xf2\x01\n" +
 	"\x10ListNotesRequest\x12\x1b\n" +
 	"\tpage_size\x18\x01 \x01(\x05R\bpageSize\x12\x1d\n" +
 	"\n" +
@@ -2434,22 +6601,26 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\x03tag\x18\x03 \x01(\tR\x03tag\x12\x1f\n" +
 	"\vpinned_only\x18\x04 \x01(\bR\n" +
 	"pinnedOnly\x12)\n" +
-	"\x10include_archived\x18\x05 \x01(\bR\x0fincludeArchived\"a\n" +
+	"\x10include_archived\x18\x05 \x01(\bR\x0fincludeArchived\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x06 \x01(\tR\tprojectId\x12%\n" +
+	"\x05space\x18\a \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\"a\n" +
 	"\x11ListNotesResponse\x12$\n" +
 	"\x05notes\x18\x01 \x03(\v2\x0e.noted.v1.NoteR\x05notes\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x87\x01\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xae\x01\n" +
 	"\x12SearchNotesRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x1a\n" +
 	"\bsemantic\x18\x03 \x01(\bR\bsemantic\x12)\n" +
-	"\x10include_archived\x18\x04 \x01(\bR\x0fincludeArchived\"]\n" +
+	"\x10include_archived\x18\x04 \x01(\bR\x0fincludeArchived\x12%\n" +
+	"\x05space\x18\x05 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\"]\n" +
 	"\aNoteHit\x12\"\n" +
 	"\x04note\x18\x01 \x01(\v2\x0e.noted.v1.NoteR\x04note\x12\x18\n" +
 	"\asnippet\x18\x02 \x01(\tR\asnippet\x12\x14\n" +
 	"\x05score\x18\x03 \x01(\x01R\x05score\"P\n" +
 	"\x13SearchNotesResponse\x12%\n" +
 	"\x04hits\x18\x01 \x03(\v2\x11.noted.v1.NoteHitR\x04hits\x12\x12\n" +
-	"\x04mode\x18\x02 \x01(\tR\x04mode\"\xf6\x03\n" +
+	"\x04mode\x18\x02 \x01(\tR\x04mode\"\xbc\x04\n" +
 	"\x05Event\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -2466,7 +6637,10 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\vcreate_time\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"createTime\x12;\n" +
 	"\vupdate_time\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"updateTimeB\x18\n" +
+	"updateTime\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\r \x01(\tR\tprojectId\x12%\n" +
+	"\x05space\x18\x0e \x01(\x0e2\x0f.noted.v1.SpaceR\x05spaceB\x18\n" +
 	"\x16_remind_before_minutes\";\n" +
 	"\x12CreateEventRequest\x12%\n" +
 	"\x05event\x18\x01 \x01(\v2\x0f.noted.v1.EventR\x05event\"!\n" +
@@ -2477,10 +6651,11 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
 	"updateMask\"$\n" +
 	"\x12DeleteEventRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"o\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x96\x01\n" +
 	"\x11ListEventsRequest\x12.\n" +
 	"\x04from\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
-	"\x02to\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\"\xa5\x01\n" +
+	"\x02to\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12%\n" +
+	"\x05space\x18\x03 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\"\xa5\x01\n" +
 	"\n" +
 	"Occurrence\x12%\n" +
 	"\x05event\x18\x01 \x01(\v2\x0f.noted.v1.EventR\x05event\x129\n" +
@@ -2488,7 +6663,7 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"start_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tstartTime\x125\n" +
 	"\bend_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\aendTime\"L\n" +
 	"\x12ListEventsResponse\x126\n" +
-	"\voccurrences\x18\x01 \x03(\v2\x14.noted.v1.OccurrenceR\voccurrences\"\xd3\x03\n" +
+	"\voccurrences\x18\x01 \x03(\v2\x14.noted.v1.OccurrenceR\voccurrences\"\x99\x04\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
@@ -2504,7 +6679,10 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"createTime\x12;\n" +
 	"\vupdate_time\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"updateTime\"7\n" +
+	"updateTime\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\f \x01(\tR\tprojectId\x12%\n" +
+	"\x05space\x18\r \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\"7\n" +
 	"\x11CreateTaskRequest\x12\"\n" +
 	"\x04task\x18\x01 \x01(\v2\x0e.noted.v1.TaskR\x04task\" \n" +
 	"\x0eGetTaskRequest\x12\x0e\n" +
@@ -2514,7 +6692,7 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
 	"updateMask\"#\n" +
 	"\x11DeleteTaskRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\xaf\x02\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xf5\x02\n" +
 	"\x10ListTasksRequest\x12\x1b\n" +
 	"\tpage_size\x18\x01 \x01(\x05R\bpageSize\x12\x1d\n" +
 	"\n" +
@@ -2522,7 +6700,10 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\x06filter\x18\x03 \x01(\x0e2!.noted.v1.ListTasksRequest.FilterR\x06filter\x12\x10\n" +
 	"\x03tag\x18\x04 \x01(\tR\x03tag\x129\n" +
 	"\n" +
-	"due_before\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tdueBefore\"W\n" +
+	"due_before\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tdueBefore\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x06 \x01(\tR\tprojectId\x12%\n" +
+	"\x05space\x18\a \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\"W\n" +
 	"\x06Filter\x12\x16\n" +
 	"\x12FILTER_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vFILTER_OPEN\x10\x01\x12\x14\n" +
@@ -2531,23 +6712,26 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"FILTER_ALL\x10\x03\"a\n" +
 	"\x11ListTasksResponse\x12$\n" +
 	"\x05tasks\x18\x01 \x03(\v2\x0e.noted.v1.TaskR\x05tasks\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xa1\x02\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xc8\x02\n" +
 	"\bReminder\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12+\n" +
 	"\x04kind\x18\x02 \x01(\x0e2\x17.noted.v1.Reminder.KindR\x04kind\x12\x15\n" +
 	"\x06ref_id\x18\x03 \x01(\tR\x05refId\x12\x14\n" +
 	"\x05title\x18\x04 \x01(\tR\x05title\x125\n" +
 	"\bdue_time\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\adueTime\x127\n" +
-	"\tfire_time\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\bfireTime\";\n" +
+	"\tfire_time\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\bfireTime\x12%\n" +
+	"\x05space\x18\a \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\";\n" +
 	"\x04Kind\x12\x14\n" +
 	"\x10KIND_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
 	"KIND_EVENT\x10\x01\x12\r\n" +
-	"\tKIND_TASK\x10\x02\"\x17\n" +
-	"\x15WatchRemindersRequest\"^\n" +
+	"\tKIND_TASK\x10\x02\">\n" +
+	"\x15WatchRemindersRequest\x12%\n" +
+	"\x05space\x18\x01 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\"\x85\x01\n" +
 	"\x14ListRemindersRequest\x120\n" +
 	"\x05since\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x05since\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\x05R\x05limit\"I\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12%\n" +
+	"\x05space\x18\x03 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\"I\n" +
 	"\x15ListRemindersResponse\x120\n" +
 	"\treminders\x18\x01 \x03(\v2\x12.noted.v1.ReminderR\treminders\"\x12\n" +
 	"\x10GetStatusRequest\"\x80\x01\n" +
@@ -2555,18 +6739,31 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\x12\x12\n" +
 	"\x04chat\x18\x02 \x01(\bR\x04chat\x12'\n" +
 	"\x0fsemantic_search\x18\x03 \x01(\bR\x0esemanticSearch\x12\x14\n" +
-	"\x05model\x18\x04 \x01(\tR\x05model\"E\n" +
+	"\x05model\x18\x04 \x01(\tR\x05model\"\x8b\x01\n" +
 	"\n" +
 	"AskRequest\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x02 \x01(\tR\tsessionId\"a\n" +
+	"session_id\x18\x02 \x01(\tR\tsessionId\x12%\n" +
+	"\x05space\x18\x03 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12\x1d\n" +
+	"\n" +
+	"auto_apply\x18\x04 \x01(\bR\tautoApply\"\xf0\x01\n" +
 	"\vAskResponse\x12\x14\n" +
 	"\x05reply\x18\x01 \x01(\tR\x05reply\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x02 \x01(\tR\tsessionId\x12\x1d\n" +
 	"\n" +
-	"tools_used\x18\x03 \x03(\tR\ttoolsUsed\"/\n" +
+	"tools_used\x18\x03 \x03(\tR\ttoolsUsed\x12.\n" +
+	"\bproposal\x18\x04 \x01(\v2\x12.noted.v1.ProposalR\bproposal\x12(\n" +
+	"\x06change\x18\x05 \x01(\v2\x10.noted.v1.ChangeR\x06change\x123\n" +
+	"\n" +
+	"references\x18\x06 \x03(\v2\x13.noted.v1.ReferenceR\n" +
+	"references\"u\n" +
+	"\tReference\x12\x12\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x0e\n" +
+	"\x02id\x18\x02 \x01(\tR\x02id\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\x12.\n" +
+	"\x04time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\"/\n" +
 	"\x14SummarizeNoteRequest\x12\x17\n" +
 	"\anote_id\x18\x01 \x01(\tR\x06noteId\"1\n" +
 	"\x15SummarizeNoteResponse\x12\x18\n" +
@@ -2575,17 +6772,338 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\anote_id\x18\x01 \x01(\tR\x06noteId\x12\x14\n" +
 	"\x05apply\x18\x02 \x01(\bR\x05apply\")\n" +
 	"\x13SuggestTagsResponse\x12\x12\n" +
-	"\x04tags\x18\x01 \x03(\tR\x04tags\"a\n" +
+	"\x04tags\x18\x01 \x03(\tR\x04tags\"\x88\x01\n" +
 	"\x14DailyBriefingRequest\x12,\n" +
 	"\x03day\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x03day\x12\x1b\n" +
-	"\ttime_zone\x18\x02 \x01(\tR\btimeZone\"3\n" +
+	"\ttime_zone\x18\x02 \x01(\tR\btimeZone\x12%\n" +
+	"\x05space\x18\x03 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\"3\n" +
 	"\x15DailyBriefingResponse\x12\x1a\n" +
-	"\bbriefing\x18\x01 \x01(\tR\bbriefing*^\n" +
+	"\bbriefing\x18\x01 \x01(\tR\bbriefing\"\x99\x01\n" +
+	"\n" +
+	"AIFeatures\x12%\n" +
+	"\x0edaily_briefing\x18\x01 \x01(\bR\rdailyBriefing\x12 \n" +
+	"\vsuggestions\x18\x02 \x01(\bR\vsuggestions\x12#\n" +
+	"\rweekly_review\x18\x03 \x01(\bR\fweeklyReview\x12\x1d\n" +
+	"\n" +
+	"note_tools\x18\x04 \x01(\bR\tnoteTools\"\x16\n" +
+	"\x14GetAIFeaturesRequest\"\xa3\x01\n" +
+	"\x14SetAIFeaturesRequest\x12%\n" +
+	"\x0edaily_briefing\x18\x01 \x01(\bR\rdailyBriefing\x12 \n" +
+	"\vsuggestions\x18\x02 \x01(\bR\vsuggestions\x12#\n" +
+	"\rweekly_review\x18\x03 \x01(\bR\fweeklyReview\x12\x1d\n" +
+	"\n" +
+	"note_tools\x18\x04 \x01(\bR\tnoteTools\"H\n" +
+	"\bAIAccess\x12\x1d\n" +
+	"\n" +
+	"allow_work\x18\x01 \x01(\bR\tallowWork\x12\x1d\n" +
+	"\n" +
+	"allow_life\x18\x02 \x01(\bR\tallowLife\"\x14\n" +
+	"\x12GetAIAccessRequest\"R\n" +
+	"\x12SetAIAccessRequest\x12\x1d\n" +
+	"\n" +
+	"allow_work\x18\x01 \x01(\bR\tallowWork\x12\x1d\n" +
+	"\n" +
+	"allow_life\x18\x02 \x01(\bR\tallowLife\"P\n" +
+	"\x13PlanFromTextRequest\x12\x12\n" +
+	"\x04text\x18\x01 \x01(\tR\x04text\x12%\n" +
+	"\x05space\x18\x02 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\".\n" +
+	"\x13ExtractTasksRequest\x12\x17\n" +
+	"\anote_id\x18\x01 \x01(\tR\x06noteId\"~\n" +
+	"\tMilestone\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x12\n" +
+	"\x04done\x18\x03 \x01(\bR\x04done\x127\n" +
+	"\tdone_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\bdoneTime\"6\n" +
+	"\bDayTotal\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x12\x16\n" +
+	"\x06amount\x18\x02 \x01(\x01R\x06amount\"\xd9\x04\n" +
+	"\fGoalProgress\x12=\n" +
+	"\fperiod_start\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\vperiodStart\x129\n" +
+	"\n" +
+	"period_end\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tperiodEnd\x12\x12\n" +
+	"\x04done\x18\x03 \x01(\x01R\x04done\x12\x16\n" +
+	"\x06target\x18\x04 \x01(\x01R\x06target\x12\x1c\n" +
+	"\tremaining\x18\x05 \x01(\x01R\tremaining\x12\x18\n" +
+	"\apercent\x18\x06 \x01(\x01R\apercent\x12\x1a\n" +
+	"\bachieved\x18\a \x01(\bR\bachieved\x12\x16\n" +
+	"\x06behind\x18\b \x01(\bR\x06behind\x12\x16\n" +
+	"\x06streak\x18\t \x01(\x05R\x06streak\x12&\n" +
+	"\x04days\x18\n" +
+	" \x03(\v2\x12.noted.v1.DayTotalR\x04days\x12*\n" +
+	"\x06recent\x18\v \x03(\v2\x12.noted.v1.DayTotalR\x06recent\x12'\n" +
+	"\x0fmilestones_done\x18\f \x01(\x05R\x0emilestonesDone\x12)\n" +
+	"\x10milestones_total\x18\r \x01(\x05R\x0fmilestonesTotal\x12+\n" +
+	"\x11milestone_percent\x18\x0e \x01(\x01R\x10milestonePercent\x12!\n" +
+	"\fcounter_done\x18\x0f \x01(\x01R\vcounterDone\x12'\n" +
+	"\x0fcounter_percent\x18\x10 \x01(\x01R\x0ecounterPercent\"\xc4\x04\n" +
+	"\x04Goal\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
+	"\x05notes\x18\x03 \x01(\tR\x05notes\x12,\n" +
+	"\x06period\x18\x04 \x01(\x0e2\x14.noted.v1.GoalPeriodR\x06period\x12\x16\n" +
+	"\x06target\x18\x05 \x01(\x01R\x06target\x12\x12\n" +
+	"\x04unit\x18\x06 \x01(\tR\x04unit\x12\x1b\n" +
+	"\ttime_zone\x18\a \x01(\tR\btimeZone\x12\x19\n" +
+	"\bevent_id\x18\b \x01(\tR\aeventId\x123\n" +
+	"\n" +
+	"milestones\x18\t \x03(\v2\x13.noted.v1.MilestoneR\n" +
+	"milestones\x12\x1a\n" +
+	"\barchived\x18\n" +
+	" \x01(\bR\barchived\x12;\n" +
+	"\vcreate_time\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"createTime\x12;\n" +
+	"\vupdate_time\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"updateTime\x122\n" +
+	"\bprogress\x18\r \x01(\v2\x16.noted.v1.GoalProgressR\bprogress\x12%\n" +
+	"\x05space\x18\x0e \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12!\n" +
+	"\fcounter_unit\x18\x0f \x01(\tR\vcounterUnit\x12%\n" +
+	"\x0ecounter_target\x18\x10 \x01(\x01R\rcounterTarget\"\xa4\x01\n" +
+	"\aCheckIn\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
+	"\agoal_id\x18\x02 \x01(\tR\x06goalId\x12.\n" +
+	"\x04time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\x12\x16\n" +
+	"\x06amount\x18\x04 \x01(\x01R\x06amount\x12\x12\n" +
+	"\x04note\x18\x05 \x01(\tR\x04note\x12\x14\n" +
+	"\x05count\x18\x06 \x01(\x01R\x05count\"7\n" +
+	"\x11CreateGoalRequest\x12\"\n" +
+	"\x04goal\x18\x01 \x01(\v2\x0e.noted.v1.GoalR\x04goal\" \n" +
+	"\x0eGetGoalRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"t\n" +
+	"\x11UpdateGoalRequest\x12\"\n" +
+	"\x04goal\x18\x01 \x01(\v2\x0e.noted.v1.GoalR\x04goal\x12;\n" +
+	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
+	"updateMask\"#\n" +
+	"\x11DeleteGoalRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"d\n" +
+	"\x10ListGoalsRequest\x12)\n" +
+	"\x10include_archived\x18\x01 \x01(\bR\x0fincludeArchived\x12%\n" +
+	"\x05space\x18\x02 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\"9\n" +
+	"\x11ListGoalsResponse\x12$\n" +
+	"\x05goals\x18\x01 \x03(\v2\x0e.noted.v1.GoalR\x05goals\"\xa1\x01\n" +
+	"\x14RecordCheckInRequest\x12\x17\n" +
+	"\agoal_id\x18\x01 \x01(\tR\x06goalId\x12\x16\n" +
+	"\x06amount\x18\x02 \x01(\x01R\x06amount\x12.\n" +
+	"\x04time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\x12\x12\n" +
+	"\x04note\x18\x04 \x01(\tR\x04note\x12\x14\n" +
+	"\x05count\x18\x05 \x01(\x01R\x05count\"i\n" +
+	"\x15RecordCheckInResponse\x12,\n" +
+	"\bcheck_in\x18\x01 \x01(\v2\x11.noted.v1.CheckInR\acheckIn\x12\"\n" +
+	"\x04goal\x18\x02 \x01(\v2\x0e.noted.v1.GoalR\x04goal\"&\n" +
+	"\x14DeleteCheckInRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xa0\x01\n" +
+	"\x13ListCheckInsRequest\x12\x17\n" +
+	"\agoal_id\x18\x01 \x01(\tR\x06goalId\x12.\n" +
+	"\x04from\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
+	"\x02to\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12\x14\n" +
+	"\x05limit\x18\x04 \x01(\x05R\x05limit\"F\n" +
+	"\x14ListCheckInsResponse\x12.\n" +
+	"\tcheck_ins\x18\x01 \x03(\v2\x11.noted.v1.CheckInR\bcheckIns\"i\n" +
+	"\x17SetMilestoneDoneRequest\x12\x17\n" +
+	"\agoal_id\x18\x01 \x01(\tR\x06goalId\x12!\n" +
+	"\fmilestone_id\x18\x02 \x01(\tR\vmilestoneId\x12\x12\n" +
+	"\x04done\x18\x03 \x01(\bR\x04done\"\xe2\x02\n" +
+	"\x0fProjectProgress\x12\x1f\n" +
+	"\vtasks_total\x18\x01 \x01(\x05R\n" +
+	"tasksTotal\x12\x1d\n" +
+	"\n" +
+	"tasks_done\x18\x02 \x01(\x05R\ttasksDone\x12\x18\n" +
+	"\apercent\x18\x03 \x01(\x01R\apercent\x12'\n" +
+	"\x0fevents_upcoming\x18\x04 \x01(\x05R\x0eeventsUpcoming\x12\x1f\n" +
+	"\vnotes_count\x18\x05 \x01(\x05R\n" +
+	"notesCount\x127\n" +
+	"\tnext_time\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\bnextTime\x12\x1d\n" +
+	"\n" +
+	"next_title\x18\a \x01(\tR\tnextTitle\x12 \n" +
+	"\tdays_left\x18\b \x01(\x05H\x00R\bdaysLeft\x88\x01\x01\x12#\n" +
+	"\rtasks_overdue\x18\t \x01(\x05R\ftasksOverdueB\f\n" +
+	"\n" +
+	"_days_left\"\xc3\x03\n" +
+	"\aProject\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
+	"\x05notes\x18\x03 \x01(\tR\x05notes\x12\x16\n" +
+	"\x06pinned\x18\x04 \x01(\bR\x06pinned\x12\x1a\n" +
+	"\barchived\x18\x05 \x01(\bR\barchived\x129\n" +
+	"\n" +
+	"start_time\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tstartTime\x125\n" +
+	"\bdue_time\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\adueTime\x12;\n" +
+	"\vcreate_time\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"createTime\x12;\n" +
+	"\vupdate_time\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"updateTime\x125\n" +
+	"\bprogress\x18\n" +
+	" \x01(\v2\x19.noted.v1.ProjectProgressR\bprogress\x12%\n" +
+	"\x05space\x18\v \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\"C\n" +
+	"\x14CreateProjectRequest\x12+\n" +
+	"\aproject\x18\x01 \x01(\v2\x11.noted.v1.ProjectR\aproject\"#\n" +
+	"\x11GetProjectRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xb1\x01\n" +
+	"\rProjectDetail\x12+\n" +
+	"\aproject\x18\x01 \x01(\v2\x11.noted.v1.ProjectR\aproject\x12$\n" +
+	"\x05tasks\x18\x02 \x03(\v2\x0e.noted.v1.TaskR\x05tasks\x12'\n" +
+	"\x06events\x18\x03 \x03(\v2\x0f.noted.v1.EventR\x06events\x12$\n" +
+	"\x05notes\x18\x04 \x03(\v2\x0e.noted.v1.NoteR\x05notes\"\x80\x01\n" +
+	"\x14UpdateProjectRequest\x12+\n" +
+	"\aproject\x18\x01 \x01(\v2\x11.noted.v1.ProjectR\aproject\x12;\n" +
+	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
+	"updateMask\"I\n" +
+	"\x14DeleteProjectRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
+	"\fdelete_items\x18\x02 \x01(\bR\vdeleteItems\"\x88\x01\n" +
+	"\x13ListProjectsRequest\x12)\n" +
+	"\x10include_archived\x18\x01 \x01(\bR\x0fincludeArchived\x12\x1f\n" +
+	"\vpinned_only\x18\x02 \x01(\bR\n" +
+	"pinnedOnly\x12%\n" +
+	"\x05space\x18\x03 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\"E\n" +
+	"\x14ListProjectsResponse\x12-\n" +
+	"\bprojects\x18\x01 \x03(\v2\x11.noted.v1.ProjectR\bprojects\"\x82\x01\n" +
+	"\x0fGetFocusRequest\x12+\n" +
+	"\ahorizon\x18\x01 \x01(\x0e2\x11.noted.v1.HorizonR\ahorizon\x12\x1b\n" +
+	"\ttime_zone\x18\x02 \x01(\tR\btimeZone\x12%\n" +
+	"\x05space\x18\x03 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\"\xfe\x01\n" +
+	"\tFocusItem\x12,\n" +
+	"\x05event\x18\x01 \x01(\v2\x14.noted.v1.OccurrenceH\x00R\x05event\x12$\n" +
+	"\x04task\x18\x02 \x01(\v2\x0e.noted.v1.TaskH\x00R\x04task\x127\n" +
+	"\tsort_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\bsortTime\x12\x18\n" +
+	"\aoverdue\x18\x04 \x01(\bR\aoverdue\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x05 \x01(\tR\tprojectId\x12#\n" +
+	"\rproject_title\x18\x06 \x01(\tR\fprojectTitleB\x06\n" +
+	"\x04item\"\xcf\x02\n" +
+	"\x10GetFocusResponse\x12+\n" +
+	"\ahorizon\x18\x01 \x01(\x0e2\x11.noted.v1.HorizonR\ahorizon\x12.\n" +
+	"\x04from\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
+	"\x02to\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12)\n" +
+	"\x05items\x18\x04 \x03(\v2\x13.noted.v1.FocusItemR\x05items\x12$\n" +
+	"\x05goals\x18\x05 \x03(\v2\x0e.noted.v1.GoalR\x05goals\x12:\n" +
+	"\x0fpinned_projects\x18\x06 \x03(\v2\x11.noted.v1.ProjectR\x0epinnedProjects\x12%\n" +
+	"\x05space\x18\a \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\"\x8b\x01\n" +
+	"\n" +
+	"Preference\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\x12\x18\n" +
+	"\aversion\x18\x03 \x01(\x03R\aversion\x12;\n" +
+	"\vupdate_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"updateTime\"(\n" +
+	"\x14GetPreferenceRequest\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\"q\n" +
+	"\x14SetPreferenceRequest\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\x12\"\n" +
+	"\n" +
+	"if_version\x18\x03 \x01(\x03H\x00R\tifVersion\x88\x01\x01B\r\n" +
+	"\v_if_version\"+\n" +
+	"\x17DeletePreferenceRequest\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\"0\n" +
+	"\x16ListPreferencesRequest\x12\x16\n" +
+	"\x06prefix\x18\x01 \x01(\tR\x06prefix\"Q\n" +
+	"\x17ListPreferencesResponse\x126\n" +
+	"\vpreferences\x18\x01 \x03(\v2\x14.noted.v1.PreferenceR\vpreferences\"b\n" +
+	"\tOperation\x12\x12\n" +
+	"\x04type\x18\x01 \x01(\tR\x04type\x12\x14\n" +
+	"\x05label\x18\x02 \x01(\tR\x05label\x12+\n" +
+	"\x04args\x18\x03 \x01(\v2\x17.google.protobuf.StructR\x04args\"i\n" +
+	"\rProposalInput\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
+	"\x05label\x18\x02 \x01(\tR\x05label\x12\x12\n" +
+	"\x04type\x18\x03 \x01(\tR\x04type\x12\x1a\n" +
+	"\brequired\x18\x04 \x01(\bR\brequired\"\x93\x03\n" +
+	"\bProposal\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\x12\x14\n" +
+	"\x05title\x18\x04 \x01(\tR\x05title\x12\x16\n" +
+	"\x06reason\x18\x05 \x01(\tR\x06reason\x12%\n" +
+	"\x05space\x18\x06 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12\x16\n" +
+	"\x06source\x18\a \x01(\tR\x06source\x123\n" +
+	"\n" +
+	"operations\x18\b \x03(\v2\x13.noted.v1.OperationR\n" +
+	"operations\x12/\n" +
+	"\x06inputs\x18\t \x03(\v2\x17.noted.v1.ProposalInputR\x06inputs\x12;\n" +
+	"\vcreate_time\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"createTime\x12;\n" +
+	"\vdecide_time\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"decideTime\"\xfb\x01\n" +
+	"\x06Change\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
+	"\vproposal_id\x18\x02 \x01(\tR\n" +
+	"proposalId\x12\x18\n" +
+	"\asummary\x18\x03 \x01(\tR\asummary\x12\x18\n" +
+	"\aentries\x18\x04 \x01(\x05R\aentries\x12;\n" +
+	"\vcreate_time\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"createTime\x12\x16\n" +
+	"\x06undone\x18\x06 \x01(\bR\x06undone\x127\n" +
+	"\tundo_time\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\bundoTime\"t\n" +
+	"\x14ListProposalsRequest\x12%\n" +
+	"\x05space\x18\x01 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\x12\x1d\n" +
+	"\n" +
+	"no_refresh\x18\x03 \x01(\bR\tnoRefresh\"I\n" +
+	"\x15ListProposalsResponse\x120\n" +
+	"\tproposals\x18\x01 \x03(\v2\x12.noted.v1.ProposalR\tproposals\".\n" +
+	"\x12OperationSelection\x12\x18\n" +
+	"\aindexes\x18\x01 \x03(\x05R\aindexes\"\xe3\x01\n" +
+	"\x15AcceptProposalRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12C\n" +
+	"\x06inputs\x18\x02 \x03(\v2+.noted.v1.AcceptProposalRequest.InputsEntryR\x06inputs\x12:\n" +
+	"\tselection\x18\x03 \x01(\v2\x1c.noted.v1.OperationSelectionR\tselection\x1a9\n" +
+	"\vInputsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"r\n" +
+	"\x16AcceptProposalResponse\x12.\n" +
+	"\bproposal\x18\x01 \x01(\v2\x12.noted.v1.ProposalR\bproposal\x12(\n" +
+	"\x06change\x18\x02 \x01(\v2\x10.noted.v1.ChangeR\x06change\"(\n" +
+	"\x16DismissProposalRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x8f\x01\n" +
+	"\x16ProposeScheduleRequest\x12\x19\n" +
+	"\btask_ids\x18\x01 \x03(\tR\ataskIds\x12)\n" +
+	"\x10duration_minutes\x18\x02 \x01(\x05R\x0fdurationMinutes\x12\x12\n" +
+	"\x04days\x18\x03 \x01(\x05R\x04days\x12\x1b\n" +
+	"\ttime_zone\x18\x04 \x01(\tR\btimeZone\"\x91\x01\n" +
+	"\x16GetWeeklyReviewRequest\x123\n" +
+	"\aweek_of\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x06weekOf\x12%\n" +
+	"\x05space\x18\x02 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12\x1b\n" +
+	"\ttime_zone\x18\x03 \x01(\tR\btimeZone\"\xb6\x02\n" +
+	"\fWeeklyReview\x12.\n" +
+	"\x04from\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
+	"\x02to\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12\x1d\n" +
+	"\n" +
+	"tasks_done\x18\x03 \x01(\x05R\ttasksDone\x12\x1f\n" +
+	"\vtasks_total\x18\x04 \x01(\x05R\n" +
+	"tasksTotal\x12$\n" +
+	"\x05goals\x18\x05 \x03(\v2\x0e.noted.v1.GoalR\x05goals\x123\n" +
+	"\rcarried_tasks\x18\x06 \x03(\v2\x0e.noted.v1.TaskR\fcarriedTasks\x12/\n" +
+	"\tnext_week\x18\a \x01(\v2\x12.noted.v1.ProposalR\bnextWeek\"*\n" +
+	"\x12ListChangesRequest\x12\x14\n" +
+	"\x05limit\x18\x01 \x01(\x05R\x05limit\"A\n" +
+	"\x13ListChangesResponse\x12*\n" +
+	"\achanges\x18\x01 \x03(\v2\x10.noted.v1.ChangeR\achanges\"#\n" +
+	"\x11UndoChangeRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id*>\n" +
+	"\x05Space\x12\x15\n" +
+	"\x11SPACE_UNSPECIFIED\x10\x00\x12\x0e\n" +
+	"\n" +
+	"SPACE_WORK\x10\x01\x12\x0e\n" +
+	"\n" +
+	"SPACE_LIFE\x10\x02*^\n" +
 	"\bPriority\x12\x18\n" +
 	"\x14PRIORITY_UNSPECIFIED\x10\x00\x12\x10\n" +
 	"\fPRIORITY_LOW\x10\x01\x12\x13\n" +
 	"\x0fPRIORITY_MEDIUM\x10\x02\x12\x11\n" +
-	"\rPRIORITY_HIGH\x10\x032\x8d\x03\n" +
+	"\rPRIORITY_HIGH\x10\x03*k\n" +
+	"\n" +
+	"GoalPeriod\x12\x1b\n" +
+	"\x17GOAL_PERIOD_UNSPECIFIED\x10\x00\x12\x13\n" +
+	"\x0fGOAL_PERIOD_DAY\x10\x01\x12\x14\n" +
+	"\x10GOAL_PERIOD_WEEK\x10\x02\x12\x15\n" +
+	"\x11GOAL_PERIOD_MONTH\x10\x03*p\n" +
+	"\aHorizon\x12\x17\n" +
+	"\x13HORIZON_UNSPECIFIED\x10\x00\x12\x11\n" +
+	"\rHORIZON_TODAY\x10\x01\x12\x14\n" +
+	"\x10HORIZON_UPCOMING\x10\x02\x12\x10\n" +
+	"\fHORIZON_WEEK\x10\x03\x12\x11\n" +
+	"\rHORIZON_MONTH\x10\x042\x8d\x03\n" +
 	"\vNoteService\x129\n" +
 	"\n" +
 	"CreateNote\x12\x1b.noted.v1.CreateNoteRequest\x1a\x0e.noted.v1.Note\x123\n" +
@@ -2612,13 +7130,55 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"DeleteTask\x12\x1b.noted.v1.DeleteTaskRequest\x1a\x16.google.protobuf.Empty\x12D\n" +
 	"\tListTasks\x12\x1a.noted.v1.ListTasksRequest\x1a\x1b.noted.v1.ListTasksResponse\x12G\n" +
 	"\x0eWatchReminders\x12\x1f.noted.v1.WatchRemindersRequest\x1a\x12.noted.v1.Reminder0\x01\x12P\n" +
-	"\rListReminders\x12\x1e.noted.v1.ListRemindersRequest\x1a\x1f.noted.v1.ListRemindersResponse2\xf5\x02\n" +
+	"\rListReminders\x12\x1e.noted.v1.ListRemindersRequest\x1a\x1f.noted.v1.ListRemindersResponse2\x8b\x06\n" +
 	"\tAIService\x12D\n" +
 	"\tGetStatus\x12\x1a.noted.v1.GetStatusRequest\x1a\x1b.noted.v1.GetStatusResponse\x122\n" +
 	"\x03Ask\x12\x14.noted.v1.AskRequest\x1a\x15.noted.v1.AskResponse\x12P\n" +
 	"\rSummarizeNote\x12\x1e.noted.v1.SummarizeNoteRequest\x1a\x1f.noted.v1.SummarizeNoteResponse\x12J\n" +
 	"\vSuggestTags\x12\x1c.noted.v1.SuggestTagsRequest\x1a\x1d.noted.v1.SuggestTagsResponse\x12P\n" +
-	"\rDailyBriefing\x12\x1e.noted.v1.DailyBriefingRequest\x1a\x1f.noted.v1.DailyBriefingResponseB\x8d\x01\n" +
+	"\rDailyBriefing\x12\x1e.noted.v1.DailyBriefingRequest\x1a\x1f.noted.v1.DailyBriefingResponse\x12A\n" +
+	"\fPlanFromText\x12\x1d.noted.v1.PlanFromTextRequest\x1a\x12.noted.v1.Proposal\x12A\n" +
+	"\fExtractTasks\x12\x1d.noted.v1.ExtractTasksRequest\x1a\x12.noted.v1.Proposal\x12?\n" +
+	"\vGetAIAccess\x12\x1c.noted.v1.GetAIAccessRequest\x1a\x12.noted.v1.AIAccess\x12?\n" +
+	"\vSetAIAccess\x12\x1c.noted.v1.SetAIAccessRequest\x1a\x12.noted.v1.AIAccess\x12E\n" +
+	"\rGetAIFeatures\x12\x1e.noted.v1.GetAIFeaturesRequest\x1a\x14.noted.v1.AIFeatures\x12E\n" +
+	"\rSetAIFeatures\x12\x1e.noted.v1.SetAIFeaturesRequest\x1a\x14.noted.v1.AIFeatures2\xea\x04\n" +
+	"\vGoalService\x129\n" +
+	"\n" +
+	"CreateGoal\x12\x1b.noted.v1.CreateGoalRequest\x1a\x0e.noted.v1.Goal\x123\n" +
+	"\aGetGoal\x12\x18.noted.v1.GetGoalRequest\x1a\x0e.noted.v1.Goal\x129\n" +
+	"\n" +
+	"UpdateGoal\x12\x1b.noted.v1.UpdateGoalRequest\x1a\x0e.noted.v1.Goal\x12A\n" +
+	"\n" +
+	"DeleteGoal\x12\x1b.noted.v1.DeleteGoalRequest\x1a\x16.google.protobuf.Empty\x12D\n" +
+	"\tListGoals\x12\x1a.noted.v1.ListGoalsRequest\x1a\x1b.noted.v1.ListGoalsResponse\x12P\n" +
+	"\rRecordCheckIn\x12\x1e.noted.v1.RecordCheckInRequest\x1a\x1f.noted.v1.RecordCheckInResponse\x12?\n" +
+	"\rDeleteCheckIn\x12\x1e.noted.v1.DeleteCheckInRequest\x1a\x0e.noted.v1.Goal\x12M\n" +
+	"\fListCheckIns\x12\x1d.noted.v1.ListCheckInsRequest\x1a\x1e.noted.v1.ListCheckInsResponse\x12E\n" +
+	"\x10SetMilestoneDone\x12!.noted.v1.SetMilestoneDoneRequest\x1a\x0e.noted.v1.Goal2\xf4\x02\n" +
+	"\x0eProjectService\x12B\n" +
+	"\rCreateProject\x12\x1e.noted.v1.CreateProjectRequest\x1a\x11.noted.v1.Project\x12B\n" +
+	"\n" +
+	"GetProject\x12\x1b.noted.v1.GetProjectRequest\x1a\x17.noted.v1.ProjectDetail\x12B\n" +
+	"\rUpdateProject\x12\x1e.noted.v1.UpdateProjectRequest\x1a\x11.noted.v1.Project\x12G\n" +
+	"\rDeleteProject\x12\x1e.noted.v1.DeleteProjectRequest\x1a\x16.google.protobuf.Empty\x12M\n" +
+	"\fListProjects\x12\x1d.noted.v1.ListProjectsRequest\x1a\x1e.noted.v1.ListProjectsResponse2Q\n" +
+	"\fFocusService\x12A\n" +
+	"\bGetFocus\x12\x19.noted.v1.GetFocusRequest\x1a\x1a.noted.v1.GetFocusResponse2\xc8\x02\n" +
+	"\x11PreferenceService\x12E\n" +
+	"\rGetPreference\x12\x1e.noted.v1.GetPreferenceRequest\x1a\x14.noted.v1.Preference\x12E\n" +
+	"\rSetPreference\x12\x1e.noted.v1.SetPreferenceRequest\x1a\x14.noted.v1.Preference\x12M\n" +
+	"\x10DeletePreference\x12!.noted.v1.DeletePreferenceRequest\x1a\x16.google.protobuf.Empty\x12V\n" +
+	"\x0fListPreferences\x12 .noted.v1.ListPreferencesRequest\x1a!.noted.v1.ListPreferencesResponse2\xa2\x04\n" +
+	"\x11SuggestionService\x12P\n" +
+	"\rListProposals\x12\x1e.noted.v1.ListProposalsRequest\x1a\x1f.noted.v1.ListProposalsResponse\x12S\n" +
+	"\x0eAcceptProposal\x12\x1f.noted.v1.AcceptProposalRequest\x1a .noted.v1.AcceptProposalResponse\x12G\n" +
+	"\x0fDismissProposal\x12 .noted.v1.DismissProposalRequest\x1a\x12.noted.v1.Proposal\x12G\n" +
+	"\x0fProposeSchedule\x12 .noted.v1.ProposeScheduleRequest\x1a\x12.noted.v1.Proposal\x12K\n" +
+	"\x0fGetWeeklyReview\x12 .noted.v1.GetWeeklyReviewRequest\x1a\x16.noted.v1.WeeklyReview\x12J\n" +
+	"\vListChanges\x12\x1c.noted.v1.ListChangesRequest\x1a\x1d.noted.v1.ListChangesResponse\x12;\n" +
+	"\n" +
+	"UndoChange\x12\x1b.noted.v1.UndoChangeRequest\x1a\x10.noted.v1.ChangeB\x8d\x01\n" +
 	"\fcom.noted.v1B\n" +
 	"NotedProtoP\x01Z0github.com/liliang-cn/noted/gen/noted/v1;notedv1\xa2\x02\x03NXX\xaa\x02\bNoted.V1\xca\x02\bNoted\\V1\xe2\x02\x14Noted\\V1\\GPBMetadata\xea\x02\tNoted::V1b\x06proto3"
 
@@ -2634,146 +7194,367 @@ func file_noted_v1_noted_proto_rawDescGZIP() []byte {
 	return file_noted_v1_noted_proto_rawDescData
 }
 
-var file_noted_v1_noted_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_noted_v1_noted_proto_msgTypes = make([]protoimpl.MessageInfo, 39)
+var file_noted_v1_noted_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
+var file_noted_v1_noted_proto_msgTypes = make([]protoimpl.MessageInfo, 100)
 var file_noted_v1_noted_proto_goTypes = []any{
-	(Priority)(0),                 // 0: noted.v1.Priority
-	(ListTasksRequest_Filter)(0),  // 1: noted.v1.ListTasksRequest.Filter
-	(Reminder_Kind)(0),            // 2: noted.v1.Reminder.Kind
-	(*Note)(nil),                  // 3: noted.v1.Note
-	(*CreateNoteRequest)(nil),     // 4: noted.v1.CreateNoteRequest
-	(*GetNoteRequest)(nil),        // 5: noted.v1.GetNoteRequest
-	(*UpdateNoteRequest)(nil),     // 6: noted.v1.UpdateNoteRequest
-	(*DeleteNoteRequest)(nil),     // 7: noted.v1.DeleteNoteRequest
-	(*ListNotesRequest)(nil),      // 8: noted.v1.ListNotesRequest
-	(*ListNotesResponse)(nil),     // 9: noted.v1.ListNotesResponse
-	(*SearchNotesRequest)(nil),    // 10: noted.v1.SearchNotesRequest
-	(*NoteHit)(nil),               // 11: noted.v1.NoteHit
-	(*SearchNotesResponse)(nil),   // 12: noted.v1.SearchNotesResponse
-	(*Event)(nil),                 // 13: noted.v1.Event
-	(*CreateEventRequest)(nil),    // 14: noted.v1.CreateEventRequest
-	(*GetEventRequest)(nil),       // 15: noted.v1.GetEventRequest
-	(*UpdateEventRequest)(nil),    // 16: noted.v1.UpdateEventRequest
-	(*DeleteEventRequest)(nil),    // 17: noted.v1.DeleteEventRequest
-	(*ListEventsRequest)(nil),     // 18: noted.v1.ListEventsRequest
-	(*Occurrence)(nil),            // 19: noted.v1.Occurrence
-	(*ListEventsResponse)(nil),    // 20: noted.v1.ListEventsResponse
-	(*Task)(nil),                  // 21: noted.v1.Task
-	(*CreateTaskRequest)(nil),     // 22: noted.v1.CreateTaskRequest
-	(*GetTaskRequest)(nil),        // 23: noted.v1.GetTaskRequest
-	(*UpdateTaskRequest)(nil),     // 24: noted.v1.UpdateTaskRequest
-	(*DeleteTaskRequest)(nil),     // 25: noted.v1.DeleteTaskRequest
-	(*ListTasksRequest)(nil),      // 26: noted.v1.ListTasksRequest
-	(*ListTasksResponse)(nil),     // 27: noted.v1.ListTasksResponse
-	(*Reminder)(nil),              // 28: noted.v1.Reminder
-	(*WatchRemindersRequest)(nil), // 29: noted.v1.WatchRemindersRequest
-	(*ListRemindersRequest)(nil),  // 30: noted.v1.ListRemindersRequest
-	(*ListRemindersResponse)(nil), // 31: noted.v1.ListRemindersResponse
-	(*GetStatusRequest)(nil),      // 32: noted.v1.GetStatusRequest
-	(*GetStatusResponse)(nil),     // 33: noted.v1.GetStatusResponse
-	(*AskRequest)(nil),            // 34: noted.v1.AskRequest
-	(*AskResponse)(nil),           // 35: noted.v1.AskResponse
-	(*SummarizeNoteRequest)(nil),  // 36: noted.v1.SummarizeNoteRequest
-	(*SummarizeNoteResponse)(nil), // 37: noted.v1.SummarizeNoteResponse
-	(*SuggestTagsRequest)(nil),    // 38: noted.v1.SuggestTagsRequest
-	(*SuggestTagsResponse)(nil),   // 39: noted.v1.SuggestTagsResponse
-	(*DailyBriefingRequest)(nil),  // 40: noted.v1.DailyBriefingRequest
-	(*DailyBriefingResponse)(nil), // 41: noted.v1.DailyBriefingResponse
-	(*timestamppb.Timestamp)(nil), // 42: google.protobuf.Timestamp
-	(*fieldmaskpb.FieldMask)(nil), // 43: google.protobuf.FieldMask
-	(*emptypb.Empty)(nil),         // 44: google.protobuf.Empty
+	(Space)(0),                      // 0: noted.v1.Space
+	(Priority)(0),                   // 1: noted.v1.Priority
+	(GoalPeriod)(0),                 // 2: noted.v1.GoalPeriod
+	(Horizon)(0),                    // 3: noted.v1.Horizon
+	(ListTasksRequest_Filter)(0),    // 4: noted.v1.ListTasksRequest.Filter
+	(Reminder_Kind)(0),              // 5: noted.v1.Reminder.Kind
+	(*Note)(nil),                    // 6: noted.v1.Note
+	(*CreateNoteRequest)(nil),       // 7: noted.v1.CreateNoteRequest
+	(*GetNoteRequest)(nil),          // 8: noted.v1.GetNoteRequest
+	(*UpdateNoteRequest)(nil),       // 9: noted.v1.UpdateNoteRequest
+	(*DeleteNoteRequest)(nil),       // 10: noted.v1.DeleteNoteRequest
+	(*ListNotesRequest)(nil),        // 11: noted.v1.ListNotesRequest
+	(*ListNotesResponse)(nil),       // 12: noted.v1.ListNotesResponse
+	(*SearchNotesRequest)(nil),      // 13: noted.v1.SearchNotesRequest
+	(*NoteHit)(nil),                 // 14: noted.v1.NoteHit
+	(*SearchNotesResponse)(nil),     // 15: noted.v1.SearchNotesResponse
+	(*Event)(nil),                   // 16: noted.v1.Event
+	(*CreateEventRequest)(nil),      // 17: noted.v1.CreateEventRequest
+	(*GetEventRequest)(nil),         // 18: noted.v1.GetEventRequest
+	(*UpdateEventRequest)(nil),      // 19: noted.v1.UpdateEventRequest
+	(*DeleteEventRequest)(nil),      // 20: noted.v1.DeleteEventRequest
+	(*ListEventsRequest)(nil),       // 21: noted.v1.ListEventsRequest
+	(*Occurrence)(nil),              // 22: noted.v1.Occurrence
+	(*ListEventsResponse)(nil),      // 23: noted.v1.ListEventsResponse
+	(*Task)(nil),                    // 24: noted.v1.Task
+	(*CreateTaskRequest)(nil),       // 25: noted.v1.CreateTaskRequest
+	(*GetTaskRequest)(nil),          // 26: noted.v1.GetTaskRequest
+	(*UpdateTaskRequest)(nil),       // 27: noted.v1.UpdateTaskRequest
+	(*DeleteTaskRequest)(nil),       // 28: noted.v1.DeleteTaskRequest
+	(*ListTasksRequest)(nil),        // 29: noted.v1.ListTasksRequest
+	(*ListTasksResponse)(nil),       // 30: noted.v1.ListTasksResponse
+	(*Reminder)(nil),                // 31: noted.v1.Reminder
+	(*WatchRemindersRequest)(nil),   // 32: noted.v1.WatchRemindersRequest
+	(*ListRemindersRequest)(nil),    // 33: noted.v1.ListRemindersRequest
+	(*ListRemindersResponse)(nil),   // 34: noted.v1.ListRemindersResponse
+	(*GetStatusRequest)(nil),        // 35: noted.v1.GetStatusRequest
+	(*GetStatusResponse)(nil),       // 36: noted.v1.GetStatusResponse
+	(*AskRequest)(nil),              // 37: noted.v1.AskRequest
+	(*AskResponse)(nil),             // 38: noted.v1.AskResponse
+	(*Reference)(nil),               // 39: noted.v1.Reference
+	(*SummarizeNoteRequest)(nil),    // 40: noted.v1.SummarizeNoteRequest
+	(*SummarizeNoteResponse)(nil),   // 41: noted.v1.SummarizeNoteResponse
+	(*SuggestTagsRequest)(nil),      // 42: noted.v1.SuggestTagsRequest
+	(*SuggestTagsResponse)(nil),     // 43: noted.v1.SuggestTagsResponse
+	(*DailyBriefingRequest)(nil),    // 44: noted.v1.DailyBriefingRequest
+	(*DailyBriefingResponse)(nil),   // 45: noted.v1.DailyBriefingResponse
+	(*AIFeatures)(nil),              // 46: noted.v1.AIFeatures
+	(*GetAIFeaturesRequest)(nil),    // 47: noted.v1.GetAIFeaturesRequest
+	(*SetAIFeaturesRequest)(nil),    // 48: noted.v1.SetAIFeaturesRequest
+	(*AIAccess)(nil),                // 49: noted.v1.AIAccess
+	(*GetAIAccessRequest)(nil),      // 50: noted.v1.GetAIAccessRequest
+	(*SetAIAccessRequest)(nil),      // 51: noted.v1.SetAIAccessRequest
+	(*PlanFromTextRequest)(nil),     // 52: noted.v1.PlanFromTextRequest
+	(*ExtractTasksRequest)(nil),     // 53: noted.v1.ExtractTasksRequest
+	(*Milestone)(nil),               // 54: noted.v1.Milestone
+	(*DayTotal)(nil),                // 55: noted.v1.DayTotal
+	(*GoalProgress)(nil),            // 56: noted.v1.GoalProgress
+	(*Goal)(nil),                    // 57: noted.v1.Goal
+	(*CheckIn)(nil),                 // 58: noted.v1.CheckIn
+	(*CreateGoalRequest)(nil),       // 59: noted.v1.CreateGoalRequest
+	(*GetGoalRequest)(nil),          // 60: noted.v1.GetGoalRequest
+	(*UpdateGoalRequest)(nil),       // 61: noted.v1.UpdateGoalRequest
+	(*DeleteGoalRequest)(nil),       // 62: noted.v1.DeleteGoalRequest
+	(*ListGoalsRequest)(nil),        // 63: noted.v1.ListGoalsRequest
+	(*ListGoalsResponse)(nil),       // 64: noted.v1.ListGoalsResponse
+	(*RecordCheckInRequest)(nil),    // 65: noted.v1.RecordCheckInRequest
+	(*RecordCheckInResponse)(nil),   // 66: noted.v1.RecordCheckInResponse
+	(*DeleteCheckInRequest)(nil),    // 67: noted.v1.DeleteCheckInRequest
+	(*ListCheckInsRequest)(nil),     // 68: noted.v1.ListCheckInsRequest
+	(*ListCheckInsResponse)(nil),    // 69: noted.v1.ListCheckInsResponse
+	(*SetMilestoneDoneRequest)(nil), // 70: noted.v1.SetMilestoneDoneRequest
+	(*ProjectProgress)(nil),         // 71: noted.v1.ProjectProgress
+	(*Project)(nil),                 // 72: noted.v1.Project
+	(*CreateProjectRequest)(nil),    // 73: noted.v1.CreateProjectRequest
+	(*GetProjectRequest)(nil),       // 74: noted.v1.GetProjectRequest
+	(*ProjectDetail)(nil),           // 75: noted.v1.ProjectDetail
+	(*UpdateProjectRequest)(nil),    // 76: noted.v1.UpdateProjectRequest
+	(*DeleteProjectRequest)(nil),    // 77: noted.v1.DeleteProjectRequest
+	(*ListProjectsRequest)(nil),     // 78: noted.v1.ListProjectsRequest
+	(*ListProjectsResponse)(nil),    // 79: noted.v1.ListProjectsResponse
+	(*GetFocusRequest)(nil),         // 80: noted.v1.GetFocusRequest
+	(*FocusItem)(nil),               // 81: noted.v1.FocusItem
+	(*GetFocusResponse)(nil),        // 82: noted.v1.GetFocusResponse
+	(*Preference)(nil),              // 83: noted.v1.Preference
+	(*GetPreferenceRequest)(nil),    // 84: noted.v1.GetPreferenceRequest
+	(*SetPreferenceRequest)(nil),    // 85: noted.v1.SetPreferenceRequest
+	(*DeletePreferenceRequest)(nil), // 86: noted.v1.DeletePreferenceRequest
+	(*ListPreferencesRequest)(nil),  // 87: noted.v1.ListPreferencesRequest
+	(*ListPreferencesResponse)(nil), // 88: noted.v1.ListPreferencesResponse
+	(*Operation)(nil),               // 89: noted.v1.Operation
+	(*ProposalInput)(nil),           // 90: noted.v1.ProposalInput
+	(*Proposal)(nil),                // 91: noted.v1.Proposal
+	(*Change)(nil),                  // 92: noted.v1.Change
+	(*ListProposalsRequest)(nil),    // 93: noted.v1.ListProposalsRequest
+	(*ListProposalsResponse)(nil),   // 94: noted.v1.ListProposalsResponse
+	(*OperationSelection)(nil),      // 95: noted.v1.OperationSelection
+	(*AcceptProposalRequest)(nil),   // 96: noted.v1.AcceptProposalRequest
+	(*AcceptProposalResponse)(nil),  // 97: noted.v1.AcceptProposalResponse
+	(*DismissProposalRequest)(nil),  // 98: noted.v1.DismissProposalRequest
+	(*ProposeScheduleRequest)(nil),  // 99: noted.v1.ProposeScheduleRequest
+	(*GetWeeklyReviewRequest)(nil),  // 100: noted.v1.GetWeeklyReviewRequest
+	(*WeeklyReview)(nil),            // 101: noted.v1.WeeklyReview
+	(*ListChangesRequest)(nil),      // 102: noted.v1.ListChangesRequest
+	(*ListChangesResponse)(nil),     // 103: noted.v1.ListChangesResponse
+	(*UndoChangeRequest)(nil),       // 104: noted.v1.UndoChangeRequest
+	nil,                             // 105: noted.v1.AcceptProposalRequest.InputsEntry
+	(*timestamppb.Timestamp)(nil),   // 106: google.protobuf.Timestamp
+	(*fieldmaskpb.FieldMask)(nil),   // 107: google.protobuf.FieldMask
+	(*structpb.Struct)(nil),         // 108: google.protobuf.Struct
+	(*emptypb.Empty)(nil),           // 109: google.protobuf.Empty
 }
 var file_noted_v1_noted_proto_depIdxs = []int32{
-	42, // 0: noted.v1.Note.create_time:type_name -> google.protobuf.Timestamp
-	42, // 1: noted.v1.Note.update_time:type_name -> google.protobuf.Timestamp
-	3,  // 2: noted.v1.CreateNoteRequest.note:type_name -> noted.v1.Note
-	3,  // 3: noted.v1.UpdateNoteRequest.note:type_name -> noted.v1.Note
-	43, // 4: noted.v1.UpdateNoteRequest.update_mask:type_name -> google.protobuf.FieldMask
-	3,  // 5: noted.v1.ListNotesResponse.notes:type_name -> noted.v1.Note
-	3,  // 6: noted.v1.NoteHit.note:type_name -> noted.v1.Note
-	11, // 7: noted.v1.SearchNotesResponse.hits:type_name -> noted.v1.NoteHit
-	42, // 8: noted.v1.Event.start_time:type_name -> google.protobuf.Timestamp
-	42, // 9: noted.v1.Event.end_time:type_name -> google.protobuf.Timestamp
-	42, // 10: noted.v1.Event.create_time:type_name -> google.protobuf.Timestamp
-	42, // 11: noted.v1.Event.update_time:type_name -> google.protobuf.Timestamp
-	13, // 12: noted.v1.CreateEventRequest.event:type_name -> noted.v1.Event
-	13, // 13: noted.v1.UpdateEventRequest.event:type_name -> noted.v1.Event
-	43, // 14: noted.v1.UpdateEventRequest.update_mask:type_name -> google.protobuf.FieldMask
-	42, // 15: noted.v1.ListEventsRequest.from:type_name -> google.protobuf.Timestamp
-	42, // 16: noted.v1.ListEventsRequest.to:type_name -> google.protobuf.Timestamp
-	13, // 17: noted.v1.Occurrence.event:type_name -> noted.v1.Event
-	42, // 18: noted.v1.Occurrence.start_time:type_name -> google.protobuf.Timestamp
-	42, // 19: noted.v1.Occurrence.end_time:type_name -> google.protobuf.Timestamp
-	19, // 20: noted.v1.ListEventsResponse.occurrences:type_name -> noted.v1.Occurrence
-	42, // 21: noted.v1.Task.due_time:type_name -> google.protobuf.Timestamp
-	0,  // 22: noted.v1.Task.priority:type_name -> noted.v1.Priority
-	42, // 23: noted.v1.Task.complete_time:type_name -> google.protobuf.Timestamp
-	42, // 24: noted.v1.Task.remind_time:type_name -> google.protobuf.Timestamp
-	42, // 25: noted.v1.Task.create_time:type_name -> google.protobuf.Timestamp
-	42, // 26: noted.v1.Task.update_time:type_name -> google.protobuf.Timestamp
-	21, // 27: noted.v1.CreateTaskRequest.task:type_name -> noted.v1.Task
-	21, // 28: noted.v1.UpdateTaskRequest.task:type_name -> noted.v1.Task
-	43, // 29: noted.v1.UpdateTaskRequest.update_mask:type_name -> google.protobuf.FieldMask
-	1,  // 30: noted.v1.ListTasksRequest.filter:type_name -> noted.v1.ListTasksRequest.Filter
-	42, // 31: noted.v1.ListTasksRequest.due_before:type_name -> google.protobuf.Timestamp
-	21, // 32: noted.v1.ListTasksResponse.tasks:type_name -> noted.v1.Task
-	2,  // 33: noted.v1.Reminder.kind:type_name -> noted.v1.Reminder.Kind
-	42, // 34: noted.v1.Reminder.due_time:type_name -> google.protobuf.Timestamp
-	42, // 35: noted.v1.Reminder.fire_time:type_name -> google.protobuf.Timestamp
-	42, // 36: noted.v1.ListRemindersRequest.since:type_name -> google.protobuf.Timestamp
-	28, // 37: noted.v1.ListRemindersResponse.reminders:type_name -> noted.v1.Reminder
-	42, // 38: noted.v1.DailyBriefingRequest.day:type_name -> google.protobuf.Timestamp
-	4,  // 39: noted.v1.NoteService.CreateNote:input_type -> noted.v1.CreateNoteRequest
-	5,  // 40: noted.v1.NoteService.GetNote:input_type -> noted.v1.GetNoteRequest
-	6,  // 41: noted.v1.NoteService.UpdateNote:input_type -> noted.v1.UpdateNoteRequest
-	7,  // 42: noted.v1.NoteService.DeleteNote:input_type -> noted.v1.DeleteNoteRequest
-	8,  // 43: noted.v1.NoteService.ListNotes:input_type -> noted.v1.ListNotesRequest
-	10, // 44: noted.v1.NoteService.SearchNotes:input_type -> noted.v1.SearchNotesRequest
-	14, // 45: noted.v1.CalendarService.CreateEvent:input_type -> noted.v1.CreateEventRequest
-	15, // 46: noted.v1.CalendarService.GetEvent:input_type -> noted.v1.GetEventRequest
-	16, // 47: noted.v1.CalendarService.UpdateEvent:input_type -> noted.v1.UpdateEventRequest
-	17, // 48: noted.v1.CalendarService.DeleteEvent:input_type -> noted.v1.DeleteEventRequest
-	18, // 49: noted.v1.CalendarService.ListEvents:input_type -> noted.v1.ListEventsRequest
-	22, // 50: noted.v1.CalendarService.CreateTask:input_type -> noted.v1.CreateTaskRequest
-	23, // 51: noted.v1.CalendarService.GetTask:input_type -> noted.v1.GetTaskRequest
-	24, // 52: noted.v1.CalendarService.UpdateTask:input_type -> noted.v1.UpdateTaskRequest
-	25, // 53: noted.v1.CalendarService.DeleteTask:input_type -> noted.v1.DeleteTaskRequest
-	26, // 54: noted.v1.CalendarService.ListTasks:input_type -> noted.v1.ListTasksRequest
-	29, // 55: noted.v1.CalendarService.WatchReminders:input_type -> noted.v1.WatchRemindersRequest
-	30, // 56: noted.v1.CalendarService.ListReminders:input_type -> noted.v1.ListRemindersRequest
-	32, // 57: noted.v1.AIService.GetStatus:input_type -> noted.v1.GetStatusRequest
-	34, // 58: noted.v1.AIService.Ask:input_type -> noted.v1.AskRequest
-	36, // 59: noted.v1.AIService.SummarizeNote:input_type -> noted.v1.SummarizeNoteRequest
-	38, // 60: noted.v1.AIService.SuggestTags:input_type -> noted.v1.SuggestTagsRequest
-	40, // 61: noted.v1.AIService.DailyBriefing:input_type -> noted.v1.DailyBriefingRequest
-	3,  // 62: noted.v1.NoteService.CreateNote:output_type -> noted.v1.Note
-	3,  // 63: noted.v1.NoteService.GetNote:output_type -> noted.v1.Note
-	3,  // 64: noted.v1.NoteService.UpdateNote:output_type -> noted.v1.Note
-	44, // 65: noted.v1.NoteService.DeleteNote:output_type -> google.protobuf.Empty
-	9,  // 66: noted.v1.NoteService.ListNotes:output_type -> noted.v1.ListNotesResponse
-	12, // 67: noted.v1.NoteService.SearchNotes:output_type -> noted.v1.SearchNotesResponse
-	13, // 68: noted.v1.CalendarService.CreateEvent:output_type -> noted.v1.Event
-	13, // 69: noted.v1.CalendarService.GetEvent:output_type -> noted.v1.Event
-	13, // 70: noted.v1.CalendarService.UpdateEvent:output_type -> noted.v1.Event
-	44, // 71: noted.v1.CalendarService.DeleteEvent:output_type -> google.protobuf.Empty
-	20, // 72: noted.v1.CalendarService.ListEvents:output_type -> noted.v1.ListEventsResponse
-	21, // 73: noted.v1.CalendarService.CreateTask:output_type -> noted.v1.Task
-	21, // 74: noted.v1.CalendarService.GetTask:output_type -> noted.v1.Task
-	21, // 75: noted.v1.CalendarService.UpdateTask:output_type -> noted.v1.Task
-	44, // 76: noted.v1.CalendarService.DeleteTask:output_type -> google.protobuf.Empty
-	27, // 77: noted.v1.CalendarService.ListTasks:output_type -> noted.v1.ListTasksResponse
-	28, // 78: noted.v1.CalendarService.WatchReminders:output_type -> noted.v1.Reminder
-	31, // 79: noted.v1.CalendarService.ListReminders:output_type -> noted.v1.ListRemindersResponse
-	33, // 80: noted.v1.AIService.GetStatus:output_type -> noted.v1.GetStatusResponse
-	35, // 81: noted.v1.AIService.Ask:output_type -> noted.v1.AskResponse
-	37, // 82: noted.v1.AIService.SummarizeNote:output_type -> noted.v1.SummarizeNoteResponse
-	39, // 83: noted.v1.AIService.SuggestTags:output_type -> noted.v1.SuggestTagsResponse
-	41, // 84: noted.v1.AIService.DailyBriefing:output_type -> noted.v1.DailyBriefingResponse
-	62, // [62:85] is the sub-list for method output_type
-	39, // [39:62] is the sub-list for method input_type
-	39, // [39:39] is the sub-list for extension type_name
-	39, // [39:39] is the sub-list for extension extendee
-	0,  // [0:39] is the sub-list for field type_name
+	106, // 0: noted.v1.Note.create_time:type_name -> google.protobuf.Timestamp
+	106, // 1: noted.v1.Note.update_time:type_name -> google.protobuf.Timestamp
+	0,   // 2: noted.v1.Note.space:type_name -> noted.v1.Space
+	6,   // 3: noted.v1.CreateNoteRequest.note:type_name -> noted.v1.Note
+	6,   // 4: noted.v1.UpdateNoteRequest.note:type_name -> noted.v1.Note
+	107, // 5: noted.v1.UpdateNoteRequest.update_mask:type_name -> google.protobuf.FieldMask
+	0,   // 6: noted.v1.ListNotesRequest.space:type_name -> noted.v1.Space
+	6,   // 7: noted.v1.ListNotesResponse.notes:type_name -> noted.v1.Note
+	0,   // 8: noted.v1.SearchNotesRequest.space:type_name -> noted.v1.Space
+	6,   // 9: noted.v1.NoteHit.note:type_name -> noted.v1.Note
+	14,  // 10: noted.v1.SearchNotesResponse.hits:type_name -> noted.v1.NoteHit
+	106, // 11: noted.v1.Event.start_time:type_name -> google.protobuf.Timestamp
+	106, // 12: noted.v1.Event.end_time:type_name -> google.protobuf.Timestamp
+	106, // 13: noted.v1.Event.create_time:type_name -> google.protobuf.Timestamp
+	106, // 14: noted.v1.Event.update_time:type_name -> google.protobuf.Timestamp
+	0,   // 15: noted.v1.Event.space:type_name -> noted.v1.Space
+	16,  // 16: noted.v1.CreateEventRequest.event:type_name -> noted.v1.Event
+	16,  // 17: noted.v1.UpdateEventRequest.event:type_name -> noted.v1.Event
+	107, // 18: noted.v1.UpdateEventRequest.update_mask:type_name -> google.protobuf.FieldMask
+	106, // 19: noted.v1.ListEventsRequest.from:type_name -> google.protobuf.Timestamp
+	106, // 20: noted.v1.ListEventsRequest.to:type_name -> google.protobuf.Timestamp
+	0,   // 21: noted.v1.ListEventsRequest.space:type_name -> noted.v1.Space
+	16,  // 22: noted.v1.Occurrence.event:type_name -> noted.v1.Event
+	106, // 23: noted.v1.Occurrence.start_time:type_name -> google.protobuf.Timestamp
+	106, // 24: noted.v1.Occurrence.end_time:type_name -> google.protobuf.Timestamp
+	22,  // 25: noted.v1.ListEventsResponse.occurrences:type_name -> noted.v1.Occurrence
+	106, // 26: noted.v1.Task.due_time:type_name -> google.protobuf.Timestamp
+	1,   // 27: noted.v1.Task.priority:type_name -> noted.v1.Priority
+	106, // 28: noted.v1.Task.complete_time:type_name -> google.protobuf.Timestamp
+	106, // 29: noted.v1.Task.remind_time:type_name -> google.protobuf.Timestamp
+	106, // 30: noted.v1.Task.create_time:type_name -> google.protobuf.Timestamp
+	106, // 31: noted.v1.Task.update_time:type_name -> google.protobuf.Timestamp
+	0,   // 32: noted.v1.Task.space:type_name -> noted.v1.Space
+	24,  // 33: noted.v1.CreateTaskRequest.task:type_name -> noted.v1.Task
+	24,  // 34: noted.v1.UpdateTaskRequest.task:type_name -> noted.v1.Task
+	107, // 35: noted.v1.UpdateTaskRequest.update_mask:type_name -> google.protobuf.FieldMask
+	4,   // 36: noted.v1.ListTasksRequest.filter:type_name -> noted.v1.ListTasksRequest.Filter
+	106, // 37: noted.v1.ListTasksRequest.due_before:type_name -> google.protobuf.Timestamp
+	0,   // 38: noted.v1.ListTasksRequest.space:type_name -> noted.v1.Space
+	24,  // 39: noted.v1.ListTasksResponse.tasks:type_name -> noted.v1.Task
+	5,   // 40: noted.v1.Reminder.kind:type_name -> noted.v1.Reminder.Kind
+	106, // 41: noted.v1.Reminder.due_time:type_name -> google.protobuf.Timestamp
+	106, // 42: noted.v1.Reminder.fire_time:type_name -> google.protobuf.Timestamp
+	0,   // 43: noted.v1.Reminder.space:type_name -> noted.v1.Space
+	0,   // 44: noted.v1.WatchRemindersRequest.space:type_name -> noted.v1.Space
+	106, // 45: noted.v1.ListRemindersRequest.since:type_name -> google.protobuf.Timestamp
+	0,   // 46: noted.v1.ListRemindersRequest.space:type_name -> noted.v1.Space
+	31,  // 47: noted.v1.ListRemindersResponse.reminders:type_name -> noted.v1.Reminder
+	0,   // 48: noted.v1.AskRequest.space:type_name -> noted.v1.Space
+	91,  // 49: noted.v1.AskResponse.proposal:type_name -> noted.v1.Proposal
+	92,  // 50: noted.v1.AskResponse.change:type_name -> noted.v1.Change
+	39,  // 51: noted.v1.AskResponse.references:type_name -> noted.v1.Reference
+	106, // 52: noted.v1.Reference.time:type_name -> google.protobuf.Timestamp
+	106, // 53: noted.v1.DailyBriefingRequest.day:type_name -> google.protobuf.Timestamp
+	0,   // 54: noted.v1.DailyBriefingRequest.space:type_name -> noted.v1.Space
+	0,   // 55: noted.v1.PlanFromTextRequest.space:type_name -> noted.v1.Space
+	106, // 56: noted.v1.Milestone.done_time:type_name -> google.protobuf.Timestamp
+	106, // 57: noted.v1.GoalProgress.period_start:type_name -> google.protobuf.Timestamp
+	106, // 58: noted.v1.GoalProgress.period_end:type_name -> google.protobuf.Timestamp
+	55,  // 59: noted.v1.GoalProgress.days:type_name -> noted.v1.DayTotal
+	55,  // 60: noted.v1.GoalProgress.recent:type_name -> noted.v1.DayTotal
+	2,   // 61: noted.v1.Goal.period:type_name -> noted.v1.GoalPeriod
+	54,  // 62: noted.v1.Goal.milestones:type_name -> noted.v1.Milestone
+	106, // 63: noted.v1.Goal.create_time:type_name -> google.protobuf.Timestamp
+	106, // 64: noted.v1.Goal.update_time:type_name -> google.protobuf.Timestamp
+	56,  // 65: noted.v1.Goal.progress:type_name -> noted.v1.GoalProgress
+	0,   // 66: noted.v1.Goal.space:type_name -> noted.v1.Space
+	106, // 67: noted.v1.CheckIn.time:type_name -> google.protobuf.Timestamp
+	57,  // 68: noted.v1.CreateGoalRequest.goal:type_name -> noted.v1.Goal
+	57,  // 69: noted.v1.UpdateGoalRequest.goal:type_name -> noted.v1.Goal
+	107, // 70: noted.v1.UpdateGoalRequest.update_mask:type_name -> google.protobuf.FieldMask
+	0,   // 71: noted.v1.ListGoalsRequest.space:type_name -> noted.v1.Space
+	57,  // 72: noted.v1.ListGoalsResponse.goals:type_name -> noted.v1.Goal
+	106, // 73: noted.v1.RecordCheckInRequest.time:type_name -> google.protobuf.Timestamp
+	58,  // 74: noted.v1.RecordCheckInResponse.check_in:type_name -> noted.v1.CheckIn
+	57,  // 75: noted.v1.RecordCheckInResponse.goal:type_name -> noted.v1.Goal
+	106, // 76: noted.v1.ListCheckInsRequest.from:type_name -> google.protobuf.Timestamp
+	106, // 77: noted.v1.ListCheckInsRequest.to:type_name -> google.protobuf.Timestamp
+	58,  // 78: noted.v1.ListCheckInsResponse.check_ins:type_name -> noted.v1.CheckIn
+	106, // 79: noted.v1.ProjectProgress.next_time:type_name -> google.protobuf.Timestamp
+	106, // 80: noted.v1.Project.start_time:type_name -> google.protobuf.Timestamp
+	106, // 81: noted.v1.Project.due_time:type_name -> google.protobuf.Timestamp
+	106, // 82: noted.v1.Project.create_time:type_name -> google.protobuf.Timestamp
+	106, // 83: noted.v1.Project.update_time:type_name -> google.protobuf.Timestamp
+	71,  // 84: noted.v1.Project.progress:type_name -> noted.v1.ProjectProgress
+	0,   // 85: noted.v1.Project.space:type_name -> noted.v1.Space
+	72,  // 86: noted.v1.CreateProjectRequest.project:type_name -> noted.v1.Project
+	72,  // 87: noted.v1.ProjectDetail.project:type_name -> noted.v1.Project
+	24,  // 88: noted.v1.ProjectDetail.tasks:type_name -> noted.v1.Task
+	16,  // 89: noted.v1.ProjectDetail.events:type_name -> noted.v1.Event
+	6,   // 90: noted.v1.ProjectDetail.notes:type_name -> noted.v1.Note
+	72,  // 91: noted.v1.UpdateProjectRequest.project:type_name -> noted.v1.Project
+	107, // 92: noted.v1.UpdateProjectRequest.update_mask:type_name -> google.protobuf.FieldMask
+	0,   // 93: noted.v1.ListProjectsRequest.space:type_name -> noted.v1.Space
+	72,  // 94: noted.v1.ListProjectsResponse.projects:type_name -> noted.v1.Project
+	3,   // 95: noted.v1.GetFocusRequest.horizon:type_name -> noted.v1.Horizon
+	0,   // 96: noted.v1.GetFocusRequest.space:type_name -> noted.v1.Space
+	22,  // 97: noted.v1.FocusItem.event:type_name -> noted.v1.Occurrence
+	24,  // 98: noted.v1.FocusItem.task:type_name -> noted.v1.Task
+	106, // 99: noted.v1.FocusItem.sort_time:type_name -> google.protobuf.Timestamp
+	3,   // 100: noted.v1.GetFocusResponse.horizon:type_name -> noted.v1.Horizon
+	106, // 101: noted.v1.GetFocusResponse.from:type_name -> google.protobuf.Timestamp
+	106, // 102: noted.v1.GetFocusResponse.to:type_name -> google.protobuf.Timestamp
+	81,  // 103: noted.v1.GetFocusResponse.items:type_name -> noted.v1.FocusItem
+	57,  // 104: noted.v1.GetFocusResponse.goals:type_name -> noted.v1.Goal
+	72,  // 105: noted.v1.GetFocusResponse.pinned_projects:type_name -> noted.v1.Project
+	0,   // 106: noted.v1.GetFocusResponse.space:type_name -> noted.v1.Space
+	106, // 107: noted.v1.Preference.update_time:type_name -> google.protobuf.Timestamp
+	83,  // 108: noted.v1.ListPreferencesResponse.preferences:type_name -> noted.v1.Preference
+	108, // 109: noted.v1.Operation.args:type_name -> google.protobuf.Struct
+	0,   // 110: noted.v1.Proposal.space:type_name -> noted.v1.Space
+	89,  // 111: noted.v1.Proposal.operations:type_name -> noted.v1.Operation
+	90,  // 112: noted.v1.Proposal.inputs:type_name -> noted.v1.ProposalInput
+	106, // 113: noted.v1.Proposal.create_time:type_name -> google.protobuf.Timestamp
+	106, // 114: noted.v1.Proposal.decide_time:type_name -> google.protobuf.Timestamp
+	106, // 115: noted.v1.Change.create_time:type_name -> google.protobuf.Timestamp
+	106, // 116: noted.v1.Change.undo_time:type_name -> google.protobuf.Timestamp
+	0,   // 117: noted.v1.ListProposalsRequest.space:type_name -> noted.v1.Space
+	91,  // 118: noted.v1.ListProposalsResponse.proposals:type_name -> noted.v1.Proposal
+	105, // 119: noted.v1.AcceptProposalRequest.inputs:type_name -> noted.v1.AcceptProposalRequest.InputsEntry
+	95,  // 120: noted.v1.AcceptProposalRequest.selection:type_name -> noted.v1.OperationSelection
+	91,  // 121: noted.v1.AcceptProposalResponse.proposal:type_name -> noted.v1.Proposal
+	92,  // 122: noted.v1.AcceptProposalResponse.change:type_name -> noted.v1.Change
+	106, // 123: noted.v1.GetWeeklyReviewRequest.week_of:type_name -> google.protobuf.Timestamp
+	0,   // 124: noted.v1.GetWeeklyReviewRequest.space:type_name -> noted.v1.Space
+	106, // 125: noted.v1.WeeklyReview.from:type_name -> google.protobuf.Timestamp
+	106, // 126: noted.v1.WeeklyReview.to:type_name -> google.protobuf.Timestamp
+	57,  // 127: noted.v1.WeeklyReview.goals:type_name -> noted.v1.Goal
+	24,  // 128: noted.v1.WeeklyReview.carried_tasks:type_name -> noted.v1.Task
+	91,  // 129: noted.v1.WeeklyReview.next_week:type_name -> noted.v1.Proposal
+	92,  // 130: noted.v1.ListChangesResponse.changes:type_name -> noted.v1.Change
+	7,   // 131: noted.v1.NoteService.CreateNote:input_type -> noted.v1.CreateNoteRequest
+	8,   // 132: noted.v1.NoteService.GetNote:input_type -> noted.v1.GetNoteRequest
+	9,   // 133: noted.v1.NoteService.UpdateNote:input_type -> noted.v1.UpdateNoteRequest
+	10,  // 134: noted.v1.NoteService.DeleteNote:input_type -> noted.v1.DeleteNoteRequest
+	11,  // 135: noted.v1.NoteService.ListNotes:input_type -> noted.v1.ListNotesRequest
+	13,  // 136: noted.v1.NoteService.SearchNotes:input_type -> noted.v1.SearchNotesRequest
+	17,  // 137: noted.v1.CalendarService.CreateEvent:input_type -> noted.v1.CreateEventRequest
+	18,  // 138: noted.v1.CalendarService.GetEvent:input_type -> noted.v1.GetEventRequest
+	19,  // 139: noted.v1.CalendarService.UpdateEvent:input_type -> noted.v1.UpdateEventRequest
+	20,  // 140: noted.v1.CalendarService.DeleteEvent:input_type -> noted.v1.DeleteEventRequest
+	21,  // 141: noted.v1.CalendarService.ListEvents:input_type -> noted.v1.ListEventsRequest
+	25,  // 142: noted.v1.CalendarService.CreateTask:input_type -> noted.v1.CreateTaskRequest
+	26,  // 143: noted.v1.CalendarService.GetTask:input_type -> noted.v1.GetTaskRequest
+	27,  // 144: noted.v1.CalendarService.UpdateTask:input_type -> noted.v1.UpdateTaskRequest
+	28,  // 145: noted.v1.CalendarService.DeleteTask:input_type -> noted.v1.DeleteTaskRequest
+	29,  // 146: noted.v1.CalendarService.ListTasks:input_type -> noted.v1.ListTasksRequest
+	32,  // 147: noted.v1.CalendarService.WatchReminders:input_type -> noted.v1.WatchRemindersRequest
+	33,  // 148: noted.v1.CalendarService.ListReminders:input_type -> noted.v1.ListRemindersRequest
+	35,  // 149: noted.v1.AIService.GetStatus:input_type -> noted.v1.GetStatusRequest
+	37,  // 150: noted.v1.AIService.Ask:input_type -> noted.v1.AskRequest
+	40,  // 151: noted.v1.AIService.SummarizeNote:input_type -> noted.v1.SummarizeNoteRequest
+	42,  // 152: noted.v1.AIService.SuggestTags:input_type -> noted.v1.SuggestTagsRequest
+	44,  // 153: noted.v1.AIService.DailyBriefing:input_type -> noted.v1.DailyBriefingRequest
+	52,  // 154: noted.v1.AIService.PlanFromText:input_type -> noted.v1.PlanFromTextRequest
+	53,  // 155: noted.v1.AIService.ExtractTasks:input_type -> noted.v1.ExtractTasksRequest
+	50,  // 156: noted.v1.AIService.GetAIAccess:input_type -> noted.v1.GetAIAccessRequest
+	51,  // 157: noted.v1.AIService.SetAIAccess:input_type -> noted.v1.SetAIAccessRequest
+	47,  // 158: noted.v1.AIService.GetAIFeatures:input_type -> noted.v1.GetAIFeaturesRequest
+	48,  // 159: noted.v1.AIService.SetAIFeatures:input_type -> noted.v1.SetAIFeaturesRequest
+	59,  // 160: noted.v1.GoalService.CreateGoal:input_type -> noted.v1.CreateGoalRequest
+	60,  // 161: noted.v1.GoalService.GetGoal:input_type -> noted.v1.GetGoalRequest
+	61,  // 162: noted.v1.GoalService.UpdateGoal:input_type -> noted.v1.UpdateGoalRequest
+	62,  // 163: noted.v1.GoalService.DeleteGoal:input_type -> noted.v1.DeleteGoalRequest
+	63,  // 164: noted.v1.GoalService.ListGoals:input_type -> noted.v1.ListGoalsRequest
+	65,  // 165: noted.v1.GoalService.RecordCheckIn:input_type -> noted.v1.RecordCheckInRequest
+	67,  // 166: noted.v1.GoalService.DeleteCheckIn:input_type -> noted.v1.DeleteCheckInRequest
+	68,  // 167: noted.v1.GoalService.ListCheckIns:input_type -> noted.v1.ListCheckInsRequest
+	70,  // 168: noted.v1.GoalService.SetMilestoneDone:input_type -> noted.v1.SetMilestoneDoneRequest
+	73,  // 169: noted.v1.ProjectService.CreateProject:input_type -> noted.v1.CreateProjectRequest
+	74,  // 170: noted.v1.ProjectService.GetProject:input_type -> noted.v1.GetProjectRequest
+	76,  // 171: noted.v1.ProjectService.UpdateProject:input_type -> noted.v1.UpdateProjectRequest
+	77,  // 172: noted.v1.ProjectService.DeleteProject:input_type -> noted.v1.DeleteProjectRequest
+	78,  // 173: noted.v1.ProjectService.ListProjects:input_type -> noted.v1.ListProjectsRequest
+	80,  // 174: noted.v1.FocusService.GetFocus:input_type -> noted.v1.GetFocusRequest
+	84,  // 175: noted.v1.PreferenceService.GetPreference:input_type -> noted.v1.GetPreferenceRequest
+	85,  // 176: noted.v1.PreferenceService.SetPreference:input_type -> noted.v1.SetPreferenceRequest
+	86,  // 177: noted.v1.PreferenceService.DeletePreference:input_type -> noted.v1.DeletePreferenceRequest
+	87,  // 178: noted.v1.PreferenceService.ListPreferences:input_type -> noted.v1.ListPreferencesRequest
+	93,  // 179: noted.v1.SuggestionService.ListProposals:input_type -> noted.v1.ListProposalsRequest
+	96,  // 180: noted.v1.SuggestionService.AcceptProposal:input_type -> noted.v1.AcceptProposalRequest
+	98,  // 181: noted.v1.SuggestionService.DismissProposal:input_type -> noted.v1.DismissProposalRequest
+	99,  // 182: noted.v1.SuggestionService.ProposeSchedule:input_type -> noted.v1.ProposeScheduleRequest
+	100, // 183: noted.v1.SuggestionService.GetWeeklyReview:input_type -> noted.v1.GetWeeklyReviewRequest
+	102, // 184: noted.v1.SuggestionService.ListChanges:input_type -> noted.v1.ListChangesRequest
+	104, // 185: noted.v1.SuggestionService.UndoChange:input_type -> noted.v1.UndoChangeRequest
+	6,   // 186: noted.v1.NoteService.CreateNote:output_type -> noted.v1.Note
+	6,   // 187: noted.v1.NoteService.GetNote:output_type -> noted.v1.Note
+	6,   // 188: noted.v1.NoteService.UpdateNote:output_type -> noted.v1.Note
+	109, // 189: noted.v1.NoteService.DeleteNote:output_type -> google.protobuf.Empty
+	12,  // 190: noted.v1.NoteService.ListNotes:output_type -> noted.v1.ListNotesResponse
+	15,  // 191: noted.v1.NoteService.SearchNotes:output_type -> noted.v1.SearchNotesResponse
+	16,  // 192: noted.v1.CalendarService.CreateEvent:output_type -> noted.v1.Event
+	16,  // 193: noted.v1.CalendarService.GetEvent:output_type -> noted.v1.Event
+	16,  // 194: noted.v1.CalendarService.UpdateEvent:output_type -> noted.v1.Event
+	109, // 195: noted.v1.CalendarService.DeleteEvent:output_type -> google.protobuf.Empty
+	23,  // 196: noted.v1.CalendarService.ListEvents:output_type -> noted.v1.ListEventsResponse
+	24,  // 197: noted.v1.CalendarService.CreateTask:output_type -> noted.v1.Task
+	24,  // 198: noted.v1.CalendarService.GetTask:output_type -> noted.v1.Task
+	24,  // 199: noted.v1.CalendarService.UpdateTask:output_type -> noted.v1.Task
+	109, // 200: noted.v1.CalendarService.DeleteTask:output_type -> google.protobuf.Empty
+	30,  // 201: noted.v1.CalendarService.ListTasks:output_type -> noted.v1.ListTasksResponse
+	31,  // 202: noted.v1.CalendarService.WatchReminders:output_type -> noted.v1.Reminder
+	34,  // 203: noted.v1.CalendarService.ListReminders:output_type -> noted.v1.ListRemindersResponse
+	36,  // 204: noted.v1.AIService.GetStatus:output_type -> noted.v1.GetStatusResponse
+	38,  // 205: noted.v1.AIService.Ask:output_type -> noted.v1.AskResponse
+	41,  // 206: noted.v1.AIService.SummarizeNote:output_type -> noted.v1.SummarizeNoteResponse
+	43,  // 207: noted.v1.AIService.SuggestTags:output_type -> noted.v1.SuggestTagsResponse
+	45,  // 208: noted.v1.AIService.DailyBriefing:output_type -> noted.v1.DailyBriefingResponse
+	91,  // 209: noted.v1.AIService.PlanFromText:output_type -> noted.v1.Proposal
+	91,  // 210: noted.v1.AIService.ExtractTasks:output_type -> noted.v1.Proposal
+	49,  // 211: noted.v1.AIService.GetAIAccess:output_type -> noted.v1.AIAccess
+	49,  // 212: noted.v1.AIService.SetAIAccess:output_type -> noted.v1.AIAccess
+	46,  // 213: noted.v1.AIService.GetAIFeatures:output_type -> noted.v1.AIFeatures
+	46,  // 214: noted.v1.AIService.SetAIFeatures:output_type -> noted.v1.AIFeatures
+	57,  // 215: noted.v1.GoalService.CreateGoal:output_type -> noted.v1.Goal
+	57,  // 216: noted.v1.GoalService.GetGoal:output_type -> noted.v1.Goal
+	57,  // 217: noted.v1.GoalService.UpdateGoal:output_type -> noted.v1.Goal
+	109, // 218: noted.v1.GoalService.DeleteGoal:output_type -> google.protobuf.Empty
+	64,  // 219: noted.v1.GoalService.ListGoals:output_type -> noted.v1.ListGoalsResponse
+	66,  // 220: noted.v1.GoalService.RecordCheckIn:output_type -> noted.v1.RecordCheckInResponse
+	57,  // 221: noted.v1.GoalService.DeleteCheckIn:output_type -> noted.v1.Goal
+	69,  // 222: noted.v1.GoalService.ListCheckIns:output_type -> noted.v1.ListCheckInsResponse
+	57,  // 223: noted.v1.GoalService.SetMilestoneDone:output_type -> noted.v1.Goal
+	72,  // 224: noted.v1.ProjectService.CreateProject:output_type -> noted.v1.Project
+	75,  // 225: noted.v1.ProjectService.GetProject:output_type -> noted.v1.ProjectDetail
+	72,  // 226: noted.v1.ProjectService.UpdateProject:output_type -> noted.v1.Project
+	109, // 227: noted.v1.ProjectService.DeleteProject:output_type -> google.protobuf.Empty
+	79,  // 228: noted.v1.ProjectService.ListProjects:output_type -> noted.v1.ListProjectsResponse
+	82,  // 229: noted.v1.FocusService.GetFocus:output_type -> noted.v1.GetFocusResponse
+	83,  // 230: noted.v1.PreferenceService.GetPreference:output_type -> noted.v1.Preference
+	83,  // 231: noted.v1.PreferenceService.SetPreference:output_type -> noted.v1.Preference
+	109, // 232: noted.v1.PreferenceService.DeletePreference:output_type -> google.protobuf.Empty
+	88,  // 233: noted.v1.PreferenceService.ListPreferences:output_type -> noted.v1.ListPreferencesResponse
+	94,  // 234: noted.v1.SuggestionService.ListProposals:output_type -> noted.v1.ListProposalsResponse
+	97,  // 235: noted.v1.SuggestionService.AcceptProposal:output_type -> noted.v1.AcceptProposalResponse
+	91,  // 236: noted.v1.SuggestionService.DismissProposal:output_type -> noted.v1.Proposal
+	91,  // 237: noted.v1.SuggestionService.ProposeSchedule:output_type -> noted.v1.Proposal
+	101, // 238: noted.v1.SuggestionService.GetWeeklyReview:output_type -> noted.v1.WeeklyReview
+	103, // 239: noted.v1.SuggestionService.ListChanges:output_type -> noted.v1.ListChangesResponse
+	92,  // 240: noted.v1.SuggestionService.UndoChange:output_type -> noted.v1.Change
+	186, // [186:241] is the sub-list for method output_type
+	131, // [131:186] is the sub-list for method input_type
+	131, // [131:131] is the sub-list for extension type_name
+	131, // [131:131] is the sub-list for extension extendee
+	0,   // [0:131] is the sub-list for field type_name
 }
 
 func init() { file_noted_v1_noted_proto_init() }
@@ -2782,15 +7563,21 @@ func file_noted_v1_noted_proto_init() {
 		return
 	}
 	file_noted_v1_noted_proto_msgTypes[10].OneofWrappers = []any{}
+	file_noted_v1_noted_proto_msgTypes[65].OneofWrappers = []any{}
+	file_noted_v1_noted_proto_msgTypes[75].OneofWrappers = []any{
+		(*FocusItem_Event)(nil),
+		(*FocusItem_Task)(nil),
+	}
+	file_noted_v1_noted_proto_msgTypes[79].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_noted_v1_noted_proto_rawDesc), len(file_noted_v1_noted_proto_rawDesc)),
-			NumEnums:      3,
-			NumMessages:   39,
+			NumEnums:      6,
+			NumMessages:   100,
 			NumExtensions: 0,
-			NumServices:   3,
+			NumServices:   8,
 		},
 		GoTypes:           file_noted_v1_noted_proto_goTypes,
 		DependencyIndexes: file_noted_v1_noted_proto_depIdxs,

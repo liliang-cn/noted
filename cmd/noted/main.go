@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -18,6 +19,7 @@ import (
 	"github.com/liliang-cn/noted/internal/auth"
 	"github.com/liliang-cn/noted/internal/config"
 	"github.com/liliang-cn/noted/internal/mcpserver"
+	"github.com/liliang-cn/noted/internal/plan"
 	"github.com/liliang-cn/noted/internal/reminder"
 	"github.com/liliang-cn/noted/internal/server"
 	"github.com/liliang-cn/noted/internal/store"
@@ -39,7 +41,7 @@ Usage:
   noted user list [-config ...]
   noted token new <user> [-label text]      issue another token for an existing user
   noted mcp [-addr host:port] [-token T]    MCP server on stdio, backed by a running noted server
-  noted health [-addr host:port]            exit 0 if a server answers (for container healthchecks)
+  noted health [-addr host:port] [-tls]    exit 0 if a server answers (for container healthchecks)
   noted version
 
 Configuration comes from the TOML file (default ./noted.toml when present) and
@@ -90,7 +92,9 @@ func configFlag(fs *flag.FlagSet) *string {
 func serve(argv []string) error {
 	fs := flag.NewFlagSet("serve", flag.ExitOnError)
 	path := configFlag(fs)
-	fs.Parse(argv)
+	if err := fs.Parse(argv); err != nil {
+		return err
+	}
 
 	cfg, err := config.Load(*path)
 	if err != nil {
@@ -105,7 +109,7 @@ func serve(argv []string) error {
 	if err != nil {
 		return err
 	}
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 
 	authn, err := auth.New(ctx, st, cfg.Auth.Disabled)
 	if err != nil {
@@ -124,17 +128,18 @@ func serve(argv []string) error {
 	}
 
 	deps := server.Deps{
-		Store: st, Auth: authn, Hub: reminder.NewHub(), Location: cfg.Location(), Reflection: cfg.Server.Reflection,
+		Store: st, Auth: authn, Hub: reminder.NewHub(), Location: cfg.Location(), Locale: plan.Locale(cfg.Language),
+		Reflection: cfg.Server.Reflection,
 	}
 
 	if cfg.AI.Enabled {
 		eng, err := ai.New(ctx, ai.Options{
-			Store: st, LLM: cfg.AI.LLM, Embed: cfg.AI.Embedding, Dir: cfg.AIDir(), Location: cfg.Location(),
+			Store: st, LLM: cfg.AI.LLM, Embed: cfg.AI.Embedding, Dir: cfg.AIDir(), Location: cfg.Location(), Locale: plan.Locale(cfg.Language),
 		})
 		if err != nil {
 			return fmt.Errorf("start AI: %w", err)
 		}
-		defer eng.Close()
+		defer func() { _ = eng.Close() }()
 		deps.Engine = eng
 		s := eng.Status()
 		slog.Info("AI enabled", "model", s.Model, "semantic_search", s.Semantic)
@@ -227,7 +232,7 @@ func userCmd(argv []string) error {
 	if err != nil {
 		return err
 	}
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 	ctx := context.Background()
 	switch pos[0] {
 	case "add":
@@ -268,7 +273,7 @@ func tokenCmd(argv []string) error {
 	if err != nil {
 		return err
 	}
-	defer st.Close()
+	defer func() { _ = st.Close() }()
 	ctx := context.Background()
 	users, err := st.ListUsers(ctx)
 	if err != nil {
@@ -288,17 +293,25 @@ func tokenCmd(argv []string) error {
 }
 
 // health asks a running server's gRPC health service whether it is serving.
-// It talks plaintext, so it is meant for the container-local probe; with TLS
-// enabled, point a real probe at the port instead.
+// It is a probe of the local server, so with -tls it does not verify the
+// certificate (which is usually issued for a public name, not 127.0.0.1); the
+// health service exposes nothing, and no credentials are sent.
 func health(argv []string) error {
 	fs := flag.NewFlagSet("health", flag.ExitOnError)
 	addr := fs.String("addr", "127.0.0.1:43872", "server address")
-	fs.Parse(argv)
-	conn, err := grpc.NewClient(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	useTLS := fs.Bool("tls", false, "the server has TLS enabled")
+	if err := fs.Parse(argv); err != nil {
+		return err
+	}
+	creds := insecure.NewCredentials()
+	if *useTLS {
+		creds = credentials.NewTLS(&tls.Config{InsecureSkipVerify: true}) //nolint:gosec // local liveness probe only
+	}
+	conn, err := grpc.NewClient(*addr, grpc.WithTransportCredentials(creds))
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	resp, err := healthpb.NewHealthClient(conn).Check(ctx, &healthpb.HealthCheckRequest{})
@@ -327,7 +340,9 @@ func mcpCmd(argv []string) error {
 	token := fs.String("token", os.Getenv("NOTED_TOKEN"), "user token (env NOTED_TOKEN); omit if auth is disabled")
 	useTLS := fs.Bool("tls", false, "connect to the server with TLS")
 	tz := fs.String("tz", envOr("NOTED_TIME_ZONE", "Local"), "zone for times given without an offset")
-	fs.Parse(argv)
+	if err := fs.Parse(argv); err != nil {
+		return err
+	}
 
 	loc, err := time.LoadLocation(*tz)
 	if err != nil {
@@ -347,7 +362,7 @@ func mcpCmd(argv []string) error {
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

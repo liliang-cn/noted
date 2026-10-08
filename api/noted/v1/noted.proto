@@ -4,7 +4,17 @@ package noted.v1;
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
+import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
+
+// Space is the work/life dimension. Every note, event, task, goal and project
+// belongs to one. In filters, UNSPECIFIED means both ("combined" mode); when
+// writing, UNSPECIFIED means "inherit from the project, else LIFE".
+enum Space {
+  SPACE_UNSPECIFIED = 0;
+  SPACE_WORK = 1;
+  SPACE_LIFE = 2;
+}
 
 // ---------------------------------------------------------------- notes ----
 
@@ -17,6 +27,8 @@ message Note {
   bool archived = 6;
   google.protobuf.Timestamp create_time = 7;
   google.protobuf.Timestamp update_time = 8;
+  string project_id = 9; // optional: the project this note belongs to
+  Space space = 10;
 }
 
 message CreateNoteRequest {
@@ -29,7 +41,7 @@ message GetNoteRequest {
 
 message UpdateNoteRequest {
   Note note = 1; // note.id selects the note
-  // Fields to change: title, content, tags, pinned, archived.
+  // Fields to change: title, content, tags, pinned, archived, project_id, space.
   google.protobuf.FieldMask update_mask = 2;
 }
 
@@ -43,6 +55,8 @@ message ListNotesRequest {
   string tag = 3;
   bool pinned_only = 4;
   bool include_archived = 5;
+  string project_id = 6; // only notes of this project
+  Space space = 7;  // UNSPECIFIED: both
 }
 
 message ListNotesResponse {
@@ -58,6 +72,7 @@ message SearchNotesRequest {
   // so in SearchNotesResponse.mode.
   bool semantic = 3;
   bool include_archived = 4;
+  Space space = 5;  // UNSPECIFIED: both
 }
 
 message NoteHit {
@@ -97,6 +112,8 @@ message Event {
   optional int32 remind_before_minutes = 10; // unset: no reminder
   google.protobuf.Timestamp create_time = 11;
   google.protobuf.Timestamp update_time = 12;
+  string project_id = 13; // optional: the project this event belongs to
+  Space space = 14;
 }
 
 message CreateEventRequest {
@@ -110,7 +127,7 @@ message GetEventRequest {
 message UpdateEventRequest {
   Event event = 1;
   // title, description, location, start_time, end_time, all_day, time_zone,
-  // rrule, remind_before_minutes
+  // rrule, remind_before_minutes, project_id, space
   google.protobuf.FieldMask update_mask = 2;
 }
 
@@ -121,6 +138,7 @@ message DeleteEventRequest {
 message ListEventsRequest {
   google.protobuf.Timestamp from = 1; // inclusive
   google.protobuf.Timestamp to = 2;   // exclusive; at most 366 days after from
+  Space space = 3;  // UNSPECIFIED: both
 }
 
 // One concrete instance of an event inside the requested window.
@@ -153,6 +171,8 @@ message Task {
   repeated string tags = 9;
   google.protobuf.Timestamp create_time = 10;
   google.protobuf.Timestamp update_time = 11;
+  string project_id = 12; // optional: the project this task belongs to
+  Space space = 13;
 }
 
 message CreateTaskRequest {
@@ -165,7 +185,7 @@ message GetTaskRequest {
 
 message UpdateTaskRequest {
   Task task = 1;
-  // title, notes, due_time, priority, completed, remind_time, tags
+  // title, notes, due_time, priority, completed, remind_time, tags, project_id, space
   google.protobuf.FieldMask update_mask = 2;
 }
 
@@ -185,6 +205,8 @@ message ListTasksRequest {
   Filter filter = 3;
   string tag = 4;
   google.protobuf.Timestamp due_before = 5;
+  string project_id = 6; // only tasks of this project
+  Space space = 7;  // UNSPECIFIED: both
 }
 
 message ListTasksResponse {
@@ -204,13 +226,17 @@ message Reminder {
   string title = 4;
   google.protobuf.Timestamp due_time = 5;  // when the event starts / task is due
   google.protobuf.Timestamp fire_time = 6; // when the reminder fired
+  Space space = 7;
 }
 
-message WatchRemindersRequest {}
+message WatchRemindersRequest {
+  Space space = 1; // UNSPECIFIED: both
+}
 
 message ListRemindersRequest {
   google.protobuf.Timestamp since = 1; // default: last 24h
   int32 limit = 2;                     // default 100
+  Space space = 3; // UNSPECIFIED: both
 }
 
 message ListRemindersResponse {
@@ -254,12 +280,32 @@ message AskRequest {
   string message = 1;
   // Conversation id; empty starts a new one. Returned in the response.
   string session_id = 2;
+  // The mode the app is in. Used as the default space for what the
+  // assistant creates when the message does not make it obvious.
+  Space space = 3;
+  // Carry out whatever the assistant prepared right away, instead of returning it for
+  // the user to confirm. For callers (such as MCP clients) that have their own confirmation step.
+  bool auto_apply = 4;
 }
 
 message AskResponse {
   string reply = 1;
   string session_id = 2;
   repeated string tools_used = 3; // e.g. create_event, search_notes
+  // What the assistant prepared. Nothing in it has been done yet, unless auto_apply was set.
+  Proposal proposal = 4;
+  Change change = 5; // set when auto_apply carried the proposal out
+  // The things the assistant looked at that its reply talks about, so the app can show
+  // them as real rows under the answer.
+  repeated Reference references = 6;
+}
+
+// Something the assistant read while answering.
+message Reference {
+  string kind = 1; // event, task, note, project or goal
+  string id = 2;
+  string title = 3;
+  google.protobuf.Timestamp time = 4; // start time or due date, when it has one
 }
 
 message SummarizeNoteRequest {
@@ -283,6 +329,7 @@ message DailyBriefingRequest {
   // Local day to brief on; only the date matters. Default: today.
   google.protobuf.Timestamp day = 1;
   string time_zone = 2; // IANA name; default: the server's configured zone
+  Space space = 3;  // UNSPECIFIED: the whole day
 }
 
 message DailyBriefingResponse {
@@ -297,4 +344,518 @@ service AIService {
   rpc SummarizeNote(SummarizeNoteRequest) returns (SummarizeNoteResponse);
   rpc SuggestTags(SuggestTagsRequest) returns (SuggestTagsResponse);
   rpc DailyBriefing(DailyBriefingRequest) returns (DailyBriefingResponse);
+  // Break "next month I'm going to X, I need A, B and C" into a project with tasks.
+  // Returns a pending proposal; nothing is created until it is accepted. A start date
+  // the user did not give comes back as an input to fill in, not as a guess.
+  rpc PlanFromText(PlanFromTextRequest) returns (Proposal);
+  // Find the to-dos written inside a note and propose them as tasks.
+  rpc ExtractTasks(ExtractTasksRequest) returns (Proposal);
+
+  // Which spaces the assistant may read. Content of a space that is off is
+  // never sent to a language or embedding model: the assistant cannot see it,
+  // its notes are removed from the semantic index, and no summary, tag or
+  // to-do extraction runs on them. Both are on until the user turns one off.
+  // Works whether or not AI is enabled on the server.
+  rpc GetAIAccess(GetAIAccessRequest) returns (AIAccess);
+  rpc SetAIAccess(SetAIAccessRequest) returns (AIAccess);
+
+  // Which features are on. All are on until turned off. A feature that is off
+  // answers FAILED_PRECONDITION (or, for suggestions, lists nothing).
+  rpc GetAIFeatures(GetAIFeaturesRequest) returns (AIFeatures);
+  rpc SetAIFeatures(SetAIFeaturesRequest) returns (AIFeatures);
+}
+
+message AIFeatures {
+  bool daily_briefing = 1;
+  bool suggestions = 2;      // the suggestions list, including the next-week plan
+  bool weekly_review = 3;
+  bool note_tools = 4;       // summaries, suggested tags, to-dos found in a note
+}
+
+message GetAIFeaturesRequest {}
+
+message SetAIFeaturesRequest {
+  bool daily_briefing = 1;
+  bool suggestions = 2;
+  bool weekly_review = 3;
+  bool note_tools = 4;
+}
+
+message AIAccess {
+  bool allow_work = 1;
+  bool allow_life = 2;
+}
+
+message GetAIAccessRequest {}
+
+message SetAIAccessRequest {
+  bool allow_work = 1;
+  bool allow_life = 2;
+}
+
+message PlanFromTextRequest {
+  string text = 1;
+  Space space = 2; // the app's current mode; used when the text does not make it clear
+}
+
+message ExtractTasksRequest {
+  string note_id = 1;
+}
+
+// ---------------------------------------------------------------- goals ----
+//
+// A goal is a recurring target: "3 times a week", "140 minutes a week".
+// Frequency and amount goals are the same thing: every check-in carries an
+// amount (default 1), and progress is the sum of amounts in the current
+// period measured against the target. Exercise is target 3, unit "times",
+// each check-in 1; German study is target 140, unit "minutes", each check-in 20.
+
+enum GoalPeriod {
+  GOAL_PERIOD_UNSPECIFIED = 0;
+  GOAL_PERIOD_DAY = 1;
+  GOAL_PERIOD_WEEK = 2; // weeks start on Monday
+  GOAL_PERIOD_MONTH = 3;
+}
+
+message Milestone {
+  string id = 1;
+  string title = 2;
+  bool done = 3;
+  google.protobuf.Timestamp done_time = 4;
+}
+
+message DayTotal {
+  string date = 1; // YYYY-MM-DD in the goal's time zone
+  double amount = 2;
+}
+
+// Computed by the server; ignored on input.
+message GoalProgress {
+  google.protobuf.Timestamp period_start = 1;
+  google.protobuf.Timestamp period_end = 2;
+  double done = 3;       // sum of check-in amounts this period
+  double target = 4;
+  double remaining = 5;  // max(target - done, 0)
+  double percent = 6;    // done / target; can exceed 1
+  bool achieved = 7;
+  // Behind the pace the target implies, counting only days before today.
+  bool behind = 8;
+  // Consecutive achieved periods. The current period counts once achieved;
+  // until then the streak is the run of achieved periods before it.
+  int32 streak = 9;
+  repeated DayTotal days = 10;   // every day of the current period
+  repeated DayTotal recent = 11; // the last 14 days ending today, oldest first
+  int32 milestones_done = 12;
+  int32 milestones_total = 13;
+  double milestone_percent = 14; // milestones_done / milestones_total, 0 if none
+  double counter_done = 15;    // the running total so far
+  double counter_percent = 16; // counter_done / counter_target; 0 when there is no counter
+}
+
+message Goal {
+  string id = 1;
+  string title = 2;
+  string notes = 3;
+  GoalPeriod period = 4;
+  double target = 5;     // per period, in unit
+  string unit = 6;       // default "times"
+  string time_zone = 7;  // IANA; period boundaries follow it (default UTC)
+  string event_id = 8;   // optional recurring event that schedules the sessions
+  repeated Milestone milestones = 9;
+  bool archived = 10;
+  google.protobuf.Timestamp create_time = 11;
+  google.protobuf.Timestamp update_time = 12;
+  GoalProgress progress = 13;
+  Space space = 14;
+  // An optional running total next to the per-period target: 40 lessons, counted in
+  // counter_unit. Not tied to a period. Check-ins feed it through their count.
+  string counter_unit = 15;
+  double counter_target = 16;
+}
+
+message CheckIn {
+  string id = 1;
+  string goal_id = 2;
+  google.protobuf.Timestamp time = 3;
+  double amount = 4;
+  string note = 5;
+  double count = 6; // added to the running total
+}
+
+message CreateGoalRequest {
+  Goal goal = 1;
+}
+
+message GetGoalRequest {
+  string id = 1;
+}
+
+message UpdateGoalRequest {
+  Goal goal = 1;
+  // title, notes, period, target, unit, time_zone, event_id, archived, space,
+  // counter_unit, counter_target, milestones. Updating milestones replaces the list: entries that carry an
+  // existing id keep their done state, the rest are new.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message DeleteGoalRequest {
+  string id = 1;
+}
+
+message ListGoalsRequest {
+  bool include_archived = 1;
+  Space space = 2;  // UNSPECIFIED: both
+}
+
+message ListGoalsResponse {
+  repeated Goal goals = 1; // goals that are behind pace first, then by title
+}
+
+message RecordCheckInRequest {
+  string goal_id = 1;
+  double amount = 2;                    // default 1
+  google.protobuf.Timestamp time = 3;   // default now; backfilling is allowed
+  string note = 4;
+  // Added to the goal's running total (a finished lesson). Needs a counter_target on
+  // the goal. With neither amount nor count a check-in counts as 1 amount; with only
+  // a count it moves the running total alone.
+  double count = 5;
+}
+
+message RecordCheckInResponse {
+  CheckIn check_in = 1;
+  Goal goal = 2; // with fresh progress
+}
+
+message DeleteCheckInRequest {
+  string id = 1;
+}
+
+message ListCheckInsRequest {
+  string goal_id = 1;
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+  int32 limit = 4; // default 100, max 500
+}
+
+message ListCheckInsResponse {
+  repeated CheckIn check_ins = 1; // newest first
+}
+
+message SetMilestoneDoneRequest {
+  string goal_id = 1;
+  string milestone_id = 2;
+  bool done = 3;
+}
+
+service GoalService {
+  rpc CreateGoal(CreateGoalRequest) returns (Goal);
+  rpc GetGoal(GetGoalRequest) returns (Goal);
+  rpc UpdateGoal(UpdateGoalRequest) returns (Goal);
+  rpc DeleteGoal(DeleteGoalRequest) returns (google.protobuf.Empty);
+  rpc ListGoals(ListGoalsRequest) returns (ListGoalsResponse);
+
+  rpc RecordCheckIn(RecordCheckInRequest) returns (RecordCheckInResponse);
+  // Undo a check-in; returns the goal with fresh progress.
+  rpc DeleteCheckIn(DeleteCheckInRequest) returns (Goal);
+  rpc ListCheckIns(ListCheckInsRequest) returns (ListCheckInsResponse);
+  rpc SetMilestoneDone(SetMilestoneDoneRequest) returns (Goal);
+}
+
+// ------------------------------------------------------------- projects ----
+//
+// A project is a finite piece of work with an end: "Trip to the Philippines"
+// = apply for the visa + book a hotel + book flights. Tasks, events and notes
+// join a project through their project_id.
+
+message ProjectProgress {
+  int32 tasks_total = 1;
+  int32 tasks_done = 2;
+  double percent = 3; // tasks_done / tasks_total, 0 when there are no tasks
+  int32 events_upcoming = 4;
+  int32 notes_count = 5;
+  // Earliest open task due date or upcoming event, whichever is first.
+  google.protobuf.Timestamp next_time = 6;
+  string next_title = 7;
+  // Whole days from today to the project's start (or due) date; negative once
+  // past. Unset when the project has neither.
+  optional int32 days_left = 8;
+  int32 tasks_overdue = 9;
+}
+
+message Project {
+  string id = 1;
+  string title = 2;
+  string notes = 3;
+  bool pinned = 4;
+  bool archived = 5;
+  google.protobuf.Timestamp start_time = 6; // e.g. the departure date
+  google.protobuf.Timestamp due_time = 7;   // deadline or end date
+  google.protobuf.Timestamp create_time = 8;
+  google.protobuf.Timestamp update_time = 9;
+  ProjectProgress progress = 10; // computed by the server
+  Space space = 11;
+}
+
+message CreateProjectRequest {
+  Project project = 1;
+}
+
+message GetProjectRequest {
+  string id = 1;
+}
+
+message ProjectDetail {
+  Project project = 1;
+  repeated Task tasks = 2;     // open first (by due date), then completed
+  repeated Event events = 3;   // by start time
+  repeated Note notes = 4;     // newest first
+}
+
+message UpdateProjectRequest {
+  Project project = 1;
+  // title, notes, pinned, archived, start_time, due_time, space
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message DeleteProjectRequest {
+  string id = 1;
+  // Also delete the project's tasks, events and notes. By default they are
+  // kept and simply leave the project.
+  bool delete_items = 2;
+}
+
+message ListProjectsRequest {
+  bool include_archived = 1;
+  bool pinned_only = 2;
+  Space space = 3;  // UNSPECIFIED: both
+}
+
+message ListProjectsResponse {
+  repeated Project projects = 1; // pinned first, then nearest date, then newest
+}
+
+service ProjectService {
+  rpc CreateProject(CreateProjectRequest) returns (Project);
+  rpc GetProject(GetProjectRequest) returns (ProjectDetail);
+  rpc UpdateProject(UpdateProjectRequest) returns (Project);
+  rpc DeleteProject(DeleteProjectRequest) returns (google.protobuf.Empty);
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+}
+
+// ---------------------------------------------------------------- focus ----
+//
+// One call that answers "what should I look at": events, tasks, goals and
+// pinned projects for a time horizon.
+
+enum Horizon {
+  HORIZON_UNSPECIFIED = 0; // same as TODAY
+  HORIZON_TODAY = 1;       // today, plus open tasks that are overdue
+  HORIZON_UPCOMING = 2;    // tomorrow through the next 14 days
+  HORIZON_WEEK = 3;        // Monday to Sunday of the current week
+  HORIZON_MONTH = 4;       // the 1st to the end of the current month
+}
+
+message GetFocusRequest {
+  Horizon horizon = 1;
+  string time_zone = 2; // IANA; default: the server's configured zone
+  Space space = 3;  // UNSPECIFIED: both (combined mode)
+}
+
+message FocusItem {
+  oneof item {
+    Occurrence event = 1;
+    Task task = 2;
+  }
+  google.protobuf.Timestamp sort_time = 3; // start time, or the task's due time
+  bool overdue = 4;                        // an open task due before the window
+  string project_id = 5;
+  string project_title = 6;
+}
+
+message GetFocusResponse {
+  Horizon horizon = 1;
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+  repeated FocusItem items = 4;      // events and tasks, ordered by sort_time
+  repeated Goal goals = 5;           // active goals, behind pace first
+  repeated Project pinned_projects = 6;
+  Space space = 7;
+}
+
+service FocusService {
+  rpc GetFocus(GetFocusRequest) returns (GetFocusResponse);
+}
+
+// ---------------------------------------------------------- preferences ----
+//
+// Small per-user JSON documents the app keeps on the server so every device
+// shares them: the chosen theme, a custom theme, page layouts. The server
+// stores them verbatim; it does not interpret them or check any subscription.
+// Keys look like "ui.theme" or "ui.layout.work".
+
+message Preference {
+  string key = 1;
+  string value = 2; // a JSON document, at most 64 KiB
+  int64 version = 3; // starts at 1 and increases by one on every write
+  google.protobuf.Timestamp update_time = 4;
+}
+
+message GetPreferenceRequest {
+  string key = 1;
+}
+
+message SetPreferenceRequest {
+  string key = 1;
+  string value = 2;
+  // When set, the write succeeds only if the stored version equals it (0 means
+  // "the key must not exist yet"); otherwise ABORTED. Unset: last write wins.
+  optional int64 if_version = 3;
+}
+
+message DeletePreferenceRequest {
+  string key = 1;
+}
+
+message ListPreferencesRequest {
+  string prefix = 1; // only keys starting with this
+}
+
+message ListPreferencesResponse {
+  repeated Preference preferences = 1;
+}
+
+service PreferenceService {
+  rpc GetPreference(GetPreferenceRequest) returns (Preference);
+  rpc SetPreference(SetPreferenceRequest) returns (Preference);
+  rpc DeletePreference(DeletePreferenceRequest) returns (google.protobuf.Empty);
+  rpc ListPreferences(ListPreferencesRequest) returns (ListPreferencesResponse);
+}
+
+// ---------------------------------------------------------- suggestions ----
+//
+// A proposal is a set of changes that someone (a fixed rule, the assistant)
+// suggests but has not made. Listing, reading or generating one never touches
+// the user's data: only AcceptProposal does, and every acceptance is recorded
+// as a Change that UndoChange takes back.
+
+message Operation {
+  // create_project, create_task, create_event, update_task, update_event,
+  // update_project or check_in.
+  string type = 1;
+  string label = 2; // a sentence a person can read: what this step does
+  google.protobuf.Struct args = 3;
+}
+
+// A value the proposal cannot know and the user has to give when accepting.
+message ProposalInput {
+  string name = 1;
+  string label = 2;
+  string type = 3; // "date" or "text"
+  bool required = 4;
+}
+
+message Proposal {
+  string id = 1;
+  // goal_slot, project_dates, conflict, overdue, schedule, weekly, plan,
+  // extract or ask.
+  string kind = 2;
+  string status = 3; // pending, accepted or dismissed
+  string title = 4;
+  string reason = 5;
+  Space space = 6;
+  string source = 7; // "rules" (no model involved) or "ai"
+  repeated Operation operations = 8;
+  repeated ProposalInput inputs = 9;
+  google.protobuf.Timestamp create_time = 10;
+  google.protobuf.Timestamp decide_time = 11;
+}
+
+message Change {
+  string id = 1;
+  string proposal_id = 2;
+  string summary = 3;
+  int32 entries = 4; // how many things were created or modified
+  google.protobuf.Timestamp create_time = 5;
+  bool undone = 6;
+  google.protobuf.Timestamp undo_time = 7;
+}
+
+message ListProposalsRequest {
+  Space space = 1;      // UNSPECIFIED: both
+  string status = 2;    // default "pending"
+  // Pending suggestions are recomputed from the user's data before listing, so
+  // they stay current. Set this to skip that and just read what is stored.
+  bool no_refresh = 3;
+}
+
+message ListProposalsResponse {
+  repeated Proposal proposals = 1;
+}
+
+message OperationSelection {
+  repeated int32 indexes = 1; // positions in Proposal.operations
+}
+
+message AcceptProposalRequest {
+  string id = 1;
+  map<string, string> inputs = 2; // values for Proposal.inputs, by name
+  // Which operations to carry out. Unset: all of them. A selection that leaves
+  // out an operation another one depends on is rejected.
+  OperationSelection selection = 3;
+}
+
+message AcceptProposalResponse {
+  Proposal proposal = 1;
+  Change change = 2;
+}
+
+message DismissProposalRequest {
+  string id = 1;
+}
+
+message ProposeScheduleRequest {
+  repeated string task_ids = 1;
+  int32 duration_minutes = 2; // per task, default 60
+  int32 days = 3;             // how far ahead to look, default 5, max 14
+  string time_zone = 4;
+}
+
+message GetWeeklyReviewRequest {
+  google.protobuf.Timestamp week_of = 1; // any moment in the week; default now
+  Space space = 2;
+  string time_zone = 3;
+}
+
+message WeeklyReview {
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+  int32 tasks_done = 3;
+  int32 tasks_total = 4;           // finished this week plus open ones that were due this week
+  repeated Goal goals = 5;         // progress as it stood at the end of the week
+  repeated Task carried_tasks = 6; // open and due this week: they slipped
+  Proposal next_week = 7;          // stored as pending; unset when there is nothing to suggest
+}
+
+message ListChangesRequest {
+  int32 limit = 1; // default 50, max 200
+}
+
+message ListChangesResponse {
+  repeated Change changes = 1;
+}
+
+message UndoChangeRequest {
+  string id = 1;
+}
+
+service SuggestionService {
+  rpc ListProposals(ListProposalsRequest) returns (ListProposalsResponse);
+  rpc AcceptProposal(AcceptProposalRequest) returns (AcceptProposalResponse);
+  rpc DismissProposal(DismissProposalRequest) returns (Proposal);
+  // Fit tasks into free stretches of the calendar. Stored as a pending proposal.
+  rpc ProposeSchedule(ProposeScheduleRequest) returns (Proposal);
+  rpc GetWeeklyReview(GetWeeklyReviewRequest) returns (WeeklyReview);
+  rpc ListChanges(ListChangesRequest) returns (ListChangesResponse);
+  rpc UndoChange(UndoChangeRequest) returns (Change);
 }

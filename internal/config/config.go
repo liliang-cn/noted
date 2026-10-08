@@ -18,6 +18,7 @@ type Config struct {
 	Storage  Storage `toml:"storage"`
 	Auth     Auth    `toml:"auth"`
 	TimeZone string  `toml:"time_zone"` // default zone for briefings and AI date math
+	Language string  `toml:"language"`  // "zh" or "en": language of the sentences the server writes (suggestions)
 	Notify   Notify  `toml:"notify"`
 	AI       AI      `toml:"ai"`
 }
@@ -64,6 +65,7 @@ func Default() Config {
 		Server:   Server{Listen: "127.0.0.1:43872", Reflection: true},
 		Storage:  Storage{DataDir: "./data"},
 		TimeZone: "UTC",
+		Language: "zh",
 	}
 }
 
@@ -96,6 +98,7 @@ func applyEnv(c *Config) {
 	str(&c.Server.Listen, "NOTED_LISTEN")
 	str(&c.Storage.DataDir, "NOTED_DATA_DIR")
 	str(&c.TimeZone, "NOTED_TIME_ZONE")
+	str(&c.Language, "NOTED_LANGUAGE")
 	str(&c.Notify.WebhookURL, "NOTED_WEBHOOK_URL")
 	boolean(&c.Auth.Disabled, "NOTED_AUTH_DISABLED")
 	boolean(&c.AI.Enabled, "NOTED_AI_ENABLED")
@@ -108,6 +111,9 @@ func applyEnv(c *Config) {
 }
 
 func (c Config) Validate() error {
+	if c.Language != "zh" && c.Language != "en" {
+		return fmt.Errorf("language %q: must be zh or en", c.Language)
+	}
 	if _, err := time.LoadLocation(c.TimeZone); err != nil {
 		return fmt.Errorf("time_zone %q: %w", c.TimeZone, err)
 	}

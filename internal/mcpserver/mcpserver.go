@@ -22,6 +22,10 @@ import (
 type tools struct {
 	notes pb.NoteServiceClient
 	cal   pb.CalendarServiceClient
+	goals pb.GoalServiceClient
+	projs pb.ProjectServiceClient
+	focus pb.FocusServiceClient
+	sugg  pb.SuggestionServiceClient
 	ai    pb.AIServiceClient
 	loc   *time.Location // reads zone-less times
 }
@@ -29,7 +33,7 @@ type tools struct {
 // New builds the MCP server. AI tools are registered only when the noted
 // server reports AI enabled, so clients never see tools that cannot work.
 func New(ctx context.Context, conn grpc.ClientConnInterface, loc *time.Location, version string) (*mcp.Server, error) {
-	t := &tools{notes: pb.NewNoteServiceClient(conn), cal: pb.NewCalendarServiceClient(conn), ai: pb.NewAIServiceClient(conn), loc: loc}
+	t := &tools{notes: pb.NewNoteServiceClient(conn), cal: pb.NewCalendarServiceClient(conn), goals: pb.NewGoalServiceClient(conn), projs: pb.NewProjectServiceClient(conn), focus: pb.NewFocusServiceClient(conn), sugg: pb.NewSuggestionServiceClient(conn), ai: pb.NewAIServiceClient(conn), loc: loc}
 	st, err := t.ai.GetStatus(ctx, &pb.GetStatusRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("cannot reach the noted server (check address and token): %w", err)
@@ -39,8 +43,11 @@ func New(ctx context.Context, conn grpc.ClientConnInterface, loc *time.Location,
 			"zone-less times are read in " + loc.String() + ". Resolve relative dates like \"next Friday\" yourself before calling.",
 	})
 	t.register(s)
+	t.registerPlanning(s)
+	t.registerSuggestions(s)
 	if st.Chat {
 		t.registerAI(s)
+		t.registerAIPlanning(s)
 	}
 	return s, nil
 }
@@ -53,6 +60,19 @@ var (
 )
 
 func ptr[T any](v T) *T { return &v }
+
+// spaceOf reads the optional "work" / "life" argument; empty means both.
+func spaceOf(s string) (pb.Space, error) {
+	switch s {
+	case "":
+		return pb.Space_SPACE_UNSPECIFIED, nil
+	case "work":
+		return pb.Space_SPACE_WORK, nil
+	case "life":
+		return pb.Space_SPACE_LIFE, nil
+	}
+	return 0, fmt.Errorf("space must be work or life")
+}
 
 // text returns a proto message as readable JSON.
 func text(m proto.Message) (*mcp.CallToolResult, any, error) {
@@ -93,33 +113,41 @@ type searchIn struct {
 	Query    string `json:"query" jsonschema:"words to look for"`
 	Semantic bool   `json:"semantic,omitempty" jsonschema:"rank by meaning when the server has embeddings; falls back to keyword search"`
 	Limit    int32  `json:"limit,omitempty" jsonschema:"max results (default 20)"`
+	Space    string `json:"space,omitempty" jsonschema:"work or life; omit for both"`
 }
 type listNotesIn struct {
 	Tag             string `json:"tag,omitempty"`
 	PinnedOnly      bool   `json:"pinned_only,omitempty"`
 	IncludeArchived bool   `json:"include_archived,omitempty"`
 	Limit           int32  `json:"limit,omitempty" jsonschema:"max notes (default 50)"`
+	Space           string `json:"space,omitempty" jsonschema:"work or life; omit for both"`
+	ProjectID       string `json:"project_id,omitempty"`
 }
 type idIn struct {
 	ID string `json:"id"`
 }
 type createNoteIn struct {
-	Title   string   `json:"title,omitempty"`
-	Content string   `json:"content,omitempty" jsonschema:"Markdown body"`
-	Tags    []string `json:"tags,omitempty"`
-	Pinned  bool     `json:"pinned,omitempty"`
+	Title     string   `json:"title,omitempty"`
+	Content   string   `json:"content,omitempty" jsonschema:"Markdown body"`
+	Tags      []string `json:"tags,omitempty"`
+	Pinned    bool     `json:"pinned,omitempty"`
+	Space     string   `json:"space,omitempty" jsonschema:"work or life; omit to inherit from the project, else life"`
+	ProjectID string   `json:"project_id,omitempty"`
 }
 type updateNoteIn struct {
-	ID       string    `json:"id"`
-	Title    *string   `json:"title,omitempty"`
-	Content  *string   `json:"content,omitempty"`
-	Tags     *[]string `json:"tags,omitempty" jsonschema:"replaces all tags"`
-	Pinned   *bool     `json:"pinned,omitempty"`
-	Archived *bool     `json:"archived,omitempty"`
+	ID        string    `json:"id"`
+	Title     *string   `json:"title,omitempty"`
+	Content   *string   `json:"content,omitempty"`
+	Tags      *[]string `json:"tags,omitempty" jsonschema:"replaces all tags"`
+	Pinned    *bool     `json:"pinned,omitempty"`
+	Archived  *bool     `json:"archived,omitempty"`
+	Space     *string   `json:"space,omitempty" jsonschema:"work or life"`
+	ProjectID *string   `json:"project_id,omitempty" jsonschema:"empty string removes it from its project"`
 }
 type listEventsIn struct {
-	From string `json:"from" jsonschema:"window start, RFC 3339"`
-	To   string `json:"to" jsonschema:"window end (exclusive), RFC 3339; at most 366 days after from"`
+	From  string `json:"from" jsonschema:"window start, RFC 3339"`
+	To    string `json:"to" jsonschema:"window end (exclusive), RFC 3339; at most 366 days after from"`
+	Space string `json:"space,omitempty" jsonschema:"work or life; omit for both"`
 }
 type createEventIn struct {
 	Title               string `json:"title"`
@@ -131,6 +159,8 @@ type createEventIn struct {
 	TimeZone            string `json:"time_zone,omitempty" jsonschema:"IANA name, e.g. Asia/Shanghai; recurrence is expanded in it"`
 	RRule               string `json:"rrule,omitempty" jsonschema:"repeat rule, e.g. FREQ=WEEKLY;BYDAY=MO,WE or FREQ=DAILY;COUNT=5"`
 	RemindBeforeMinutes *int32 `json:"remind_before_minutes,omitempty"`
+	Space               string `json:"space,omitempty" jsonschema:"work or life; omit to inherit from the project, else life"`
+	ProjectID           string `json:"project_id,omitempty"`
 }
 type updateEventIn struct {
 	ID                  string  `json:"id"`
@@ -142,19 +172,25 @@ type updateEventIn struct {
 	RRule               *string `json:"rrule,omitempty" jsonschema:"empty string makes it one-off"`
 	RemindBeforeMinutes *int32  `json:"remind_before_minutes,omitempty"`
 	ClearReminder       bool    `json:"clear_reminder,omitempty"`
+	Space               *string `json:"space,omitempty" jsonschema:"work or life"`
+	ProjectID           *string `json:"project_id,omitempty"`
 }
 type listTasksIn struct {
-	State string `json:"state,omitempty" jsonschema:"open (default), done or all"`
-	Tag   string `json:"tag,omitempty"`
-	Limit int32  `json:"limit,omitempty"`
+	State     string `json:"state,omitempty" jsonschema:"open (default), done or all"`
+	Tag       string `json:"tag,omitempty"`
+	Limit     int32  `json:"limit,omitempty"`
+	Space     string `json:"space,omitempty" jsonschema:"work or life; omit for both"`
+	ProjectID string `json:"project_id,omitempty"`
 }
 type createTaskIn struct {
-	Title    string   `json:"title"`
-	Notes    string   `json:"notes,omitempty"`
-	Due      string   `json:"due,omitempty" jsonschema:"RFC 3339"`
-	RemindAt string   `json:"remind_at,omitempty" jsonschema:"RFC 3339"`
-	Priority int32    `json:"priority,omitempty" jsonschema:"1 low, 2 medium, 3 high"`
-	Tags     []string `json:"tags,omitempty"`
+	Title     string   `json:"title"`
+	Notes     string   `json:"notes,omitempty"`
+	Due       string   `json:"due,omitempty" jsonschema:"RFC 3339"`
+	RemindAt  string   `json:"remind_at,omitempty" jsonschema:"RFC 3339"`
+	Priority  int32    `json:"priority,omitempty" jsonschema:"1 low, 2 medium, 3 high"`
+	Tags      []string `json:"tags,omitempty"`
+	Space     string   `json:"space,omitempty" jsonschema:"work or life; omit to inherit from the project, else life"`
+	ProjectID string   `json:"project_id,omitempty"`
 }
 type askIn struct {
 	Message   string `json:"message"`
@@ -168,7 +204,11 @@ type briefingIn struct {
 func (t *tools) register(s *mcp.Server) {
 	mcp.AddTool(s, &mcp.Tool{Name: "search_notes", Description: "Search notes by keywords (or meaning, with semantic=true).", Annotations: readOnly},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in searchIn) (*mcp.CallToolResult, any, error) {
-			r, err := t.notes.SearchNotes(ctx, &pb.SearchNotesRequest{Query: in.Query, Semantic: in.Semantic, Limit: in.Limit})
+			sp, err := spaceOf(in.Space)
+			if err != nil {
+				return nil, nil, err
+			}
+			r, err := t.notes.SearchNotes(ctx, &pb.SearchNotesRequest{Query: in.Query, Semantic: in.Semantic, Limit: in.Limit, Space: sp})
 			if err != nil {
 				return nil, nil, err
 			}
@@ -176,7 +216,11 @@ func (t *tools) register(s *mcp.Server) {
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "list_notes", Description: "List notes, pinned first then most recently edited.", Annotations: readOnly},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in listNotesIn) (*mcp.CallToolResult, any, error) {
-			r, err := t.notes.ListNotes(ctx, &pb.ListNotesRequest{Tag: in.Tag, PinnedOnly: in.PinnedOnly, IncludeArchived: in.IncludeArchived, PageSize: in.Limit})
+			sp, err := spaceOf(in.Space)
+			if err != nil {
+				return nil, nil, err
+			}
+			r, err := t.notes.ListNotes(ctx, &pb.ListNotesRequest{Tag: in.Tag, PinnedOnly: in.PinnedOnly, IncludeArchived: in.IncludeArchived, PageSize: in.Limit, Space: sp, ProjectId: in.ProjectID})
 			if err != nil {
 				return nil, nil, err
 			}
@@ -192,7 +236,11 @@ func (t *tools) register(s *mcp.Server) {
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "create_note", Description: "Save a new note.", Annotations: additive},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in createNoteIn) (*mcp.CallToolResult, any, error) {
-			r, err := t.notes.CreateNote(ctx, &pb.CreateNoteRequest{Note: &pb.Note{Title: in.Title, Content: in.Content, Tags: in.Tags, Pinned: in.Pinned}})
+			sp, err := spaceOf(in.Space)
+			if err != nil {
+				return nil, nil, err
+			}
+			r, err := t.notes.CreateNote(ctx, &pb.CreateNoteRequest{Note: &pb.Note{Title: in.Title, Content: in.Content, Tags: in.Tags, Pinned: in.Pinned, Space: sp, ProjectId: in.ProjectID}})
 			if err != nil {
 				return nil, nil, err
 			}
@@ -215,6 +263,16 @@ func (t *tools) register(s *mcp.Server) {
 			}
 			if in.Archived != nil {
 				n.Archived, mask = *in.Archived, append(mask, "archived")
+			}
+			if in.ProjectID != nil {
+				n.ProjectId, mask = *in.ProjectID, append(mask, "project_id")
+			}
+			if in.Space != nil {
+				sp, err := spaceOf(*in.Space)
+				if err != nil || sp == pb.Space_SPACE_UNSPECIFIED {
+					return nil, nil, fmt.Errorf("space must be work or life")
+				}
+				n.Space, mask = sp, append(mask, "space")
 			}
 			if len(mask) == 0 {
 				return nil, nil, fmt.Errorf("nothing to update: pass at least one field")
@@ -243,7 +301,11 @@ func (t *tools) register(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			r, err := t.cal.ListEvents(ctx, &pb.ListEventsRequest{From: from, To: to})
+			sp, err := spaceOf(in.Space)
+			if err != nil {
+				return nil, nil, err
+			}
+			r, err := t.cal.ListEvents(ctx, &pb.ListEventsRequest{From: from, To: to, Space: sp})
 			if err != nil {
 				return nil, nil, err
 			}
@@ -263,9 +325,14 @@ func (t *tools) register(s *mcp.Server) {
 			if tz == "" {
 				tz = t.loc.String()
 			}
+			sp, err := spaceOf(in.Space)
+			if err != nil {
+				return nil, nil, err
+			}
 			r, err := t.cal.CreateEvent(ctx, &pb.CreateEventRequest{Event: &pb.Event{
 				Title: in.Title, StartTime: start, EndTime: end, AllDay: in.AllDay, Location: in.Location,
-				Description: in.Description, TimeZone: tz, Rrule: in.RRule, RemindBeforeMinutes: in.RemindBeforeMinutes}})
+				Description: in.Description, TimeZone: tz, Rrule: in.RRule, RemindBeforeMinutes: in.RemindBeforeMinutes,
+				Space: sp, ProjectId: in.ProjectID}})
 			if err != nil {
 				return nil, nil, err
 			}
@@ -295,6 +362,16 @@ func (t *tools) register(s *mcp.Server) {
 					return nil, nil, err
 				}
 				mask = append(mask, "end_time")
+			}
+			if in.ProjectID != nil {
+				e.ProjectId, mask = *in.ProjectID, append(mask, "project_id")
+			}
+			if in.Space != nil {
+				sp, err := spaceOf(*in.Space)
+				if err != nil || sp == pb.Space_SPACE_UNSPECIFIED {
+					return nil, nil, fmt.Errorf("space must be work or life")
+				}
+				e.Space, mask = sp, append(mask, "space")
 			}
 			if in.RemindBeforeMinutes != nil || in.ClearReminder {
 				if !in.ClearReminder {
@@ -331,7 +408,11 @@ func (t *tools) register(s *mcp.Server) {
 			default:
 				return nil, nil, fmt.Errorf("state must be open, done or all")
 			}
-			r, err := t.cal.ListTasks(ctx, &pb.ListTasksRequest{Filter: f, Tag: in.Tag, PageSize: in.Limit})
+			sp, err := spaceOf(in.Space)
+			if err != nil {
+				return nil, nil, err
+			}
+			r, err := t.cal.ListTasks(ctx, &pb.ListTasksRequest{Filter: f, Tag: in.Tag, PageSize: in.Limit, Space: sp, ProjectId: in.ProjectID})
 			if err != nil {
 				return nil, nil, err
 			}
@@ -347,8 +428,13 @@ func (t *tools) register(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
+			sp, err := spaceOf(in.Space)
+			if err != nil {
+				return nil, nil, err
+			}
 			r, err := t.cal.CreateTask(ctx, &pb.CreateTaskRequest{Task: &pb.Task{
-				Title: in.Title, Notes: in.Notes, DueTime: due, RemindTime: rem, Priority: pb.Priority(in.Priority), Tags: in.Tags}})
+				Title: in.Title, Notes: in.Notes, DueTime: due, RemindTime: rem, Priority: pb.Priority(in.Priority), Tags: in.Tags,
+				Space: sp, ProjectId: in.ProjectID}})
 			if err != nil {
 				return nil, nil, err
 			}
@@ -384,7 +470,9 @@ func (t *tools) register(s *mcp.Server) {
 func (t *tools) registerAI(s *mcp.Server) {
 	mcp.AddTool(s, &mcp.Tool{Name: "ask_assistant", Description: "Ask noted's own built-in assistant, which can read and write the user's notes, events and tasks from plain language.", Annotations: additive},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in askIn) (*mcp.CallToolResult, any, error) {
-			r, err := t.ai.Ask(ctx, &pb.AskRequest{Message: in.Message, SessionId: in.SessionID})
+			// The MCP client has its own confirmation step for tool calls, so what the
+			// assistant prepares is carried out here; the result names the change so it can be undone.
+			r, err := t.ai.Ask(ctx, &pb.AskRequest{Message: in.Message, SessionId: in.SessionID, AutoApply: true})
 			if err != nil {
 				return nil, nil, err
 			}

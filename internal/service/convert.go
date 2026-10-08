@@ -24,9 +24,31 @@ func timePtr(t *timestamppb.Timestamp) *time.Time {
 	return &v
 }
 
+// spaceIn maps the wire enum to the store's string; UNSPECIFIED is "" (both / inherit).
+func spaceIn(s pb.Space) string {
+	switch s {
+	case pb.Space_SPACE_WORK:
+		return store.SpaceWork
+	case pb.Space_SPACE_LIFE:
+		return store.SpaceLife
+	}
+	return ""
+}
+
+func spaceOut(s string) pb.Space {
+	switch s {
+	case store.SpaceWork:
+		return pb.Space_SPACE_WORK
+	case store.SpaceLife:
+		return pb.Space_SPACE_LIFE
+	}
+	return pb.Space_SPACE_UNSPECIFIED
+}
+
 func noteToPB(n store.Note) *pb.Note {
 	return &pb.Note{
 		Id: n.ID, Title: n.Title, Content: n.Content, Tags: n.Tags, Pinned: n.Pinned, Archived: n.Archived,
+		ProjectId: n.ProjectID, Space: spaceOut(n.Space),
 		CreateTime: timestamppb.New(n.Created), UpdateTime: timestamppb.New(n.Updated),
 	}
 }
@@ -35,7 +57,7 @@ func eventToPB(e store.Event) *pb.Event {
 	out := &pb.Event{
 		Id: e.ID, Title: e.Title, Description: e.Description, Location: e.Location,
 		StartTime: timestamppb.New(e.Start), EndTime: timestamppb.New(e.End), AllDay: e.AllDay,
-		TimeZone: e.TimeZone, Rrule: e.RRule,
+		TimeZone: e.TimeZone, Rrule: e.RRule, ProjectId: e.ProjectID, Space: spaceOut(e.Space),
 		CreateTime: timestamppb.New(e.Created), UpdateTime: timestamppb.New(e.Updated),
 	}
 	if e.RemindBefore != nil {
@@ -49,6 +71,7 @@ func eventFromPB(e *pb.Event) store.Event {
 	out := store.Event{
 		Title: e.GetTitle(), Description: e.GetDescription(), Location: e.GetLocation(),
 		AllDay: e.GetAllDay(), TimeZone: e.GetTimeZone(), RRule: e.GetRrule(),
+		ProjectID: e.GetProjectId(), Space: spaceIn(e.GetSpace()),
 	}
 	if e.StartTime != nil {
 		out.Start = e.StartTime.AsTime()
@@ -67,6 +90,7 @@ func taskToPB(t store.Task) *pb.Task {
 	return &pb.Task{
 		Id: t.ID, Title: t.Title, Notes: t.Notes, DueTime: tsPtr(t.Due), Priority: pb.Priority(t.Priority),
 		Completed: t.Done, CompleteTime: tsPtr(t.DoneAt), RemindTime: tsPtr(t.Remind), Tags: t.Tags,
+		ProjectId: t.ProjectID, Space: spaceOut(t.Space),
 		CreateTime: timestamppb.New(t.Created), UpdateTime: timestamppb.New(t.Updated),
 	}
 }
@@ -81,6 +105,6 @@ func reminderToPB(r store.Reminder) *pb.Reminder {
 	}
 	return &pb.Reminder{
 		Id: r.ID, Kind: kind, RefId: r.RefID, Title: r.Title,
-		DueTime: timestamppb.New(r.Due), FireTime: timestamppb.New(r.Fired),
+		DueTime: timestamppb.New(r.Due), FireTime: timestamppb.New(r.Fired), Space: spaceOut(r.Space),
 	}
 }

@@ -21,6 +21,7 @@ type Reminder struct {
 	Title  string
 	Due    time.Time
 	Fired  time.Time
+	Space  string
 }
 
 // CollectDueReminders finds every reminder that should have fired by now,
@@ -38,7 +39,7 @@ func (s *Store) CollectDueReminders(ctx context.Context, now time.Time) ([]Remin
 		}
 		for _, d := range evs {
 			r := Reminder{ID: uuid.NewString(), UserID: d.ev.UserID, Kind: KindEvent, RefID: d.ev.ID,
-				Title: d.ev.Title, Due: d.start, Fired: now}
+				Title: d.ev.Title, Due: d.start, Fired: now, Space: d.ev.Space}
 			if err := insertReminder(ctx, tx, r); err != nil {
 				return err
 			}
@@ -57,12 +58,12 @@ func (s *Store) CollectDueReminders(ctx context.Context, now time.Time) ([]Remin
 		for rows.Next() {
 			t, err := scanTask(rows)
 			if err != nil {
-				rows.Close()
+				_ = rows.Close()
 				return err
 			}
 			tasks = append(tasks, t)
 		}
-		rows.Close()
+		_ = rows.Close()
 		if err := rows.Err(); err != nil {
 			return err
 		}
@@ -71,7 +72,7 @@ func (s *Store) CollectDueReminders(ctx context.Context, now time.Time) ([]Remin
 			if t.Due != nil {
 				due = *t.Due
 			}
-			r := Reminder{ID: uuid.NewString(), UserID: t.UserID, Kind: KindTask, RefID: t.ID, Title: t.Title, Due: due, Fired: now}
+			r := Reminder{ID: uuid.NewString(), UserID: t.UserID, Kind: KindTask, RefID: t.ID, Title: t.Title, Due: due, Fired: now, Space: t.Space}
 			if err := insertReminder(ctx, tx, r); err != nil {
 				return err
 			}
@@ -96,7 +97,7 @@ func (s *Store) dueEvents(ctx context.Context, tx *sql.Tx, now time.Time) ([]due
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []dueEvent
 	for rows.Next() {
 		var e Event
@@ -104,7 +105,7 @@ func (s *Store) dueEvents(ctx context.Context, tx *sql.Tx, now time.Time) ([]due
 		var allDay int
 		var remind, last sql.NullInt64
 		if err := rows.Scan(&e.ID, &e.UserID, &e.Title, &e.Description, &e.Location, &start, &end, &allDay,
-			&e.TimeZone, &e.RRule, &remind, &created, &updated, &last); err != nil {
+			&e.TimeZone, &e.RRule, &remind, &e.ProjectID, &e.Space, &created, &updated, &last); err != nil {
 			return nil, err
 		}
 		e.Start, e.End, e.AllDay = fromMS(start), fromMS(end), allDay != 0
@@ -127,24 +128,29 @@ func (s *Store) dueEvents(ctx context.Context, tx *sql.Tx, now time.Time) ([]due
 }
 
 func insertReminder(ctx context.Context, tx *sql.Tx, r Reminder) error {
-	_, err := tx.ExecContext(ctx, `INSERT INTO reminders(id, user_id, kind, ref_id, title, due_ms, fire_ms)
-		VALUES (?, ?, ?, ?, ?, ?, ?)`, r.ID, r.UserID, r.Kind, r.RefID, r.Title, ms(r.Due), ms(r.Fired))
+	_, err := tx.ExecContext(ctx, `INSERT INTO reminders(id, user_id, kind, ref_id, title, due_ms, fire_ms, space)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, r.ID, r.UserID, r.Kind, r.RefID, r.Title, ms(r.Due), ms(r.Fired), r.Space)
 	return err
 }
 
 // ListReminders returns reminders that fired at or after since, newest first.
-func (s *Store) ListReminders(ctx context.Context, userID string, since time.Time, limit int) ([]Reminder, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT id, user_id, kind, ref_id, title, due_ms, fire_ms FROM reminders
-		WHERE user_id = ? AND fire_ms >= ? ORDER BY fire_ms DESC LIMIT ?`, userID, ms(since), limit)
+func (s *Store) ListReminders(ctx context.Context, userID string, since time.Time, limit int, space string) ([]Reminder, error) {
+	if err := checkSpaceFilter(space); err != nil {
+		return nil, err
+	}
+	q := `SELECT id, user_id, kind, ref_id, title, due_ms, fire_ms, space FROM reminders WHERE user_id = ? AND fire_ms >= ?`
+	args := []any{userID, ms(since)}
+	q, args = spaceClause(q, args, "space", space)
+	rows, err := s.db.QueryContext(ctx, q+` ORDER BY fire_ms DESC LIMIT ?`, append(args, limit)...)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []Reminder
 	for rows.Next() {
 		var r Reminder
 		var due, fire int64
-		if err := rows.Scan(&r.ID, &r.UserID, &r.Kind, &r.RefID, &r.Title, &due, &fire); err != nil {
+		if err := rows.Scan(&r.ID, &r.UserID, &r.Kind, &r.RefID, &r.Title, &due, &fire, &r.Space); err != nil {
 			return nil, err
 		}
 		r.Due, r.Fired = fromMS(due), fromMS(fire)

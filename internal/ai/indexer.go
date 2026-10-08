@@ -66,7 +66,27 @@ func (ix *Indexer) drain(ctx context.Context) time.Duration {
 		if len(notes) == 0 {
 			return 0
 		}
+		access := map[string]store.AIAccess{}
 		for _, n := range notes {
+			acc, seen := access[n.UserID]
+			if !seen {
+				var err error
+				if acc, err = ix.Store.GetAIAccess(ctx, n.UserID); err != nil {
+					slog.Error("ai index: read access setting", "err", err)
+					return 30 * time.Second
+				}
+				access[n.UserID] = acc
+			}
+			if !acc.Allows(n.Space) {
+				// The user keeps this space away from models: it is not embedded,
+				// and anything left over from before is removed.
+				_ = ix.Engine.RemoveNote(ctx, n.UserID, n.ID)
+				if err := ix.Store.MarkNoteIndexed(ctx, n.ID, n.Updated); err != nil {
+					slog.Error("ai index: mark skipped", "note", n.ID, "err", err)
+					return 30 * time.Second
+				}
+				continue
+			}
 			if err := ix.Engine.IndexNote(ctx, n); err != nil {
 				slog.Warn("ai index: note not indexed; will retry", "note", n.ID, "err", err)
 				return 30 * time.Second

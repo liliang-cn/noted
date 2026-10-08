@@ -12,18 +12,20 @@ import (
 )
 
 type Task struct {
-	ID       string
-	UserID   string
-	Title    string
-	Notes    string
-	Due      *time.Time
-	Priority int // 0 unset, 1 low, 2 medium, 3 high
-	Done     bool
-	DoneAt   *time.Time
-	Remind   *time.Time
-	Tags     []string
-	Created  time.Time
-	Updated  time.Time
+	ID        string
+	UserID    string
+	Title     string
+	Notes     string
+	Due       *time.Time
+	Priority  int // 0 unset, 1 low, 2 medium, 3 high
+	Done      bool
+	DoneAt    *time.Time
+	Remind    *time.Time
+	Tags      []string
+	ProjectID string
+	Space     string
+	Created   time.Time
+	Updated   time.Time
 }
 
 type TaskPatch struct {
@@ -33,12 +35,16 @@ type TaskPatch struct {
 	Done         *bool
 	Remind       **time.Time
 	Tags         *[]string
+	ProjectID    *string
+	Space        *string
 }
 
 type TaskFilter struct {
 	State     string // "open" (default), "done" or "all"
 	Tag       string
 	DueBefore *time.Time
+	ProjectID string
+	Space     string
 	Limit     int
 	Offset    int
 }
@@ -68,12 +74,19 @@ func (s *Store) CreateTask(ctx context.Context, t Task) (Task, error) {
 	if t.Done {
 		t.DoneAt = &now
 	}
-	err := s.tx(ctx, func(tx *sql.Tx) error {
+	if err := s.checkProject(ctx, t.UserID, t.ProjectID); err != nil {
+		return Task{}, err
+	}
+	var err error
+	if t.Space, err = s.resolveSpace(ctx, t.UserID, t.Space, t.ProjectID); err != nil {
+		return Task{}, err
+	}
+	err = s.tx(ctx, func(tx *sql.Tx) error {
 		_, err := tx.ExecContext(ctx, `
-			INSERT INTO tasks(id, user_id, title, notes, due_ms, priority, completed, complete_ms, remind_ms, created_ms, updated_ms)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			INSERT INTO tasks(id, user_id, title, notes, due_ms, priority, completed, complete_ms, remind_ms, project_id, space, created_ms, updated_ms)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			t.ID, t.UserID, t.Title, t.Notes, nullMS(t.Due), t.Priority, b2i(t.Done), nullMS(t.DoneAt), nullMS(t.Remind),
-			ms(t.Created), ms(t.Updated))
+			t.ProjectID, t.Space, ms(t.Created), ms(t.Updated))
 		if err != nil {
 			return err
 		}
@@ -94,14 +107,14 @@ func writeTaskTags(ctx context.Context, tx *sql.Tx, t Task) error {
 	return nil
 }
 
-const taskCols = `id, user_id, title, notes, due_ms, priority, completed, complete_ms, remind_ms, created_ms, updated_ms`
+const taskCols = `id, user_id, title, notes, due_ms, priority, completed, complete_ms, remind_ms, project_id, space, created_ms, updated_ms`
 
 func scanTask(r scanner) (Task, error) {
 	var t Task
 	var due, doneAt, remind sql.NullInt64
 	var done int
 	var created, updated int64
-	if err := r.Scan(&t.ID, &t.UserID, &t.Title, &t.Notes, &due, &t.Priority, &done, &doneAt, &remind, &created, &updated); err != nil {
+	if err := r.Scan(&t.ID, &t.UserID, &t.Title, &t.Notes, &due, &t.Priority, &done, &doneAt, &remind, &t.ProjectID, &t.Space, &created, &updated); err != nil {
 		return Task{}, err
 	}
 	t.Due, t.DoneAt, t.Remind = ptrTime(due), ptrTime(doneAt), ptrTime(remind)
@@ -164,6 +177,18 @@ func (s *Store) UpdateTask(ctx context.Context, userID, id string, p TaskPatch) 
 	if p.Tags != nil {
 		t.Tags = *p.Tags
 	}
+	if p.ProjectID != nil {
+		t.ProjectID = *p.ProjectID
+		if err := s.checkProject(ctx, userID, t.ProjectID); err != nil {
+			return Task{}, err
+		}
+	}
+	if p.Space != nil {
+		if *p.Space != SpaceWork && *p.Space != SpaceLife {
+			return Task{}, invalid("space must be work or life")
+		}
+		t.Space = *p.Space
+	}
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	if p.Done != nil && *p.Done != t.Done {
 		t.Done = *p.Done
@@ -180,13 +205,13 @@ func (s *Store) UpdateTask(ctx context.Context, userID, id string, p TaskPatch) 
 	rearm := oldRemind != nullMS(t.Remind) || (p.Done != nil && !t.Done)
 	err = s.tx(ctx, func(tx *sql.Tx) error {
 		q := `UPDATE tasks SET title = ?, notes = ?, due_ms = ?, priority = ?, completed = ?, complete_ms = ?,
-			remind_ms = ?, updated_ms = ?`
+			remind_ms = ?, project_id = ?, space = ?, updated_ms = ?`
 		if rearm {
 			q += `, reminded = 0`
 		}
 		q += ` WHERE id = ? AND user_id = ?`
 		if _, err := tx.ExecContext(ctx, q, t.Title, t.Notes, nullMS(t.Due), t.Priority, b2i(t.Done), nullMS(t.DoneAt),
-			nullMS(t.Remind), ms(t.Updated), id, userID); err != nil {
+			nullMS(t.Remind), t.ProjectID, t.Space, ms(t.Updated), id, userID); err != nil {
 			return err
 		}
 		return writeTaskTags(ctx, tx, t)
@@ -224,13 +249,21 @@ func (s *Store) ListTasks(ctx context.Context, userID string, f TaskFilter) ([]T
 		q += ` AND due_ms IS NOT NULL AND due_ms < ?`
 		args = append(args, ms(*f.DueBefore))
 	}
+	if f.ProjectID != "" {
+		q += ` AND project_id = ?`
+		args = append(args, f.ProjectID)
+	}
+	if err := checkSpaceFilter(f.Space); err != nil {
+		return nil, err
+	}
+	q, args = spaceClause(q, args, "space", f.Space)
 	q += ` ORDER BY completed, due_ms IS NULL, due_ms, priority DESC, created_ms, id LIMIT ? OFFSET ?`
 	args = append(args, f.Limit, f.Offset)
 	rows, err := s.db.QueryContext(ctx, q, args...)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var out []Task
 	for rows.Next() {
 		t, err := scanTask(rows)
@@ -242,6 +275,18 @@ func (s *Store) ListTasks(ctx context.Context, userID string, f TaskFilter) ([]T
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
-	rows.Close()
+	_ = rows.Close()
 	return out, s.withTaskTags(ctx, out)
+}
+
+// CountCompleted counts tasks finished in [from, to).
+func (s *Store) CountCompleted(ctx context.Context, userID string, from, to time.Time, space string) (int, error) {
+	if err := checkSpaceFilter(space); err != nil {
+		return 0, err
+	}
+	q := `SELECT COUNT(*) FROM tasks WHERE user_id = ? AND completed = 1 AND complete_ms >= ? AND complete_ms < ?`
+	args := []any{userID, ms(from), ms(to)}
+	q, args = spaceClause(q, args, "space", space)
+	var n int
+	return n, s.db.QueryRowContext(ctx, q, args...).Scan(&n)
 }

@@ -18,6 +18,7 @@ import (
 var (
 	ErrNotFound = errors.New("not found")
 	ErrInvalid  = errors.New("invalid argument")
+	ErrConflict = errors.New("version conflict")
 )
 
 func invalid(format string, a ...any) error {
@@ -31,7 +32,7 @@ type Store struct {
 // Open opens (creating if needed) the database at path and migrates it.
 // ":memory:" gives a private in-memory database, handy for tests.
 func Open(path string) (*Store, error) {
-	dsn := path
+	var dsn string
 	if path == ":memory:" {
 		dsn = "file::memory:?cache=shared&_pragma=foreign_keys(1)"
 	} else {
@@ -50,7 +51,7 @@ func Open(path string) (*Store, error) {
 	db.SetMaxOpenConns(1)
 	s := &Store{db: db}
 	if err := s.migrate(context.Background()); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("migrate: %w", err)
 	}
 	return s, nil
@@ -133,6 +134,91 @@ CREATE TABLE IF NOT EXISTS task_tags (
 	PRIMARY KEY (task_id, tag)
 );
 
+CREATE TABLE IF NOT EXISTS projects (
+	id         TEXT PRIMARY KEY,
+	user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	title      TEXT NOT NULL,
+	notes      TEXT NOT NULL DEFAULT '',
+	pinned     INTEGER NOT NULL DEFAULT 0,
+	archived   INTEGER NOT NULL DEFAULT 0,
+	start_ms   INTEGER,
+	due_ms     INTEGER,
+	created_ms INTEGER NOT NULL,
+	updated_ms INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS projects_user ON projects(user_id, pinned DESC, updated_ms DESC);
+
+CREATE TABLE IF NOT EXISTS goals (
+	id         TEXT PRIMARY KEY,
+	user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	title      TEXT NOT NULL,
+	notes      TEXT NOT NULL DEFAULT '',
+	period     TEXT NOT NULL,
+	target     REAL NOT NULL,
+	unit       TEXT NOT NULL DEFAULT '',
+	tz         TEXT NOT NULL DEFAULT 'UTC',
+	event_id   TEXT NOT NULL DEFAULT '',
+	archived   INTEGER NOT NULL DEFAULT 0,
+	created_ms INTEGER NOT NULL,
+	updated_ms INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS goals_user ON goals(user_id, archived);
+CREATE TABLE IF NOT EXISTS goal_milestones (
+	id       TEXT PRIMARY KEY,
+	goal_id  TEXT NOT NULL REFERENCES goals(id) ON DELETE CASCADE,
+	position INTEGER NOT NULL,
+	title    TEXT NOT NULL,
+	done_ms  INTEGER
+);
+CREATE INDEX IF NOT EXISTS goal_milestones_goal ON goal_milestones(goal_id, position);
+CREATE TABLE IF NOT EXISTS goal_checkins (
+	id         TEXT PRIMARY KEY,
+	goal_id    TEXT NOT NULL REFERENCES goals(id) ON DELETE CASCADE,
+	user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	time_ms    INTEGER NOT NULL,
+	local_date TEXT NOT NULL,
+	amount     REAL NOT NULL,
+	note       TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS goal_checkins_goal ON goal_checkins(goal_id, local_date);
+
+CREATE TABLE IF NOT EXISTS proposals (
+	id          TEXT PRIMARY KEY,
+	user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	kind        TEXT NOT NULL,
+	status      TEXT NOT NULL,
+	title       TEXT NOT NULL,
+	reason      TEXT NOT NULL DEFAULT '',
+	space       TEXT NOT NULL DEFAULT 'life',
+	source      TEXT NOT NULL,
+	fingerprint TEXT NOT NULL DEFAULT '',
+	ops         TEXT NOT NULL,
+	inputs      TEXT NOT NULL DEFAULT '[]',
+	created_ms  INTEGER NOT NULL,
+	decided_ms  INTEGER
+);
+CREATE INDEX IF NOT EXISTS proposals_user ON proposals(user_id, status, created_ms DESC);
+CREATE INDEX IF NOT EXISTS proposals_fp ON proposals(user_id, fingerprint);
+CREATE TABLE IF NOT EXISTS changes (
+	id          TEXT PRIMARY KEY,
+	user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	proposal_id TEXT NOT NULL DEFAULT '',
+	summary     TEXT NOT NULL,
+	entries     TEXT NOT NULL,
+	created_ms  INTEGER NOT NULL,
+	undone_ms   INTEGER
+);
+CREATE INDEX IF NOT EXISTS changes_user ON changes(user_id, created_ms DESC);
+
+CREATE TABLE IF NOT EXISTS preferences (
+	user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	key        TEXT NOT NULL,
+	value      TEXT NOT NULL,
+	version    INTEGER NOT NULL,
+	updated_ms INTEGER NOT NULL,
+	PRIMARY KEY (user_id, key)
+);
+
 CREATE TABLE IF NOT EXISTS reminders (
 	id      TEXT PRIMARY KEY,
 	user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -146,7 +232,107 @@ CREATE INDEX IF NOT EXISTS reminders_user_fire ON reminders(user_id, fire_ms DES
 `
 
 func (s *Store) migrate(ctx context.Context) error {
-	_, err := s.db.ExecContext(ctx, schema)
+	if _, err := s.db.ExecContext(ctx, schema); err != nil {
+		return err
+	}
+	// Columns added after the first release. SQLite has no ADD COLUMN IF NOT
+	// EXISTS, so look first.
+	for _, table := range []string{"notes", "events", "tasks"} {
+		if err := s.ensureColumn(ctx, table, "project_id", "TEXT NOT NULL DEFAULT ''"); err != nil {
+			return err
+		}
+		if _, err := s.db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS `+table+`_project ON `+table+`(project_id)`); err != nil {
+			return err
+		}
+	}
+	// The work/life dimension. Rows that predate it are life.
+	for _, table := range []string{"notes", "events", "tasks", "goals", "projects", "reminders"} {
+		if err := s.ensureColumn(ctx, table, "space", "TEXT NOT NULL DEFAULT 'life'"); err != nil {
+			return err
+		}
+	}
+	// A goal may carry a running total next to its per-period one (19 of 40 lessons).
+	for _, c := range []struct{ table, col, ddl string }{
+		{"goals", "counter_unit", "TEXT NOT NULL DEFAULT ''"},
+		{"goals", "counter_target", "REAL NOT NULL DEFAULT 0"},
+		{"goal_checkins", "tally", "REAL NOT NULL DEFAULT 0"},
+	} {
+		if err := s.ensureColumn(ctx, c.table, c.col, c.ddl); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// The two spaces. In a filter, "" means both ("combined" mode).
+const (
+	SpaceWork = "work"
+	SpaceLife = "life"
+)
+
+// checkSpaceFilter validates a read filter: "", "work" or "life".
+func checkSpaceFilter(space string) error {
+	switch space {
+	case "", SpaceWork, SpaceLife:
+		return nil
+	}
+	return invalid("space must be work or life")
+}
+
+// resolveSpace picks the space for a new row: the one given, else the
+// project's, else life.
+func (s *Store) resolveSpace(ctx context.Context, userID, space, projectID string) (string, error) {
+	if space != "" {
+		if space != SpaceWork && space != SpaceLife {
+			return "", invalid("space must be work or life")
+		}
+		return space, nil
+	}
+	if projectID != "" {
+		var ps string
+		err := s.db.QueryRowContext(ctx, `SELECT space FROM projects WHERE id = ? AND user_id = ?`, projectID, userID).Scan(&ps)
+		if err == nil {
+			return ps, nil
+		}
+		if !errors.Is(err, sql.ErrNoRows) {
+			return "", err
+		}
+	}
+	return SpaceLife, nil
+}
+
+// spaceClause appends " AND <col> = ?" when a filter is set.
+func spaceClause(q string, args []any, col, space string) (string, []any) {
+	if space == "" {
+		return q, args
+	}
+	return q + ` AND ` + col + ` = ?`, append(args, space)
+}
+
+func (s *Store) ensureColumn(ctx context.Context, table, column, ddl string) error {
+	rows, err := s.db.QueryContext(ctx, `PRAGMA table_info(`+table+`)`)
+	if err != nil {
+		return err
+	}
+	found := false
+	for rows.Next() {
+		var cid int
+		var name, typ string
+		var notnull, pk int
+		var dflt sql.NullString
+		if err := rows.Scan(&cid, &name, &typ, &notnull, &dflt, &pk); err != nil {
+			_ = rows.Close()
+			return err
+		}
+		if name == column {
+			found = true
+		}
+	}
+	_ = rows.Close()
+	if found {
+		return rows.Err()
+	}
+	_, err = s.db.ExecContext(ctx, `ALTER TABLE `+table+` ADD COLUMN `+column+` `+ddl)
 	return err
 }
 
