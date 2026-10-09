@@ -1,0 +1,71 @@
+{
+  "identifier": "7C3A91E4",
+  "nonRenewingSubscriptions": [],
+  "products": [],
+  "settings": {
+    "_applicationInternalID": "",
+    "_developerTeamID": "NUDL4XSA6J",
+    "_failTransactionsEnabled": false,
+    "_lastSynchronizedDate": 0,
+    "_locale": "zh_Hans",
+    "_storefront": "CHN",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [
+    {
+      "id": "21500001",
+      "localizations": [],
+      "name": "Noted Pro",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "98",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "6700000001",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "一年",
+              "displayName": "Noted Pro 年付",
+              "locale": "zh_Hans"
+            }
+          ],
+          "productID": "cn.superleo.noted.pro.yearly",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Pro 年付",
+          "subscriptionGroupID": "21500001",
+          "type": "RecurringSubscription",
+          "winbackOffers": []
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "12",
+          "familyShareable": false,
+          "groupNumber": 2,
+          "internalID": "6700000002",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "一个月",
+              "displayName": "Noted Pro 月付",
+              "locale": "zh_Hans"
+            }
+          ],
+          "productID": "cn.superleo.noted.pro.monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Pro 月付",
+          "subscriptionGroupID": "21500001",
+          "type": "RecurringSubscription",
+          "winbackOffers": []
+        }
+      ]
+    }
+  ],
+  "version": {
+    "major": 4,
+    "minor": 0
+  }
+}

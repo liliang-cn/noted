@@ -182,6 +182,63 @@ CREATE TABLE IF NOT EXISTS goal_checkins (
 );
 CREATE INDEX IF NOT EXISTS goal_checkins_goal ON goal_checkins(goal_id, local_date);
 
+CREATE TABLE IF NOT EXISTS objectives (
+	id           TEXT PRIMARY KEY,
+	user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	title        TEXT NOT NULL,
+	notes        TEXT NOT NULL DEFAULT '',
+	space        TEXT NOT NULL DEFAULT 'life',
+	start_ms     INTEGER,
+	due_ms       INTEGER,
+	metric_name  TEXT NOT NULL DEFAULT '',
+	metric_unit  TEXT NOT NULL DEFAULT '',
+	metric_start REAL NOT NULL DEFAULT 0,
+	metric_target REAL NOT NULL DEFAULT 0,
+	archived     INTEGER NOT NULL DEFAULT 0,
+	created_ms   INTEGER NOT NULL,
+	updated_ms   INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS objectives_user ON objectives(user_id, archived);
+CREATE TABLE IF NOT EXISTS objective_measurements (
+	id           TEXT PRIMARY KEY,
+	objective_id TEXT NOT NULL REFERENCES objectives(id) ON DELETE CASCADE,
+	user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	time_ms      INTEGER NOT NULL,
+	value        REAL NOT NULL,
+	note         TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS objective_measurements_objective ON objective_measurements(objective_id, time_ms);
+CREATE TABLE IF NOT EXISTS holdings (
+	id            TEXT PRIMARY KEY,
+	user_id       TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	symbol        TEXT NOT NULL,
+	name          TEXT NOT NULL DEFAULT '',
+	currency      TEXT NOT NULL DEFAULT 'USD',
+	notes         TEXT NOT NULL DEFAULT '',
+	last_price    REAL,
+	last_price_ms INTEGER,
+	dca_amount    REAL NOT NULL DEFAULT 0,
+	dca_day       INTEGER NOT NULL DEFAULT 0,
+	dca_time      TEXT NOT NULL DEFAULT '09:00',
+	dca_event_id  TEXT NOT NULL DEFAULT '',
+	tz            TEXT NOT NULL DEFAULT 'UTC',
+	archived      INTEGER NOT NULL DEFAULT 0,
+	created_ms    INTEGER NOT NULL,
+	updated_ms    INTEGER NOT NULL,
+	UNIQUE (user_id, symbol)
+);
+CREATE TABLE IF NOT EXISTS holding_trades (
+	id         TEXT PRIMARY KEY,
+	holding_id TEXT NOT NULL REFERENCES holdings(id) ON DELETE CASCADE,
+	user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	time_ms    INTEGER NOT NULL,
+	side       TEXT NOT NULL,
+	shares     REAL NOT NULL,
+	price      REAL NOT NULL,
+	fee        REAL NOT NULL DEFAULT 0,
+	note       TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS holding_trades_holding ON holding_trades(holding_id, time_ms);
 CREATE TABLE IF NOT EXISTS proposals (
 	id          TEXT PRIMARY KEY,
 	user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -256,6 +313,7 @@ func (s *Store) migrate(ctx context.Context) error {
 		{"goals", "counter_unit", "TEXT NOT NULL DEFAULT ''"},
 		{"goals", "counter_target", "REAL NOT NULL DEFAULT 0"},
 		{"goal_checkins", "tally", "REAL NOT NULL DEFAULT 0"},
+		{"goals", "objective_id", "TEXT NOT NULL DEFAULT ''"},
 	} {
 		if err := s.ensureColumn(ctx, c.table, c.col, c.ddl); err != nil {
 			return err

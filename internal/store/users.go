@@ -93,3 +93,13 @@ func (s *Store) UserForToken(ctx context.Context, tok string) (User, error) {
 	u.Created = fromMS(created)
 	return u, err
 }
+
+// UserName returns the name of a user id.
+func (s *Store) UserName(ctx context.Context, id string) (string, error) {
+	var name string
+	err := s.db.QueryRowContext(ctx, `SELECT name FROM users WHERE id = ?`, id).Scan(&name)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	return name, err
+}

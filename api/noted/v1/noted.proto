@@ -471,6 +471,8 @@ message Goal {
   // counter_unit. Not tied to a period. Check-ins feed it through their count.
   string counter_unit = 15;
   double counter_target = 16;
+  // The objective (a larger goal such as losing weight) this goal is a dimension of.
+  string objective_id = 17;
 }
 
 message CheckIn {
@@ -560,6 +562,96 @@ service GoalService {
   rpc DeleteCheckIn(DeleteCheckInRequest) returns (Goal);
   rpc ListCheckIns(ListCheckInsRequest) returns (ListCheckInsResponse);
   rpc SetMilestoneDone(SetMilestoneDoneRequest) returns (Goal);
+}
+
+// ------------------------------------------------------------ objectives ----
+
+// An objective is a larger goal such as losing weight: several dimensions (goals
+// such as swimming twice a week or sugar-free days) and, optionally, one metric
+// (weight in kg) with readings over time.
+message Objective {
+  string id = 1;
+  string title = 2;
+  string notes = 3;
+  Space space = 4;
+  google.protobuf.Timestamp start_time = 5;
+  google.protobuf.Timestamp due_time = 6;
+  string metric_name = 7;   // "weight"
+  string metric_unit = 8;   // "kg"; empty: no metric
+  double metric_start = 9;
+  double metric_target = 10; // may be below or above metric_start
+  bool archived = 11;
+  google.protobuf.Timestamp create_time = 12;
+  google.protobuf.Timestamp update_time = 13;
+  ObjectiveProgress progress = 14;
+  repeated Goal goals = 15; // the dimensions, with their progress
+}
+
+message ObjectiveProgress {
+  int32 goals_total = 1;
+  int32 goals_achieved = 2;   // dimensions that met this period's target
+  double goals_percent = 3;   // mean progress of the dimensions this period, each capped at 1
+  bool behind = 4;            // some dimension is behind its pace
+  bool has_metric = 5;
+  bool has_reading = 6;
+  double metric_current = 7;  // the latest reading
+  double metric_change = 8;   // latest reading minus metric_start
+  double metric_percent = 9;  // 0..1 of the way from metric_start to metric_target
+  google.protobuf.Timestamp last_reading_time = 10;
+  double percent = 11;        // headline: metric_percent once there is a reading, else goals_percent
+  optional int32 days_left = 12; // set with due_time; negative once past
+  bool on_track = 13;         // the metric is not behind the share of time used; true when unknown
+}
+
+message Measurement {
+  string id = 1;
+  string objective_id = 2;
+  google.protobuf.Timestamp time = 3;
+  double value = 4;
+  string note = 5;
+}
+
+message CreateObjectiveRequest { Objective objective = 1; }
+message GetObjectiveRequest { string id = 1; }
+message UpdateObjectiveRequest {
+  Objective objective = 1;
+  // title, notes, space, start_time, due_time, metric_name, metric_unit,
+  // metric_start, metric_target, archived. An unset start_time/due_time in the
+  // mask clears it.
+  google.protobuf.FieldMask update_mask = 2;
+}
+message DeleteObjectiveRequest { string id = 1; } // its goals stay, standing alone
+message ListObjectivesRequest {
+  bool include_archived = 1;
+  Space space = 2; // UNSPECIFIED: both
+}
+message ListObjectivesResponse { repeated Objective objectives = 1; }
+
+message RecordMeasurementRequest {
+  string objective_id = 1;
+  double value = 2;
+  google.protobuf.Timestamp time = 3; // default now
+  string note = 4;
+}
+message DeleteMeasurementRequest { string id = 1; }
+message ListMeasurementsRequest {
+  string objective_id = 1;
+  google.protobuf.Timestamp from = 2;
+  google.protobuf.Timestamp to = 3;
+  int32 limit = 4; // newest N, returned oldest first; default 365, max 5000
+}
+message ListMeasurementsResponse { repeated Measurement measurements = 1; }
+
+service ObjectiveService {
+  rpc CreateObjective(CreateObjectiveRequest) returns (Objective);
+  rpc GetObjective(GetObjectiveRequest) returns (Objective);
+  rpc UpdateObjective(UpdateObjectiveRequest) returns (Objective);
+  rpc DeleteObjective(DeleteObjectiveRequest) returns (google.protobuf.Empty);
+  rpc ListObjectives(ListObjectivesRequest) returns (ListObjectivesResponse);
+  // Records a reading of the objective's metric and returns the objective with its new progress.
+  rpc RecordMeasurement(RecordMeasurementRequest) returns (Objective);
+  rpc DeleteMeasurement(DeleteMeasurementRequest) returns (google.protobuf.Empty);
+  rpc ListMeasurements(ListMeasurementsRequest) returns (ListMeasurementsResponse);
 }
 
 // ------------------------------------------------------------- projects ----
@@ -732,6 +824,21 @@ service PreferenceService {
   rpc ListPreferences(ListPreferencesRequest) returns (ListPreferencesResponse);
 }
 
+// --------------------------------------------------------------- export ----
+
+message ExportRequest {}
+
+message ExportChunk {
+  string filename = 1; // set on the first chunk only
+  bytes data = 2;
+}
+
+service ExportService {
+  // Streams a zip of everything the caller owns: noted.json, notes/*.md and
+  // calendar.ics. Archived and finished items are included.
+  rpc Export(ExportRequest) returns (stream ExportChunk);
+}
+
 // ---------------------------------------------------------- suggestions ----
 //
 // A proposal is a set of changes that someone (a fixed rule, the assistant)
@@ -858,4 +965,95 @@ service SuggestionService {
   rpc GetWeeklyReview(GetWeeklyReviewRequest) returns (WeeklyReview);
   rpc ListChanges(ListChangesRequest) returns (ListChangesResponse);
   rpc UndoChange(UndoChangeRequest) returns (Change);
+}
+
+// ------------------------------------------------------------- holdings ----
+
+// A holding is something the user invests in, such as the ticker QQQM, with the
+// buys and sells they made and, optionally, a plan to buy on a day every month.
+// noted records and reports; it does not fetch prices or move money. The last
+// price is one the user enters.
+message Holding {
+  string id = 1;
+  string symbol = 2;   // upper case, e.g. "VOO"
+  string name = 3;
+  string currency = 4; // default USD
+  string notes = 5;
+  optional double last_price = 6; // unset: no price entered yet
+  google.protobuf.Timestamp last_price_time = 7;
+  double dca_amount = 8; // planned amount per month, in currency
+  int32 dca_day = 9;     // day of the month, 1-28; 0: no plan
+  string dca_time = 10;  // "HH:MM" in time_zone; default 09:00
+  string dca_event_id = 11; // the monthly calendar event that reminds about the plan
+  string time_zone = 12;  // IANA; the plan day and "this month" follow it
+  bool archived = 13;
+  google.protobuf.Timestamp create_time = 14;
+  google.protobuf.Timestamp update_time = 15;
+  Position position = 16;
+}
+
+message Position {
+  double shares = 1;
+  double avg_cost = 2;       // per share, of the shares still held (average-cost method)
+  double cost_basis = 3;     // avg_cost * shares
+  double realized_pnl = 4;
+  double total_bought = 5;   // everything spent on buys, fees included
+  int32 trades = 6;
+  bool has_price = 7;
+  double market_value = 8;   // shares * last_price
+  double unrealized_pnl = 9;
+  double unrealized_percent = 10; // of cost_basis
+  DcaStatus dca = 11;
+}
+
+message DcaStatus {
+  bool active = 1;
+  google.protobuf.Timestamp next_time = 2; // the next planned day
+  bool done_this_month = 3;                // a buy was recorded this calendar month
+  double invested_this_month = 4;
+  int32 streak_months = 5;                 // consecutive months with a buy
+}
+
+message Trade {
+  string id = 1;
+  string holding_id = 2;
+  google.protobuf.Timestamp time = 3; // default now
+  string side = 4;                    // "buy" or "sell"
+  double shares = 5;
+  double price = 6;
+  double fee = 7;
+  string note = 8;
+}
+
+message CreateHoldingRequest { Holding holding = 1; }
+message GetHoldingRequest { string id = 1; }
+message UpdateHoldingRequest {
+  Holding holding = 1;
+  // name, currency, notes, last_price, dca_amount, dca_day, dca_time, time_zone,
+  // archived. last_price unset in the mask's holding clears the price.
+  google.protobuf.FieldMask update_mask = 2;
+}
+message DeleteHoldingRequest { string id = 1; } // its trades and its monthly event go too
+message ListHoldingsRequest { bool include_archived = 1; }
+message ListHoldingsResponse { repeated Holding holdings = 1; }
+
+message RecordTradeRequest {
+  string holding_id = 1;
+  Trade trade = 2; // id and holding_id are ignored
+}
+message DeleteTradeRequest { string id = 1; }
+message ListTradesRequest { string holding_id = 1; }
+message ListTradesResponse { repeated Trade trades = 1; } // oldest first
+
+service HoldingService {
+  rpc CreateHolding(CreateHoldingRequest) returns (Holding);
+  rpc GetHolding(GetHoldingRequest) returns (Holding);
+  rpc UpdateHolding(UpdateHoldingRequest) returns (Holding);
+  rpc DeleteHolding(DeleteHoldingRequest) returns (google.protobuf.Empty);
+  rpc ListHoldings(ListHoldingsRequest) returns (ListHoldingsResponse);
+  // Records a buy or sell and returns the holding with its new position. A sell
+  // of more shares than were held at that time is refused.
+  rpc RecordTrade(RecordTradeRequest) returns (Holding);
+  rpc DeleteTrade(DeleteTradeRequest) returns (google.protobuf.Empty);
+  rpc ListTrades(ListTradesRequest) returns (ListTradesResponse);
 }

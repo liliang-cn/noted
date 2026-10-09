@@ -297,3 +297,21 @@ func (s *Store) ListEvents(ctx context.Context, userID string, from, to time.Tim
 	sort.SliceStable(out, func(i, j int) bool { return out[i].Start.Before(out[j].Start) })
 	return out, nil
 }
+
+// AllEvents returns every event of the user as stored, recurring ones once, ordered by start.
+func (s *Store) AllEvents(ctx context.Context, userID string) ([]Event, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT `+eventCols+` FROM events WHERE user_id = ? ORDER BY start_ms, id`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	var out []Event
+	for rows.Next() {
+		e, err := scanEvent(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}

@@ -97,7 +97,38 @@ grpcurl -plaintext -H "$T" -d '{"from":"2026-10-12T00:00:00Z","to":"2026-10-19T0
 grpcurl -plaintext -H "$T" $A noted.v1.CalendarService/WatchReminders
 ```
 
-接口定义在 [`api/noted/v1/noted.proto`](api/noted/v1/noted.proto),分三个 service:`NoteService`、`CalendarService`、`AIService`。更新类接口用 `update_mask` 指定要改的字段。周期规则支持 RRULE 子集:`FREQ`(DAILY/WEEKLY/MONTHLY/YEARLY)、`INTERVAL`、`COUNT`、`UNTIL`、`BYDAY`(仅 WEEKLY)。
+接口定义在 [`api/noted/v1/noted.proto`](api/noted/v1/noted.proto),主要的 service:`NoteService`、`CalendarService`、`GoalService`、`ObjectiveService`、`HoldingService`、`ProjectService`、`ExportService`、`AIService`。更新类接口用 `update_mask` 指定要改的字段。周期规则支持 RRULE 子集:`FREQ`(DAILY/WEEKLY/MONTHLY/YEARLY)、`INTERVAL`、`COUNT`、`UNTIL`、`BYDAY`(仅 WEEKLY)。
+
+### 目标计划
+
+`ObjectiveService` 管"大目标",比如减肥:它由几个维度(普通的 `Goal`,例如游泳每周 2 次、跑步每周 3 次、轻食每周 10 餐、控糖每周 7 天,各自有周期和数量)加一个可选的结果指标(体重 75 → 68 kg,随时记录读数)组成。创建维度时把 `goal.objective_id` 设成计划的 id。进度同时给两个数:`goals_percent` 是各维度本期完成度的平均,`metric_percent` 是指标从起点走向目标的比例;有读数后 `percent` 取指标,没有就取维度平均。设了起止日期时,`on_track` 表示指标没有落后于已用掉的时间。指标可以向下(体重)也可以向上(肌肉)。删除计划会保留里面的维度,变成单独的目标。
+
+```sh
+grpcurl -plaintext -H "$T" -d '{"objective":{"title":"减肥","metric_name":"体重","metric_unit":"kg","metric_start":75,"metric_target":68,"due_time":"2027-01-09T00:00:00Z"}}' $A noted.v1.ObjectiveService/CreateObjective
+grpcurl -plaintext -H "$T" -d '{"objective_id":"<id>","value":73.8}' $A noted.v1.ObjectiveService/RecordMeasurement
+```
+
+### 标的和定投
+
+`HoldingService` 记录你投资的标的(QQQM、VOO、OKLO 这样的代码)、买卖记录和每月定投计划。持仓按平均成本法算:股数、均价、成本、已实现盈亏;你自己填一个现价,就有市值和浮动盈亏。卖出超过当时持有的股数会被拒绝,补记以前的交易也会按时间顺序重新校验。设了 `dca_day`(1-28)后,服务端会建一条每月同一天的周期日程"定投 QQQM",准点提醒,所以本地通知、Apple Watch 和日历里都能看到;改日期或金额会移动同一条日程,停掉计划、归档或删除标的会一起删掉它。`position.dca` 给出这个月是否已经买过、本月投入和连续几个月都买了。
+
+noted 只记录和提醒:不联网取行情,不下单,不碰钱。现价要自己填。
+
+```sh
+grpcurl -plaintext -H "$T" -d '{"holding":{"symbol":"QQQM","dca_day":15,"dca_amount":500,"time_zone":"Asia/Shanghai"}}' $A noted.v1.HoldingService/CreateHolding
+grpcurl -plaintext -H "$T" -d '{"holding_id":"<id>","trade":{"side":"buy","shares":3,"price":160}}' $A noted.v1.HoldingService/RecordTrade
+```
+
+### 导出
+
+你的数据随时能带走。服务端导出有两种方式:
+
+```sh
+noted export alice -o alice.zip                      # 在服务器上,直接读数据库
+grpcurl -plaintext -H "$T" $A noted.v1.ExportService/Export   # 远程,流式返回同一个 zip
+```
+
+zip 里有 `noted.json`(全部记录,包括已归档和已完成的、目标和读数、标的和买卖记录、设置)、`notes/` 下每条笔记一个带元数据的 Markdown、`calendar.ics`(日程和有日期的待办,任何日历 App 都能导入)和 `trades.csv`(买卖记录,可直接用表格打开)。iOS App 在 设置 → 导出我的数据 里直接生成并分享同一个文件。
 
 ## AI(可选)
 
@@ -177,6 +208,24 @@ claude mcp add noted -e NOTED_ADDR=127.0.0.1:43872 -e NOTED_TOKEN=<token> -- /pa
 | AI | `ask_assistant` `summarize_note` `daily_briefing` `plan_from_text` `extract_tasks`(仅服务端开了 AI 时才出现) |
 
 带 `space` 参数的工具可传 `work` 或 `life`,不传就是两边都看;`create_task` 等传 `project_id` 就加进项目。时间一律用 RFC 3339,例如 `2026-03-05T15:00:00+08:00`;"下周五"这类相对日期由调用方的模型先换算。删除类工具带 destructive 标注,客户端通常会弹确认。出错时作为工具错误返回,模型可以读到原因并重试。
+
+## iOS
+
+`ios/` 是 SwiftUI 客户端(iOS 18+),直接连这个服务的 gRPC 端口。
+
+```sh
+cd ios && xcodegen generate && open Noted.xcodeproj
+```
+
+首次打开填服务器地址、端口和 `noted user add` 给的 token。Swift 的 gRPC 桩代码在 `ios/Noted/Generated`,改了 proto 之后用 `protoc-gen-swift` 和 `protoc-gen-grpc-swift-2` 重新生成。主题和概览布局保存在服务端的偏好里,多台设备共用。
+
+提醒:App 把接下来 14 天里设了提醒的日程和待办预约成本地通知(最多 60 条),App 在前台时服务端触发的提醒通过 `WatchReminders` 流显示成提示条。小组件和 Apple Watch 显示的是 App 写下的当天快照,不直连服务器,也拿不到令牌。Pro 订阅的商品 ID 是 `cn.superleo.noted.pro.yearly` 和 `cn.superleo.noted.pro.monthly`,`ios/Noted.storekit` 里的价格只是本地测试占位。
+
+改了 proto 后重新生成 Swift 桩:`protoc -I api --swift_out=ios/Noted/Generated --swift_opt=Visibility=Public --grpc-swift-2_out=ios/Noted/Generated --grpc-swift-2_opt=Server=false,Visibility=Public noted/v1/noted.proto`(需要 `protoc-gen-swift` 和 `protoc-gen-grpc-swift-2` 在 PATH 里)。`ios/Tests/shots.sh <目录>` 起一个有示例数据的服务,把各页面截图存下来,用来和设计稿对照。
+
+测试:`ios/Tests/run-ui-tests.sh` 起一个真实的 noted 和一个假模型,跑单元测试和 UI 测试,最后核对服务端数据;`ios/Tests/run-watch-roundtrip.sh` 用一对配对的模拟器测手机和手表之间的同步。两者都需要 grpcurl 和已安装的模拟器。
+
+已知限制:`ListProposals` 不像 `GetFocus` 那样接收客户端时区,建议里的空档按服务器的 `NOTED_TIME_ZONE` 计算。
 
 ## 开发
 

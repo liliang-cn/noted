@@ -312,3 +312,51 @@ func TestTokens(t *testing.T) {
 		t.Fatalf("bad token accepted: %v", err)
 	}
 }
+
+// A reminder set for the moment an event starts (0 minutes before) has to fire
+// at the start: the start itself is the edge of its window.
+func TestReminderAtTheStartFires(t *testing.T) {
+	ctx := context.Background()
+	s, uid := newStore(t)
+	start := time.Date(2026, 5, 4, 9, 0, 0, 0, time.UTC)
+	zero := 0
+	e, err := s.CreateEvent(ctx, Event{UserID: uid, Title: "At the start", Start: start, RemindBefore: &zero})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got, _ := s.CollectDueReminders(ctx, start.Add(-30*time.Second)); len(got) != 0 {
+		t.Fatalf("fired before the start: %v", got)
+	}
+	// The scheduler ticks every 15 seconds, so it arrives a little after the start.
+	got, err := s.CollectDueReminders(ctx, start.Add(10*time.Second))
+	if err != nil || len(got) != 1 || got[0].RefID != e.ID {
+		t.Fatalf("want one reminder for the event, got %v %v", got, err)
+	}
+	if again, _ := s.CollectDueReminders(ctx, start.Add(25*time.Second)); len(again) != 0 {
+		t.Fatal("fired twice")
+	}
+}
+
+func TestReminderAtTheStartIsNotDeliveredLongAfter(t *testing.T) {
+	ctx := context.Background()
+	s, uid := newStore(t)
+	start := time.Date(2026, 5, 4, 9, 0, 0, 0, time.UTC)
+	zero := 0
+	s.CreateEvent(ctx, Event{UserID: uid, Title: "Missed", Start: start, RemindBefore: &zero})
+	// The server was down: an hour later, telling someone the meeting is starting would be wrong.
+	if got, _ := s.CollectDueReminders(ctx, start.Add(time.Hour)); len(got) != 0 {
+		t.Fatalf("a reminder for the start was delivered an hour late: %v", got)
+	}
+}
+
+func TestReminderWithLeadStillSkipsEventsThatStarted(t *testing.T) {
+	ctx := context.Background()
+	s, uid := newStore(t)
+	start := time.Date(2026, 5, 4, 9, 0, 0, 0, time.UTC)
+	five := 5
+	s.CreateEvent(ctx, Event{UserID: uid, Title: "Started", Start: start, RemindBefore: &five})
+	if got, _ := s.CollectDueReminders(ctx, start.Add(30*time.Second)); len(got) != 0 {
+		t.Fatalf("a 5-minute reminder fired after the event began: %v", got)
+	}
+}

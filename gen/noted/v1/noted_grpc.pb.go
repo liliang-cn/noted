@@ -1756,6 +1756,376 @@ var GoalService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
+	ObjectiveService_CreateObjective_FullMethodName   = "/noted.v1.ObjectiveService/CreateObjective"
+	ObjectiveService_GetObjective_FullMethodName      = "/noted.v1.ObjectiveService/GetObjective"
+	ObjectiveService_UpdateObjective_FullMethodName   = "/noted.v1.ObjectiveService/UpdateObjective"
+	ObjectiveService_DeleteObjective_FullMethodName   = "/noted.v1.ObjectiveService/DeleteObjective"
+	ObjectiveService_ListObjectives_FullMethodName    = "/noted.v1.ObjectiveService/ListObjectives"
+	ObjectiveService_RecordMeasurement_FullMethodName = "/noted.v1.ObjectiveService/RecordMeasurement"
+	ObjectiveService_DeleteMeasurement_FullMethodName = "/noted.v1.ObjectiveService/DeleteMeasurement"
+	ObjectiveService_ListMeasurements_FullMethodName  = "/noted.v1.ObjectiveService/ListMeasurements"
+)
+
+// ObjectiveServiceClient is the client API for ObjectiveService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type ObjectiveServiceClient interface {
+	CreateObjective(ctx context.Context, in *CreateObjectiveRequest, opts ...grpc.CallOption) (*Objective, error)
+	GetObjective(ctx context.Context, in *GetObjectiveRequest, opts ...grpc.CallOption) (*Objective, error)
+	UpdateObjective(ctx context.Context, in *UpdateObjectiveRequest, opts ...grpc.CallOption) (*Objective, error)
+	DeleteObjective(ctx context.Context, in *DeleteObjectiveRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListObjectives(ctx context.Context, in *ListObjectivesRequest, opts ...grpc.CallOption) (*ListObjectivesResponse, error)
+	// Records a reading of the objective's metric and returns the objective with its new progress.
+	RecordMeasurement(ctx context.Context, in *RecordMeasurementRequest, opts ...grpc.CallOption) (*Objective, error)
+	DeleteMeasurement(ctx context.Context, in *DeleteMeasurementRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListMeasurements(ctx context.Context, in *ListMeasurementsRequest, opts ...grpc.CallOption) (*ListMeasurementsResponse, error)
+}
+
+type objectiveServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewObjectiveServiceClient(cc grpc.ClientConnInterface) ObjectiveServiceClient {
+	return &objectiveServiceClient{cc}
+}
+
+func (c *objectiveServiceClient) CreateObjective(ctx context.Context, in *CreateObjectiveRequest, opts ...grpc.CallOption) (*Objective, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Objective)
+	err := c.cc.Invoke(ctx, ObjectiveService_CreateObjective_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *objectiveServiceClient) GetObjective(ctx context.Context, in *GetObjectiveRequest, opts ...grpc.CallOption) (*Objective, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Objective)
+	err := c.cc.Invoke(ctx, ObjectiveService_GetObjective_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *objectiveServiceClient) UpdateObjective(ctx context.Context, in *UpdateObjectiveRequest, opts ...grpc.CallOption) (*Objective, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Objective)
+	err := c.cc.Invoke(ctx, ObjectiveService_UpdateObjective_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *objectiveServiceClient) DeleteObjective(ctx context.Context, in *DeleteObjectiveRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, ObjectiveService_DeleteObjective_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *objectiveServiceClient) ListObjectives(ctx context.Context, in *ListObjectivesRequest, opts ...grpc.CallOption) (*ListObjectivesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListObjectivesResponse)
+	err := c.cc.Invoke(ctx, ObjectiveService_ListObjectives_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *objectiveServiceClient) RecordMeasurement(ctx context.Context, in *RecordMeasurementRequest, opts ...grpc.CallOption) (*Objective, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Objective)
+	err := c.cc.Invoke(ctx, ObjectiveService_RecordMeasurement_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *objectiveServiceClient) DeleteMeasurement(ctx context.Context, in *DeleteMeasurementRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, ObjectiveService_DeleteMeasurement_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *objectiveServiceClient) ListMeasurements(ctx context.Context, in *ListMeasurementsRequest, opts ...grpc.CallOption) (*ListMeasurementsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMeasurementsResponse)
+	err := c.cc.Invoke(ctx, ObjectiveService_ListMeasurements_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ObjectiveServiceServer is the server API for ObjectiveService service.
+// All implementations must embed UnimplementedObjectiveServiceServer
+// for forward compatibility.
+type ObjectiveServiceServer interface {
+	CreateObjective(context.Context, *CreateObjectiveRequest) (*Objective, error)
+	GetObjective(context.Context, *GetObjectiveRequest) (*Objective, error)
+	UpdateObjective(context.Context, *UpdateObjectiveRequest) (*Objective, error)
+	DeleteObjective(context.Context, *DeleteObjectiveRequest) (*emptypb.Empty, error)
+	ListObjectives(context.Context, *ListObjectivesRequest) (*ListObjectivesResponse, error)
+	// Records a reading of the objective's metric and returns the objective with its new progress.
+	RecordMeasurement(context.Context, *RecordMeasurementRequest) (*Objective, error)
+	DeleteMeasurement(context.Context, *DeleteMeasurementRequest) (*emptypb.Empty, error)
+	ListMeasurements(context.Context, *ListMeasurementsRequest) (*ListMeasurementsResponse, error)
+	mustEmbedUnimplementedObjectiveServiceServer()
+}
+
+// UnimplementedObjectiveServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedObjectiveServiceServer struct{}
+
+func (UnimplementedObjectiveServiceServer) CreateObjective(context.Context, *CreateObjectiveRequest) (*Objective, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateObjective not implemented")
+}
+func (UnimplementedObjectiveServiceServer) GetObjective(context.Context, *GetObjectiveRequest) (*Objective, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetObjective not implemented")
+}
+func (UnimplementedObjectiveServiceServer) UpdateObjective(context.Context, *UpdateObjectiveRequest) (*Objective, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateObjective not implemented")
+}
+func (UnimplementedObjectiveServiceServer) DeleteObjective(context.Context, *DeleteObjectiveRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteObjective not implemented")
+}
+func (UnimplementedObjectiveServiceServer) ListObjectives(context.Context, *ListObjectivesRequest) (*ListObjectivesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListObjectives not implemented")
+}
+func (UnimplementedObjectiveServiceServer) RecordMeasurement(context.Context, *RecordMeasurementRequest) (*Objective, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RecordMeasurement not implemented")
+}
+func (UnimplementedObjectiveServiceServer) DeleteMeasurement(context.Context, *DeleteMeasurementRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteMeasurement not implemented")
+}
+func (UnimplementedObjectiveServiceServer) ListMeasurements(context.Context, *ListMeasurementsRequest) (*ListMeasurementsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListMeasurements not implemented")
+}
+func (UnimplementedObjectiveServiceServer) mustEmbedUnimplementedObjectiveServiceServer() {}
+func (UnimplementedObjectiveServiceServer) testEmbeddedByValue()                          {}
+
+// UnsafeObjectiveServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ObjectiveServiceServer will
+// result in compilation errors.
+type UnsafeObjectiveServiceServer interface {
+	mustEmbedUnimplementedObjectiveServiceServer()
+}
+
+func RegisterObjectiveServiceServer(s grpc.ServiceRegistrar, srv ObjectiveServiceServer) {
+	// If the following call pancis, it indicates UnimplementedObjectiveServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&ObjectiveService_ServiceDesc, srv)
+}
+
+func _ObjectiveService_CreateObjective_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateObjectiveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ObjectiveServiceServer).CreateObjective(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ObjectiveService_CreateObjective_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ObjectiveServiceServer).CreateObjective(ctx, req.(*CreateObjectiveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ObjectiveService_GetObjective_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetObjectiveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ObjectiveServiceServer).GetObjective(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ObjectiveService_GetObjective_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ObjectiveServiceServer).GetObjective(ctx, req.(*GetObjectiveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ObjectiveService_UpdateObjective_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateObjectiveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ObjectiveServiceServer).UpdateObjective(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ObjectiveService_UpdateObjective_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ObjectiveServiceServer).UpdateObjective(ctx, req.(*UpdateObjectiveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ObjectiveService_DeleteObjective_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteObjectiveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ObjectiveServiceServer).DeleteObjective(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ObjectiveService_DeleteObjective_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ObjectiveServiceServer).DeleteObjective(ctx, req.(*DeleteObjectiveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ObjectiveService_ListObjectives_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListObjectivesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ObjectiveServiceServer).ListObjectives(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ObjectiveService_ListObjectives_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ObjectiveServiceServer).ListObjectives(ctx, req.(*ListObjectivesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ObjectiveService_RecordMeasurement_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RecordMeasurementRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ObjectiveServiceServer).RecordMeasurement(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ObjectiveService_RecordMeasurement_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ObjectiveServiceServer).RecordMeasurement(ctx, req.(*RecordMeasurementRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ObjectiveService_DeleteMeasurement_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteMeasurementRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ObjectiveServiceServer).DeleteMeasurement(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ObjectiveService_DeleteMeasurement_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ObjectiveServiceServer).DeleteMeasurement(ctx, req.(*DeleteMeasurementRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ObjectiveService_ListMeasurements_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMeasurementsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ObjectiveServiceServer).ListMeasurements(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ObjectiveService_ListMeasurements_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ObjectiveServiceServer).ListMeasurements(ctx, req.(*ListMeasurementsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ObjectiveService_ServiceDesc is the grpc.ServiceDesc for ObjectiveService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ObjectiveService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "noted.v1.ObjectiveService",
+	HandlerType: (*ObjectiveServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateObjective",
+			Handler:    _ObjectiveService_CreateObjective_Handler,
+		},
+		{
+			MethodName: "GetObjective",
+			Handler:    _ObjectiveService_GetObjective_Handler,
+		},
+		{
+			MethodName: "UpdateObjective",
+			Handler:    _ObjectiveService_UpdateObjective_Handler,
+		},
+		{
+			MethodName: "DeleteObjective",
+			Handler:    _ObjectiveService_DeleteObjective_Handler,
+		},
+		{
+			MethodName: "ListObjectives",
+			Handler:    _ObjectiveService_ListObjectives_Handler,
+		},
+		{
+			MethodName: "RecordMeasurement",
+			Handler:    _ObjectiveService_RecordMeasurement_Handler,
+		},
+		{
+			MethodName: "DeleteMeasurement",
+			Handler:    _ObjectiveService_DeleteMeasurement_Handler,
+		},
+		{
+			MethodName: "ListMeasurements",
+			Handler:    _ObjectiveService_ListMeasurements_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "noted/v1/noted.proto",
+}
+
+const (
 	ProjectService_CreateProject_FullMethodName = "/noted.v1.ProjectService/CreateProject"
 	ProjectService_GetProject_FullMethodName    = "/noted.v1.ProjectService/GetProject"
 	ProjectService_UpdateProject_FullMethodName = "/noted.v1.ProjectService/UpdateProject"
@@ -2328,6 +2698,115 @@ var PreferenceService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
+	ExportService_Export_FullMethodName = "/noted.v1.ExportService/Export"
+)
+
+// ExportServiceClient is the client API for ExportService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type ExportServiceClient interface {
+	// Streams a zip of everything the caller owns: noted.json, notes/*.md and
+	// calendar.ics. Archived and finished items are included.
+	Export(ctx context.Context, in *ExportRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExportChunk], error)
+}
+
+type exportServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewExportServiceClient(cc grpc.ClientConnInterface) ExportServiceClient {
+	return &exportServiceClient{cc}
+}
+
+func (c *exportServiceClient) Export(ctx context.Context, in *ExportRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ExportChunk], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &ExportService_ServiceDesc.Streams[0], ExportService_Export_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[ExportRequest, ExportChunk]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ExportService_ExportClient = grpc.ServerStreamingClient[ExportChunk]
+
+// ExportServiceServer is the server API for ExportService service.
+// All implementations must embed UnimplementedExportServiceServer
+// for forward compatibility.
+type ExportServiceServer interface {
+	// Streams a zip of everything the caller owns: noted.json, notes/*.md and
+	// calendar.ics. Archived and finished items are included.
+	Export(*ExportRequest, grpc.ServerStreamingServer[ExportChunk]) error
+	mustEmbedUnimplementedExportServiceServer()
+}
+
+// UnimplementedExportServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedExportServiceServer struct{}
+
+func (UnimplementedExportServiceServer) Export(*ExportRequest, grpc.ServerStreamingServer[ExportChunk]) error {
+	return status.Errorf(codes.Unimplemented, "method Export not implemented")
+}
+func (UnimplementedExportServiceServer) mustEmbedUnimplementedExportServiceServer() {}
+func (UnimplementedExportServiceServer) testEmbeddedByValue()                       {}
+
+// UnsafeExportServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ExportServiceServer will
+// result in compilation errors.
+type UnsafeExportServiceServer interface {
+	mustEmbedUnimplementedExportServiceServer()
+}
+
+func RegisterExportServiceServer(s grpc.ServiceRegistrar, srv ExportServiceServer) {
+	// If the following call pancis, it indicates UnimplementedExportServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&ExportService_ServiceDesc, srv)
+}
+
+func _ExportService_Export_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ExportRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ExportServiceServer).Export(m, &grpc.GenericServerStream[ExportRequest, ExportChunk]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ExportService_ExportServer = grpc.ServerStreamingServer[ExportChunk]
+
+// ExportService_ServiceDesc is the grpc.ServiceDesc for ExportService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ExportService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "noted.v1.ExportService",
+	HandlerType: (*ExportServiceServer)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Export",
+			Handler:       _ExportService_Export_Handler,
+			ServerStreams: true,
+		},
+	},
+	Metadata: "noted/v1/noted.proto",
+}
+
+const (
 	SuggestionService_ListProposals_FullMethodName   = "/noted.v1.SuggestionService/ListProposals"
 	SuggestionService_AcceptProposal_FullMethodName  = "/noted.v1.SuggestionService/AcceptProposal"
 	SuggestionService_DismissProposal_FullMethodName = "/noted.v1.SuggestionService/DismissProposal"
@@ -2653,6 +3132,378 @@ var SuggestionService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UndoChange",
 			Handler:    _SuggestionService_UndoChange_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "noted/v1/noted.proto",
+}
+
+const (
+	HoldingService_CreateHolding_FullMethodName = "/noted.v1.HoldingService/CreateHolding"
+	HoldingService_GetHolding_FullMethodName    = "/noted.v1.HoldingService/GetHolding"
+	HoldingService_UpdateHolding_FullMethodName = "/noted.v1.HoldingService/UpdateHolding"
+	HoldingService_DeleteHolding_FullMethodName = "/noted.v1.HoldingService/DeleteHolding"
+	HoldingService_ListHoldings_FullMethodName  = "/noted.v1.HoldingService/ListHoldings"
+	HoldingService_RecordTrade_FullMethodName   = "/noted.v1.HoldingService/RecordTrade"
+	HoldingService_DeleteTrade_FullMethodName   = "/noted.v1.HoldingService/DeleteTrade"
+	HoldingService_ListTrades_FullMethodName    = "/noted.v1.HoldingService/ListTrades"
+)
+
+// HoldingServiceClient is the client API for HoldingService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type HoldingServiceClient interface {
+	CreateHolding(ctx context.Context, in *CreateHoldingRequest, opts ...grpc.CallOption) (*Holding, error)
+	GetHolding(ctx context.Context, in *GetHoldingRequest, opts ...grpc.CallOption) (*Holding, error)
+	UpdateHolding(ctx context.Context, in *UpdateHoldingRequest, opts ...grpc.CallOption) (*Holding, error)
+	DeleteHolding(ctx context.Context, in *DeleteHoldingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListHoldings(ctx context.Context, in *ListHoldingsRequest, opts ...grpc.CallOption) (*ListHoldingsResponse, error)
+	// Records a buy or sell and returns the holding with its new position. A sell
+	// of more shares than were held at that time is refused.
+	RecordTrade(ctx context.Context, in *RecordTradeRequest, opts ...grpc.CallOption) (*Holding, error)
+	DeleteTrade(ctx context.Context, in *DeleteTradeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListTrades(ctx context.Context, in *ListTradesRequest, opts ...grpc.CallOption) (*ListTradesResponse, error)
+}
+
+type holdingServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewHoldingServiceClient(cc grpc.ClientConnInterface) HoldingServiceClient {
+	return &holdingServiceClient{cc}
+}
+
+func (c *holdingServiceClient) CreateHolding(ctx context.Context, in *CreateHoldingRequest, opts ...grpc.CallOption) (*Holding, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Holding)
+	err := c.cc.Invoke(ctx, HoldingService_CreateHolding_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *holdingServiceClient) GetHolding(ctx context.Context, in *GetHoldingRequest, opts ...grpc.CallOption) (*Holding, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Holding)
+	err := c.cc.Invoke(ctx, HoldingService_GetHolding_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *holdingServiceClient) UpdateHolding(ctx context.Context, in *UpdateHoldingRequest, opts ...grpc.CallOption) (*Holding, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Holding)
+	err := c.cc.Invoke(ctx, HoldingService_UpdateHolding_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *holdingServiceClient) DeleteHolding(ctx context.Context, in *DeleteHoldingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, HoldingService_DeleteHolding_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *holdingServiceClient) ListHoldings(ctx context.Context, in *ListHoldingsRequest, opts ...grpc.CallOption) (*ListHoldingsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListHoldingsResponse)
+	err := c.cc.Invoke(ctx, HoldingService_ListHoldings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *holdingServiceClient) RecordTrade(ctx context.Context, in *RecordTradeRequest, opts ...grpc.CallOption) (*Holding, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Holding)
+	err := c.cc.Invoke(ctx, HoldingService_RecordTrade_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *holdingServiceClient) DeleteTrade(ctx context.Context, in *DeleteTradeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, HoldingService_DeleteTrade_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *holdingServiceClient) ListTrades(ctx context.Context, in *ListTradesRequest, opts ...grpc.CallOption) (*ListTradesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTradesResponse)
+	err := c.cc.Invoke(ctx, HoldingService_ListTrades_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// HoldingServiceServer is the server API for HoldingService service.
+// All implementations must embed UnimplementedHoldingServiceServer
+// for forward compatibility.
+type HoldingServiceServer interface {
+	CreateHolding(context.Context, *CreateHoldingRequest) (*Holding, error)
+	GetHolding(context.Context, *GetHoldingRequest) (*Holding, error)
+	UpdateHolding(context.Context, *UpdateHoldingRequest) (*Holding, error)
+	DeleteHolding(context.Context, *DeleteHoldingRequest) (*emptypb.Empty, error)
+	ListHoldings(context.Context, *ListHoldingsRequest) (*ListHoldingsResponse, error)
+	// Records a buy or sell and returns the holding with its new position. A sell
+	// of more shares than were held at that time is refused.
+	RecordTrade(context.Context, *RecordTradeRequest) (*Holding, error)
+	DeleteTrade(context.Context, *DeleteTradeRequest) (*emptypb.Empty, error)
+	ListTrades(context.Context, *ListTradesRequest) (*ListTradesResponse, error)
+	mustEmbedUnimplementedHoldingServiceServer()
+}
+
+// UnimplementedHoldingServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedHoldingServiceServer struct{}
+
+func (UnimplementedHoldingServiceServer) CreateHolding(context.Context, *CreateHoldingRequest) (*Holding, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateHolding not implemented")
+}
+func (UnimplementedHoldingServiceServer) GetHolding(context.Context, *GetHoldingRequest) (*Holding, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetHolding not implemented")
+}
+func (UnimplementedHoldingServiceServer) UpdateHolding(context.Context, *UpdateHoldingRequest) (*Holding, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateHolding not implemented")
+}
+func (UnimplementedHoldingServiceServer) DeleteHolding(context.Context, *DeleteHoldingRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteHolding not implemented")
+}
+func (UnimplementedHoldingServiceServer) ListHoldings(context.Context, *ListHoldingsRequest) (*ListHoldingsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListHoldings not implemented")
+}
+func (UnimplementedHoldingServiceServer) RecordTrade(context.Context, *RecordTradeRequest) (*Holding, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RecordTrade not implemented")
+}
+func (UnimplementedHoldingServiceServer) DeleteTrade(context.Context, *DeleteTradeRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteTrade not implemented")
+}
+func (UnimplementedHoldingServiceServer) ListTrades(context.Context, *ListTradesRequest) (*ListTradesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTrades not implemented")
+}
+func (UnimplementedHoldingServiceServer) mustEmbedUnimplementedHoldingServiceServer() {}
+func (UnimplementedHoldingServiceServer) testEmbeddedByValue()                        {}
+
+// UnsafeHoldingServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to HoldingServiceServer will
+// result in compilation errors.
+type UnsafeHoldingServiceServer interface {
+	mustEmbedUnimplementedHoldingServiceServer()
+}
+
+func RegisterHoldingServiceServer(s grpc.ServiceRegistrar, srv HoldingServiceServer) {
+	// If the following call pancis, it indicates UnimplementedHoldingServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&HoldingService_ServiceDesc, srv)
+}
+
+func _HoldingService_CreateHolding_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateHoldingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HoldingServiceServer).CreateHolding(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: HoldingService_CreateHolding_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HoldingServiceServer).CreateHolding(ctx, req.(*CreateHoldingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _HoldingService_GetHolding_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetHoldingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HoldingServiceServer).GetHolding(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: HoldingService_GetHolding_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HoldingServiceServer).GetHolding(ctx, req.(*GetHoldingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _HoldingService_UpdateHolding_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateHoldingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HoldingServiceServer).UpdateHolding(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: HoldingService_UpdateHolding_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HoldingServiceServer).UpdateHolding(ctx, req.(*UpdateHoldingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _HoldingService_DeleteHolding_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteHoldingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HoldingServiceServer).DeleteHolding(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: HoldingService_DeleteHolding_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HoldingServiceServer).DeleteHolding(ctx, req.(*DeleteHoldingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _HoldingService_ListHoldings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListHoldingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HoldingServiceServer).ListHoldings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: HoldingService_ListHoldings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HoldingServiceServer).ListHoldings(ctx, req.(*ListHoldingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _HoldingService_RecordTrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RecordTradeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HoldingServiceServer).RecordTrade(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: HoldingService_RecordTrade_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HoldingServiceServer).RecordTrade(ctx, req.(*RecordTradeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _HoldingService_DeleteTrade_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteTradeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HoldingServiceServer).DeleteTrade(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: HoldingService_DeleteTrade_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HoldingServiceServer).DeleteTrade(ctx, req.(*DeleteTradeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _HoldingService_ListTrades_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTradesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HoldingServiceServer).ListTrades(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: HoldingService_ListTrades_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HoldingServiceServer).ListTrades(ctx, req.(*ListTradesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// HoldingService_ServiceDesc is the grpc.ServiceDesc for HoldingService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var HoldingService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "noted.v1.HoldingService",
+	HandlerType: (*HoldingServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateHolding",
+			Handler:    _HoldingService_CreateHolding_Handler,
+		},
+		{
+			MethodName: "GetHolding",
+			Handler:    _HoldingService_GetHolding_Handler,
+		},
+		{
+			MethodName: "UpdateHolding",
+			Handler:    _HoldingService_UpdateHolding_Handler,
+		},
+		{
+			MethodName: "DeleteHolding",
+			Handler:    _HoldingService_DeleteHolding_Handler,
+		},
+		{
+			MethodName: "ListHoldings",
+			Handler:    _HoldingService_ListHoldings_Handler,
+		},
+		{
+			MethodName: "RecordTrade",
+			Handler:    _HoldingService_RecordTrade_Handler,
+		},
+		{
+			MethodName: "DeleteTrade",
+			Handler:    _HoldingService_DeleteTrade_Handler,
+		},
+		{
+			MethodName: "ListTrades",
+			Handler:    _HoldingService_ListTrades_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
