@@ -33,6 +33,7 @@ type Goal struct {
 	CounterUnit   string
 	CounterTarget float64
 	Archived      bool
+	ObjectiveID   string // the larger goal this one is a dimension of; empty: stands alone
 	Milestones    []Milestone
 	Created       time.Time
 	Updated       time.Time
@@ -65,6 +66,7 @@ type GoalPatch struct {
 	CounterUnit          *string
 	CounterTarget        *float64
 	Archived             *bool
+	ObjectiveID          *string
 	Milestones           *[]Milestone
 }
 
@@ -177,6 +179,9 @@ func (s *Store) CreateGoal(ctx context.Context, g Goal) (Goal, error) {
 	if err := s.checkEvent(ctx, g.UserID, g.EventID); err != nil {
 		return Goal{}, err
 	}
+	if err := s.checkObjective(ctx, g.UserID, g.ObjectiveID); err != nil {
+		return Goal{}, err
+	}
 	var err error
 	if g.Space, err = s.resolveSpace(ctx, g.UserID, g.Space, ""); err != nil {
 		return Goal{}, err
@@ -188,9 +193,9 @@ func (s *Store) CreateGoal(ctx context.Context, g Goal) (Goal, error) {
 	}
 	err = s.tx(ctx, func(tx *sql.Tx) error {
 		if _, err := tx.ExecContext(ctx, `
-			INSERT INTO goals(id, user_id, title, notes, period, target, unit, tz, event_id, space, counter_unit, counter_target, archived, created_ms, updated_ms)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			g.ID, g.UserID, g.Title, g.Notes, g.Period, g.Target, g.Unit, g.TimeZone, g.EventID, g.Space, g.CounterUnit, g.CounterTarget, b2i(g.Archived),
+			INSERT INTO goals(id, user_id, title, notes, period, target, unit, tz, event_id, space, counter_unit, counter_target, archived, objective_id, created_ms, updated_ms)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			g.ID, g.UserID, g.Title, g.Notes, g.Period, g.Target, g.Unit, g.TimeZone, g.EventID, g.Space, g.CounterUnit, g.CounterTarget, b2i(g.Archived), g.ObjectiveID,
 			ms(g.Created), ms(g.Updated)); err != nil {
 			return err
 		}
@@ -212,14 +217,14 @@ func writeMilestones(ctx context.Context, tx *sql.Tx, g Goal) error {
 	return nil
 }
 
-const goalCols = `id, user_id, title, notes, period, target, unit, tz, event_id, space, counter_unit, counter_target, archived, created_ms, updated_ms`
+const goalCols = `id, user_id, title, notes, period, target, unit, tz, event_id, space, counter_unit, counter_target, archived, objective_id, created_ms, updated_ms`
 
 func scanGoal(r scanner) (Goal, error) {
 	var g Goal
 	var archived int
 	var created, updated int64
 	if err := r.Scan(&g.ID, &g.UserID, &g.Title, &g.Notes, &g.Period, &g.Target, &g.Unit, &g.TimeZone, &g.EventID,
-		&g.Space, &g.CounterUnit, &g.CounterTarget, &archived, &created, &updated); err != nil {
+		&g.Space, &g.CounterUnit, &g.CounterTarget, &archived, &g.ObjectiveID, &created, &updated); err != nil {
 		return Goal{}, err
 	}
 	g.Archived = archived != 0
@@ -305,6 +310,12 @@ func (s *Store) UpdateGoal(ctx context.Context, userID, id string, p GoalPatch) 
 	if p.Archived != nil {
 		g.Archived = *p.Archived
 	}
+	if p.ObjectiveID != nil {
+		if err := s.checkObjective(ctx, userID, *p.ObjectiveID); err != nil {
+			return Goal{}, err
+		}
+		g.ObjectiveID = *p.ObjectiveID
+	}
 	if p.Space != nil {
 		if *p.Space != SpaceWork && *p.Space != SpaceLife {
 			return Goal{}, invalid("space must be work or life")
@@ -339,9 +350,9 @@ func (s *Store) UpdateGoal(ctx context.Context, userID, id string, p GoalPatch) 
 	g.Updated = time.Now().UTC().Truncate(time.Millisecond)
 	err = s.tx(ctx, func(tx *sql.Tx) error {
 		if _, err := tx.ExecContext(ctx, `
-			UPDATE goals SET title = ?, notes = ?, period = ?, target = ?, unit = ?, tz = ?, event_id = ?, space = ?, counter_unit = ?, counter_target = ?, archived = ?, updated_ms = ?
+			UPDATE goals SET title = ?, notes = ?, period = ?, target = ?, unit = ?, tz = ?, event_id = ?, space = ?, counter_unit = ?, counter_target = ?, archived = ?, objective_id = ?, updated_ms = ?
 			WHERE id = ? AND user_id = ?`,
-			g.Title, g.Notes, g.Period, g.Target, g.Unit, g.TimeZone, g.EventID, g.Space, g.CounterUnit, g.CounterTarget, b2i(g.Archived), ms(g.Updated), id, userID); err != nil {
+			g.Title, g.Notes, g.Period, g.Target, g.Unit, g.TimeZone, g.EventID, g.Space, g.CounterUnit, g.CounterTarget, b2i(g.Archived), g.ObjectiveID, ms(g.Updated), id, userID); err != nil {
 			return err
 		}
 		if p.Milestones != nil {

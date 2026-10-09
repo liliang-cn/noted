@@ -29,7 +29,9 @@ type Reminder struct {
 // repeatedly; the scheduler calls it on a timer.
 //
 // An event reminder fires when the next occurrence is within its
-// remind_before window; occurrences that already started are not reminded.
+// remind_before window; occurrences that already started are not reminded,
+// except that a reminder set for the start itself (0 minutes) still fires if
+// the scheduler reaches it up to startGrace late.
 func (s *Store) CollectDueReminders(ctx context.Context, now time.Time) ([]Reminder, error) {
 	var fired []Reminder
 	err := s.tx(ctx, func(tx *sql.Tx) error {
@@ -86,6 +88,9 @@ func (s *Store) CollectDueReminders(ctx context.Context, now time.Time) ([]Remin
 	return fired, err
 }
 
+// startGrace is how late an "at the start" reminder may still be delivered.
+const startGrace = 2 * time.Minute
+
 type dueEvent struct {
 	ev    Event
 	start time.Time
@@ -93,7 +98,7 @@ type dueEvent struct {
 
 func (s *Store) dueEvents(ctx context.Context, tx *sql.Tx, now time.Time) ([]dueEvent, error) {
 	rows, err := tx.QueryContext(ctx, `SELECT `+eventCols+`, reminded_for_ms FROM events
-		WHERE remind_before IS NOT NULL AND (rrule <> '' OR start_ms > ?)`, ms(now))
+		WHERE remind_before IS NOT NULL AND (rrule <> '' OR start_ms > ?)`, ms(now.Add(-startGrace)))
 	if err != nil {
 		return nil, err
 	}
@@ -110,9 +115,13 @@ func (s *Store) dueEvents(ctx context.Context, tx *sql.Tx, now time.Time) ([]due
 		}
 		e.Start, e.End, e.AllDay = fromMS(start), fromMS(end), allDay != 0
 		lead := time.Duration(remind.Int64) * time.Minute
+		grace := time.Duration(0)
+		if lead == 0 {
+			grace = startGrace
+		}
 		// The next occurrence that has not started yet.
-		for _, o := range e.Occurrences(now, now.Add(lead+time.Minute), 8) {
-			if !o.Start.After(now) {
+		for _, o := range e.Occurrences(now.Add(-grace), now.Add(lead+time.Minute), 8) {
+			if late := now.Sub(o.Start); late > 0 && (grace == 0 || late >= grace) {
 				continue // already started (or ongoing): too late to remind
 			}
 			if o.Start.Add(-lead).After(now) {

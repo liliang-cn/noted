@@ -18,6 +18,7 @@ import (
 	"github.com/liliang-cn/noted/internal/ai"
 	"github.com/liliang-cn/noted/internal/auth"
 	"github.com/liliang-cn/noted/internal/config"
+	"github.com/liliang-cn/noted/internal/export"
 	"github.com/liliang-cn/noted/internal/mcpserver"
 	"github.com/liliang-cn/noted/internal/plan"
 	"github.com/liliang-cn/noted/internal/reminder"
@@ -40,6 +41,7 @@ Usage:
   noted user add <name> [-config ...]       create a user and print its first token
   noted user list [-config ...]
   noted token new <user> [-label text]      issue another token for an existing user
+  noted export <user> [-o file.zip]         write everything a user has (JSON, Markdown notes, .ics) to a zip
   noted mcp [-addr host:port] [-token T]    MCP server on stdio, backed by a running noted server
   noted health [-addr host:port] [-tls]    exit 0 if a server answers (for container healthchecks)
   noted version
@@ -61,6 +63,8 @@ func main() {
 		err = userCmd(os.Args[2:])
 	case "token":
 		err = tokenCmd(os.Args[2:])
+	case "export":
+		err = exportCmd(os.Args[2:])
 	case "mcp":
 		err = mcpCmd(os.Args[2:])
 	case "health":
@@ -260,6 +264,50 @@ func userCmd(argv []string) error {
 		return fmt.Errorf("unknown user command %q", pos[0])
 	}
 	return nil
+}
+
+func exportCmd(argv []string) error {
+	pos, flags := splitArgs(argv)
+	if len(pos) != 1 {
+		return fmt.Errorf("usage: noted export <user> [-o file.zip]")
+	}
+	fs := flag.NewFlagSet("export", flag.ExitOnError)
+	out := fs.String("o", "", "output file (default noted-<user>-<date>.zip)")
+	st, err := openStore(fs, flags)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = st.Close() }()
+	ctx := context.Background()
+	users, err := st.ListUsers(ctx)
+	if err != nil {
+		return err
+	}
+	for _, u := range users {
+		if u.Name != pos[0] {
+			continue
+		}
+		now := time.Now()
+		path := *out
+		if path == "" {
+			path = fmt.Sprintf("noted-%s-%s.zip", u.Name, now.Format("20060102"))
+		}
+		f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+		if err != nil {
+			return err
+		}
+		if err := export.Write(ctx, st, u.ID, u.Name, now, f); err != nil {
+			_ = f.Close()
+			_ = os.Remove(path)
+			return err
+		}
+		if err := f.Close(); err != nil {
+			return err
+		}
+		fmt.Println(path)
+		return nil
+	}
+	return fmt.Errorf("no user named %q", pos[0])
 }
 
 func tokenCmd(argv []string) error {

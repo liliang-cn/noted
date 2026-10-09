@@ -1,3 +1,7 @@
 /bin/
 /data/
 /noted.toml
+ios/Noted.xcodeproj/
+ios/build/
+*.xcuserstate
+xcuserdata/

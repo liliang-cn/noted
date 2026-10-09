@@ -41,10 +41,13 @@ func New(d Deps, opts ...grpc.ServerOption) *grpc.Server {
 	pb.RegisterNoteServiceServer(g, &service.Notes{Store: d.Store, AI: d.Engine, Changed: d.Changed})
 	pb.RegisterCalendarServiceServer(g, &service.Calendar{Store: d.Store, Hub: d.Hub})
 	pb.RegisterGoalServiceServer(g, &service.Goals{Store: d.Store})
+	pb.RegisterObjectiveServiceServer(g, &service.Objectives{Store: d.Store})
+	pb.RegisterHoldingServiceServer(g, &service.Holdings{Store: d.Store, Location: d.Location})
 	pb.RegisterProjectServiceServer(g, &service.Projects{Store: d.Store, Location: d.Location})
 	pb.RegisterFocusServiceServer(g, &service.Focus{Store: d.Store, Location: d.Location})
 	sugg := &service.Suggestions{Store: d.Store, Location: d.Location, Locale: d.Locale}
 	pb.RegisterSuggestionServiceServer(g, sugg)
+	pb.RegisterExportServiceServer(g, &service.Export{Store: d.Store})
 	pb.RegisterPreferenceServiceServer(g, &service.Preferences{Store: d.Store})
 	pb.RegisterAIServiceServer(g, &service.AI{Store: d.Store, Engine: d.Engine, Location: d.Location, Locale: d.Locale, Sugg: sugg, Changed: d.Changed})
 

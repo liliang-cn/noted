@@ -1,0 +1,184 @@
+name: Noted
+options:
+  bundleIdPrefix: cn.superleo
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    DEVELOPMENT_TEAM: NUDL4XSA6J
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+packages:
+  GRPCSwift:
+    url: https://github.com/grpc/grpc-swift-2.git
+    from: 2.0.0
+  GRPCSwiftProtobuf:
+    url: https://github.com/grpc/grpc-swift-protobuf.git
+    from: 2.0.0
+  GRPCSwiftNIOTransport:
+    url: https://github.com/grpc/grpc-swift-nio-transport.git
+    from: 2.0.0
+  SwiftProtobuf:
+    url: https://github.com/apple/swift-protobuf.git
+    from: 1.30.0
+schemes:
+  NotedWatch:
+    build:
+      targets:
+        NotedWatch: all
+    test:
+      targets:
+        - NotedWatchTests
+        - NotedWatchUITests
+  Noted:
+    build:
+      targets:
+        Noted: all
+    run:
+      storeKitConfiguration: Noted.storekit
+    test:
+      storeKitConfiguration: Noted.storekit
+      targets:
+        - NotedTests
+        - NotedUITests
+targets:
+  Noted:
+    type: application
+    platform: iOS
+    sources:
+      - Noted
+      - Shared
+    entitlements:
+      path: Config/Noted.entitlements
+      properties:
+        com.apple.security.application-groups: [group.cn.superleo.noted]
+    dependencies:
+      - target: NotedWidgets
+      - target: NotedWatch
+      - package: GRPCSwift
+        product: GRPCCore
+      - package: GRPCSwiftProtobuf
+        product: GRPCProtobuf
+      - package: GRPCSwiftNIOTransport
+        product: GRPCNIOTransportHTTP2
+      - package: SwiftProtobuf
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cn.superleo.noted
+        CODE_SIGN_STYLE: Automatic
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Noted
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_UIUserInterfaceStyle: Light
+        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: 把笔记保存为图片
+        INFOPLIST_KEY_NSLocalNetworkUsageDescription: 连接你在局域网里运行的 noted 服务
+        SWIFT_STRICT_CONCURRENCY: complete
+  NotedTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - NotedTests
+      - path: Noted.storekit
+        buildPhase: resources
+    dependencies:
+      - target: Noted
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cn.superleo.noted.tests
+        GENERATE_INFOPLIST_FILE: YES
+  NotedUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [NotedUITests]
+    dependencies:
+      - target: Noted
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cn.superleo.noted.uitests
+        GENERATE_INFOPLIST_FILE: YES
+  NotedWidgets:
+    type: app-extension
+    platform: iOS
+    sources: [NotedWidgets, Shared]
+    entitlements:
+      path: Config/NotedWidgets.entitlements
+      properties:
+        com.apple.security.application-groups: [group.cn.superleo.noted]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cn.superleo.noted.widgets
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Noted
+        SKIP_INSTALL: YES
+    info:
+      path: Config/WidgetsInfo.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+  NotedWatch:
+    type: application
+    platform: watchOS
+    sources: [NotedWatch, Shared]
+    entitlements:
+      path: Config/NotedWatch.entitlements
+      properties:
+        com.apple.security.application-groups: [group.cn.superleo.noted]
+    dependencies:
+      - target: NotedWatchWidgets
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cn.superleo.noted.watchkitapp
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Noted
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: cn.superleo.noted
+        WATCHOS_DEPLOYMENT_TARGET: "11.0"
+  NotedWatchWidgets:
+    type: app-extension
+    platform: watchOS
+    sources: [NotedWidgets, Shared]
+    entitlements:
+      path: Config/NotedWatchWidgets.entitlements
+      properties:
+        com.apple.security.application-groups: [group.cn.superleo.noted]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cn.superleo.noted.watchkitapp.widgets
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Noted
+        SKIP_INSTALL: YES
+        WATCHOS_DEPLOYMENT_TARGET: "11.0"
+    info:
+      path: Config/WatchWidgetsInfo.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+  NotedWatchTests:
+    type: bundle.unit-test
+    platform: watchOS
+    sources: [NotedWatchTests]
+    dependencies:
+      - target: NotedWatch
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cn.superleo.noted.watchtests
+        GENERATE_INFOPLIST_FILE: YES
+        WATCHOS_DEPLOYMENT_TARGET: "11.0"
+  NotedWatchUITests:
+    type: bundle.ui-testing
+    platform: watchOS
+    sources: [NotedWatchUITests]
+    dependencies:
+      - target: NotedWatch
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: cn.superleo.noted.watchuitests
+        GENERATE_INFOPLIST_FILE: YES
+        WATCHOS_DEPLOYMENT_TARGET: "11.0"
+        TEST_TARGET_NAME: NotedWatch
