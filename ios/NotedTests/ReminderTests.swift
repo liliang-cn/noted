@@ -64,7 +64,7 @@ final class ReminderTests: XCTestCase {
     }
 
     func testMuteRules() {
-        let life = occ("生活的", in: 60, remind: 5, space: .life, id: "a")
+        let life = occ("个人的", in: 60, remind: 5, space: .life, id: "a")
         let work = occ("工作的", in: 60, remind: 5, space: .work, id: "b")
         var m = MuteRules()
         m.lifeInWork = true
@@ -72,7 +72,7 @@ final class ReminderTests: XCTestCase {
         XCTAssertEqual(ReminderPlanner.plan(occurrences: [life, work], tasks: [], now: now, mode: .life, mute: m).count, 2, "muting applies only while in that mode")
         XCTAssertEqual(ReminderPlanner.plan(occurrences: [life, work], tasks: [], now: now, mode: .all, mute: m).count, 2)
         m = MuteRules(); m.workInLife = true
-        XCTAssertEqual(ReminderPlanner.plan(occurrences: [life, work], tasks: [], now: now, mode: .life, mute: m).map(\.title), ["生活的"])
+        XCTAssertEqual(ReminderPlanner.plan(occurrences: [life, work], tasks: [], now: now, mode: .life, mute: m).map(\.title), ["个人的"])
         XCTAssertEqual(ReminderPlanner.plan(occurrences: [], tasks: [task("工作待办", remindIn: 30)], now: now, mode: .life, mute: m).count, 1, "an untagged space is never muted")
     }
 

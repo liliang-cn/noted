@@ -34,6 +34,7 @@ type Goal struct {
 	CounterTarget float64
 	Archived      bool
 	ObjectiveID   string // the larger goal this one is a dimension of; empty: stands alone
+	ProjectID     string // the project this goal belongs to; empty: none
 	Milestones    []Milestone
 	Created       time.Time
 	Updated       time.Time
@@ -55,6 +56,9 @@ type CheckIn struct {
 	Amount float64
 	Tally  float64 // added to the goal\'s running total, if it has one
 	Note   string
+	// TimeEntryID is the time entry that made this check-in, which keeps it in
+	// step with itself; empty for one recorded directly.
+	TimeEntryID string
 }
 
 type GoalPatch struct {
@@ -67,6 +71,7 @@ type GoalPatch struct {
 	CounterTarget        *float64
 	Archived             *bool
 	ObjectiveID          *string
+	ProjectID            *string
 	Milestones           *[]Milestone
 }
 
@@ -182,6 +187,9 @@ func (s *Store) CreateGoal(ctx context.Context, g Goal) (Goal, error) {
 	if err := s.checkObjective(ctx, g.UserID, g.ObjectiveID); err != nil {
 		return Goal{}, err
 	}
+	if err := s.checkProject(ctx, g.UserID, g.ProjectID); err != nil {
+		return Goal{}, err
+	}
 	var err error
 	if g.Space, err = s.resolveSpace(ctx, g.UserID, g.Space, ""); err != nil {
 		return Goal{}, err
@@ -193,9 +201,9 @@ func (s *Store) CreateGoal(ctx context.Context, g Goal) (Goal, error) {
 	}
 	err = s.tx(ctx, func(tx *sql.Tx) error {
 		if _, err := tx.ExecContext(ctx, `
-			INSERT INTO goals(id, user_id, title, notes, period, target, unit, tz, event_id, space, counter_unit, counter_target, archived, objective_id, created_ms, updated_ms)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			g.ID, g.UserID, g.Title, g.Notes, g.Period, g.Target, g.Unit, g.TimeZone, g.EventID, g.Space, g.CounterUnit, g.CounterTarget, b2i(g.Archived), g.ObjectiveID,
+			INSERT INTO goals(id, user_id, title, notes, period, target, unit, tz, event_id, space, counter_unit, counter_target, archived, objective_id, project_id, created_ms, updated_ms)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			g.ID, g.UserID, g.Title, g.Notes, g.Period, g.Target, g.Unit, g.TimeZone, g.EventID, g.Space, g.CounterUnit, g.CounterTarget, b2i(g.Archived), g.ObjectiveID, g.ProjectID,
 			ms(g.Created), ms(g.Updated)); err != nil {
 			return err
 		}
@@ -217,14 +225,14 @@ func writeMilestones(ctx context.Context, tx *sql.Tx, g Goal) error {
 	return nil
 }
 
-const goalCols = `id, user_id, title, notes, period, target, unit, tz, event_id, space, counter_unit, counter_target, archived, objective_id, created_ms, updated_ms`
+const goalCols = `id, user_id, title, notes, period, target, unit, tz, event_id, space, counter_unit, counter_target, archived, objective_id, project_id, created_ms, updated_ms`
 
 func scanGoal(r scanner) (Goal, error) {
 	var g Goal
 	var archived int
 	var created, updated int64
 	if err := r.Scan(&g.ID, &g.UserID, &g.Title, &g.Notes, &g.Period, &g.Target, &g.Unit, &g.TimeZone, &g.EventID,
-		&g.Space, &g.CounterUnit, &g.CounterTarget, &archived, &g.ObjectiveID, &created, &updated); err != nil {
+		&g.Space, &g.CounterUnit, &g.CounterTarget, &archived, &g.ObjectiveID, &g.ProjectID, &created, &updated); err != nil {
 		return Goal{}, err
 	}
 	g.Archived = archived != 0
@@ -282,7 +290,7 @@ func (s *Store) UpdateGoal(ctx context.Context, userID, id string, p GoalPatch) 
 	if err != nil {
 		return Goal{}, err
 	}
-	oldTZ := g.TimeZone
+	oldTZ, oldUnit := g.TimeZone, g.Unit
 	if p.Title != nil {
 		g.Title = *p.Title
 	}
@@ -315,6 +323,12 @@ func (s *Store) UpdateGoal(ctx context.Context, userID, id string, p GoalPatch) 
 			return Goal{}, err
 		}
 		g.ObjectiveID = *p.ObjectiveID
+	}
+	if p.ProjectID != nil {
+		if err := s.checkProject(ctx, userID, *p.ProjectID); err != nil {
+			return Goal{}, err
+		}
+		g.ProjectID = *p.ProjectID
 	}
 	if p.Space != nil {
 		if *p.Space != SpaceWork && *p.Space != SpaceLife {
@@ -350,13 +364,18 @@ func (s *Store) UpdateGoal(ctx context.Context, userID, id string, p GoalPatch) 
 	g.Updated = time.Now().UTC().Truncate(time.Millisecond)
 	err = s.tx(ctx, func(tx *sql.Tx) error {
 		if _, err := tx.ExecContext(ctx, `
-			UPDATE goals SET title = ?, notes = ?, period = ?, target = ?, unit = ?, tz = ?, event_id = ?, space = ?, counter_unit = ?, counter_target = ?, archived = ?, objective_id = ?, updated_ms = ?
+			UPDATE goals SET title = ?, notes = ?, period = ?, target = ?, unit = ?, tz = ?, event_id = ?, space = ?, counter_unit = ?, counter_target = ?, archived = ?, objective_id = ?, project_id = ?, updated_ms = ?
 			WHERE id = ? AND user_id = ?`,
-			g.Title, g.Notes, g.Period, g.Target, g.Unit, g.TimeZone, g.EventID, g.Space, g.CounterUnit, g.CounterTarget, b2i(g.Archived), g.ObjectiveID, ms(g.Updated), id, userID); err != nil {
+			g.Title, g.Notes, g.Period, g.Target, g.Unit, g.TimeZone, g.EventID, g.Space, g.CounterUnit, g.CounterTarget, b2i(g.Archived), g.ObjectiveID, g.ProjectID, ms(g.Updated), id, userID); err != nil {
 			return err
 		}
 		if p.Milestones != nil {
 			if err := writeMilestones(ctx, tx, g); err != nil {
+				return err
+			}
+		}
+		if g.Unit != oldUnit {
+			if err := recountEntries(ctx, tx, g); err != nil {
 				return err
 			}
 		}
@@ -366,6 +385,36 @@ func (s *Store) UpdateGoal(ctx context.Context, userID, id string, p GoalPatch) 
 		return nil
 	})
 	return g, err
+}
+
+// recountEntries sets what the check-ins made by time entries add, after the
+// goal's unit changed (from times to minutes, say).
+func recountEntries(ctx context.Context, tx *sql.Tx, g Goal) error {
+	rows, err := tx.QueryContext(ctx, `SELECT c.id, e.minutes FROM goal_checkins c JOIN time_entries e ON e.id = c.time_entry_id
+		WHERE c.goal_id = ? AND c.user_id = ?`, g.ID, g.UserID)
+	if err != nil {
+		return err
+	}
+	amounts := map[string]float64{}
+	for rows.Next() {
+		var id string
+		var minutes int
+		if err := rows.Scan(&id, &minutes); err != nil {
+			_ = rows.Close()
+			return err
+		}
+		amounts[id] = GoalAmount(g.Unit, minutes)
+	}
+	_ = rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	for id, a := range amounts {
+		if _, err := tx.ExecContext(ctx, `UPDATE goal_checkins SET amount = ? WHERE id = ?`, a, id); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // recomputeDates re-buckets every check-in into days of the goal's new zone.
@@ -401,15 +450,20 @@ func recomputeDates(ctx context.Context, tx *sql.Tx, g Goal) error {
 	return nil
 }
 
+// DeleteGoal removes the goal and its check-ins. Time entries that counted
+// toward it stay, no longer linked.
 func (s *Store) DeleteGoal(ctx context.Context, userID, id string) error {
-	res, err := s.db.ExecContext(ctx, `DELETE FROM goals WHERE id = ? AND user_id = ?`, id, userID)
-	if err != nil {
+	return s.tx(ctx, func(tx *sql.Tx) error {
+		res, err := tx.ExecContext(ctx, `DELETE FROM goals WHERE id = ? AND user_id = ?`, id, userID)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return ErrNotFound
+		}
+		_, err = tx.ExecContext(ctx, `UPDATE time_entries SET goal_id = '' WHERE goal_id = ? AND user_id = ?`, id, userID)
 		return err
-	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return ErrNotFound
-	}
-	return nil
+	})
 }
 
 // ListGoals returns goals with progress, those behind pace first, then by title.
@@ -529,15 +583,19 @@ func (s *Store) RecordCheckIn(ctx context.Context, userID, goalID string, amount
 	return c, err
 }
 
-// DeleteCheckIn removes a check-in and returns the goal it belonged to.
+// DeleteCheckIn removes a check-in and returns the goal it belonged to. One a
+// time entry made is refused: it goes with the entry.
 func (s *Store) DeleteCheckIn(ctx context.Context, userID, id string) (string, error) {
-	var goalID string
-	err := s.db.QueryRowContext(ctx, `SELECT goal_id FROM goal_checkins WHERE id = ? AND user_id = ?`, id, userID).Scan(&goalID)
+	var goalID, entryID string
+	err := s.db.QueryRowContext(ctx, `SELECT goal_id, time_entry_id FROM goal_checkins WHERE id = ? AND user_id = ?`, id, userID).Scan(&goalID, &entryID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", ErrNotFound
 	}
 	if err != nil {
 		return "", err
+	}
+	if entryID != "" {
+		return "", precondition("this check-in was made by time entry %s; edit or delete that entry instead", entryID)
 	}
 	_, err = s.db.ExecContext(ctx, `DELETE FROM goal_checkins WHERE id = ? AND user_id = ?`, id, userID)
 	return goalID, err
@@ -547,7 +605,7 @@ func (s *Store) ListCheckIns(ctx context.Context, userID, goalID string, from, t
 	if _, err := s.GetGoal(ctx, userID, goalID); err != nil {
 		return nil, err
 	}
-	q := `SELECT id, goal_id, user_id, time_ms, local_date, amount, tally, note FROM goal_checkins WHERE goal_id = ? AND user_id = ?`
+	q := `SELECT id, goal_id, user_id, time_ms, local_date, amount, tally, note, time_entry_id FROM goal_checkins WHERE goal_id = ? AND user_id = ?`
 	args := []any{goalID, userID}
 	if from != nil {
 		q += ` AND time_ms >= ?`
@@ -568,7 +626,7 @@ func (s *Store) ListCheckIns(ctx context.Context, userID, goalID string, from, t
 	for rows.Next() {
 		var c CheckIn
 		var t int64
-		if err := rows.Scan(&c.ID, &c.GoalID, &c.UserID, &t, &c.Date, &c.Amount, &c.Tally, &c.Note); err != nil {
+		if err := rows.Scan(&c.ID, &c.GoalID, &c.UserID, &t, &c.Date, &c.Amount, &c.Tally, &c.Note, &c.TimeEntryID); err != nil {
 			return nil, err
 		}
 		c.Time = fromMS(t)

@@ -117,6 +117,517 @@ extension GRPCCore.ServiceDescriptor {
     public static let noted_v1_NoteService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.NoteService")
 }
 
+// MARK: noted.v1.NoteService (server)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_NoteService {
+    /// Streaming variant of the service protocol for the "noted.v1.NoteService" service.
+    ///
+    /// This protocol is the lowest-level of the service protocols generated for this service
+    /// giving you the most flexibility over the implementation of your service. This comes at
+    /// the cost of more verbose and less strict APIs. Each RPC requires you to implement it in
+    /// terms of a request stream and response stream. Where the RPC expects only a single
+    /// request or response message, you are responsible for ensuring your implementation
+    /// maintains this invariant.
+    ///
+    /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
+    /// or ``SimpleServiceProtocol`` instead.
+    public protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+        /// Handle the "CreateNote" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_CreateNoteRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Note` messages.
+        func createNote(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_CreateNoteRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Note>
+
+        /// Handle the "GetNote" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetNoteRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Note` messages.
+        func getNote(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetNoteRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Note>
+
+        /// Handle the "UpdateNote" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_UpdateNoteRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Note` messages.
+        func updateNote(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_UpdateNoteRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Note>
+
+        /// Handle the "DeleteNote" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_DeleteNoteRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        func deleteNote(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteNoteRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListNotes" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListNotesRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListNotesResponse` messages.
+        func listNotes(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListNotesRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListNotesResponse>
+
+        /// Handle the "SearchNotes" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_SearchNotesRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_SearchNotesResponse` messages.
+        func searchNotes(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_SearchNotesRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_SearchNotesResponse>
+    }
+
+    /// Service protocol for the "noted.v1.NoteService" service.
+    ///
+    /// This protocol is higher level than ``StreamingServiceProtocol`` but lower level than
+    /// the ``SimpleServiceProtocol``, it provides access to request and response metadata and
+    /// trailing response metadata. If you don't need these then consider using
+    /// the ``SimpleServiceProtocol``. If you need fine grained control over your RPCs then
+    /// use ``StreamingServiceProtocol``.
+    public protocol ServiceProtocol: Noted_V1_NoteService.StreamingServiceProtocol {
+        /// Handle the "CreateNote" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_CreateNoteRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Note` message.
+        func createNote(
+            request: GRPCCore.ServerRequest<Noted_V1_CreateNoteRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Note>
+
+        /// Handle the "GetNote" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetNoteRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Note` message.
+        func getNote(
+            request: GRPCCore.ServerRequest<Noted_V1_GetNoteRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Note>
+
+        /// Handle the "UpdateNote" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_UpdateNoteRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Note` message.
+        func updateNote(
+            request: GRPCCore.ServerRequest<Noted_V1_UpdateNoteRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Note>
+
+        /// Handle the "DeleteNote" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeleteNoteRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `SwiftProtobuf.Google_Protobuf_Empty` message.
+        func deleteNote(
+            request: GRPCCore.ServerRequest<Noted_V1_DeleteNoteRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListNotes" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListNotesRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListNotesResponse` message.
+        func listNotes(
+            request: GRPCCore.ServerRequest<Noted_V1_ListNotesRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListNotesResponse>
+
+        /// Handle the "SearchNotes" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SearchNotesRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_SearchNotesResponse` message.
+        func searchNotes(
+            request: GRPCCore.ServerRequest<Noted_V1_SearchNotesRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_SearchNotesResponse>
+    }
+
+    /// Simple service protocol for the "noted.v1.NoteService" service.
+    ///
+    /// This is the highest level protocol for the service. The API is the easiest to use but
+    /// doesn't provide access to request or response metadata. If you need access to these
+    /// then use ``ServiceProtocol`` instead.
+    public protocol SimpleServiceProtocol: Noted_V1_NoteService.ServiceProtocol {
+        /// Handle the "CreateNote" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_CreateNoteRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Note` to respond with.
+        func createNote(
+            request: Noted_V1_CreateNoteRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Note
+
+        /// Handle the "GetNote" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetNoteRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Note` to respond with.
+        func getNote(
+            request: Noted_V1_GetNoteRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Note
+
+        /// Handle the "UpdateNote" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_UpdateNoteRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Note` to respond with.
+        func updateNote(
+            request: Noted_V1_UpdateNoteRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Note
+
+        /// Handle the "DeleteNote" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_DeleteNoteRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `SwiftProtobuf.Google_Protobuf_Empty` to respond with.
+        func deleteNote(
+            request: Noted_V1_DeleteNoteRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> SwiftProtobuf.Google_Protobuf_Empty
+
+        /// Handle the "ListNotes" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListNotesRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListNotesResponse` to respond with.
+        func listNotes(
+            request: Noted_V1_ListNotesRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListNotesResponse
+
+        /// Handle the "SearchNotes" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_SearchNotesRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_SearchNotesResponse` to respond with.
+        func searchNotes(
+            request: Noted_V1_SearchNotesRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_SearchNotesResponse
+    }
+}
+
+// Default implementation of 'registerMethods(with:)'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_NoteService.StreamingServiceProtocol {
+    public func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
+        router.registerHandler(
+            forMethod: Noted_V1_NoteService.Method.CreateNote.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_CreateNoteRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Note>(),
+            handler: { request, context in
+                try await self.createNote(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_NoteService.Method.GetNote.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetNoteRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Note>(),
+            handler: { request, context in
+                try await self.getNote(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_NoteService.Method.UpdateNote.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_UpdateNoteRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Note>(),
+            handler: { request, context in
+                try await self.updateNote(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_NoteService.Method.DeleteNote.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_DeleteNoteRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+            handler: { request, context in
+                try await self.deleteNote(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_NoteService.Method.ListNotes.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListNotesRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListNotesResponse>(),
+            handler: { request, context in
+                try await self.listNotes(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_NoteService.Method.SearchNotes.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_SearchNotesRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_SearchNotesResponse>(),
+            handler: { request, context in
+                try await self.searchNotes(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+    }
+}
+
+// Default implementation of streaming methods from 'StreamingServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_NoteService.ServiceProtocol {
+    public func createNote(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_CreateNoteRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Note> {
+        let response = try await self.createNote(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func getNote(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetNoteRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Note> {
+        let response = try await self.getNote(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func updateNote(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_UpdateNoteRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Note> {
+        let response = try await self.updateNote(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func deleteNote(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteNoteRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        let response = try await self.deleteNote(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func listNotes(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListNotesRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListNotesResponse> {
+        let response = try await self.listNotes(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func searchNotes(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_SearchNotesRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_SearchNotesResponse> {
+        let response = try await self.searchNotes(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+}
+
+// Default implementation of methods from 'ServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_NoteService.SimpleServiceProtocol {
+    public func createNote(
+        request: GRPCCore.ServerRequest<Noted_V1_CreateNoteRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Note> {
+        return GRPCCore.ServerResponse<Noted_V1_Note>(
+            message: try await self.createNote(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func getNote(
+        request: GRPCCore.ServerRequest<Noted_V1_GetNoteRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Note> {
+        return GRPCCore.ServerResponse<Noted_V1_Note>(
+            message: try await self.getNote(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func updateNote(
+        request: GRPCCore.ServerRequest<Noted_V1_UpdateNoteRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Note> {
+        return GRPCCore.ServerResponse<Noted_V1_Note>(
+            message: try await self.updateNote(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func deleteNote(
+        request: GRPCCore.ServerRequest<Noted_V1_DeleteNoteRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        return GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>(
+            message: try await self.deleteNote(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func listNotes(
+        request: GRPCCore.ServerRequest<Noted_V1_ListNotesRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListNotesResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListNotesResponse>(
+            message: try await self.listNotes(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func searchNotes(
+        request: GRPCCore.ServerRequest<Noted_V1_SearchNotesRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_SearchNotesResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_SearchNotesResponse>(
+            message: try await self.searchNotes(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+}
+
 // MARK: noted.v1.NoteService (client)
 
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
@@ -910,6 +1421,45 @@ public enum Noted_V1_CalendarService: Sendable {
                 type: .unary
             )
         }
+        /// Namespace for "LogTaskWork" metadata.
+        public enum LogTaskWork: Sendable {
+            /// Request type for "LogTaskWork".
+            public typealias Input = Noted_V1_LogTaskWorkRequest
+            /// Response type for "LogTaskWork".
+            public typealias Output = Noted_V1_Task
+            /// Descriptor for "LogTaskWork".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.CalendarService"),
+                method: "LogTaskWork",
+                type: .unary
+            )
+        }
+        /// Namespace for "ListTaskWork" metadata.
+        public enum ListTaskWork: Sendable {
+            /// Request type for "ListTaskWork".
+            public typealias Input = Noted_V1_ListTaskWorkRequest
+            /// Response type for "ListTaskWork".
+            public typealias Output = Noted_V1_ListTaskWorkResponse
+            /// Descriptor for "ListTaskWork".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.CalendarService"),
+                method: "ListTaskWork",
+                type: .unary
+            )
+        }
+        /// Namespace for "DeleteTaskWork" metadata.
+        public enum DeleteTaskWork: Sendable {
+            /// Request type for "DeleteTaskWork".
+            public typealias Input = Noted_V1_DeleteTaskWorkRequest
+            /// Response type for "DeleteTaskWork".
+            public typealias Output = Noted_V1_Task
+            /// Descriptor for "DeleteTaskWork".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.CalendarService"),
+                method: "DeleteTaskWork",
+                type: .unary
+            )
+        }
         /// Namespace for "WatchReminders" metadata.
         public enum WatchReminders: Sendable {
             /// Request type for "WatchReminders".
@@ -948,6 +1498,9 @@ public enum Noted_V1_CalendarService: Sendable {
             UpdateTask.descriptor,
             DeleteTask.descriptor,
             ListTasks.descriptor,
+            LogTaskWork.descriptor,
+            ListTaskWork.descriptor,
+            DeleteTaskWork.descriptor,
             WatchReminders.descriptor,
             ListReminders.descriptor
         ]
@@ -958,6 +1511,1257 @@ public enum Noted_V1_CalendarService: Sendable {
 extension GRPCCore.ServiceDescriptor {
     /// Service descriptor for the "noted.v1.CalendarService" service.
     public static let noted_v1_CalendarService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.CalendarService")
+}
+
+// MARK: noted.v1.CalendarService (server)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_CalendarService {
+    /// Streaming variant of the service protocol for the "noted.v1.CalendarService" service.
+    ///
+    /// This protocol is the lowest-level of the service protocols generated for this service
+    /// giving you the most flexibility over the implementation of your service. This comes at
+    /// the cost of more verbose and less strict APIs. Each RPC requires you to implement it in
+    /// terms of a request stream and response stream. Where the RPC expects only a single
+    /// request or response message, you are responsible for ensuring your implementation
+    /// maintains this invariant.
+    ///
+    /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
+    /// or ``SimpleServiceProtocol`` instead.
+    public protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+        /// Handle the "CreateEvent" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_CreateEventRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Event` messages.
+        func createEvent(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_CreateEventRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Event>
+
+        /// Handle the "GetEvent" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetEventRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Event` messages.
+        func getEvent(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetEventRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Event>
+
+        /// Handle the "UpdateEvent" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_UpdateEventRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Event` messages.
+        func updateEvent(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_UpdateEventRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Event>
+
+        /// Handle the "DeleteEvent" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_DeleteEventRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        func deleteEvent(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteEventRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListEvents" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListEventsRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListEventsResponse` messages.
+        func listEvents(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListEventsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListEventsResponse>
+
+        /// Handle the "CreateTask" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_CreateTaskRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Task` messages.
+        func createTask(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_CreateTaskRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Task>
+
+        /// Handle the "GetTask" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetTaskRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Task` messages.
+        func getTask(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetTaskRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Task>
+
+        /// Handle the "UpdateTask" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_UpdateTaskRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Task` messages.
+        func updateTask(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_UpdateTaskRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Task>
+
+        /// Handle the "DeleteTask" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_DeleteTaskRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        func deleteTask(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteTaskRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListTasks" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListTasksRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListTasksResponse` messages.
+        func listTasks(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListTasksRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListTasksResponse>
+
+        /// Handle the "LogTaskWork" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Logs a sitting on a task and returns the task with its new totals.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_LogTaskWorkRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Task` messages.
+        func logTaskWork(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_LogTaskWorkRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Task>
+
+        /// Handle the "ListTaskWork" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListTaskWorkRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListTaskWorkResponse` messages.
+        func listTaskWork(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListTaskWorkRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListTaskWorkResponse>
+
+        /// Handle the "DeleteTaskWork" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Removes a sitting and returns the task with its totals recomputed. A
+        /// > completed task stays completed.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_DeleteTaskWorkRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Task` messages.
+        func deleteTaskWork(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteTaskWorkRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Task>
+
+        /// Handle the "WatchReminders" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Live stream of reminders as they fire. Reminders that fired while no
+        /// > client was connected are available from ListReminders.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_WatchRemindersRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Reminder` messages.
+        func watchReminders(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_WatchRemindersRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Reminder>
+
+        /// Handle the "ListReminders" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListRemindersRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListRemindersResponse` messages.
+        func listReminders(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListRemindersRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListRemindersResponse>
+    }
+
+    /// Service protocol for the "noted.v1.CalendarService" service.
+    ///
+    /// This protocol is higher level than ``StreamingServiceProtocol`` but lower level than
+    /// the ``SimpleServiceProtocol``, it provides access to request and response metadata and
+    /// trailing response metadata. If you don't need these then consider using
+    /// the ``SimpleServiceProtocol``. If you need fine grained control over your RPCs then
+    /// use ``StreamingServiceProtocol``.
+    public protocol ServiceProtocol: Noted_V1_CalendarService.StreamingServiceProtocol {
+        /// Handle the "CreateEvent" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_CreateEventRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Event` message.
+        func createEvent(
+            request: GRPCCore.ServerRequest<Noted_V1_CreateEventRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Event>
+
+        /// Handle the "GetEvent" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetEventRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Event` message.
+        func getEvent(
+            request: GRPCCore.ServerRequest<Noted_V1_GetEventRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Event>
+
+        /// Handle the "UpdateEvent" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_UpdateEventRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Event` message.
+        func updateEvent(
+            request: GRPCCore.ServerRequest<Noted_V1_UpdateEventRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Event>
+
+        /// Handle the "DeleteEvent" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeleteEventRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `SwiftProtobuf.Google_Protobuf_Empty` message.
+        func deleteEvent(
+            request: GRPCCore.ServerRequest<Noted_V1_DeleteEventRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListEvents" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListEventsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListEventsResponse` message.
+        func listEvents(
+            request: GRPCCore.ServerRequest<Noted_V1_ListEventsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListEventsResponse>
+
+        /// Handle the "CreateTask" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_CreateTaskRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Task` message.
+        func createTask(
+            request: GRPCCore.ServerRequest<Noted_V1_CreateTaskRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Task>
+
+        /// Handle the "GetTask" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetTaskRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Task` message.
+        func getTask(
+            request: GRPCCore.ServerRequest<Noted_V1_GetTaskRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Task>
+
+        /// Handle the "UpdateTask" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_UpdateTaskRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Task` message.
+        func updateTask(
+            request: GRPCCore.ServerRequest<Noted_V1_UpdateTaskRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Task>
+
+        /// Handle the "DeleteTask" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeleteTaskRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `SwiftProtobuf.Google_Protobuf_Empty` message.
+        func deleteTask(
+            request: GRPCCore.ServerRequest<Noted_V1_DeleteTaskRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListTasks" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListTasksRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListTasksResponse` message.
+        func listTasks(
+            request: GRPCCore.ServerRequest<Noted_V1_ListTasksRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListTasksResponse>
+
+        /// Handle the "LogTaskWork" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Logs a sitting on a task and returns the task with its new totals.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_LogTaskWorkRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Task` message.
+        func logTaskWork(
+            request: GRPCCore.ServerRequest<Noted_V1_LogTaskWorkRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Task>
+
+        /// Handle the "ListTaskWork" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListTaskWorkRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListTaskWorkResponse` message.
+        func listTaskWork(
+            request: GRPCCore.ServerRequest<Noted_V1_ListTaskWorkRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListTaskWorkResponse>
+
+        /// Handle the "DeleteTaskWork" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Removes a sitting and returns the task with its totals recomputed. A
+        /// > completed task stays completed.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeleteTaskWorkRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Task` message.
+        func deleteTaskWork(
+            request: GRPCCore.ServerRequest<Noted_V1_DeleteTaskWorkRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Task>
+
+        /// Handle the "WatchReminders" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Live stream of reminders as they fire. Reminders that fired while no
+        /// > client was connected are available from ListReminders.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_WatchRemindersRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Reminder` messages.
+        func watchReminders(
+            request: GRPCCore.ServerRequest<Noted_V1_WatchRemindersRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Reminder>
+
+        /// Handle the "ListReminders" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListRemindersRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListRemindersResponse` message.
+        func listReminders(
+            request: GRPCCore.ServerRequest<Noted_V1_ListRemindersRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListRemindersResponse>
+    }
+
+    /// Simple service protocol for the "noted.v1.CalendarService" service.
+    ///
+    /// This is the highest level protocol for the service. The API is the easiest to use but
+    /// doesn't provide access to request or response metadata. If you need access to these
+    /// then use ``ServiceProtocol`` instead.
+    public protocol SimpleServiceProtocol: Noted_V1_CalendarService.ServiceProtocol {
+        /// Handle the "CreateEvent" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_CreateEventRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Event` to respond with.
+        func createEvent(
+            request: Noted_V1_CreateEventRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Event
+
+        /// Handle the "GetEvent" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetEventRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Event` to respond with.
+        func getEvent(
+            request: Noted_V1_GetEventRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Event
+
+        /// Handle the "UpdateEvent" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_UpdateEventRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Event` to respond with.
+        func updateEvent(
+            request: Noted_V1_UpdateEventRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Event
+
+        /// Handle the "DeleteEvent" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_DeleteEventRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `SwiftProtobuf.Google_Protobuf_Empty` to respond with.
+        func deleteEvent(
+            request: Noted_V1_DeleteEventRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> SwiftProtobuf.Google_Protobuf_Empty
+
+        /// Handle the "ListEvents" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListEventsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListEventsResponse` to respond with.
+        func listEvents(
+            request: Noted_V1_ListEventsRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListEventsResponse
+
+        /// Handle the "CreateTask" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_CreateTaskRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Task` to respond with.
+        func createTask(
+            request: Noted_V1_CreateTaskRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Task
+
+        /// Handle the "GetTask" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetTaskRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Task` to respond with.
+        func getTask(
+            request: Noted_V1_GetTaskRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Task
+
+        /// Handle the "UpdateTask" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_UpdateTaskRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Task` to respond with.
+        func updateTask(
+            request: Noted_V1_UpdateTaskRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Task
+
+        /// Handle the "DeleteTask" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_DeleteTaskRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `SwiftProtobuf.Google_Protobuf_Empty` to respond with.
+        func deleteTask(
+            request: Noted_V1_DeleteTaskRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> SwiftProtobuf.Google_Protobuf_Empty
+
+        /// Handle the "ListTasks" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListTasksRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListTasksResponse` to respond with.
+        func listTasks(
+            request: Noted_V1_ListTasksRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListTasksResponse
+
+        /// Handle the "LogTaskWork" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Logs a sitting on a task and returns the task with its new totals.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_LogTaskWorkRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Task` to respond with.
+        func logTaskWork(
+            request: Noted_V1_LogTaskWorkRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Task
+
+        /// Handle the "ListTaskWork" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListTaskWorkRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListTaskWorkResponse` to respond with.
+        func listTaskWork(
+            request: Noted_V1_ListTaskWorkRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListTaskWorkResponse
+
+        /// Handle the "DeleteTaskWork" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Removes a sitting and returns the task with its totals recomputed. A
+        /// > completed task stays completed.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_DeleteTaskWorkRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Task` to respond with.
+        func deleteTaskWork(
+            request: Noted_V1_DeleteTaskWorkRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Task
+
+        /// Handle the "WatchReminders" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Live stream of reminders as they fire. Reminders that fired while no
+        /// > client was connected are available from ListReminders.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_WatchRemindersRequest` message.
+        ///   - response: A response stream of `Noted_V1_Reminder` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        func watchReminders(
+            request: Noted_V1_WatchRemindersRequest,
+            response: GRPCCore.RPCWriter<Noted_V1_Reminder>,
+            context: GRPCCore.ServerContext
+        ) async throws
+
+        /// Handle the "ListReminders" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListRemindersRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListRemindersResponse` to respond with.
+        func listReminders(
+            request: Noted_V1_ListRemindersRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListRemindersResponse
+    }
+}
+
+// Default implementation of 'registerMethods(with:)'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_CalendarService.StreamingServiceProtocol {
+    public func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
+        router.registerHandler(
+            forMethod: Noted_V1_CalendarService.Method.CreateEvent.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_CreateEventRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Event>(),
+            handler: { request, context in
+                try await self.createEvent(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_CalendarService.Method.GetEvent.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetEventRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Event>(),
+            handler: { request, context in
+                try await self.getEvent(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_CalendarService.Method.UpdateEvent.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_UpdateEventRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Event>(),
+            handler: { request, context in
+                try await self.updateEvent(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_CalendarService.Method.DeleteEvent.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_DeleteEventRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+            handler: { request, context in
+                try await self.deleteEvent(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_CalendarService.Method.ListEvents.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListEventsRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListEventsResponse>(),
+            handler: { request, context in
+                try await self.listEvents(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_CalendarService.Method.CreateTask.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_CreateTaskRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Task>(),
+            handler: { request, context in
+                try await self.createTask(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_CalendarService.Method.GetTask.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetTaskRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Task>(),
+            handler: { request, context in
+                try await self.getTask(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_CalendarService.Method.UpdateTask.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_UpdateTaskRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Task>(),
+            handler: { request, context in
+                try await self.updateTask(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_CalendarService.Method.DeleteTask.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_DeleteTaskRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+            handler: { request, context in
+                try await self.deleteTask(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_CalendarService.Method.ListTasks.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListTasksRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListTasksResponse>(),
+            handler: { request, context in
+                try await self.listTasks(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_CalendarService.Method.LogTaskWork.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_LogTaskWorkRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Task>(),
+            handler: { request, context in
+                try await self.logTaskWork(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_CalendarService.Method.ListTaskWork.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListTaskWorkRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListTaskWorkResponse>(),
+            handler: { request, context in
+                try await self.listTaskWork(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_CalendarService.Method.DeleteTaskWork.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_DeleteTaskWorkRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Task>(),
+            handler: { request, context in
+                try await self.deleteTaskWork(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_CalendarService.Method.WatchReminders.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_WatchRemindersRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Reminder>(),
+            handler: { request, context in
+                try await self.watchReminders(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_CalendarService.Method.ListReminders.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListRemindersRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListRemindersResponse>(),
+            handler: { request, context in
+                try await self.listReminders(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+    }
+}
+
+// Default implementation of streaming methods from 'StreamingServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_CalendarService.ServiceProtocol {
+    public func createEvent(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_CreateEventRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Event> {
+        let response = try await self.createEvent(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func getEvent(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetEventRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Event> {
+        let response = try await self.getEvent(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func updateEvent(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_UpdateEventRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Event> {
+        let response = try await self.updateEvent(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func deleteEvent(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteEventRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        let response = try await self.deleteEvent(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func listEvents(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListEventsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListEventsResponse> {
+        let response = try await self.listEvents(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func createTask(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_CreateTaskRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Task> {
+        let response = try await self.createTask(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func getTask(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetTaskRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Task> {
+        let response = try await self.getTask(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func updateTask(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_UpdateTaskRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Task> {
+        let response = try await self.updateTask(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func deleteTask(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteTaskRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        let response = try await self.deleteTask(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func listTasks(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListTasksRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListTasksResponse> {
+        let response = try await self.listTasks(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func logTaskWork(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_LogTaskWorkRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Task> {
+        let response = try await self.logTaskWork(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func listTaskWork(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListTaskWorkRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListTaskWorkResponse> {
+        let response = try await self.listTaskWork(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func deleteTaskWork(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteTaskWorkRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Task> {
+        let response = try await self.deleteTaskWork(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func watchReminders(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_WatchRemindersRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Reminder> {
+        let response = try await self.watchReminders(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return response
+    }
+
+    public func listReminders(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListRemindersRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListRemindersResponse> {
+        let response = try await self.listReminders(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+}
+
+// Default implementation of methods from 'ServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_CalendarService.SimpleServiceProtocol {
+    public func createEvent(
+        request: GRPCCore.ServerRequest<Noted_V1_CreateEventRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Event> {
+        return GRPCCore.ServerResponse<Noted_V1_Event>(
+            message: try await self.createEvent(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func getEvent(
+        request: GRPCCore.ServerRequest<Noted_V1_GetEventRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Event> {
+        return GRPCCore.ServerResponse<Noted_V1_Event>(
+            message: try await self.getEvent(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func updateEvent(
+        request: GRPCCore.ServerRequest<Noted_V1_UpdateEventRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Event> {
+        return GRPCCore.ServerResponse<Noted_V1_Event>(
+            message: try await self.updateEvent(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func deleteEvent(
+        request: GRPCCore.ServerRequest<Noted_V1_DeleteEventRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        return GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>(
+            message: try await self.deleteEvent(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func listEvents(
+        request: GRPCCore.ServerRequest<Noted_V1_ListEventsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListEventsResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListEventsResponse>(
+            message: try await self.listEvents(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func createTask(
+        request: GRPCCore.ServerRequest<Noted_V1_CreateTaskRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Task> {
+        return GRPCCore.ServerResponse<Noted_V1_Task>(
+            message: try await self.createTask(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func getTask(
+        request: GRPCCore.ServerRequest<Noted_V1_GetTaskRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Task> {
+        return GRPCCore.ServerResponse<Noted_V1_Task>(
+            message: try await self.getTask(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func updateTask(
+        request: GRPCCore.ServerRequest<Noted_V1_UpdateTaskRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Task> {
+        return GRPCCore.ServerResponse<Noted_V1_Task>(
+            message: try await self.updateTask(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func deleteTask(
+        request: GRPCCore.ServerRequest<Noted_V1_DeleteTaskRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        return GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>(
+            message: try await self.deleteTask(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func listTasks(
+        request: GRPCCore.ServerRequest<Noted_V1_ListTasksRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListTasksResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListTasksResponse>(
+            message: try await self.listTasks(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func logTaskWork(
+        request: GRPCCore.ServerRequest<Noted_V1_LogTaskWorkRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Task> {
+        return GRPCCore.ServerResponse<Noted_V1_Task>(
+            message: try await self.logTaskWork(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func listTaskWork(
+        request: GRPCCore.ServerRequest<Noted_V1_ListTaskWorkRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListTaskWorkResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListTaskWorkResponse>(
+            message: try await self.listTaskWork(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func deleteTaskWork(
+        request: GRPCCore.ServerRequest<Noted_V1_DeleteTaskWorkRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Task> {
+        return GRPCCore.ServerResponse<Noted_V1_Task>(
+            message: try await self.deleteTaskWork(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func watchReminders(
+        request: GRPCCore.ServerRequest<Noted_V1_WatchRemindersRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Reminder> {
+        return GRPCCore.StreamingServerResponse<Noted_V1_Reminder>(
+            metadata: [:],
+            producer: { writer in
+                try await self.watchReminders(
+                    request: request.message,
+                    response: writer,
+                    context: context
+                )
+                return [:]
+            }
+        )
+    }
+
+    public func listReminders(
+        request: GRPCCore.ServerRequest<Noted_V1_ListRemindersRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListRemindersResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListRemindersResponse>(
+            message: try await self.listReminders(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
 }
 
 // MARK: noted.v1.CalendarService (client)
@@ -1157,6 +2961,72 @@ extension Noted_V1_CalendarService {
             deserializer: some GRPCCore.MessageDeserializer<Noted_V1_ListTasksResponse>,
             options: GRPCCore.CallOptions,
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListTasksResponse>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "LogTaskWork" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Logs a sitting on a task and returns the task with its new totals.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_LogTaskWorkRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_LogTaskWorkRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Task` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func logTaskWork<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_LogTaskWorkRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_LogTaskWorkRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Task>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Task>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "ListTaskWork" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListTaskWorkRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_ListTaskWorkRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_ListTaskWorkResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func listTaskWork<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_ListTaskWorkRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_ListTaskWorkRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_ListTaskWorkResponse>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListTaskWorkResponse>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "DeleteTaskWork" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Removes a sitting and returns the task with its totals recomputed. A
+        /// > completed task stays completed.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeleteTaskWorkRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_DeleteTaskWorkRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Task` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func deleteTaskWork<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_DeleteTaskWorkRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_DeleteTaskWorkRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Task>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Task>) async throws -> Result
         ) async throws -> Result where Result: Sendable
 
         /// Call the "WatchReminders" method.
@@ -1519,6 +3389,105 @@ extension Noted_V1_CalendarService {
             )
         }
 
+        /// Call the "LogTaskWork" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Logs a sitting on a task and returns the task with its new totals.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_LogTaskWorkRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_LogTaskWorkRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Task` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func logTaskWork<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_LogTaskWorkRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_LogTaskWorkRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Task>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Task>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_CalendarService.Method.LogTaskWork.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "ListTaskWork" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListTaskWorkRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_ListTaskWorkRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_ListTaskWorkResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func listTaskWork<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_ListTaskWorkRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_ListTaskWorkRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_ListTaskWorkResponse>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListTaskWorkResponse>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_CalendarService.Method.ListTaskWork.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "DeleteTaskWork" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Removes a sitting and returns the task with its totals recomputed. A
+        /// > completed task stays completed.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeleteTaskWorkRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_DeleteTaskWorkRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Task` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func deleteTaskWork<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_DeleteTaskWorkRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_DeleteTaskWorkRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Task>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Task>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_CalendarService.Method.DeleteTaskWork.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
         /// Call the "WatchReminders" method.
         ///
         /// > Source IDL Documentation:
@@ -1832,6 +3801,90 @@ extension Noted_V1_CalendarService.ClientProtocol {
             request: request,
             serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListTasksRequest>(),
             deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListTasksResponse>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "LogTaskWork" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Logs a sitting on a task and returns the task with its new totals.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_LogTaskWorkRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func logTaskWork<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_LogTaskWorkRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Task>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.logTaskWork(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_LogTaskWorkRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_Task>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "ListTaskWork" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_ListTaskWorkRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func listTaskWork<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_ListTaskWorkRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListTaskWorkResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.listTaskWork(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListTaskWorkRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListTaskWorkResponse>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DeleteTaskWork" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Removes a sitting and returns the task with its totals recomputed. A
+    /// > completed task stays completed.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_DeleteTaskWorkRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func deleteTaskWork<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_DeleteTaskWorkRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Task>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.deleteTaskWork(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_DeleteTaskWorkRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_Task>(),
             options: options,
             onResponse: handleResponse
         )
@@ -2184,6 +4237,102 @@ extension Noted_V1_CalendarService.ClientProtocol {
         )
     }
 
+    /// Call the "LogTaskWork" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Logs a sitting on a task and returns the task with its new totals.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func logTaskWork<Result>(
+        _ message: Noted_V1_LogTaskWorkRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Task>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_LogTaskWorkRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.logTaskWork(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "ListTaskWork" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func listTaskWork<Result>(
+        _ message: Noted_V1_ListTaskWorkRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListTaskWorkResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_ListTaskWorkRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.listTaskWork(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DeleteTaskWork" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Removes a sitting and returns the task with its totals recomputed. A
+    /// > completed task stays completed.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func deleteTaskWork<Result>(
+        _ message: Noted_V1_DeleteTaskWorkRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Task>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_DeleteTaskWorkRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.deleteTaskWork(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
     /// Call the "WatchReminders" method.
     ///
     /// > Source IDL Documentation:
@@ -2419,6 +4568,986 @@ public enum Noted_V1_AIService: Sendable {
 extension GRPCCore.ServiceDescriptor {
     /// Service descriptor for the "noted.v1.AIService" service.
     public static let noted_v1_AIService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AIService")
+}
+
+// MARK: noted.v1.AIService (server)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_AIService {
+    /// Streaming variant of the service protocol for the "noted.v1.AIService" service.
+    ///
+    /// This protocol is the lowest-level of the service protocols generated for this service
+    /// giving you the most flexibility over the implementation of your service. This comes at
+    /// the cost of more verbose and less strict APIs. Each RPC requires you to implement it in
+    /// terms of a request stream and response stream. Where the RPC expects only a single
+    /// request or response message, you are responsible for ensuring your implementation
+    /// maintains this invariant.
+    ///
+    /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
+    /// or ``SimpleServiceProtocol`` instead.
+    public protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+        /// Handle the "GetStatus" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetStatusRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_GetStatusResponse` messages.
+        func getStatus(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetStatusRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_GetStatusResponse>
+
+        /// Handle the "Ask" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Natural-language assistant that can read and write notes, events and
+        /// > tasks on the caller's behalf.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_AskRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_AskResponse` messages.
+        func ask(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_AskRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_AskResponse>
+
+        /// Handle the "SummarizeNote" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_SummarizeNoteRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_SummarizeNoteResponse` messages.
+        func summarizeNote(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_SummarizeNoteRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_SummarizeNoteResponse>
+
+        /// Handle the "SuggestTags" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_SuggestTagsRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_SuggestTagsResponse` messages.
+        func suggestTags(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_SuggestTagsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_SuggestTagsResponse>
+
+        /// Handle the "DailyBriefing" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_DailyBriefingRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_DailyBriefingResponse` messages.
+        func dailyBriefing(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_DailyBriefingRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_DailyBriefingResponse>
+
+        /// Handle the "PlanFromText" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Break "next month I'm going to X, I need A, B and C" into a project with tasks.
+        /// > Returns a pending proposal; nothing is created until it is accepted. A start date
+        /// > the user did not give comes back as an input to fill in, not as a guess.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_PlanFromTextRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Proposal` messages.
+        func planFromText(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_PlanFromTextRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Proposal>
+
+        /// Handle the "ExtractTasks" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Find the to-dos written inside a note and propose them as tasks.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ExtractTasksRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Proposal` messages.
+        func extractTasks(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ExtractTasksRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Proposal>
+
+        /// Handle the "GetAIAccess" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Which spaces the assistant may read. Content of a space that is off is
+        /// > never sent to a language or embedding model: the assistant cannot see it,
+        /// > its notes are removed from the semantic index, and no summary, tag or
+        /// > to-do extraction runs on them. Both are on until the user turns one off.
+        /// > Works whether or not AI is enabled on the server.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetAIAccessRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_AIAccess` messages.
+        func getAIAccess(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetAIAccessRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_AIAccess>
+
+        /// Handle the "SetAIAccess" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_SetAIAccessRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_AIAccess` messages.
+        func setAIAccess(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_SetAIAccessRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_AIAccess>
+
+        /// Handle the "GetAIFeatures" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Which features are on. All are on until turned off. A feature that is off
+        /// > answers FAILED_PRECONDITION (or, for suggestions, lists nothing).
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetAIFeaturesRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_AIFeatures` messages.
+        func getAIFeatures(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetAIFeaturesRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_AIFeatures>
+
+        /// Handle the "SetAIFeatures" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_SetAIFeaturesRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_AIFeatures` messages.
+        func setAIFeatures(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_SetAIFeaturesRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_AIFeatures>
+    }
+
+    /// Service protocol for the "noted.v1.AIService" service.
+    ///
+    /// This protocol is higher level than ``StreamingServiceProtocol`` but lower level than
+    /// the ``SimpleServiceProtocol``, it provides access to request and response metadata and
+    /// trailing response metadata. If you don't need these then consider using
+    /// the ``SimpleServiceProtocol``. If you need fine grained control over your RPCs then
+    /// use ``StreamingServiceProtocol``.
+    public protocol ServiceProtocol: Noted_V1_AIService.StreamingServiceProtocol {
+        /// Handle the "GetStatus" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetStatusRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_GetStatusResponse` message.
+        func getStatus(
+            request: GRPCCore.ServerRequest<Noted_V1_GetStatusRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_GetStatusResponse>
+
+        /// Handle the "Ask" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Natural-language assistant that can read and write notes, events and
+        /// > tasks on the caller's behalf.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_AskRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_AskResponse` message.
+        func ask(
+            request: GRPCCore.ServerRequest<Noted_V1_AskRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_AskResponse>
+
+        /// Handle the "SummarizeNote" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SummarizeNoteRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_SummarizeNoteResponse` message.
+        func summarizeNote(
+            request: GRPCCore.ServerRequest<Noted_V1_SummarizeNoteRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_SummarizeNoteResponse>
+
+        /// Handle the "SuggestTags" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SuggestTagsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_SuggestTagsResponse` message.
+        func suggestTags(
+            request: GRPCCore.ServerRequest<Noted_V1_SuggestTagsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_SuggestTagsResponse>
+
+        /// Handle the "DailyBriefing" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DailyBriefingRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_DailyBriefingResponse` message.
+        func dailyBriefing(
+            request: GRPCCore.ServerRequest<Noted_V1_DailyBriefingRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_DailyBriefingResponse>
+
+        /// Handle the "PlanFromText" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Break "next month I'm going to X, I need A, B and C" into a project with tasks.
+        /// > Returns a pending proposal; nothing is created until it is accepted. A start date
+        /// > the user did not give comes back as an input to fill in, not as a guess.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_PlanFromTextRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Proposal` message.
+        func planFromText(
+            request: GRPCCore.ServerRequest<Noted_V1_PlanFromTextRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Proposal>
+
+        /// Handle the "ExtractTasks" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Find the to-dos written inside a note and propose them as tasks.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ExtractTasksRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Proposal` message.
+        func extractTasks(
+            request: GRPCCore.ServerRequest<Noted_V1_ExtractTasksRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Proposal>
+
+        /// Handle the "GetAIAccess" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Which spaces the assistant may read. Content of a space that is off is
+        /// > never sent to a language or embedding model: the assistant cannot see it,
+        /// > its notes are removed from the semantic index, and no summary, tag or
+        /// > to-do extraction runs on them. Both are on until the user turns one off.
+        /// > Works whether or not AI is enabled on the server.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetAIAccessRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_AIAccess` message.
+        func getAIAccess(
+            request: GRPCCore.ServerRequest<Noted_V1_GetAIAccessRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_AIAccess>
+
+        /// Handle the "SetAIAccess" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SetAIAccessRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_AIAccess` message.
+        func setAIAccess(
+            request: GRPCCore.ServerRequest<Noted_V1_SetAIAccessRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_AIAccess>
+
+        /// Handle the "GetAIFeatures" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Which features are on. All are on until turned off. A feature that is off
+        /// > answers FAILED_PRECONDITION (or, for suggestions, lists nothing).
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetAIFeaturesRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_AIFeatures` message.
+        func getAIFeatures(
+            request: GRPCCore.ServerRequest<Noted_V1_GetAIFeaturesRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_AIFeatures>
+
+        /// Handle the "SetAIFeatures" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SetAIFeaturesRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_AIFeatures` message.
+        func setAIFeatures(
+            request: GRPCCore.ServerRequest<Noted_V1_SetAIFeaturesRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_AIFeatures>
+    }
+
+    /// Simple service protocol for the "noted.v1.AIService" service.
+    ///
+    /// This is the highest level protocol for the service. The API is the easiest to use but
+    /// doesn't provide access to request or response metadata. If you need access to these
+    /// then use ``ServiceProtocol`` instead.
+    public protocol SimpleServiceProtocol: Noted_V1_AIService.ServiceProtocol {
+        /// Handle the "GetStatus" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetStatusRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_GetStatusResponse` to respond with.
+        func getStatus(
+            request: Noted_V1_GetStatusRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_GetStatusResponse
+
+        /// Handle the "Ask" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Natural-language assistant that can read and write notes, events and
+        /// > tasks on the caller's behalf.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_AskRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_AskResponse` to respond with.
+        func ask(
+            request: Noted_V1_AskRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_AskResponse
+
+        /// Handle the "SummarizeNote" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_SummarizeNoteRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_SummarizeNoteResponse` to respond with.
+        func summarizeNote(
+            request: Noted_V1_SummarizeNoteRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_SummarizeNoteResponse
+
+        /// Handle the "SuggestTags" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_SuggestTagsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_SuggestTagsResponse` to respond with.
+        func suggestTags(
+            request: Noted_V1_SuggestTagsRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_SuggestTagsResponse
+
+        /// Handle the "DailyBriefing" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_DailyBriefingRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_DailyBriefingResponse` to respond with.
+        func dailyBriefing(
+            request: Noted_V1_DailyBriefingRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_DailyBriefingResponse
+
+        /// Handle the "PlanFromText" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Break "next month I'm going to X, I need A, B and C" into a project with tasks.
+        /// > Returns a pending proposal; nothing is created until it is accepted. A start date
+        /// > the user did not give comes back as an input to fill in, not as a guess.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_PlanFromTextRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Proposal` to respond with.
+        func planFromText(
+            request: Noted_V1_PlanFromTextRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Proposal
+
+        /// Handle the "ExtractTasks" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Find the to-dos written inside a note and propose them as tasks.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ExtractTasksRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Proposal` to respond with.
+        func extractTasks(
+            request: Noted_V1_ExtractTasksRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Proposal
+
+        /// Handle the "GetAIAccess" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Which spaces the assistant may read. Content of a space that is off is
+        /// > never sent to a language or embedding model: the assistant cannot see it,
+        /// > its notes are removed from the semantic index, and no summary, tag or
+        /// > to-do extraction runs on them. Both are on until the user turns one off.
+        /// > Works whether or not AI is enabled on the server.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetAIAccessRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_AIAccess` to respond with.
+        func getAIAccess(
+            request: Noted_V1_GetAIAccessRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_AIAccess
+
+        /// Handle the "SetAIAccess" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_SetAIAccessRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_AIAccess` to respond with.
+        func setAIAccess(
+            request: Noted_V1_SetAIAccessRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_AIAccess
+
+        /// Handle the "GetAIFeatures" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Which features are on. All are on until turned off. A feature that is off
+        /// > answers FAILED_PRECONDITION (or, for suggestions, lists nothing).
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetAIFeaturesRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_AIFeatures` to respond with.
+        func getAIFeatures(
+            request: Noted_V1_GetAIFeaturesRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_AIFeatures
+
+        /// Handle the "SetAIFeatures" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_SetAIFeaturesRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_AIFeatures` to respond with.
+        func setAIFeatures(
+            request: Noted_V1_SetAIFeaturesRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_AIFeatures
+    }
+}
+
+// Default implementation of 'registerMethods(with:)'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_AIService.StreamingServiceProtocol {
+    public func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
+        router.registerHandler(
+            forMethod: Noted_V1_AIService.Method.GetStatus.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetStatusRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_GetStatusResponse>(),
+            handler: { request, context in
+                try await self.getStatus(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AIService.Method.Ask.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_AskRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_AskResponse>(),
+            handler: { request, context in
+                try await self.ask(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AIService.Method.SummarizeNote.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_SummarizeNoteRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_SummarizeNoteResponse>(),
+            handler: { request, context in
+                try await self.summarizeNote(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AIService.Method.SuggestTags.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_SuggestTagsRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_SuggestTagsResponse>(),
+            handler: { request, context in
+                try await self.suggestTags(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AIService.Method.DailyBriefing.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_DailyBriefingRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_DailyBriefingResponse>(),
+            handler: { request, context in
+                try await self.dailyBriefing(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AIService.Method.PlanFromText.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_PlanFromTextRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Proposal>(),
+            handler: { request, context in
+                try await self.planFromText(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AIService.Method.ExtractTasks.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ExtractTasksRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Proposal>(),
+            handler: { request, context in
+                try await self.extractTasks(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AIService.Method.GetAIAccess.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetAIAccessRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_AIAccess>(),
+            handler: { request, context in
+                try await self.getAIAccess(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AIService.Method.SetAIAccess.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_SetAIAccessRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_AIAccess>(),
+            handler: { request, context in
+                try await self.setAIAccess(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AIService.Method.GetAIFeatures.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetAIFeaturesRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_AIFeatures>(),
+            handler: { request, context in
+                try await self.getAIFeatures(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AIService.Method.SetAIFeatures.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_SetAIFeaturesRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_AIFeatures>(),
+            handler: { request, context in
+                try await self.setAIFeatures(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+    }
+}
+
+// Default implementation of streaming methods from 'StreamingServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_AIService.ServiceProtocol {
+    public func getStatus(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetStatusRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_GetStatusResponse> {
+        let response = try await self.getStatus(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func ask(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_AskRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_AskResponse> {
+        let response = try await self.ask(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func summarizeNote(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_SummarizeNoteRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_SummarizeNoteResponse> {
+        let response = try await self.summarizeNote(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func suggestTags(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_SuggestTagsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_SuggestTagsResponse> {
+        let response = try await self.suggestTags(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func dailyBriefing(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_DailyBriefingRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_DailyBriefingResponse> {
+        let response = try await self.dailyBriefing(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func planFromText(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_PlanFromTextRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Proposal> {
+        let response = try await self.planFromText(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func extractTasks(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ExtractTasksRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Proposal> {
+        let response = try await self.extractTasks(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func getAIAccess(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetAIAccessRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_AIAccess> {
+        let response = try await self.getAIAccess(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func setAIAccess(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_SetAIAccessRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_AIAccess> {
+        let response = try await self.setAIAccess(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func getAIFeatures(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetAIFeaturesRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_AIFeatures> {
+        let response = try await self.getAIFeatures(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func setAIFeatures(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_SetAIFeaturesRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_AIFeatures> {
+        let response = try await self.setAIFeatures(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+}
+
+// Default implementation of methods from 'ServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_AIService.SimpleServiceProtocol {
+    public func getStatus(
+        request: GRPCCore.ServerRequest<Noted_V1_GetStatusRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_GetStatusResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_GetStatusResponse>(
+            message: try await self.getStatus(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func ask(
+        request: GRPCCore.ServerRequest<Noted_V1_AskRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_AskResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_AskResponse>(
+            message: try await self.ask(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func summarizeNote(
+        request: GRPCCore.ServerRequest<Noted_V1_SummarizeNoteRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_SummarizeNoteResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_SummarizeNoteResponse>(
+            message: try await self.summarizeNote(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func suggestTags(
+        request: GRPCCore.ServerRequest<Noted_V1_SuggestTagsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_SuggestTagsResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_SuggestTagsResponse>(
+            message: try await self.suggestTags(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func dailyBriefing(
+        request: GRPCCore.ServerRequest<Noted_V1_DailyBriefingRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_DailyBriefingResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_DailyBriefingResponse>(
+            message: try await self.dailyBriefing(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func planFromText(
+        request: GRPCCore.ServerRequest<Noted_V1_PlanFromTextRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Proposal> {
+        return GRPCCore.ServerResponse<Noted_V1_Proposal>(
+            message: try await self.planFromText(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func extractTasks(
+        request: GRPCCore.ServerRequest<Noted_V1_ExtractTasksRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Proposal> {
+        return GRPCCore.ServerResponse<Noted_V1_Proposal>(
+            message: try await self.extractTasks(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func getAIAccess(
+        request: GRPCCore.ServerRequest<Noted_V1_GetAIAccessRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_AIAccess> {
+        return GRPCCore.ServerResponse<Noted_V1_AIAccess>(
+            message: try await self.getAIAccess(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func setAIAccess(
+        request: GRPCCore.ServerRequest<Noted_V1_SetAIAccessRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_AIAccess> {
+        return GRPCCore.ServerResponse<Noted_V1_AIAccess>(
+            message: try await self.setAIAccess(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func getAIFeatures(
+        request: GRPCCore.ServerRequest<Noted_V1_GetAIFeaturesRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_AIFeatures> {
+        return GRPCCore.ServerResponse<Noted_V1_AIFeatures>(
+            message: try await self.getAIFeatures(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func setAIFeatures(
+        request: GRPCCore.ServerRequest<Noted_V1_SetAIFeaturesRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_AIFeatures> {
+        return GRPCCore.ServerResponse<Noted_V1_AIFeatures>(
+            message: try await self.setAIFeatures(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
 }
 
 // MARK: noted.v1.AIService (client)
@@ -3849,6 +6978,763 @@ extension GRPCCore.ServiceDescriptor {
     public static let noted_v1_GoalService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.GoalService")
 }
 
+// MARK: noted.v1.GoalService (server)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_GoalService {
+    /// Streaming variant of the service protocol for the "noted.v1.GoalService" service.
+    ///
+    /// This protocol is the lowest-level of the service protocols generated for this service
+    /// giving you the most flexibility over the implementation of your service. This comes at
+    /// the cost of more verbose and less strict APIs. Each RPC requires you to implement it in
+    /// terms of a request stream and response stream. Where the RPC expects only a single
+    /// request or response message, you are responsible for ensuring your implementation
+    /// maintains this invariant.
+    ///
+    /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
+    /// or ``SimpleServiceProtocol`` instead.
+    public protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+        /// Handle the "CreateGoal" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_CreateGoalRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Goal` messages.
+        func createGoal(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_CreateGoalRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Goal>
+
+        /// Handle the "GetGoal" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetGoalRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Goal` messages.
+        func getGoal(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetGoalRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Goal>
+
+        /// Handle the "UpdateGoal" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_UpdateGoalRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Goal` messages.
+        func updateGoal(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_UpdateGoalRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Goal>
+
+        /// Handle the "DeleteGoal" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_DeleteGoalRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        func deleteGoal(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteGoalRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListGoals" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListGoalsRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListGoalsResponse` messages.
+        func listGoals(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListGoalsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListGoalsResponse>
+
+        /// Handle the "RecordCheckIn" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_RecordCheckInRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_RecordCheckInResponse` messages.
+        func recordCheckIn(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_RecordCheckInRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_RecordCheckInResponse>
+
+        /// Handle the "DeleteCheckIn" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Undo a check-in; returns the goal with fresh progress. FAILED_PRECONDITION
+        /// > for one a time entry made: edit or delete the entry instead.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_DeleteCheckInRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Goal` messages.
+        func deleteCheckIn(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteCheckInRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Goal>
+
+        /// Handle the "ListCheckIns" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListCheckInsRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListCheckInsResponse` messages.
+        func listCheckIns(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListCheckInsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListCheckInsResponse>
+
+        /// Handle the "SetMilestoneDone" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_SetMilestoneDoneRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Goal` messages.
+        func setMilestoneDone(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_SetMilestoneDoneRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Goal>
+    }
+
+    /// Service protocol for the "noted.v1.GoalService" service.
+    ///
+    /// This protocol is higher level than ``StreamingServiceProtocol`` but lower level than
+    /// the ``SimpleServiceProtocol``, it provides access to request and response metadata and
+    /// trailing response metadata. If you don't need these then consider using
+    /// the ``SimpleServiceProtocol``. If you need fine grained control over your RPCs then
+    /// use ``StreamingServiceProtocol``.
+    public protocol ServiceProtocol: Noted_V1_GoalService.StreamingServiceProtocol {
+        /// Handle the "CreateGoal" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_CreateGoalRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Goal` message.
+        func createGoal(
+            request: GRPCCore.ServerRequest<Noted_V1_CreateGoalRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Goal>
+
+        /// Handle the "GetGoal" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetGoalRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Goal` message.
+        func getGoal(
+            request: GRPCCore.ServerRequest<Noted_V1_GetGoalRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Goal>
+
+        /// Handle the "UpdateGoal" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_UpdateGoalRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Goal` message.
+        func updateGoal(
+            request: GRPCCore.ServerRequest<Noted_V1_UpdateGoalRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Goal>
+
+        /// Handle the "DeleteGoal" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeleteGoalRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `SwiftProtobuf.Google_Protobuf_Empty` message.
+        func deleteGoal(
+            request: GRPCCore.ServerRequest<Noted_V1_DeleteGoalRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListGoals" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListGoalsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListGoalsResponse` message.
+        func listGoals(
+            request: GRPCCore.ServerRequest<Noted_V1_ListGoalsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListGoalsResponse>
+
+        /// Handle the "RecordCheckIn" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_RecordCheckInRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_RecordCheckInResponse` message.
+        func recordCheckIn(
+            request: GRPCCore.ServerRequest<Noted_V1_RecordCheckInRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_RecordCheckInResponse>
+
+        /// Handle the "DeleteCheckIn" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Undo a check-in; returns the goal with fresh progress. FAILED_PRECONDITION
+        /// > for one a time entry made: edit or delete the entry instead.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeleteCheckInRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Goal` message.
+        func deleteCheckIn(
+            request: GRPCCore.ServerRequest<Noted_V1_DeleteCheckInRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Goal>
+
+        /// Handle the "ListCheckIns" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListCheckInsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListCheckInsResponse` message.
+        func listCheckIns(
+            request: GRPCCore.ServerRequest<Noted_V1_ListCheckInsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListCheckInsResponse>
+
+        /// Handle the "SetMilestoneDone" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SetMilestoneDoneRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Goal` message.
+        func setMilestoneDone(
+            request: GRPCCore.ServerRequest<Noted_V1_SetMilestoneDoneRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Goal>
+    }
+
+    /// Simple service protocol for the "noted.v1.GoalService" service.
+    ///
+    /// This is the highest level protocol for the service. The API is the easiest to use but
+    /// doesn't provide access to request or response metadata. If you need access to these
+    /// then use ``ServiceProtocol`` instead.
+    public protocol SimpleServiceProtocol: Noted_V1_GoalService.ServiceProtocol {
+        /// Handle the "CreateGoal" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_CreateGoalRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Goal` to respond with.
+        func createGoal(
+            request: Noted_V1_CreateGoalRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Goal
+
+        /// Handle the "GetGoal" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetGoalRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Goal` to respond with.
+        func getGoal(
+            request: Noted_V1_GetGoalRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Goal
+
+        /// Handle the "UpdateGoal" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_UpdateGoalRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Goal` to respond with.
+        func updateGoal(
+            request: Noted_V1_UpdateGoalRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Goal
+
+        /// Handle the "DeleteGoal" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_DeleteGoalRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `SwiftProtobuf.Google_Protobuf_Empty` to respond with.
+        func deleteGoal(
+            request: Noted_V1_DeleteGoalRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> SwiftProtobuf.Google_Protobuf_Empty
+
+        /// Handle the "ListGoals" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListGoalsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListGoalsResponse` to respond with.
+        func listGoals(
+            request: Noted_V1_ListGoalsRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListGoalsResponse
+
+        /// Handle the "RecordCheckIn" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_RecordCheckInRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_RecordCheckInResponse` to respond with.
+        func recordCheckIn(
+            request: Noted_V1_RecordCheckInRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_RecordCheckInResponse
+
+        /// Handle the "DeleteCheckIn" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Undo a check-in; returns the goal with fresh progress. FAILED_PRECONDITION
+        /// > for one a time entry made: edit or delete the entry instead.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_DeleteCheckInRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Goal` to respond with.
+        func deleteCheckIn(
+            request: Noted_V1_DeleteCheckInRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Goal
+
+        /// Handle the "ListCheckIns" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListCheckInsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListCheckInsResponse` to respond with.
+        func listCheckIns(
+            request: Noted_V1_ListCheckInsRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListCheckInsResponse
+
+        /// Handle the "SetMilestoneDone" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_SetMilestoneDoneRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Goal` to respond with.
+        func setMilestoneDone(
+            request: Noted_V1_SetMilestoneDoneRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Goal
+    }
+}
+
+// Default implementation of 'registerMethods(with:)'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_GoalService.StreamingServiceProtocol {
+    public func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
+        router.registerHandler(
+            forMethod: Noted_V1_GoalService.Method.CreateGoal.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_CreateGoalRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Goal>(),
+            handler: { request, context in
+                try await self.createGoal(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_GoalService.Method.GetGoal.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetGoalRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Goal>(),
+            handler: { request, context in
+                try await self.getGoal(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_GoalService.Method.UpdateGoal.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_UpdateGoalRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Goal>(),
+            handler: { request, context in
+                try await self.updateGoal(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_GoalService.Method.DeleteGoal.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_DeleteGoalRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+            handler: { request, context in
+                try await self.deleteGoal(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_GoalService.Method.ListGoals.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListGoalsRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListGoalsResponse>(),
+            handler: { request, context in
+                try await self.listGoals(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_GoalService.Method.RecordCheckIn.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_RecordCheckInRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_RecordCheckInResponse>(),
+            handler: { request, context in
+                try await self.recordCheckIn(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_GoalService.Method.DeleteCheckIn.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_DeleteCheckInRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Goal>(),
+            handler: { request, context in
+                try await self.deleteCheckIn(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_GoalService.Method.ListCheckIns.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListCheckInsRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListCheckInsResponse>(),
+            handler: { request, context in
+                try await self.listCheckIns(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_GoalService.Method.SetMilestoneDone.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_SetMilestoneDoneRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Goal>(),
+            handler: { request, context in
+                try await self.setMilestoneDone(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+    }
+}
+
+// Default implementation of streaming methods from 'StreamingServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_GoalService.ServiceProtocol {
+    public func createGoal(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_CreateGoalRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Goal> {
+        let response = try await self.createGoal(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func getGoal(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetGoalRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Goal> {
+        let response = try await self.getGoal(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func updateGoal(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_UpdateGoalRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Goal> {
+        let response = try await self.updateGoal(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func deleteGoal(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteGoalRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        let response = try await self.deleteGoal(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func listGoals(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListGoalsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListGoalsResponse> {
+        let response = try await self.listGoals(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func recordCheckIn(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_RecordCheckInRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_RecordCheckInResponse> {
+        let response = try await self.recordCheckIn(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func deleteCheckIn(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteCheckInRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Goal> {
+        let response = try await self.deleteCheckIn(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func listCheckIns(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListCheckInsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListCheckInsResponse> {
+        let response = try await self.listCheckIns(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func setMilestoneDone(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_SetMilestoneDoneRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Goal> {
+        let response = try await self.setMilestoneDone(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+}
+
+// Default implementation of methods from 'ServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_GoalService.SimpleServiceProtocol {
+    public func createGoal(
+        request: GRPCCore.ServerRequest<Noted_V1_CreateGoalRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Goal> {
+        return GRPCCore.ServerResponse<Noted_V1_Goal>(
+            message: try await self.createGoal(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func getGoal(
+        request: GRPCCore.ServerRequest<Noted_V1_GetGoalRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Goal> {
+        return GRPCCore.ServerResponse<Noted_V1_Goal>(
+            message: try await self.getGoal(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func updateGoal(
+        request: GRPCCore.ServerRequest<Noted_V1_UpdateGoalRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Goal> {
+        return GRPCCore.ServerResponse<Noted_V1_Goal>(
+            message: try await self.updateGoal(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func deleteGoal(
+        request: GRPCCore.ServerRequest<Noted_V1_DeleteGoalRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        return GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>(
+            message: try await self.deleteGoal(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func listGoals(
+        request: GRPCCore.ServerRequest<Noted_V1_ListGoalsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListGoalsResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListGoalsResponse>(
+            message: try await self.listGoals(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func recordCheckIn(
+        request: GRPCCore.ServerRequest<Noted_V1_RecordCheckInRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_RecordCheckInResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_RecordCheckInResponse>(
+            message: try await self.recordCheckIn(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func deleteCheckIn(
+        request: GRPCCore.ServerRequest<Noted_V1_DeleteCheckInRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Goal> {
+        return GRPCCore.ServerResponse<Noted_V1_Goal>(
+            message: try await self.deleteCheckIn(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func listCheckIns(
+        request: GRPCCore.ServerRequest<Noted_V1_ListCheckInsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListCheckInsResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListCheckInsResponse>(
+            message: try await self.listCheckIns(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func setMilestoneDone(
+        request: GRPCCore.ServerRequest<Noted_V1_SetMilestoneDoneRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Goal> {
+        return GRPCCore.ServerResponse<Noted_V1_Goal>(
+            message: try await self.setMilestoneDone(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+}
+
 // MARK: noted.v1.GoalService (client)
 
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
@@ -3976,7 +7862,8 @@ extension Noted_V1_GoalService {
         ///
         /// > Source IDL Documentation:
         /// >
-        /// > Undo a check-in; returns the goal with fresh progress.
+        /// > Undo a check-in; returns the goal with fresh progress. FAILED_PRECONDITION
+        /// > for one a time entry made: edit or delete the entry instead.
         ///
         /// - Parameters:
         ///   - request: A request containing a single `Noted_V1_DeleteCheckInRequest` message.
@@ -4234,7 +8121,8 @@ extension Noted_V1_GoalService {
         ///
         /// > Source IDL Documentation:
         /// >
-        /// > Undo a check-in; returns the goal with fresh progress.
+        /// > Undo a check-in; returns the goal with fresh progress. FAILED_PRECONDITION
+        /// > for one a time entry made: edit or delete the entry instead.
         ///
         /// - Parameters:
         ///   - request: A request containing a single `Noted_V1_DeleteCheckInRequest` message.
@@ -4483,7 +8371,8 @@ extension Noted_V1_GoalService.ClientProtocol {
     ///
     /// > Source IDL Documentation:
     /// >
-    /// > Undo a check-in; returns the goal with fresh progress.
+    /// > Undo a check-in; returns the goal with fresh progress. FAILED_PRECONDITION
+    /// > for one a time entry made: edit or delete the entry instead.
     ///
     /// - Parameters:
     ///   - request: A request containing a single `Noted_V1_DeleteCheckInRequest` message.
@@ -4740,7 +8629,8 @@ extension Noted_V1_GoalService.ClientProtocol {
     ///
     /// > Source IDL Documentation:
     /// >
-    /// > Undo a check-in; returns the goal with fresh progress.
+    /// > Undo a check-in; returns the goal with fresh progress. FAILED_PRECONDITION
+    /// > for one a time entry made: edit or delete the entry instead.
     ///
     /// - Parameters:
     ///   - message: request message to send.
@@ -4959,6 +8849,683 @@ public enum Noted_V1_ObjectiveService: Sendable {
 extension GRPCCore.ServiceDescriptor {
     /// Service descriptor for the "noted.v1.ObjectiveService" service.
     public static let noted_v1_ObjectiveService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.ObjectiveService")
+}
+
+// MARK: noted.v1.ObjectiveService (server)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_ObjectiveService {
+    /// Streaming variant of the service protocol for the "noted.v1.ObjectiveService" service.
+    ///
+    /// This protocol is the lowest-level of the service protocols generated for this service
+    /// giving you the most flexibility over the implementation of your service. This comes at
+    /// the cost of more verbose and less strict APIs. Each RPC requires you to implement it in
+    /// terms of a request stream and response stream. Where the RPC expects only a single
+    /// request or response message, you are responsible for ensuring your implementation
+    /// maintains this invariant.
+    ///
+    /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
+    /// or ``SimpleServiceProtocol`` instead.
+    public protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+        /// Handle the "CreateObjective" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_CreateObjectiveRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Objective` messages.
+        func createObjective(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_CreateObjectiveRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Objective>
+
+        /// Handle the "GetObjective" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetObjectiveRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Objective` messages.
+        func getObjective(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetObjectiveRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Objective>
+
+        /// Handle the "UpdateObjective" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_UpdateObjectiveRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Objective` messages.
+        func updateObjective(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_UpdateObjectiveRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Objective>
+
+        /// Handle the "DeleteObjective" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_DeleteObjectiveRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        func deleteObjective(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteObjectiveRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListObjectives" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListObjectivesRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListObjectivesResponse` messages.
+        func listObjectives(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListObjectivesRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListObjectivesResponse>
+
+        /// Handle the "RecordMeasurement" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Records a reading of the objective's metric and returns the objective with its new progress.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_RecordMeasurementRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Objective` messages.
+        func recordMeasurement(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_RecordMeasurementRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Objective>
+
+        /// Handle the "DeleteMeasurement" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_DeleteMeasurementRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        func deleteMeasurement(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteMeasurementRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListMeasurements" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListMeasurementsRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListMeasurementsResponse` messages.
+        func listMeasurements(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListMeasurementsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListMeasurementsResponse>
+    }
+
+    /// Service protocol for the "noted.v1.ObjectiveService" service.
+    ///
+    /// This protocol is higher level than ``StreamingServiceProtocol`` but lower level than
+    /// the ``SimpleServiceProtocol``, it provides access to request and response metadata and
+    /// trailing response metadata. If you don't need these then consider using
+    /// the ``SimpleServiceProtocol``. If you need fine grained control over your RPCs then
+    /// use ``StreamingServiceProtocol``.
+    public protocol ServiceProtocol: Noted_V1_ObjectiveService.StreamingServiceProtocol {
+        /// Handle the "CreateObjective" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_CreateObjectiveRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Objective` message.
+        func createObjective(
+            request: GRPCCore.ServerRequest<Noted_V1_CreateObjectiveRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Objective>
+
+        /// Handle the "GetObjective" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetObjectiveRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Objective` message.
+        func getObjective(
+            request: GRPCCore.ServerRequest<Noted_V1_GetObjectiveRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Objective>
+
+        /// Handle the "UpdateObjective" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_UpdateObjectiveRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Objective` message.
+        func updateObjective(
+            request: GRPCCore.ServerRequest<Noted_V1_UpdateObjectiveRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Objective>
+
+        /// Handle the "DeleteObjective" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeleteObjectiveRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `SwiftProtobuf.Google_Protobuf_Empty` message.
+        func deleteObjective(
+            request: GRPCCore.ServerRequest<Noted_V1_DeleteObjectiveRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListObjectives" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListObjectivesRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListObjectivesResponse` message.
+        func listObjectives(
+            request: GRPCCore.ServerRequest<Noted_V1_ListObjectivesRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListObjectivesResponse>
+
+        /// Handle the "RecordMeasurement" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Records a reading of the objective's metric and returns the objective with its new progress.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_RecordMeasurementRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Objective` message.
+        func recordMeasurement(
+            request: GRPCCore.ServerRequest<Noted_V1_RecordMeasurementRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Objective>
+
+        /// Handle the "DeleteMeasurement" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeleteMeasurementRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `SwiftProtobuf.Google_Protobuf_Empty` message.
+        func deleteMeasurement(
+            request: GRPCCore.ServerRequest<Noted_V1_DeleteMeasurementRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListMeasurements" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListMeasurementsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListMeasurementsResponse` message.
+        func listMeasurements(
+            request: GRPCCore.ServerRequest<Noted_V1_ListMeasurementsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListMeasurementsResponse>
+    }
+
+    /// Simple service protocol for the "noted.v1.ObjectiveService" service.
+    ///
+    /// This is the highest level protocol for the service. The API is the easiest to use but
+    /// doesn't provide access to request or response metadata. If you need access to these
+    /// then use ``ServiceProtocol`` instead.
+    public protocol SimpleServiceProtocol: Noted_V1_ObjectiveService.ServiceProtocol {
+        /// Handle the "CreateObjective" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_CreateObjectiveRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Objective` to respond with.
+        func createObjective(
+            request: Noted_V1_CreateObjectiveRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Objective
+
+        /// Handle the "GetObjective" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetObjectiveRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Objective` to respond with.
+        func getObjective(
+            request: Noted_V1_GetObjectiveRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Objective
+
+        /// Handle the "UpdateObjective" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_UpdateObjectiveRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Objective` to respond with.
+        func updateObjective(
+            request: Noted_V1_UpdateObjectiveRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Objective
+
+        /// Handle the "DeleteObjective" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_DeleteObjectiveRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `SwiftProtobuf.Google_Protobuf_Empty` to respond with.
+        func deleteObjective(
+            request: Noted_V1_DeleteObjectiveRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> SwiftProtobuf.Google_Protobuf_Empty
+
+        /// Handle the "ListObjectives" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListObjectivesRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListObjectivesResponse` to respond with.
+        func listObjectives(
+            request: Noted_V1_ListObjectivesRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListObjectivesResponse
+
+        /// Handle the "RecordMeasurement" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Records a reading of the objective's metric and returns the objective with its new progress.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_RecordMeasurementRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Objective` to respond with.
+        func recordMeasurement(
+            request: Noted_V1_RecordMeasurementRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Objective
+
+        /// Handle the "DeleteMeasurement" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_DeleteMeasurementRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `SwiftProtobuf.Google_Protobuf_Empty` to respond with.
+        func deleteMeasurement(
+            request: Noted_V1_DeleteMeasurementRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> SwiftProtobuf.Google_Protobuf_Empty
+
+        /// Handle the "ListMeasurements" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListMeasurementsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListMeasurementsResponse` to respond with.
+        func listMeasurements(
+            request: Noted_V1_ListMeasurementsRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListMeasurementsResponse
+    }
+}
+
+// Default implementation of 'registerMethods(with:)'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_ObjectiveService.StreamingServiceProtocol {
+    public func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
+        router.registerHandler(
+            forMethod: Noted_V1_ObjectiveService.Method.CreateObjective.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_CreateObjectiveRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Objective>(),
+            handler: { request, context in
+                try await self.createObjective(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_ObjectiveService.Method.GetObjective.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetObjectiveRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Objective>(),
+            handler: { request, context in
+                try await self.getObjective(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_ObjectiveService.Method.UpdateObjective.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_UpdateObjectiveRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Objective>(),
+            handler: { request, context in
+                try await self.updateObjective(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_ObjectiveService.Method.DeleteObjective.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_DeleteObjectiveRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+            handler: { request, context in
+                try await self.deleteObjective(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_ObjectiveService.Method.ListObjectives.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListObjectivesRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListObjectivesResponse>(),
+            handler: { request, context in
+                try await self.listObjectives(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_ObjectiveService.Method.RecordMeasurement.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_RecordMeasurementRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Objective>(),
+            handler: { request, context in
+                try await self.recordMeasurement(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_ObjectiveService.Method.DeleteMeasurement.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_DeleteMeasurementRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+            handler: { request, context in
+                try await self.deleteMeasurement(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_ObjectiveService.Method.ListMeasurements.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListMeasurementsRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListMeasurementsResponse>(),
+            handler: { request, context in
+                try await self.listMeasurements(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+    }
+}
+
+// Default implementation of streaming methods from 'StreamingServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_ObjectiveService.ServiceProtocol {
+    public func createObjective(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_CreateObjectiveRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Objective> {
+        let response = try await self.createObjective(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func getObjective(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetObjectiveRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Objective> {
+        let response = try await self.getObjective(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func updateObjective(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_UpdateObjectiveRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Objective> {
+        let response = try await self.updateObjective(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func deleteObjective(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteObjectiveRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        let response = try await self.deleteObjective(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func listObjectives(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListObjectivesRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListObjectivesResponse> {
+        let response = try await self.listObjectives(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func recordMeasurement(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_RecordMeasurementRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Objective> {
+        let response = try await self.recordMeasurement(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func deleteMeasurement(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteMeasurementRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        let response = try await self.deleteMeasurement(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func listMeasurements(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListMeasurementsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListMeasurementsResponse> {
+        let response = try await self.listMeasurements(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+}
+
+// Default implementation of methods from 'ServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_ObjectiveService.SimpleServiceProtocol {
+    public func createObjective(
+        request: GRPCCore.ServerRequest<Noted_V1_CreateObjectiveRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Objective> {
+        return GRPCCore.ServerResponse<Noted_V1_Objective>(
+            message: try await self.createObjective(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func getObjective(
+        request: GRPCCore.ServerRequest<Noted_V1_GetObjectiveRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Objective> {
+        return GRPCCore.ServerResponse<Noted_V1_Objective>(
+            message: try await self.getObjective(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func updateObjective(
+        request: GRPCCore.ServerRequest<Noted_V1_UpdateObjectiveRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Objective> {
+        return GRPCCore.ServerResponse<Noted_V1_Objective>(
+            message: try await self.updateObjective(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func deleteObjective(
+        request: GRPCCore.ServerRequest<Noted_V1_DeleteObjectiveRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        return GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>(
+            message: try await self.deleteObjective(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func listObjectives(
+        request: GRPCCore.ServerRequest<Noted_V1_ListObjectivesRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListObjectivesResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListObjectivesResponse>(
+            message: try await self.listObjectives(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func recordMeasurement(
+        request: GRPCCore.ServerRequest<Noted_V1_RecordMeasurementRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Objective> {
+        return GRPCCore.ServerResponse<Noted_V1_Objective>(
+            message: try await self.recordMeasurement(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func deleteMeasurement(
+        request: GRPCCore.ServerRequest<Noted_V1_DeleteMeasurementRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        return GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>(
+            message: try await self.deleteMeasurement(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func listMeasurements(
+        request: GRPCCore.ServerRequest<Noted_V1_ListMeasurementsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListMeasurementsResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListMeasurementsResponse>(
+            message: try await self.listMeasurements(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
 }
 
 // MARK: noted.v1.ObjectiveService (client)
@@ -5928,6 +10495,440 @@ extension GRPCCore.ServiceDescriptor {
     public static let noted_v1_ProjectService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.ProjectService")
 }
 
+// MARK: noted.v1.ProjectService (server)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_ProjectService {
+    /// Streaming variant of the service protocol for the "noted.v1.ProjectService" service.
+    ///
+    /// This protocol is the lowest-level of the service protocols generated for this service
+    /// giving you the most flexibility over the implementation of your service. This comes at
+    /// the cost of more verbose and less strict APIs. Each RPC requires you to implement it in
+    /// terms of a request stream and response stream. Where the RPC expects only a single
+    /// request or response message, you are responsible for ensuring your implementation
+    /// maintains this invariant.
+    ///
+    /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
+    /// or ``SimpleServiceProtocol`` instead.
+    public protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+        /// Handle the "CreateProject" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_CreateProjectRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Project` messages.
+        func createProject(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_CreateProjectRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Project>
+
+        /// Handle the "GetProject" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetProjectRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ProjectDetail` messages.
+        func getProject(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetProjectRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ProjectDetail>
+
+        /// Handle the "UpdateProject" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_UpdateProjectRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Project` messages.
+        func updateProject(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_UpdateProjectRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Project>
+
+        /// Handle the "DeleteProject" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_DeleteProjectRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        func deleteProject(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteProjectRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListProjects" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListProjectsRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListProjectsResponse` messages.
+        func listProjects(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListProjectsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListProjectsResponse>
+    }
+
+    /// Service protocol for the "noted.v1.ProjectService" service.
+    ///
+    /// This protocol is higher level than ``StreamingServiceProtocol`` but lower level than
+    /// the ``SimpleServiceProtocol``, it provides access to request and response metadata and
+    /// trailing response metadata. If you don't need these then consider using
+    /// the ``SimpleServiceProtocol``. If you need fine grained control over your RPCs then
+    /// use ``StreamingServiceProtocol``.
+    public protocol ServiceProtocol: Noted_V1_ProjectService.StreamingServiceProtocol {
+        /// Handle the "CreateProject" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_CreateProjectRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Project` message.
+        func createProject(
+            request: GRPCCore.ServerRequest<Noted_V1_CreateProjectRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Project>
+
+        /// Handle the "GetProject" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetProjectRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ProjectDetail` message.
+        func getProject(
+            request: GRPCCore.ServerRequest<Noted_V1_GetProjectRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ProjectDetail>
+
+        /// Handle the "UpdateProject" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_UpdateProjectRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Project` message.
+        func updateProject(
+            request: GRPCCore.ServerRequest<Noted_V1_UpdateProjectRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Project>
+
+        /// Handle the "DeleteProject" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeleteProjectRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `SwiftProtobuf.Google_Protobuf_Empty` message.
+        func deleteProject(
+            request: GRPCCore.ServerRequest<Noted_V1_DeleteProjectRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListProjects" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListProjectsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListProjectsResponse` message.
+        func listProjects(
+            request: GRPCCore.ServerRequest<Noted_V1_ListProjectsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListProjectsResponse>
+    }
+
+    /// Simple service protocol for the "noted.v1.ProjectService" service.
+    ///
+    /// This is the highest level protocol for the service. The API is the easiest to use but
+    /// doesn't provide access to request or response metadata. If you need access to these
+    /// then use ``ServiceProtocol`` instead.
+    public protocol SimpleServiceProtocol: Noted_V1_ProjectService.ServiceProtocol {
+        /// Handle the "CreateProject" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_CreateProjectRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Project` to respond with.
+        func createProject(
+            request: Noted_V1_CreateProjectRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Project
+
+        /// Handle the "GetProject" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetProjectRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ProjectDetail` to respond with.
+        func getProject(
+            request: Noted_V1_GetProjectRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ProjectDetail
+
+        /// Handle the "UpdateProject" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_UpdateProjectRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Project` to respond with.
+        func updateProject(
+            request: Noted_V1_UpdateProjectRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Project
+
+        /// Handle the "DeleteProject" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_DeleteProjectRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `SwiftProtobuf.Google_Protobuf_Empty` to respond with.
+        func deleteProject(
+            request: Noted_V1_DeleteProjectRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> SwiftProtobuf.Google_Protobuf_Empty
+
+        /// Handle the "ListProjects" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListProjectsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListProjectsResponse` to respond with.
+        func listProjects(
+            request: Noted_V1_ListProjectsRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListProjectsResponse
+    }
+}
+
+// Default implementation of 'registerMethods(with:)'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_ProjectService.StreamingServiceProtocol {
+    public func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
+        router.registerHandler(
+            forMethod: Noted_V1_ProjectService.Method.CreateProject.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_CreateProjectRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Project>(),
+            handler: { request, context in
+                try await self.createProject(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_ProjectService.Method.GetProject.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetProjectRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ProjectDetail>(),
+            handler: { request, context in
+                try await self.getProject(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_ProjectService.Method.UpdateProject.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_UpdateProjectRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Project>(),
+            handler: { request, context in
+                try await self.updateProject(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_ProjectService.Method.DeleteProject.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_DeleteProjectRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+            handler: { request, context in
+                try await self.deleteProject(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_ProjectService.Method.ListProjects.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListProjectsRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListProjectsResponse>(),
+            handler: { request, context in
+                try await self.listProjects(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+    }
+}
+
+// Default implementation of streaming methods from 'StreamingServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_ProjectService.ServiceProtocol {
+    public func createProject(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_CreateProjectRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Project> {
+        let response = try await self.createProject(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func getProject(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetProjectRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ProjectDetail> {
+        let response = try await self.getProject(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func updateProject(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_UpdateProjectRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Project> {
+        let response = try await self.updateProject(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func deleteProject(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteProjectRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        let response = try await self.deleteProject(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func listProjects(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListProjectsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListProjectsResponse> {
+        let response = try await self.listProjects(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+}
+
+// Default implementation of methods from 'ServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_ProjectService.SimpleServiceProtocol {
+    public func createProject(
+        request: GRPCCore.ServerRequest<Noted_V1_CreateProjectRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Project> {
+        return GRPCCore.ServerResponse<Noted_V1_Project>(
+            message: try await self.createProject(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func getProject(
+        request: GRPCCore.ServerRequest<Noted_V1_GetProjectRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ProjectDetail> {
+        return GRPCCore.ServerResponse<Noted_V1_ProjectDetail>(
+            message: try await self.getProject(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func updateProject(
+        request: GRPCCore.ServerRequest<Noted_V1_UpdateProjectRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Project> {
+        return GRPCCore.ServerResponse<Noted_V1_Project>(
+            message: try await self.updateProject(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func deleteProject(
+        request: GRPCCore.ServerRequest<Noted_V1_DeleteProjectRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        return GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>(
+            message: try await self.deleteProject(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func listProjects(
+        request: GRPCCore.ServerRequest<Noted_V1_ListProjectsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListProjectsResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListProjectsResponse>(
+            message: try await self.listProjects(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+}
+
 // MARK: noted.v1.ProjectService (client)
 
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
@@ -6514,6 +11515,132 @@ extension GRPCCore.ServiceDescriptor {
     public static let noted_v1_FocusService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.FocusService")
 }
 
+// MARK: noted.v1.FocusService (server)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_FocusService {
+    /// Streaming variant of the service protocol for the "noted.v1.FocusService" service.
+    ///
+    /// This protocol is the lowest-level of the service protocols generated for this service
+    /// giving you the most flexibility over the implementation of your service. This comes at
+    /// the cost of more verbose and less strict APIs. Each RPC requires you to implement it in
+    /// terms of a request stream and response stream. Where the RPC expects only a single
+    /// request or response message, you are responsible for ensuring your implementation
+    /// maintains this invariant.
+    ///
+    /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
+    /// or ``SimpleServiceProtocol`` instead.
+    public protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+        /// Handle the "GetFocus" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetFocusRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_GetFocusResponse` messages.
+        func getFocus(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetFocusRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_GetFocusResponse>
+    }
+
+    /// Service protocol for the "noted.v1.FocusService" service.
+    ///
+    /// This protocol is higher level than ``StreamingServiceProtocol`` but lower level than
+    /// the ``SimpleServiceProtocol``, it provides access to request and response metadata and
+    /// trailing response metadata. If you don't need these then consider using
+    /// the ``SimpleServiceProtocol``. If you need fine grained control over your RPCs then
+    /// use ``StreamingServiceProtocol``.
+    public protocol ServiceProtocol: Noted_V1_FocusService.StreamingServiceProtocol {
+        /// Handle the "GetFocus" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetFocusRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_GetFocusResponse` message.
+        func getFocus(
+            request: GRPCCore.ServerRequest<Noted_V1_GetFocusRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_GetFocusResponse>
+    }
+
+    /// Simple service protocol for the "noted.v1.FocusService" service.
+    ///
+    /// This is the highest level protocol for the service. The API is the easiest to use but
+    /// doesn't provide access to request or response metadata. If you need access to these
+    /// then use ``ServiceProtocol`` instead.
+    public protocol SimpleServiceProtocol: Noted_V1_FocusService.ServiceProtocol {
+        /// Handle the "GetFocus" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetFocusRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_GetFocusResponse` to respond with.
+        func getFocus(
+            request: Noted_V1_GetFocusRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_GetFocusResponse
+    }
+}
+
+// Default implementation of 'registerMethods(with:)'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_FocusService.StreamingServiceProtocol {
+    public func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
+        router.registerHandler(
+            forMethod: Noted_V1_FocusService.Method.GetFocus.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetFocusRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_GetFocusResponse>(),
+            handler: { request, context in
+                try await self.getFocus(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+    }
+}
+
+// Default implementation of streaming methods from 'StreamingServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_FocusService.ServiceProtocol {
+    public func getFocus(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetFocusRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_GetFocusResponse> {
+        let response = try await self.getFocus(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+}
+
+// Default implementation of methods from 'ServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_FocusService.SimpleServiceProtocol {
+    public func getFocus(
+        request: GRPCCore.ServerRequest<Noted_V1_GetFocusRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_GetFocusResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_GetFocusResponse>(
+            message: try await self.getFocus(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+}
+
 // MARK: noted.v1.FocusService (client)
 
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
@@ -6728,6 +11855,363 @@ public enum Noted_V1_PreferenceService: Sendable {
 extension GRPCCore.ServiceDescriptor {
     /// Service descriptor for the "noted.v1.PreferenceService" service.
     public static let noted_v1_PreferenceService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.PreferenceService")
+}
+
+// MARK: noted.v1.PreferenceService (server)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_PreferenceService {
+    /// Streaming variant of the service protocol for the "noted.v1.PreferenceService" service.
+    ///
+    /// This protocol is the lowest-level of the service protocols generated for this service
+    /// giving you the most flexibility over the implementation of your service. This comes at
+    /// the cost of more verbose and less strict APIs. Each RPC requires you to implement it in
+    /// terms of a request stream and response stream. Where the RPC expects only a single
+    /// request or response message, you are responsible for ensuring your implementation
+    /// maintains this invariant.
+    ///
+    /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
+    /// or ``SimpleServiceProtocol`` instead.
+    public protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+        /// Handle the "GetPreference" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetPreferenceRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Preference` messages.
+        func getPreference(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetPreferenceRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Preference>
+
+        /// Handle the "SetPreference" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_SetPreferenceRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Preference` messages.
+        func setPreference(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_SetPreferenceRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Preference>
+
+        /// Handle the "DeletePreference" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_DeletePreferenceRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        func deletePreference(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_DeletePreferenceRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListPreferences" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListPreferencesRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListPreferencesResponse` messages.
+        func listPreferences(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListPreferencesRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListPreferencesResponse>
+    }
+
+    /// Service protocol for the "noted.v1.PreferenceService" service.
+    ///
+    /// This protocol is higher level than ``StreamingServiceProtocol`` but lower level than
+    /// the ``SimpleServiceProtocol``, it provides access to request and response metadata and
+    /// trailing response metadata. If you don't need these then consider using
+    /// the ``SimpleServiceProtocol``. If you need fine grained control over your RPCs then
+    /// use ``StreamingServiceProtocol``.
+    public protocol ServiceProtocol: Noted_V1_PreferenceService.StreamingServiceProtocol {
+        /// Handle the "GetPreference" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetPreferenceRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Preference` message.
+        func getPreference(
+            request: GRPCCore.ServerRequest<Noted_V1_GetPreferenceRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Preference>
+
+        /// Handle the "SetPreference" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SetPreferenceRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Preference` message.
+        func setPreference(
+            request: GRPCCore.ServerRequest<Noted_V1_SetPreferenceRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Preference>
+
+        /// Handle the "DeletePreference" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeletePreferenceRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `SwiftProtobuf.Google_Protobuf_Empty` message.
+        func deletePreference(
+            request: GRPCCore.ServerRequest<Noted_V1_DeletePreferenceRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListPreferences" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListPreferencesRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListPreferencesResponse` message.
+        func listPreferences(
+            request: GRPCCore.ServerRequest<Noted_V1_ListPreferencesRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListPreferencesResponse>
+    }
+
+    /// Simple service protocol for the "noted.v1.PreferenceService" service.
+    ///
+    /// This is the highest level protocol for the service. The API is the easiest to use but
+    /// doesn't provide access to request or response metadata. If you need access to these
+    /// then use ``ServiceProtocol`` instead.
+    public protocol SimpleServiceProtocol: Noted_V1_PreferenceService.ServiceProtocol {
+        /// Handle the "GetPreference" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetPreferenceRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Preference` to respond with.
+        func getPreference(
+            request: Noted_V1_GetPreferenceRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Preference
+
+        /// Handle the "SetPreference" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_SetPreferenceRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Preference` to respond with.
+        func setPreference(
+            request: Noted_V1_SetPreferenceRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Preference
+
+        /// Handle the "DeletePreference" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_DeletePreferenceRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `SwiftProtobuf.Google_Protobuf_Empty` to respond with.
+        func deletePreference(
+            request: Noted_V1_DeletePreferenceRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> SwiftProtobuf.Google_Protobuf_Empty
+
+        /// Handle the "ListPreferences" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListPreferencesRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListPreferencesResponse` to respond with.
+        func listPreferences(
+            request: Noted_V1_ListPreferencesRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListPreferencesResponse
+    }
+}
+
+// Default implementation of 'registerMethods(with:)'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_PreferenceService.StreamingServiceProtocol {
+    public func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
+        router.registerHandler(
+            forMethod: Noted_V1_PreferenceService.Method.GetPreference.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetPreferenceRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Preference>(),
+            handler: { request, context in
+                try await self.getPreference(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_PreferenceService.Method.SetPreference.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_SetPreferenceRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Preference>(),
+            handler: { request, context in
+                try await self.setPreference(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_PreferenceService.Method.DeletePreference.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_DeletePreferenceRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+            handler: { request, context in
+                try await self.deletePreference(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_PreferenceService.Method.ListPreferences.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListPreferencesRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListPreferencesResponse>(),
+            handler: { request, context in
+                try await self.listPreferences(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+    }
+}
+
+// Default implementation of streaming methods from 'StreamingServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_PreferenceService.ServiceProtocol {
+    public func getPreference(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetPreferenceRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Preference> {
+        let response = try await self.getPreference(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func setPreference(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_SetPreferenceRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Preference> {
+        let response = try await self.setPreference(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func deletePreference(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_DeletePreferenceRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        let response = try await self.deletePreference(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func listPreferences(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListPreferencesRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListPreferencesResponse> {
+        let response = try await self.listPreferences(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+}
+
+// Default implementation of methods from 'ServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_PreferenceService.SimpleServiceProtocol {
+    public func getPreference(
+        request: GRPCCore.ServerRequest<Noted_V1_GetPreferenceRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Preference> {
+        return GRPCCore.ServerResponse<Noted_V1_Preference>(
+            message: try await self.getPreference(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func setPreference(
+        request: GRPCCore.ServerRequest<Noted_V1_SetPreferenceRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Preference> {
+        return GRPCCore.ServerResponse<Noted_V1_Preference>(
+            message: try await self.setPreference(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func deletePreference(
+        request: GRPCCore.ServerRequest<Noted_V1_DeletePreferenceRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        return GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>(
+            message: try await self.deletePreference(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func listPreferences(
+        request: GRPCCore.ServerRequest<Noted_V1_ListPreferencesRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListPreferencesResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListPreferencesResponse>(
+            message: try await self.listPreferences(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
 }
 
 // MARK: noted.v1.PreferenceService (client)
@@ -7213,6 +12697,152 @@ extension GRPCCore.ServiceDescriptor {
     public static let noted_v1_ExportService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.ExportService")
 }
 
+// MARK: noted.v1.ExportService (server)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_ExportService {
+    /// Streaming variant of the service protocol for the "noted.v1.ExportService" service.
+    ///
+    /// This protocol is the lowest-level of the service protocols generated for this service
+    /// giving you the most flexibility over the implementation of your service. This comes at
+    /// the cost of more verbose and less strict APIs. Each RPC requires you to implement it in
+    /// terms of a request stream and response stream. Where the RPC expects only a single
+    /// request or response message, you are responsible for ensuring your implementation
+    /// maintains this invariant.
+    ///
+    /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
+    /// or ``SimpleServiceProtocol`` instead.
+    public protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+        /// Handle the "Export" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Streams a zip of everything the caller owns: noted.json, notes/*.md and
+        /// > calendar.ics. Archived and finished items are included.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ExportRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ExportChunk` messages.
+        func export(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ExportRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ExportChunk>
+    }
+
+    /// Service protocol for the "noted.v1.ExportService" service.
+    ///
+    /// This protocol is higher level than ``StreamingServiceProtocol`` but lower level than
+    /// the ``SimpleServiceProtocol``, it provides access to request and response metadata and
+    /// trailing response metadata. If you don't need these then consider using
+    /// the ``SimpleServiceProtocol``. If you need fine grained control over your RPCs then
+    /// use ``StreamingServiceProtocol``.
+    public protocol ServiceProtocol: Noted_V1_ExportService.StreamingServiceProtocol {
+        /// Handle the "Export" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Streams a zip of everything the caller owns: noted.json, notes/*.md and
+        /// > calendar.ics. Archived and finished items are included.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ExportRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ExportChunk` messages.
+        func export(
+            request: GRPCCore.ServerRequest<Noted_V1_ExportRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ExportChunk>
+    }
+
+    /// Simple service protocol for the "noted.v1.ExportService" service.
+    ///
+    /// This is the highest level protocol for the service. The API is the easiest to use but
+    /// doesn't provide access to request or response metadata. If you need access to these
+    /// then use ``ServiceProtocol`` instead.
+    public protocol SimpleServiceProtocol: Noted_V1_ExportService.ServiceProtocol {
+        /// Handle the "Export" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Streams a zip of everything the caller owns: noted.json, notes/*.md and
+        /// > calendar.ics. Archived and finished items are included.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ExportRequest` message.
+        ///   - response: A response stream of `Noted_V1_ExportChunk` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        func export(
+            request: Noted_V1_ExportRequest,
+            response: GRPCCore.RPCWriter<Noted_V1_ExportChunk>,
+            context: GRPCCore.ServerContext
+        ) async throws
+    }
+}
+
+// Default implementation of 'registerMethods(with:)'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_ExportService.StreamingServiceProtocol {
+    public func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
+        router.registerHandler(
+            forMethod: Noted_V1_ExportService.Method.Export.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ExportRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ExportChunk>(),
+            handler: { request, context in
+                try await self.export(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+    }
+}
+
+// Default implementation of streaming methods from 'StreamingServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_ExportService.ServiceProtocol {
+    public func export(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ExportRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ExportChunk> {
+        let response = try await self.export(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return response
+    }
+}
+
+// Default implementation of methods from 'ServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_ExportService.SimpleServiceProtocol {
+    public func export(
+        request: GRPCCore.ServerRequest<Noted_V1_ExportRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ExportChunk> {
+        return GRPCCore.StreamingServerResponse<Noted_V1_ExportChunk>(
+            metadata: [:],
+            producer: { writer in
+                try await self.export(
+                    request: request.message,
+                    response: writer,
+                    context: context
+                )
+                return [:]
+            }
+        )
+    }
+}
+
 // MARK: noted.v1.ExportService (client)
 
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
@@ -7483,6 +13113,606 @@ public enum Noted_V1_SuggestionService: Sendable {
 extension GRPCCore.ServiceDescriptor {
     /// Service descriptor for the "noted.v1.SuggestionService" service.
     public static let noted_v1_SuggestionService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.SuggestionService")
+}
+
+// MARK: noted.v1.SuggestionService (server)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_SuggestionService {
+    /// Streaming variant of the service protocol for the "noted.v1.SuggestionService" service.
+    ///
+    /// This protocol is the lowest-level of the service protocols generated for this service
+    /// giving you the most flexibility over the implementation of your service. This comes at
+    /// the cost of more verbose and less strict APIs. Each RPC requires you to implement it in
+    /// terms of a request stream and response stream. Where the RPC expects only a single
+    /// request or response message, you are responsible for ensuring your implementation
+    /// maintains this invariant.
+    ///
+    /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
+    /// or ``SimpleServiceProtocol`` instead.
+    public protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+        /// Handle the "ListProposals" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListProposalsRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListProposalsResponse` messages.
+        func listProposals(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListProposalsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListProposalsResponse>
+
+        /// Handle the "AcceptProposal" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_AcceptProposalRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_AcceptProposalResponse` messages.
+        func acceptProposal(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_AcceptProposalRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_AcceptProposalResponse>
+
+        /// Handle the "DismissProposal" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_DismissProposalRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Proposal` messages.
+        func dismissProposal(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_DismissProposalRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Proposal>
+
+        /// Handle the "ProposeSchedule" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Fit tasks into free stretches of the calendar. Stored as a pending proposal.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ProposeScheduleRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Proposal` messages.
+        func proposeSchedule(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ProposeScheduleRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Proposal>
+
+        /// Handle the "GetWeeklyReview" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetWeeklyReviewRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_WeeklyReview` messages.
+        func getWeeklyReview(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetWeeklyReviewRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_WeeklyReview>
+
+        /// Handle the "ListChanges" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListChangesRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListChangesResponse` messages.
+        func listChanges(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListChangesRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListChangesResponse>
+
+        /// Handle the "UndoChange" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_UndoChangeRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Change` messages.
+        func undoChange(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_UndoChangeRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Change>
+    }
+
+    /// Service protocol for the "noted.v1.SuggestionService" service.
+    ///
+    /// This protocol is higher level than ``StreamingServiceProtocol`` but lower level than
+    /// the ``SimpleServiceProtocol``, it provides access to request and response metadata and
+    /// trailing response metadata. If you don't need these then consider using
+    /// the ``SimpleServiceProtocol``. If you need fine grained control over your RPCs then
+    /// use ``StreamingServiceProtocol``.
+    public protocol ServiceProtocol: Noted_V1_SuggestionService.StreamingServiceProtocol {
+        /// Handle the "ListProposals" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListProposalsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListProposalsResponse` message.
+        func listProposals(
+            request: GRPCCore.ServerRequest<Noted_V1_ListProposalsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListProposalsResponse>
+
+        /// Handle the "AcceptProposal" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_AcceptProposalRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_AcceptProposalResponse` message.
+        func acceptProposal(
+            request: GRPCCore.ServerRequest<Noted_V1_AcceptProposalRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_AcceptProposalResponse>
+
+        /// Handle the "DismissProposal" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DismissProposalRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Proposal` message.
+        func dismissProposal(
+            request: GRPCCore.ServerRequest<Noted_V1_DismissProposalRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Proposal>
+
+        /// Handle the "ProposeSchedule" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Fit tasks into free stretches of the calendar. Stored as a pending proposal.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ProposeScheduleRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Proposal` message.
+        func proposeSchedule(
+            request: GRPCCore.ServerRequest<Noted_V1_ProposeScheduleRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Proposal>
+
+        /// Handle the "GetWeeklyReview" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetWeeklyReviewRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_WeeklyReview` message.
+        func getWeeklyReview(
+            request: GRPCCore.ServerRequest<Noted_V1_GetWeeklyReviewRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_WeeklyReview>
+
+        /// Handle the "ListChanges" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListChangesRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListChangesResponse` message.
+        func listChanges(
+            request: GRPCCore.ServerRequest<Noted_V1_ListChangesRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListChangesResponse>
+
+        /// Handle the "UndoChange" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_UndoChangeRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Change` message.
+        func undoChange(
+            request: GRPCCore.ServerRequest<Noted_V1_UndoChangeRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Change>
+    }
+
+    /// Simple service protocol for the "noted.v1.SuggestionService" service.
+    ///
+    /// This is the highest level protocol for the service. The API is the easiest to use but
+    /// doesn't provide access to request or response metadata. If you need access to these
+    /// then use ``ServiceProtocol`` instead.
+    public protocol SimpleServiceProtocol: Noted_V1_SuggestionService.ServiceProtocol {
+        /// Handle the "ListProposals" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListProposalsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListProposalsResponse` to respond with.
+        func listProposals(
+            request: Noted_V1_ListProposalsRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListProposalsResponse
+
+        /// Handle the "AcceptProposal" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_AcceptProposalRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_AcceptProposalResponse` to respond with.
+        func acceptProposal(
+            request: Noted_V1_AcceptProposalRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_AcceptProposalResponse
+
+        /// Handle the "DismissProposal" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_DismissProposalRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Proposal` to respond with.
+        func dismissProposal(
+            request: Noted_V1_DismissProposalRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Proposal
+
+        /// Handle the "ProposeSchedule" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Fit tasks into free stretches of the calendar. Stored as a pending proposal.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ProposeScheduleRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Proposal` to respond with.
+        func proposeSchedule(
+            request: Noted_V1_ProposeScheduleRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Proposal
+
+        /// Handle the "GetWeeklyReview" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetWeeklyReviewRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_WeeklyReview` to respond with.
+        func getWeeklyReview(
+            request: Noted_V1_GetWeeklyReviewRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_WeeklyReview
+
+        /// Handle the "ListChanges" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListChangesRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListChangesResponse` to respond with.
+        func listChanges(
+            request: Noted_V1_ListChangesRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListChangesResponse
+
+        /// Handle the "UndoChange" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_UndoChangeRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Change` to respond with.
+        func undoChange(
+            request: Noted_V1_UndoChangeRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Change
+    }
+}
+
+// Default implementation of 'registerMethods(with:)'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_SuggestionService.StreamingServiceProtocol {
+    public func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
+        router.registerHandler(
+            forMethod: Noted_V1_SuggestionService.Method.ListProposals.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListProposalsRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListProposalsResponse>(),
+            handler: { request, context in
+                try await self.listProposals(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_SuggestionService.Method.AcceptProposal.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_AcceptProposalRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_AcceptProposalResponse>(),
+            handler: { request, context in
+                try await self.acceptProposal(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_SuggestionService.Method.DismissProposal.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_DismissProposalRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Proposal>(),
+            handler: { request, context in
+                try await self.dismissProposal(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_SuggestionService.Method.ProposeSchedule.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ProposeScheduleRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Proposal>(),
+            handler: { request, context in
+                try await self.proposeSchedule(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_SuggestionService.Method.GetWeeklyReview.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetWeeklyReviewRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_WeeklyReview>(),
+            handler: { request, context in
+                try await self.getWeeklyReview(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_SuggestionService.Method.ListChanges.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListChangesRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListChangesResponse>(),
+            handler: { request, context in
+                try await self.listChanges(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_SuggestionService.Method.UndoChange.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_UndoChangeRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Change>(),
+            handler: { request, context in
+                try await self.undoChange(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+    }
+}
+
+// Default implementation of streaming methods from 'StreamingServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_SuggestionService.ServiceProtocol {
+    public func listProposals(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListProposalsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListProposalsResponse> {
+        let response = try await self.listProposals(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func acceptProposal(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_AcceptProposalRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_AcceptProposalResponse> {
+        let response = try await self.acceptProposal(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func dismissProposal(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_DismissProposalRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Proposal> {
+        let response = try await self.dismissProposal(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func proposeSchedule(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ProposeScheduleRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Proposal> {
+        let response = try await self.proposeSchedule(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func getWeeklyReview(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetWeeklyReviewRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_WeeklyReview> {
+        let response = try await self.getWeeklyReview(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func listChanges(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListChangesRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListChangesResponse> {
+        let response = try await self.listChanges(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func undoChange(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_UndoChangeRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Change> {
+        let response = try await self.undoChange(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+}
+
+// Default implementation of methods from 'ServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_SuggestionService.SimpleServiceProtocol {
+    public func listProposals(
+        request: GRPCCore.ServerRequest<Noted_V1_ListProposalsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListProposalsResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListProposalsResponse>(
+            message: try await self.listProposals(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func acceptProposal(
+        request: GRPCCore.ServerRequest<Noted_V1_AcceptProposalRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_AcceptProposalResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_AcceptProposalResponse>(
+            message: try await self.acceptProposal(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func dismissProposal(
+        request: GRPCCore.ServerRequest<Noted_V1_DismissProposalRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Proposal> {
+        return GRPCCore.ServerResponse<Noted_V1_Proposal>(
+            message: try await self.dismissProposal(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func proposeSchedule(
+        request: GRPCCore.ServerRequest<Noted_V1_ProposeScheduleRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Proposal> {
+        return GRPCCore.ServerResponse<Noted_V1_Proposal>(
+            message: try await self.proposeSchedule(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func getWeeklyReview(
+        request: GRPCCore.ServerRequest<Noted_V1_GetWeeklyReviewRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_WeeklyReview> {
+        return GRPCCore.ServerResponse<Noted_V1_WeeklyReview>(
+            message: try await self.getWeeklyReview(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func listChanges(
+        request: GRPCCore.ServerRequest<Noted_V1_ListChangesRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListChangesResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListChangesResponse>(
+            message: try await self.listChanges(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func undoChange(
+        request: GRPCCore.ServerRequest<Noted_V1_UndoChangeRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Change> {
+        return GRPCCore.ServerResponse<Noted_V1_Change>(
+            message: try await self.undoChange(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
 }
 
 // MARK: noted.v1.SuggestionService (client)
@@ -8391,6 +14621,686 @@ extension GRPCCore.ServiceDescriptor {
     public static let noted_v1_HoldingService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.HoldingService")
 }
 
+// MARK: noted.v1.HoldingService (server)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_HoldingService {
+    /// Streaming variant of the service protocol for the "noted.v1.HoldingService" service.
+    ///
+    /// This protocol is the lowest-level of the service protocols generated for this service
+    /// giving you the most flexibility over the implementation of your service. This comes at
+    /// the cost of more verbose and less strict APIs. Each RPC requires you to implement it in
+    /// terms of a request stream and response stream. Where the RPC expects only a single
+    /// request or response message, you are responsible for ensuring your implementation
+    /// maintains this invariant.
+    ///
+    /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
+    /// or ``SimpleServiceProtocol`` instead.
+    public protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+        /// Handle the "CreateHolding" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_CreateHoldingRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Holding` messages.
+        func createHolding(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_CreateHoldingRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Holding>
+
+        /// Handle the "GetHolding" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetHoldingRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Holding` messages.
+        func getHolding(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetHoldingRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Holding>
+
+        /// Handle the "UpdateHolding" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_UpdateHoldingRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Holding` messages.
+        func updateHolding(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_UpdateHoldingRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Holding>
+
+        /// Handle the "DeleteHolding" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_DeleteHoldingRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        func deleteHolding(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteHoldingRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListHoldings" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListHoldingsRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListHoldingsResponse` messages.
+        func listHoldings(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListHoldingsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListHoldingsResponse>
+
+        /// Handle the "RecordTrade" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Records a buy or sell and returns the holding with its new position. A sell
+        /// > of more shares than were held at that time is refused.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_RecordTradeRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Holding` messages.
+        func recordTrade(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_RecordTradeRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Holding>
+
+        /// Handle the "DeleteTrade" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_DeleteTradeRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        func deleteTrade(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteTradeRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListTrades" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListTradesRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListTradesResponse` messages.
+        func listTrades(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListTradesRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListTradesResponse>
+    }
+
+    /// Service protocol for the "noted.v1.HoldingService" service.
+    ///
+    /// This protocol is higher level than ``StreamingServiceProtocol`` but lower level than
+    /// the ``SimpleServiceProtocol``, it provides access to request and response metadata and
+    /// trailing response metadata. If you don't need these then consider using
+    /// the ``SimpleServiceProtocol``. If you need fine grained control over your RPCs then
+    /// use ``StreamingServiceProtocol``.
+    public protocol ServiceProtocol: Noted_V1_HoldingService.StreamingServiceProtocol {
+        /// Handle the "CreateHolding" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_CreateHoldingRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Holding` message.
+        func createHolding(
+            request: GRPCCore.ServerRequest<Noted_V1_CreateHoldingRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Holding>
+
+        /// Handle the "GetHolding" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetHoldingRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Holding` message.
+        func getHolding(
+            request: GRPCCore.ServerRequest<Noted_V1_GetHoldingRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Holding>
+
+        /// Handle the "UpdateHolding" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_UpdateHoldingRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Holding` message.
+        func updateHolding(
+            request: GRPCCore.ServerRequest<Noted_V1_UpdateHoldingRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Holding>
+
+        /// Handle the "DeleteHolding" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeleteHoldingRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `SwiftProtobuf.Google_Protobuf_Empty` message.
+        func deleteHolding(
+            request: GRPCCore.ServerRequest<Noted_V1_DeleteHoldingRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListHoldings" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListHoldingsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListHoldingsResponse` message.
+        func listHoldings(
+            request: GRPCCore.ServerRequest<Noted_V1_ListHoldingsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListHoldingsResponse>
+
+        /// Handle the "RecordTrade" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Records a buy or sell and returns the holding with its new position. A sell
+        /// > of more shares than were held at that time is refused.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_RecordTradeRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Holding` message.
+        func recordTrade(
+            request: GRPCCore.ServerRequest<Noted_V1_RecordTradeRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Holding>
+
+        /// Handle the "DeleteTrade" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeleteTradeRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `SwiftProtobuf.Google_Protobuf_Empty` message.
+        func deleteTrade(
+            request: GRPCCore.ServerRequest<Noted_V1_DeleteTradeRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListTrades" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListTradesRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListTradesResponse` message.
+        func listTrades(
+            request: GRPCCore.ServerRequest<Noted_V1_ListTradesRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListTradesResponse>
+    }
+
+    /// Simple service protocol for the "noted.v1.HoldingService" service.
+    ///
+    /// This is the highest level protocol for the service. The API is the easiest to use but
+    /// doesn't provide access to request or response metadata. If you need access to these
+    /// then use ``ServiceProtocol`` instead.
+    public protocol SimpleServiceProtocol: Noted_V1_HoldingService.ServiceProtocol {
+        /// Handle the "CreateHolding" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_CreateHoldingRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Holding` to respond with.
+        func createHolding(
+            request: Noted_V1_CreateHoldingRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Holding
+
+        /// Handle the "GetHolding" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetHoldingRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Holding` to respond with.
+        func getHolding(
+            request: Noted_V1_GetHoldingRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Holding
+
+        /// Handle the "UpdateHolding" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_UpdateHoldingRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Holding` to respond with.
+        func updateHolding(
+            request: Noted_V1_UpdateHoldingRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Holding
+
+        /// Handle the "DeleteHolding" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_DeleteHoldingRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `SwiftProtobuf.Google_Protobuf_Empty` to respond with.
+        func deleteHolding(
+            request: Noted_V1_DeleteHoldingRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> SwiftProtobuf.Google_Protobuf_Empty
+
+        /// Handle the "ListHoldings" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListHoldingsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListHoldingsResponse` to respond with.
+        func listHoldings(
+            request: Noted_V1_ListHoldingsRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListHoldingsResponse
+
+        /// Handle the "RecordTrade" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Records a buy or sell and returns the holding with its new position. A sell
+        /// > of more shares than were held at that time is refused.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_RecordTradeRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Holding` to respond with.
+        func recordTrade(
+            request: Noted_V1_RecordTradeRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Holding
+
+        /// Handle the "DeleteTrade" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_DeleteTradeRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `SwiftProtobuf.Google_Protobuf_Empty` to respond with.
+        func deleteTrade(
+            request: Noted_V1_DeleteTradeRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> SwiftProtobuf.Google_Protobuf_Empty
+
+        /// Handle the "ListTrades" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListTradesRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListTradesResponse` to respond with.
+        func listTrades(
+            request: Noted_V1_ListTradesRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListTradesResponse
+    }
+}
+
+// Default implementation of 'registerMethods(with:)'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_HoldingService.StreamingServiceProtocol {
+    public func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
+        router.registerHandler(
+            forMethod: Noted_V1_HoldingService.Method.CreateHolding.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_CreateHoldingRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Holding>(),
+            handler: { request, context in
+                try await self.createHolding(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_HoldingService.Method.GetHolding.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetHoldingRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Holding>(),
+            handler: { request, context in
+                try await self.getHolding(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_HoldingService.Method.UpdateHolding.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_UpdateHoldingRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Holding>(),
+            handler: { request, context in
+                try await self.updateHolding(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_HoldingService.Method.DeleteHolding.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_DeleteHoldingRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+            handler: { request, context in
+                try await self.deleteHolding(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_HoldingService.Method.ListHoldings.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListHoldingsRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListHoldingsResponse>(),
+            handler: { request, context in
+                try await self.listHoldings(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_HoldingService.Method.RecordTrade.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_RecordTradeRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Holding>(),
+            handler: { request, context in
+                try await self.recordTrade(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_HoldingService.Method.DeleteTrade.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_DeleteTradeRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+            handler: { request, context in
+                try await self.deleteTrade(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_HoldingService.Method.ListTrades.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListTradesRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListTradesResponse>(),
+            handler: { request, context in
+                try await self.listTrades(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+    }
+}
+
+// Default implementation of streaming methods from 'StreamingServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_HoldingService.ServiceProtocol {
+    public func createHolding(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_CreateHoldingRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Holding> {
+        let response = try await self.createHolding(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func getHolding(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetHoldingRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Holding> {
+        let response = try await self.getHolding(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func updateHolding(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_UpdateHoldingRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Holding> {
+        let response = try await self.updateHolding(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func deleteHolding(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteHoldingRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        let response = try await self.deleteHolding(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func listHoldings(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListHoldingsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListHoldingsResponse> {
+        let response = try await self.listHoldings(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func recordTrade(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_RecordTradeRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Holding> {
+        let response = try await self.recordTrade(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func deleteTrade(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteTradeRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        let response = try await self.deleteTrade(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func listTrades(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListTradesRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListTradesResponse> {
+        let response = try await self.listTrades(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+}
+
+// Default implementation of methods from 'ServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_HoldingService.SimpleServiceProtocol {
+    public func createHolding(
+        request: GRPCCore.ServerRequest<Noted_V1_CreateHoldingRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Holding> {
+        return GRPCCore.ServerResponse<Noted_V1_Holding>(
+            message: try await self.createHolding(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func getHolding(
+        request: GRPCCore.ServerRequest<Noted_V1_GetHoldingRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Holding> {
+        return GRPCCore.ServerResponse<Noted_V1_Holding>(
+            message: try await self.getHolding(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func updateHolding(
+        request: GRPCCore.ServerRequest<Noted_V1_UpdateHoldingRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Holding> {
+        return GRPCCore.ServerResponse<Noted_V1_Holding>(
+            message: try await self.updateHolding(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func deleteHolding(
+        request: GRPCCore.ServerRequest<Noted_V1_DeleteHoldingRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        return GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>(
+            message: try await self.deleteHolding(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func listHoldings(
+        request: GRPCCore.ServerRequest<Noted_V1_ListHoldingsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListHoldingsResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListHoldingsResponse>(
+            message: try await self.listHoldings(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func recordTrade(
+        request: GRPCCore.ServerRequest<Noted_V1_RecordTradeRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Holding> {
+        return GRPCCore.ServerResponse<Noted_V1_Holding>(
+            message: try await self.recordTrade(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func deleteTrade(
+        request: GRPCCore.ServerRequest<Noted_V1_DeleteTradeRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        return GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>(
+            message: try await self.deleteTrade(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func listTrades(
+        request: GRPCCore.ServerRequest<Noted_V1_ListTradesRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListTradesResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListTradesResponse>(
+            message: try await self.listTrades(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+}
+
 // MARK: noted.v1.HoldingService (client)
 
 @available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
@@ -9264,6 +16174,6427 @@ extension Noted_V1_HoldingService.ClientProtocol {
             metadata: metadata
         )
         return try await self.listTrades(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+}
+
+// MARK: - noted.v1.TimeService
+
+/// Namespace containing generated types for the "noted.v1.TimeService" service.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+public enum Noted_V1_TimeService: Sendable {
+    /// Service descriptor for the "noted.v1.TimeService" service.
+    public static let descriptor = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.TimeService")
+    /// Namespace for method metadata.
+    public enum Method: Sendable {
+        /// Namespace for "CreateTimeEntry" metadata.
+        public enum CreateTimeEntry: Sendable {
+            /// Request type for "CreateTimeEntry".
+            public typealias Input = Noted_V1_CreateTimeEntryRequest
+            /// Response type for "CreateTimeEntry".
+            public typealias Output = Noted_V1_TimeEntry
+            /// Descriptor for "CreateTimeEntry".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.TimeService"),
+                method: "CreateTimeEntry",
+                type: .unary
+            )
+        }
+        /// Namespace for "GetTimeEntry" metadata.
+        public enum GetTimeEntry: Sendable {
+            /// Request type for "GetTimeEntry".
+            public typealias Input = Noted_V1_GetTimeEntryRequest
+            /// Response type for "GetTimeEntry".
+            public typealias Output = Noted_V1_TimeEntry
+            /// Descriptor for "GetTimeEntry".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.TimeService"),
+                method: "GetTimeEntry",
+                type: .unary
+            )
+        }
+        /// Namespace for "UpdateTimeEntry" metadata.
+        public enum UpdateTimeEntry: Sendable {
+            /// Request type for "UpdateTimeEntry".
+            public typealias Input = Noted_V1_UpdateTimeEntryRequest
+            /// Response type for "UpdateTimeEntry".
+            public typealias Output = Noted_V1_TimeEntry
+            /// Descriptor for "UpdateTimeEntry".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.TimeService"),
+                method: "UpdateTimeEntry",
+                type: .unary
+            )
+        }
+        /// Namespace for "DeleteTimeEntry" metadata.
+        public enum DeleteTimeEntry: Sendable {
+            /// Request type for "DeleteTimeEntry".
+            public typealias Input = Noted_V1_DeleteTimeEntryRequest
+            /// Response type for "DeleteTimeEntry".
+            public typealias Output = SwiftProtobuf.Google_Protobuf_Empty
+            /// Descriptor for "DeleteTimeEntry".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.TimeService"),
+                method: "DeleteTimeEntry",
+                type: .unary
+            )
+        }
+        /// Namespace for "ListTimeEntries" metadata.
+        public enum ListTimeEntries: Sendable {
+            /// Request type for "ListTimeEntries".
+            public typealias Input = Noted_V1_ListTimeEntriesRequest
+            /// Response type for "ListTimeEntries".
+            public typealias Output = Noted_V1_ListTimeEntriesResponse
+            /// Descriptor for "ListTimeEntries".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.TimeService"),
+                method: "ListTimeEntries",
+                type: .unary
+            )
+        }
+        /// Namespace for "StartTimer" metadata.
+        public enum StartTimer: Sendable {
+            /// Request type for "StartTimer".
+            public typealias Input = Noted_V1_StartTimerRequest
+            /// Response type for "StartTimer".
+            public typealias Output = Noted_V1_TimeEntry
+            /// Descriptor for "StartTimer".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.TimeService"),
+                method: "StartTimer",
+                type: .unary
+            )
+        }
+        /// Namespace for "StopTimer" metadata.
+        public enum StopTimer: Sendable {
+            /// Request type for "StopTimer".
+            public typealias Input = Noted_V1_StopTimerRequest
+            /// Response type for "StopTimer".
+            public typealias Output = Noted_V1_TimeEntry
+            /// Descriptor for "StopTimer".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.TimeService"),
+                method: "StopTimer",
+                type: .unary
+            )
+        }
+        /// Namespace for "GetRunningTimer" metadata.
+        public enum GetRunningTimer: Sendable {
+            /// Request type for "GetRunningTimer".
+            public typealias Input = Noted_V1_GetRunningTimerRequest
+            /// Response type for "GetRunningTimer".
+            public typealias Output = Noted_V1_GetRunningTimerResponse
+            /// Descriptor for "GetRunningTimer".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.TimeService"),
+                method: "GetRunningTimer",
+                type: .unary
+            )
+        }
+        /// Namespace for "SummarizeTime" metadata.
+        public enum SummarizeTime: Sendable {
+            /// Request type for "SummarizeTime".
+            public typealias Input = Noted_V1_SummarizeTimeRequest
+            /// Response type for "SummarizeTime".
+            public typealias Output = Noted_V1_TimeSummary
+            /// Descriptor for "SummarizeTime".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.TimeService"),
+                method: "SummarizeTime",
+                type: .unary
+            )
+        }
+        /// Descriptors for all methods in the "noted.v1.TimeService" service.
+        public static let descriptors: [GRPCCore.MethodDescriptor] = [
+            CreateTimeEntry.descriptor,
+            GetTimeEntry.descriptor,
+            UpdateTimeEntry.descriptor,
+            DeleteTimeEntry.descriptor,
+            ListTimeEntries.descriptor,
+            StartTimer.descriptor,
+            StopTimer.descriptor,
+            GetRunningTimer.descriptor,
+            SummarizeTime.descriptor
+        ]
+    }
+}
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension GRPCCore.ServiceDescriptor {
+    /// Service descriptor for the "noted.v1.TimeService" service.
+    public static let noted_v1_TimeService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.TimeService")
+}
+
+// MARK: noted.v1.TimeService (server)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_TimeService {
+    /// Streaming variant of the service protocol for the "noted.v1.TimeService" service.
+    ///
+    /// This protocol is the lowest-level of the service protocols generated for this service
+    /// giving you the most flexibility over the implementation of your service. This comes at
+    /// the cost of more verbose and less strict APIs. Each RPC requires you to implement it in
+    /// terms of a request stream and response stream. Where the RPC expects only a single
+    /// request or response message, you are responsible for ensuring your implementation
+    /// maintains this invariant.
+    ///
+    /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
+    /// or ``SimpleServiceProtocol`` instead.
+    public protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+        /// Handle the "CreateTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_CreateTimeEntryRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_TimeEntry` messages.
+        func createTimeEntry(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_CreateTimeEntryRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_TimeEntry>
+
+        /// Handle the "GetTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetTimeEntryRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_TimeEntry` messages.
+        func getTimeEntry(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetTimeEntryRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_TimeEntry>
+
+        /// Handle the "UpdateTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_UpdateTimeEntryRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_TimeEntry` messages.
+        func updateTimeEntry(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_UpdateTimeEntryRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_TimeEntry>
+
+        /// Handle the "DeleteTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_DeleteTimeEntryRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        func deleteTimeEntry(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteTimeEntryRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListTimeEntries" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListTimeEntriesRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListTimeEntriesResponse` messages.
+        func listTimeEntries(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListTimeEntriesRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListTimeEntriesResponse>
+
+        /// Handle the "StartTimer" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Starts a timer: a running entry from now. FAILED_PRECONDITION, naming the
+        /// > running one, if the user already has a timer running.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_StartTimerRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_TimeEntry` messages.
+        func startTimer(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_StartTimerRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_TimeEntry>
+
+        /// Handle the "StopTimer" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Stops the running timer and returns the finished entry; FAILED_PRECONDITION
+        /// > when none runs. A goal check-in is made only now.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_StopTimerRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_TimeEntry` messages.
+        func stopTimer(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_StopTimerRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_TimeEntry>
+
+        /// Handle the "GetRunningTimer" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetRunningTimerRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_GetRunningTimerResponse` messages.
+        func getRunningTimer(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetRunningTimerRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_GetRunningTimerResponse>
+
+        /// Handle the "SummarizeTime" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_SummarizeTimeRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_TimeSummary` messages.
+        func summarizeTime(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_SummarizeTimeRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_TimeSummary>
+    }
+
+    /// Service protocol for the "noted.v1.TimeService" service.
+    ///
+    /// This protocol is higher level than ``StreamingServiceProtocol`` but lower level than
+    /// the ``SimpleServiceProtocol``, it provides access to request and response metadata and
+    /// trailing response metadata. If you don't need these then consider using
+    /// the ``SimpleServiceProtocol``. If you need fine grained control over your RPCs then
+    /// use ``StreamingServiceProtocol``.
+    public protocol ServiceProtocol: Noted_V1_TimeService.StreamingServiceProtocol {
+        /// Handle the "CreateTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_CreateTimeEntryRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_TimeEntry` message.
+        func createTimeEntry(
+            request: GRPCCore.ServerRequest<Noted_V1_CreateTimeEntryRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_TimeEntry>
+
+        /// Handle the "GetTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetTimeEntryRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_TimeEntry` message.
+        func getTimeEntry(
+            request: GRPCCore.ServerRequest<Noted_V1_GetTimeEntryRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_TimeEntry>
+
+        /// Handle the "UpdateTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_UpdateTimeEntryRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_TimeEntry` message.
+        func updateTimeEntry(
+            request: GRPCCore.ServerRequest<Noted_V1_UpdateTimeEntryRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_TimeEntry>
+
+        /// Handle the "DeleteTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeleteTimeEntryRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `SwiftProtobuf.Google_Protobuf_Empty` message.
+        func deleteTimeEntry(
+            request: GRPCCore.ServerRequest<Noted_V1_DeleteTimeEntryRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListTimeEntries" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListTimeEntriesRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListTimeEntriesResponse` message.
+        func listTimeEntries(
+            request: GRPCCore.ServerRequest<Noted_V1_ListTimeEntriesRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListTimeEntriesResponse>
+
+        /// Handle the "StartTimer" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Starts a timer: a running entry from now. FAILED_PRECONDITION, naming the
+        /// > running one, if the user already has a timer running.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_StartTimerRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_TimeEntry` message.
+        func startTimer(
+            request: GRPCCore.ServerRequest<Noted_V1_StartTimerRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_TimeEntry>
+
+        /// Handle the "StopTimer" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Stops the running timer and returns the finished entry; FAILED_PRECONDITION
+        /// > when none runs. A goal check-in is made only now.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_StopTimerRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_TimeEntry` message.
+        func stopTimer(
+            request: GRPCCore.ServerRequest<Noted_V1_StopTimerRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_TimeEntry>
+
+        /// Handle the "GetRunningTimer" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetRunningTimerRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_GetRunningTimerResponse` message.
+        func getRunningTimer(
+            request: GRPCCore.ServerRequest<Noted_V1_GetRunningTimerRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_GetRunningTimerResponse>
+
+        /// Handle the "SummarizeTime" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SummarizeTimeRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_TimeSummary` message.
+        func summarizeTime(
+            request: GRPCCore.ServerRequest<Noted_V1_SummarizeTimeRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_TimeSummary>
+    }
+
+    /// Simple service protocol for the "noted.v1.TimeService" service.
+    ///
+    /// This is the highest level protocol for the service. The API is the easiest to use but
+    /// doesn't provide access to request or response metadata. If you need access to these
+    /// then use ``ServiceProtocol`` instead.
+    public protocol SimpleServiceProtocol: Noted_V1_TimeService.ServiceProtocol {
+        /// Handle the "CreateTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_CreateTimeEntryRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_TimeEntry` to respond with.
+        func createTimeEntry(
+            request: Noted_V1_CreateTimeEntryRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_TimeEntry
+
+        /// Handle the "GetTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetTimeEntryRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_TimeEntry` to respond with.
+        func getTimeEntry(
+            request: Noted_V1_GetTimeEntryRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_TimeEntry
+
+        /// Handle the "UpdateTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_UpdateTimeEntryRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_TimeEntry` to respond with.
+        func updateTimeEntry(
+            request: Noted_V1_UpdateTimeEntryRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_TimeEntry
+
+        /// Handle the "DeleteTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_DeleteTimeEntryRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `SwiftProtobuf.Google_Protobuf_Empty` to respond with.
+        func deleteTimeEntry(
+            request: Noted_V1_DeleteTimeEntryRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> SwiftProtobuf.Google_Protobuf_Empty
+
+        /// Handle the "ListTimeEntries" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListTimeEntriesRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListTimeEntriesResponse` to respond with.
+        func listTimeEntries(
+            request: Noted_V1_ListTimeEntriesRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListTimeEntriesResponse
+
+        /// Handle the "StartTimer" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Starts a timer: a running entry from now. FAILED_PRECONDITION, naming the
+        /// > running one, if the user already has a timer running.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_StartTimerRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_TimeEntry` to respond with.
+        func startTimer(
+            request: Noted_V1_StartTimerRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_TimeEntry
+
+        /// Handle the "StopTimer" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Stops the running timer and returns the finished entry; FAILED_PRECONDITION
+        /// > when none runs. A goal check-in is made only now.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_StopTimerRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_TimeEntry` to respond with.
+        func stopTimer(
+            request: Noted_V1_StopTimerRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_TimeEntry
+
+        /// Handle the "GetRunningTimer" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetRunningTimerRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_GetRunningTimerResponse` to respond with.
+        func getRunningTimer(
+            request: Noted_V1_GetRunningTimerRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_GetRunningTimerResponse
+
+        /// Handle the "SummarizeTime" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_SummarizeTimeRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_TimeSummary` to respond with.
+        func summarizeTime(
+            request: Noted_V1_SummarizeTimeRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_TimeSummary
+    }
+}
+
+// Default implementation of 'registerMethods(with:)'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_TimeService.StreamingServiceProtocol {
+    public func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
+        router.registerHandler(
+            forMethod: Noted_V1_TimeService.Method.CreateTimeEntry.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_CreateTimeEntryRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_TimeEntry>(),
+            handler: { request, context in
+                try await self.createTimeEntry(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_TimeService.Method.GetTimeEntry.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetTimeEntryRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_TimeEntry>(),
+            handler: { request, context in
+                try await self.getTimeEntry(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_TimeService.Method.UpdateTimeEntry.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_UpdateTimeEntryRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_TimeEntry>(),
+            handler: { request, context in
+                try await self.updateTimeEntry(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_TimeService.Method.DeleteTimeEntry.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_DeleteTimeEntryRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+            handler: { request, context in
+                try await self.deleteTimeEntry(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_TimeService.Method.ListTimeEntries.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListTimeEntriesRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListTimeEntriesResponse>(),
+            handler: { request, context in
+                try await self.listTimeEntries(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_TimeService.Method.StartTimer.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_StartTimerRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_TimeEntry>(),
+            handler: { request, context in
+                try await self.startTimer(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_TimeService.Method.StopTimer.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_StopTimerRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_TimeEntry>(),
+            handler: { request, context in
+                try await self.stopTimer(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_TimeService.Method.GetRunningTimer.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetRunningTimerRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_GetRunningTimerResponse>(),
+            handler: { request, context in
+                try await self.getRunningTimer(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_TimeService.Method.SummarizeTime.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_SummarizeTimeRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_TimeSummary>(),
+            handler: { request, context in
+                try await self.summarizeTime(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+    }
+}
+
+// Default implementation of streaming methods from 'StreamingServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_TimeService.ServiceProtocol {
+    public func createTimeEntry(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_CreateTimeEntryRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_TimeEntry> {
+        let response = try await self.createTimeEntry(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func getTimeEntry(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetTimeEntryRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_TimeEntry> {
+        let response = try await self.getTimeEntry(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func updateTimeEntry(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_UpdateTimeEntryRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_TimeEntry> {
+        let response = try await self.updateTimeEntry(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func deleteTimeEntry(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteTimeEntryRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        let response = try await self.deleteTimeEntry(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func listTimeEntries(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListTimeEntriesRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListTimeEntriesResponse> {
+        let response = try await self.listTimeEntries(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func startTimer(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_StartTimerRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_TimeEntry> {
+        let response = try await self.startTimer(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func stopTimer(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_StopTimerRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_TimeEntry> {
+        let response = try await self.stopTimer(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func getRunningTimer(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetRunningTimerRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_GetRunningTimerResponse> {
+        let response = try await self.getRunningTimer(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func summarizeTime(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_SummarizeTimeRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_TimeSummary> {
+        let response = try await self.summarizeTime(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+}
+
+// Default implementation of methods from 'ServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_TimeService.SimpleServiceProtocol {
+    public func createTimeEntry(
+        request: GRPCCore.ServerRequest<Noted_V1_CreateTimeEntryRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_TimeEntry> {
+        return GRPCCore.ServerResponse<Noted_V1_TimeEntry>(
+            message: try await self.createTimeEntry(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func getTimeEntry(
+        request: GRPCCore.ServerRequest<Noted_V1_GetTimeEntryRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_TimeEntry> {
+        return GRPCCore.ServerResponse<Noted_V1_TimeEntry>(
+            message: try await self.getTimeEntry(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func updateTimeEntry(
+        request: GRPCCore.ServerRequest<Noted_V1_UpdateTimeEntryRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_TimeEntry> {
+        return GRPCCore.ServerResponse<Noted_V1_TimeEntry>(
+            message: try await self.updateTimeEntry(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func deleteTimeEntry(
+        request: GRPCCore.ServerRequest<Noted_V1_DeleteTimeEntryRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        return GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>(
+            message: try await self.deleteTimeEntry(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func listTimeEntries(
+        request: GRPCCore.ServerRequest<Noted_V1_ListTimeEntriesRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListTimeEntriesResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListTimeEntriesResponse>(
+            message: try await self.listTimeEntries(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func startTimer(
+        request: GRPCCore.ServerRequest<Noted_V1_StartTimerRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_TimeEntry> {
+        return GRPCCore.ServerResponse<Noted_V1_TimeEntry>(
+            message: try await self.startTimer(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func stopTimer(
+        request: GRPCCore.ServerRequest<Noted_V1_StopTimerRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_TimeEntry> {
+        return GRPCCore.ServerResponse<Noted_V1_TimeEntry>(
+            message: try await self.stopTimer(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func getRunningTimer(
+        request: GRPCCore.ServerRequest<Noted_V1_GetRunningTimerRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_GetRunningTimerResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_GetRunningTimerResponse>(
+            message: try await self.getRunningTimer(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func summarizeTime(
+        request: GRPCCore.ServerRequest<Noted_V1_SummarizeTimeRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_TimeSummary> {
+        return GRPCCore.ServerResponse<Noted_V1_TimeSummary>(
+            message: try await self.summarizeTime(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+}
+
+// MARK: noted.v1.TimeService (client)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_TimeService {
+    /// Generated client protocol for the "noted.v1.TimeService" service.
+    ///
+    /// You don't need to implement this protocol directly, use the generated
+    /// implementation, ``Client``.
+    public protocol ClientProtocol: Sendable {
+        /// Call the "CreateTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_CreateTimeEntryRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_CreateTimeEntryRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_TimeEntry` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func createTimeEntry<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_CreateTimeEntryRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_CreateTimeEntryRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_TimeEntry>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "GetTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetTimeEntryRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_GetTimeEntryRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_TimeEntry` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func getTimeEntry<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_GetTimeEntryRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_GetTimeEntryRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_TimeEntry>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "UpdateTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_UpdateTimeEntryRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_UpdateTimeEntryRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_TimeEntry` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func updateTimeEntry<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_UpdateTimeEntryRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_UpdateTimeEntryRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_TimeEntry>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "DeleteTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeleteTimeEntryRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_DeleteTimeEntryRequest` messages.
+        ///   - deserializer: A deserializer for `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func deleteTimeEntry<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_DeleteTimeEntryRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_DeleteTimeEntryRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<SwiftProtobuf.Google_Protobuf_Empty>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<SwiftProtobuf.Google_Protobuf_Empty>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "ListTimeEntries" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListTimeEntriesRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_ListTimeEntriesRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_ListTimeEntriesResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func listTimeEntries<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_ListTimeEntriesRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_ListTimeEntriesRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_ListTimeEntriesResponse>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListTimeEntriesResponse>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "StartTimer" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Starts a timer: a running entry from now. FAILED_PRECONDITION, naming the
+        /// > running one, if the user already has a timer running.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_StartTimerRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_StartTimerRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_TimeEntry` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func startTimer<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_StartTimerRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_StartTimerRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_TimeEntry>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "StopTimer" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Stops the running timer and returns the finished entry; FAILED_PRECONDITION
+        /// > when none runs. A goal check-in is made only now.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_StopTimerRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_StopTimerRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_TimeEntry` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func stopTimer<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_StopTimerRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_StopTimerRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_TimeEntry>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "GetRunningTimer" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetRunningTimerRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_GetRunningTimerRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_GetRunningTimerResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func getRunningTimer<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_GetRunningTimerRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_GetRunningTimerRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_GetRunningTimerResponse>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_GetRunningTimerResponse>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "SummarizeTime" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SummarizeTimeRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_SummarizeTimeRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_TimeSummary` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func summarizeTime<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_SummarizeTimeRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_SummarizeTimeRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_TimeSummary>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeSummary>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+    }
+
+    /// Generated client for the "noted.v1.TimeService" service.
+    ///
+    /// The ``Client`` provides an implementation of ``ClientProtocol`` which wraps
+    /// a `GRPCCore.GRPCCClient`. The underlying `GRPCClient` provides the long-lived
+    /// means of communication with the remote peer.
+    public struct Client<Transport>: ClientProtocol where Transport: GRPCCore.ClientTransport {
+        private let client: GRPCCore.GRPCClient<Transport>
+
+        /// Creates a new client wrapping the provided `GRPCCore.GRPCClient`.
+        ///
+        /// - Parameters:
+        ///   - client: A `GRPCCore.GRPCClient` providing a communication channel to the service.
+        public init(wrapping client: GRPCCore.GRPCClient<Transport>) {
+            self.client = client
+        }
+
+        /// Call the "CreateTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_CreateTimeEntryRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_CreateTimeEntryRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_TimeEntry` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func createTimeEntry<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_CreateTimeEntryRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_CreateTimeEntryRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_TimeEntry>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_TimeService.Method.CreateTimeEntry.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "GetTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetTimeEntryRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_GetTimeEntryRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_TimeEntry` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func getTimeEntry<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_GetTimeEntryRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_GetTimeEntryRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_TimeEntry>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_TimeService.Method.GetTimeEntry.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "UpdateTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_UpdateTimeEntryRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_UpdateTimeEntryRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_TimeEntry` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func updateTimeEntry<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_UpdateTimeEntryRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_UpdateTimeEntryRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_TimeEntry>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_TimeService.Method.UpdateTimeEntry.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "DeleteTimeEntry" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeleteTimeEntryRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_DeleteTimeEntryRequest` messages.
+        ///   - deserializer: A deserializer for `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func deleteTimeEntry<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_DeleteTimeEntryRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_DeleteTimeEntryRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<SwiftProtobuf.Google_Protobuf_Empty>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<SwiftProtobuf.Google_Protobuf_Empty>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_TimeService.Method.DeleteTimeEntry.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "ListTimeEntries" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListTimeEntriesRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_ListTimeEntriesRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_ListTimeEntriesResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func listTimeEntries<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_ListTimeEntriesRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_ListTimeEntriesRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_ListTimeEntriesResponse>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListTimeEntriesResponse>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_TimeService.Method.ListTimeEntries.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "StartTimer" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Starts a timer: a running entry from now. FAILED_PRECONDITION, naming the
+        /// > running one, if the user already has a timer running.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_StartTimerRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_StartTimerRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_TimeEntry` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func startTimer<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_StartTimerRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_StartTimerRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_TimeEntry>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_TimeService.Method.StartTimer.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "StopTimer" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Stops the running timer and returns the finished entry; FAILED_PRECONDITION
+        /// > when none runs. A goal check-in is made only now.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_StopTimerRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_StopTimerRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_TimeEntry` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func stopTimer<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_StopTimerRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_StopTimerRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_TimeEntry>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_TimeService.Method.StopTimer.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "GetRunningTimer" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetRunningTimerRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_GetRunningTimerRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_GetRunningTimerResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func getRunningTimer<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_GetRunningTimerRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_GetRunningTimerRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_GetRunningTimerResponse>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_GetRunningTimerResponse>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_TimeService.Method.GetRunningTimer.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "SummarizeTime" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SummarizeTimeRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_SummarizeTimeRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_TimeSummary` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func summarizeTime<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_SummarizeTimeRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_SummarizeTimeRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_TimeSummary>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeSummary>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_TimeService.Method.SummarizeTime.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+    }
+}
+
+// Helpers providing default arguments to 'ClientProtocol' methods.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_TimeService.ClientProtocol {
+    /// Call the "CreateTimeEntry" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_CreateTimeEntryRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func createTimeEntry<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_CreateTimeEntryRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.createTimeEntry(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_CreateTimeEntryRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_TimeEntry>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "GetTimeEntry" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_GetTimeEntryRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func getTimeEntry<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_GetTimeEntryRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.getTimeEntry(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_GetTimeEntryRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_TimeEntry>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "UpdateTimeEntry" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_UpdateTimeEntryRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func updateTimeEntry<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_UpdateTimeEntryRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.updateTimeEntry(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_UpdateTimeEntryRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_TimeEntry>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DeleteTimeEntry" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_DeleteTimeEntryRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func deleteTimeEntry<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_DeleteTimeEntryRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<SwiftProtobuf.Google_Protobuf_Empty>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.deleteTimeEntry(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_DeleteTimeEntryRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "ListTimeEntries" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_ListTimeEntriesRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func listTimeEntries<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_ListTimeEntriesRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListTimeEntriesResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.listTimeEntries(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListTimeEntriesRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListTimeEntriesResponse>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "StartTimer" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Starts a timer: a running entry from now. FAILED_PRECONDITION, naming the
+    /// > running one, if the user already has a timer running.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_StartTimerRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func startTimer<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_StartTimerRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.startTimer(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_StartTimerRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_TimeEntry>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "StopTimer" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Stops the running timer and returns the finished entry; FAILED_PRECONDITION
+    /// > when none runs. A goal check-in is made only now.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_StopTimerRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func stopTimer<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_StopTimerRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.stopTimer(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_StopTimerRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_TimeEntry>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "GetRunningTimer" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_GetRunningTimerRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func getRunningTimer<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_GetRunningTimerRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_GetRunningTimerResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.getRunningTimer(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_GetRunningTimerRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetRunningTimerResponse>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "SummarizeTime" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_SummarizeTimeRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func summarizeTime<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_SummarizeTimeRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeSummary>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.summarizeTime(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_SummarizeTimeRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_TimeSummary>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+}
+
+// Helpers providing sugared APIs for 'ClientProtocol' methods.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_TimeService.ClientProtocol {
+    /// Call the "CreateTimeEntry" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func createTimeEntry<Result>(
+        _ message: Noted_V1_CreateTimeEntryRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_CreateTimeEntryRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.createTimeEntry(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "GetTimeEntry" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func getTimeEntry<Result>(
+        _ message: Noted_V1_GetTimeEntryRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_GetTimeEntryRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.getTimeEntry(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "UpdateTimeEntry" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func updateTimeEntry<Result>(
+        _ message: Noted_V1_UpdateTimeEntryRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_UpdateTimeEntryRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.updateTimeEntry(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DeleteTimeEntry" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func deleteTimeEntry<Result>(
+        _ message: Noted_V1_DeleteTimeEntryRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<SwiftProtobuf.Google_Protobuf_Empty>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_DeleteTimeEntryRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.deleteTimeEntry(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "ListTimeEntries" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func listTimeEntries<Result>(
+        _ message: Noted_V1_ListTimeEntriesRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListTimeEntriesResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_ListTimeEntriesRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.listTimeEntries(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "StartTimer" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Starts a timer: a running entry from now. FAILED_PRECONDITION, naming the
+    /// > running one, if the user already has a timer running.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func startTimer<Result>(
+        _ message: Noted_V1_StartTimerRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_StartTimerRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.startTimer(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "StopTimer" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Stops the running timer and returns the finished entry; FAILED_PRECONDITION
+    /// > when none runs. A goal check-in is made only now.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func stopTimer<Result>(
+        _ message: Noted_V1_StopTimerRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeEntry>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_StopTimerRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.stopTimer(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "GetRunningTimer" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func getRunningTimer<Result>(
+        _ message: Noted_V1_GetRunningTimerRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_GetRunningTimerResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_GetRunningTimerRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.getRunningTimer(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "SummarizeTime" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func summarizeTime<Result>(
+        _ message: Noted_V1_SummarizeTimeRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_TimeSummary>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_SummarizeTimeRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.summarizeTime(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+}
+
+// MARK: - noted.v1.AlarmService
+
+/// Namespace containing generated types for the "noted.v1.AlarmService" service.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+public enum Noted_V1_AlarmService: Sendable {
+    /// Service descriptor for the "noted.v1.AlarmService" service.
+    public static let descriptor = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AlarmService")
+    /// Namespace for method metadata.
+    public enum Method: Sendable {
+        /// Namespace for "CreateAlarm" metadata.
+        public enum CreateAlarm: Sendable {
+            /// Request type for "CreateAlarm".
+            public typealias Input = Noted_V1_CreateAlarmRequest
+            /// Response type for "CreateAlarm".
+            public typealias Output = Noted_V1_Alarm
+            /// Descriptor for "CreateAlarm".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AlarmService"),
+                method: "CreateAlarm",
+                type: .unary
+            )
+        }
+        /// Namespace for "GetAlarm" metadata.
+        public enum GetAlarm: Sendable {
+            /// Request type for "GetAlarm".
+            public typealias Input = Noted_V1_GetAlarmRequest
+            /// Response type for "GetAlarm".
+            public typealias Output = Noted_V1_Alarm
+            /// Descriptor for "GetAlarm".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AlarmService"),
+                method: "GetAlarm",
+                type: .unary
+            )
+        }
+        /// Namespace for "UpdateAlarm" metadata.
+        public enum UpdateAlarm: Sendable {
+            /// Request type for "UpdateAlarm".
+            public typealias Input = Noted_V1_UpdateAlarmRequest
+            /// Response type for "UpdateAlarm".
+            public typealias Output = Noted_V1_Alarm
+            /// Descriptor for "UpdateAlarm".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AlarmService"),
+                method: "UpdateAlarm",
+                type: .unary
+            )
+        }
+        /// Namespace for "DeleteAlarm" metadata.
+        public enum DeleteAlarm: Sendable {
+            /// Request type for "DeleteAlarm".
+            public typealias Input = Noted_V1_DeleteAlarmRequest
+            /// Response type for "DeleteAlarm".
+            public typealias Output = SwiftProtobuf.Google_Protobuf_Empty
+            /// Descriptor for "DeleteAlarm".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AlarmService"),
+                method: "DeleteAlarm",
+                type: .unary
+            )
+        }
+        /// Namespace for "ListAlarms" metadata.
+        public enum ListAlarms: Sendable {
+            /// Request type for "ListAlarms".
+            public typealias Input = Noted_V1_ListAlarmsRequest
+            /// Response type for "ListAlarms".
+            public typealias Output = Noted_V1_ListAlarmsResponse
+            /// Descriptor for "ListAlarms".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AlarmService"),
+                method: "ListAlarms",
+                type: .unary
+            )
+        }
+        /// Namespace for "GetAlarmsVersion" metadata.
+        public enum GetAlarmsVersion: Sendable {
+            /// Request type for "GetAlarmsVersion".
+            public typealias Input = Noted_V1_GetAlarmsVersionRequest
+            /// Response type for "GetAlarmsVersion".
+            public typealias Output = Noted_V1_GetAlarmsVersionResponse
+            /// Descriptor for "GetAlarmsVersion".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AlarmService"),
+                method: "GetAlarmsVersion",
+                type: .unary
+            )
+        }
+        /// Descriptors for all methods in the "noted.v1.AlarmService" service.
+        public static let descriptors: [GRPCCore.MethodDescriptor] = [
+            CreateAlarm.descriptor,
+            GetAlarm.descriptor,
+            UpdateAlarm.descriptor,
+            DeleteAlarm.descriptor,
+            ListAlarms.descriptor,
+            GetAlarmsVersion.descriptor
+        ]
+    }
+}
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension GRPCCore.ServiceDescriptor {
+    /// Service descriptor for the "noted.v1.AlarmService" service.
+    public static let noted_v1_AlarmService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AlarmService")
+}
+
+// MARK: noted.v1.AlarmService (server)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_AlarmService {
+    /// Streaming variant of the service protocol for the "noted.v1.AlarmService" service.
+    ///
+    /// This protocol is the lowest-level of the service protocols generated for this service
+    /// giving you the most flexibility over the implementation of your service. This comes at
+    /// the cost of more verbose and less strict APIs. Each RPC requires you to implement it in
+    /// terms of a request stream and response stream. Where the RPC expects only a single
+    /// request or response message, you are responsible for ensuring your implementation
+    /// maintains this invariant.
+    ///
+    /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
+    /// or ``SimpleServiceProtocol`` instead.
+    public protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+        /// Handle the "CreateAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_CreateAlarmRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Alarm` messages.
+        func createAlarm(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_CreateAlarmRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Alarm>
+
+        /// Handle the "GetAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetAlarmRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Alarm` messages.
+        func getAlarm(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetAlarmRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Alarm>
+
+        /// Handle the "UpdateAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_UpdateAlarmRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Alarm` messages.
+        func updateAlarm(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_UpdateAlarmRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Alarm>
+
+        /// Handle the "DeleteAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_DeleteAlarmRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        func deleteAlarm(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteAlarmRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListAlarms" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListAlarmsRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListAlarmsResponse` messages.
+        func listAlarms(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListAlarmsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListAlarmsResponse>
+
+        /// Handle the "GetAlarmsVersion" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Cheap: lets a client skip ListAlarms when nothing changed.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetAlarmsVersionRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_GetAlarmsVersionResponse` messages.
+        func getAlarmsVersion(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetAlarmsVersionRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_GetAlarmsVersionResponse>
+    }
+
+    /// Service protocol for the "noted.v1.AlarmService" service.
+    ///
+    /// This protocol is higher level than ``StreamingServiceProtocol`` but lower level than
+    /// the ``SimpleServiceProtocol``, it provides access to request and response metadata and
+    /// trailing response metadata. If you don't need these then consider using
+    /// the ``SimpleServiceProtocol``. If you need fine grained control over your RPCs then
+    /// use ``StreamingServiceProtocol``.
+    public protocol ServiceProtocol: Noted_V1_AlarmService.StreamingServiceProtocol {
+        /// Handle the "CreateAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_CreateAlarmRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Alarm` message.
+        func createAlarm(
+            request: GRPCCore.ServerRequest<Noted_V1_CreateAlarmRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Alarm>
+
+        /// Handle the "GetAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetAlarmRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Alarm` message.
+        func getAlarm(
+            request: GRPCCore.ServerRequest<Noted_V1_GetAlarmRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Alarm>
+
+        /// Handle the "UpdateAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_UpdateAlarmRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Alarm` message.
+        func updateAlarm(
+            request: GRPCCore.ServerRequest<Noted_V1_UpdateAlarmRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Alarm>
+
+        /// Handle the "DeleteAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeleteAlarmRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `SwiftProtobuf.Google_Protobuf_Empty` message.
+        func deleteAlarm(
+            request: GRPCCore.ServerRequest<Noted_V1_DeleteAlarmRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "ListAlarms" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListAlarmsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListAlarmsResponse` message.
+        func listAlarms(
+            request: GRPCCore.ServerRequest<Noted_V1_ListAlarmsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListAlarmsResponse>
+
+        /// Handle the "GetAlarmsVersion" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Cheap: lets a client skip ListAlarms when nothing changed.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetAlarmsVersionRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_GetAlarmsVersionResponse` message.
+        func getAlarmsVersion(
+            request: GRPCCore.ServerRequest<Noted_V1_GetAlarmsVersionRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_GetAlarmsVersionResponse>
+    }
+
+    /// Simple service protocol for the "noted.v1.AlarmService" service.
+    ///
+    /// This is the highest level protocol for the service. The API is the easiest to use but
+    /// doesn't provide access to request or response metadata. If you need access to these
+    /// then use ``ServiceProtocol`` instead.
+    public protocol SimpleServiceProtocol: Noted_V1_AlarmService.ServiceProtocol {
+        /// Handle the "CreateAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_CreateAlarmRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Alarm` to respond with.
+        func createAlarm(
+            request: Noted_V1_CreateAlarmRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Alarm
+
+        /// Handle the "GetAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetAlarmRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Alarm` to respond with.
+        func getAlarm(
+            request: Noted_V1_GetAlarmRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Alarm
+
+        /// Handle the "UpdateAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_UpdateAlarmRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Alarm` to respond with.
+        func updateAlarm(
+            request: Noted_V1_UpdateAlarmRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Alarm
+
+        /// Handle the "DeleteAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_DeleteAlarmRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `SwiftProtobuf.Google_Protobuf_Empty` to respond with.
+        func deleteAlarm(
+            request: Noted_V1_DeleteAlarmRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> SwiftProtobuf.Google_Protobuf_Empty
+
+        /// Handle the "ListAlarms" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListAlarmsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListAlarmsResponse` to respond with.
+        func listAlarms(
+            request: Noted_V1_ListAlarmsRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListAlarmsResponse
+
+        /// Handle the "GetAlarmsVersion" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Cheap: lets a client skip ListAlarms when nothing changed.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetAlarmsVersionRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_GetAlarmsVersionResponse` to respond with.
+        func getAlarmsVersion(
+            request: Noted_V1_GetAlarmsVersionRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_GetAlarmsVersionResponse
+    }
+}
+
+// Default implementation of 'registerMethods(with:)'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_AlarmService.StreamingServiceProtocol {
+    public func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
+        router.registerHandler(
+            forMethod: Noted_V1_AlarmService.Method.CreateAlarm.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_CreateAlarmRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Alarm>(),
+            handler: { request, context in
+                try await self.createAlarm(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AlarmService.Method.GetAlarm.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetAlarmRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Alarm>(),
+            handler: { request, context in
+                try await self.getAlarm(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AlarmService.Method.UpdateAlarm.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_UpdateAlarmRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Alarm>(),
+            handler: { request, context in
+                try await self.updateAlarm(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AlarmService.Method.DeleteAlarm.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_DeleteAlarmRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+            handler: { request, context in
+                try await self.deleteAlarm(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AlarmService.Method.ListAlarms.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListAlarmsRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListAlarmsResponse>(),
+            handler: { request, context in
+                try await self.listAlarms(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AlarmService.Method.GetAlarmsVersion.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetAlarmsVersionRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_GetAlarmsVersionResponse>(),
+            handler: { request, context in
+                try await self.getAlarmsVersion(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+    }
+}
+
+// Default implementation of streaming methods from 'StreamingServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_AlarmService.ServiceProtocol {
+    public func createAlarm(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_CreateAlarmRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Alarm> {
+        let response = try await self.createAlarm(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func getAlarm(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetAlarmRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Alarm> {
+        let response = try await self.getAlarm(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func updateAlarm(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_UpdateAlarmRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Alarm> {
+        let response = try await self.updateAlarm(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func deleteAlarm(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_DeleteAlarmRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        let response = try await self.deleteAlarm(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func listAlarms(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListAlarmsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListAlarmsResponse> {
+        let response = try await self.listAlarms(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func getAlarmsVersion(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetAlarmsVersionRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_GetAlarmsVersionResponse> {
+        let response = try await self.getAlarmsVersion(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+}
+
+// Default implementation of methods from 'ServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_AlarmService.SimpleServiceProtocol {
+    public func createAlarm(
+        request: GRPCCore.ServerRequest<Noted_V1_CreateAlarmRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Alarm> {
+        return GRPCCore.ServerResponse<Noted_V1_Alarm>(
+            message: try await self.createAlarm(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func getAlarm(
+        request: GRPCCore.ServerRequest<Noted_V1_GetAlarmRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Alarm> {
+        return GRPCCore.ServerResponse<Noted_V1_Alarm>(
+            message: try await self.getAlarm(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func updateAlarm(
+        request: GRPCCore.ServerRequest<Noted_V1_UpdateAlarmRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Alarm> {
+        return GRPCCore.ServerResponse<Noted_V1_Alarm>(
+            message: try await self.updateAlarm(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func deleteAlarm(
+        request: GRPCCore.ServerRequest<Noted_V1_DeleteAlarmRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        return GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>(
+            message: try await self.deleteAlarm(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func listAlarms(
+        request: GRPCCore.ServerRequest<Noted_V1_ListAlarmsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListAlarmsResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListAlarmsResponse>(
+            message: try await self.listAlarms(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func getAlarmsVersion(
+        request: GRPCCore.ServerRequest<Noted_V1_GetAlarmsVersionRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_GetAlarmsVersionResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_GetAlarmsVersionResponse>(
+            message: try await self.getAlarmsVersion(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+}
+
+// MARK: noted.v1.AlarmService (client)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_AlarmService {
+    /// Generated client protocol for the "noted.v1.AlarmService" service.
+    ///
+    /// You don't need to implement this protocol directly, use the generated
+    /// implementation, ``Client``.
+    public protocol ClientProtocol: Sendable {
+        /// Call the "CreateAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_CreateAlarmRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_CreateAlarmRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Alarm` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func createAlarm<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_CreateAlarmRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_CreateAlarmRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Alarm>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Alarm>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "GetAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetAlarmRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_GetAlarmRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Alarm` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func getAlarm<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_GetAlarmRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_GetAlarmRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Alarm>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Alarm>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "UpdateAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_UpdateAlarmRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_UpdateAlarmRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Alarm` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func updateAlarm<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_UpdateAlarmRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_UpdateAlarmRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Alarm>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Alarm>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "DeleteAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeleteAlarmRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_DeleteAlarmRequest` messages.
+        ///   - deserializer: A deserializer for `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func deleteAlarm<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_DeleteAlarmRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_DeleteAlarmRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<SwiftProtobuf.Google_Protobuf_Empty>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<SwiftProtobuf.Google_Protobuf_Empty>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "ListAlarms" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListAlarmsRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_ListAlarmsRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_ListAlarmsResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func listAlarms<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_ListAlarmsRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_ListAlarmsRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_ListAlarmsResponse>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListAlarmsResponse>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "GetAlarmsVersion" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Cheap: lets a client skip ListAlarms when nothing changed.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetAlarmsVersionRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_GetAlarmsVersionRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_GetAlarmsVersionResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func getAlarmsVersion<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_GetAlarmsVersionRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_GetAlarmsVersionRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_GetAlarmsVersionResponse>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_GetAlarmsVersionResponse>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+    }
+
+    /// Generated client for the "noted.v1.AlarmService" service.
+    ///
+    /// The ``Client`` provides an implementation of ``ClientProtocol`` which wraps
+    /// a `GRPCCore.GRPCCClient`. The underlying `GRPCClient` provides the long-lived
+    /// means of communication with the remote peer.
+    public struct Client<Transport>: ClientProtocol where Transport: GRPCCore.ClientTransport {
+        private let client: GRPCCore.GRPCClient<Transport>
+
+        /// Creates a new client wrapping the provided `GRPCCore.GRPCClient`.
+        ///
+        /// - Parameters:
+        ///   - client: A `GRPCCore.GRPCClient` providing a communication channel to the service.
+        public init(wrapping client: GRPCCore.GRPCClient<Transport>) {
+            self.client = client
+        }
+
+        /// Call the "CreateAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_CreateAlarmRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_CreateAlarmRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Alarm` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func createAlarm<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_CreateAlarmRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_CreateAlarmRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Alarm>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Alarm>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AlarmService.Method.CreateAlarm.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "GetAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetAlarmRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_GetAlarmRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Alarm` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func getAlarm<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_GetAlarmRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_GetAlarmRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Alarm>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Alarm>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AlarmService.Method.GetAlarm.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "UpdateAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_UpdateAlarmRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_UpdateAlarmRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Alarm` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func updateAlarm<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_UpdateAlarmRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_UpdateAlarmRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Alarm>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Alarm>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AlarmService.Method.UpdateAlarm.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "DeleteAlarm" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DeleteAlarmRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_DeleteAlarmRequest` messages.
+        ///   - deserializer: A deserializer for `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func deleteAlarm<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_DeleteAlarmRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_DeleteAlarmRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<SwiftProtobuf.Google_Protobuf_Empty>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<SwiftProtobuf.Google_Protobuf_Empty>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AlarmService.Method.DeleteAlarm.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "ListAlarms" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListAlarmsRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_ListAlarmsRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_ListAlarmsResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func listAlarms<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_ListAlarmsRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_ListAlarmsRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_ListAlarmsResponse>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListAlarmsResponse>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AlarmService.Method.ListAlarms.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "GetAlarmsVersion" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Cheap: lets a client skip ListAlarms when nothing changed.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetAlarmsVersionRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_GetAlarmsVersionRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_GetAlarmsVersionResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func getAlarmsVersion<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_GetAlarmsVersionRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_GetAlarmsVersionRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_GetAlarmsVersionResponse>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_GetAlarmsVersionResponse>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AlarmService.Method.GetAlarmsVersion.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+    }
+}
+
+// Helpers providing default arguments to 'ClientProtocol' methods.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_AlarmService.ClientProtocol {
+    /// Call the "CreateAlarm" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_CreateAlarmRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func createAlarm<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_CreateAlarmRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Alarm>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.createAlarm(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_CreateAlarmRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_Alarm>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "GetAlarm" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_GetAlarmRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func getAlarm<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_GetAlarmRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Alarm>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.getAlarm(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_GetAlarmRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_Alarm>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "UpdateAlarm" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_UpdateAlarmRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func updateAlarm<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_UpdateAlarmRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Alarm>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.updateAlarm(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_UpdateAlarmRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_Alarm>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DeleteAlarm" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_DeleteAlarmRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func deleteAlarm<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_DeleteAlarmRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<SwiftProtobuf.Google_Protobuf_Empty>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.deleteAlarm(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_DeleteAlarmRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "ListAlarms" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_ListAlarmsRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func listAlarms<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_ListAlarmsRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListAlarmsResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.listAlarms(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListAlarmsRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListAlarmsResponse>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "GetAlarmsVersion" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Cheap: lets a client skip ListAlarms when nothing changed.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_GetAlarmsVersionRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func getAlarmsVersion<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_GetAlarmsVersionRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_GetAlarmsVersionResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.getAlarmsVersion(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_GetAlarmsVersionRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetAlarmsVersionResponse>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+}
+
+// Helpers providing sugared APIs for 'ClientProtocol' methods.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_AlarmService.ClientProtocol {
+    /// Call the "CreateAlarm" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func createAlarm<Result>(
+        _ message: Noted_V1_CreateAlarmRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Alarm>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_CreateAlarmRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.createAlarm(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "GetAlarm" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func getAlarm<Result>(
+        _ message: Noted_V1_GetAlarmRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Alarm>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_GetAlarmRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.getAlarm(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "UpdateAlarm" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func updateAlarm<Result>(
+        _ message: Noted_V1_UpdateAlarmRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Alarm>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_UpdateAlarmRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.updateAlarm(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DeleteAlarm" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func deleteAlarm<Result>(
+        _ message: Noted_V1_DeleteAlarmRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<SwiftProtobuf.Google_Protobuf_Empty>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_DeleteAlarmRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.deleteAlarm(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "ListAlarms" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func listAlarms<Result>(
+        _ message: Noted_V1_ListAlarmsRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListAlarmsResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_ListAlarmsRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.listAlarms(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "GetAlarmsVersion" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Cheap: lets a client skip ListAlarms when nothing changed.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func getAlarmsVersion<Result>(
+        _ message: Noted_V1_GetAlarmsVersionRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_GetAlarmsVersionResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_GetAlarmsVersionRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.getAlarmsVersion(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+}
+
+// MARK: - noted.v1.HolidayService
+
+/// Namespace containing generated types for the "noted.v1.HolidayService" service.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+public enum Noted_V1_HolidayService: Sendable {
+    /// Service descriptor for the "noted.v1.HolidayService" service.
+    public static let descriptor = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.HolidayService")
+    /// Namespace for method metadata.
+    public enum Method: Sendable {
+        /// Namespace for "GetHolidays" metadata.
+        public enum GetHolidays: Sendable {
+            /// Request type for "GetHolidays".
+            public typealias Input = Noted_V1_GetHolidaysRequest
+            /// Response type for "GetHolidays".
+            public typealias Output = Noted_V1_GetHolidaysResponse
+            /// Descriptor for "GetHolidays".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.HolidayService"),
+                method: "GetHolidays",
+                type: .unary
+            )
+        }
+        /// Descriptors for all methods in the "noted.v1.HolidayService" service.
+        public static let descriptors: [GRPCCore.MethodDescriptor] = [
+            GetHolidays.descriptor
+        ]
+    }
+}
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension GRPCCore.ServiceDescriptor {
+    /// Service descriptor for the "noted.v1.HolidayService" service.
+    public static let noted_v1_HolidayService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.HolidayService")
+}
+
+// MARK: noted.v1.HolidayService (server)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_HolidayService {
+    /// Streaming variant of the service protocol for the "noted.v1.HolidayService" service.
+    ///
+    /// This protocol is the lowest-level of the service protocols generated for this service
+    /// giving you the most flexibility over the implementation of your service. This comes at
+    /// the cost of more verbose and less strict APIs. Each RPC requires you to implement it in
+    /// terms of a request stream and response stream. Where the RPC expects only a single
+    /// request or response message, you are responsible for ensuring your implementation
+    /// maintains this invariant.
+    ///
+    /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
+    /// or ``SimpleServiceProtocol`` instead.
+    public protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+        /// Handle the "GetHolidays" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetHolidaysRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_GetHolidaysResponse` messages.
+        func getHolidays(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetHolidaysRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_GetHolidaysResponse>
+    }
+
+    /// Service protocol for the "noted.v1.HolidayService" service.
+    ///
+    /// This protocol is higher level than ``StreamingServiceProtocol`` but lower level than
+    /// the ``SimpleServiceProtocol``, it provides access to request and response metadata and
+    /// trailing response metadata. If you don't need these then consider using
+    /// the ``SimpleServiceProtocol``. If you need fine grained control over your RPCs then
+    /// use ``StreamingServiceProtocol``.
+    public protocol ServiceProtocol: Noted_V1_HolidayService.StreamingServiceProtocol {
+        /// Handle the "GetHolidays" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetHolidaysRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_GetHolidaysResponse` message.
+        func getHolidays(
+            request: GRPCCore.ServerRequest<Noted_V1_GetHolidaysRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_GetHolidaysResponse>
+    }
+
+    /// Simple service protocol for the "noted.v1.HolidayService" service.
+    ///
+    /// This is the highest level protocol for the service. The API is the easiest to use but
+    /// doesn't provide access to request or response metadata. If you need access to these
+    /// then use ``ServiceProtocol`` instead.
+    public protocol SimpleServiceProtocol: Noted_V1_HolidayService.ServiceProtocol {
+        /// Handle the "GetHolidays" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetHolidaysRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_GetHolidaysResponse` to respond with.
+        func getHolidays(
+            request: Noted_V1_GetHolidaysRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_GetHolidaysResponse
+    }
+}
+
+// Default implementation of 'registerMethods(with:)'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_HolidayService.StreamingServiceProtocol {
+    public func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
+        router.registerHandler(
+            forMethod: Noted_V1_HolidayService.Method.GetHolidays.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetHolidaysRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_GetHolidaysResponse>(),
+            handler: { request, context in
+                try await self.getHolidays(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+    }
+}
+
+// Default implementation of streaming methods from 'StreamingServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_HolidayService.ServiceProtocol {
+    public func getHolidays(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetHolidaysRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_GetHolidaysResponse> {
+        let response = try await self.getHolidays(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+}
+
+// Default implementation of methods from 'ServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_HolidayService.SimpleServiceProtocol {
+    public func getHolidays(
+        request: GRPCCore.ServerRequest<Noted_V1_GetHolidaysRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_GetHolidaysResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_GetHolidaysResponse>(
+            message: try await self.getHolidays(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+}
+
+// MARK: noted.v1.HolidayService (client)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_HolidayService {
+    /// Generated client protocol for the "noted.v1.HolidayService" service.
+    ///
+    /// You don't need to implement this protocol directly, use the generated
+    /// implementation, ``Client``.
+    public protocol ClientProtocol: Sendable {
+        /// Call the "GetHolidays" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetHolidaysRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_GetHolidaysRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_GetHolidaysResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func getHolidays<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_GetHolidaysRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_GetHolidaysRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_GetHolidaysResponse>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_GetHolidaysResponse>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+    }
+
+    /// Generated client for the "noted.v1.HolidayService" service.
+    ///
+    /// The ``Client`` provides an implementation of ``ClientProtocol`` which wraps
+    /// a `GRPCCore.GRPCCClient`. The underlying `GRPCClient` provides the long-lived
+    /// means of communication with the remote peer.
+    public struct Client<Transport>: ClientProtocol where Transport: GRPCCore.ClientTransport {
+        private let client: GRPCCore.GRPCClient<Transport>
+
+        /// Creates a new client wrapping the provided `GRPCCore.GRPCClient`.
+        ///
+        /// - Parameters:
+        ///   - client: A `GRPCCore.GRPCClient` providing a communication channel to the service.
+        public init(wrapping client: GRPCCore.GRPCClient<Transport>) {
+            self.client = client
+        }
+
+        /// Call the "GetHolidays" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetHolidaysRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_GetHolidaysRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_GetHolidaysResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func getHolidays<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_GetHolidaysRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_GetHolidaysRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_GetHolidaysResponse>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_GetHolidaysResponse>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_HolidayService.Method.GetHolidays.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+    }
+}
+
+// Helpers providing default arguments to 'ClientProtocol' methods.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_HolidayService.ClientProtocol {
+    /// Call the "GetHolidays" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_GetHolidaysRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func getHolidays<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_GetHolidaysRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_GetHolidaysResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.getHolidays(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_GetHolidaysRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetHolidaysResponse>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+}
+
+// Helpers providing sugared APIs for 'ClientProtocol' methods.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_HolidayService.ClientProtocol {
+    /// Call the "GetHolidays" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func getHolidays<Result>(
+        _ message: Noted_V1_GetHolidaysRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_GetHolidaysResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_GetHolidaysRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.getHolidays(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+}
+
+// MARK: - noted.v1.AccountService
+
+/// Namespace containing generated types for the "noted.v1.AccountService" service.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+public enum Noted_V1_AccountService: Sendable {
+    /// Service descriptor for the "noted.v1.AccountService" service.
+    public static let descriptor = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AccountService")
+    /// Namespace for method metadata.
+    public enum Method: Sendable {
+        /// Namespace for "SignInWithApple" metadata.
+        public enum SignInWithApple: Sendable {
+            /// Request type for "SignInWithApple".
+            public typealias Input = Noted_V1_SignInWithAppleRequest
+            /// Response type for "SignInWithApple".
+            public typealias Output = Noted_V1_SignInWithAppleResponse
+            /// Descriptor for "SignInWithApple".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AccountService"),
+                method: "SignInWithApple",
+                type: .unary
+            )
+        }
+        /// Namespace for "LinkApple" metadata.
+        public enum LinkApple: Sendable {
+            /// Request type for "LinkApple".
+            public typealias Input = Noted_V1_LinkAppleRequest
+            /// Response type for "LinkApple".
+            public typealias Output = Noted_V1_Account
+            /// Descriptor for "LinkApple".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AccountService"),
+                method: "LinkApple",
+                type: .unary
+            )
+        }
+        /// Namespace for "UnlinkApple" metadata.
+        public enum UnlinkApple: Sendable {
+            /// Request type for "UnlinkApple".
+            public typealias Input = Noted_V1_UnlinkAppleRequest
+            /// Response type for "UnlinkApple".
+            public typealias Output = Noted_V1_Account
+            /// Descriptor for "UnlinkApple".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AccountService"),
+                method: "UnlinkApple",
+                type: .unary
+            )
+        }
+        /// Namespace for "GetAccount" metadata.
+        public enum GetAccount: Sendable {
+            /// Request type for "GetAccount".
+            public typealias Input = Noted_V1_GetAccountRequest
+            /// Response type for "GetAccount".
+            public typealias Output = Noted_V1_Account
+            /// Descriptor for "GetAccount".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AccountService"),
+                method: "GetAccount",
+                type: .unary
+            )
+        }
+        /// Namespace for "SignUp" metadata.
+        public enum SignUp: Sendable {
+            /// Request type for "SignUp".
+            public typealias Input = Noted_V1_SignUpRequest
+            /// Response type for "SignUp".
+            public typealias Output = Noted_V1_SignInResponse
+            /// Descriptor for "SignUp".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AccountService"),
+                method: "SignUp",
+                type: .unary
+            )
+        }
+        /// Namespace for "SignIn" metadata.
+        public enum SignIn: Sendable {
+            /// Request type for "SignIn".
+            public typealias Input = Noted_V1_SignInRequest
+            /// Response type for "SignIn".
+            public typealias Output = Noted_V1_SignInResponse
+            /// Descriptor for "SignIn".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AccountService"),
+                method: "SignIn",
+                type: .unary
+            )
+        }
+        /// Namespace for "SetEmailPassword" metadata.
+        public enum SetEmailPassword: Sendable {
+            /// Request type for "SetEmailPassword".
+            public typealias Input = Noted_V1_SetEmailPasswordRequest
+            /// Response type for "SetEmailPassword".
+            public typealias Output = Noted_V1_Account
+            /// Descriptor for "SetEmailPassword".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AccountService"),
+                method: "SetEmailPassword",
+                type: .unary
+            )
+        }
+        /// Namespace for "CreateToken" metadata.
+        public enum CreateToken: Sendable {
+            /// Request type for "CreateToken".
+            public typealias Input = Noted_V1_CreateTokenRequest
+            /// Response type for "CreateToken".
+            public typealias Output = Noted_V1_CreateTokenResponse
+            /// Descriptor for "CreateToken".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AccountService"),
+                method: "CreateToken",
+                type: .unary
+            )
+        }
+        /// Namespace for "ListTokens" metadata.
+        public enum ListTokens: Sendable {
+            /// Request type for "ListTokens".
+            public typealias Input = Noted_V1_ListTokensRequest
+            /// Response type for "ListTokens".
+            public typealias Output = Noted_V1_ListTokensResponse
+            /// Descriptor for "ListTokens".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AccountService"),
+                method: "ListTokens",
+                type: .unary
+            )
+        }
+        /// Namespace for "RevokeToken" metadata.
+        public enum RevokeToken: Sendable {
+            /// Request type for "RevokeToken".
+            public typealias Input = Noted_V1_RevokeTokenRequest
+            /// Response type for "RevokeToken".
+            public typealias Output = SwiftProtobuf.Google_Protobuf_Empty
+            /// Descriptor for "RevokeToken".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AccountService"),
+                method: "RevokeToken",
+                type: .unary
+            )
+        }
+        /// Namespace for "GetPairing" metadata.
+        public enum GetPairing: Sendable {
+            /// Request type for "GetPairing".
+            public typealias Input = Noted_V1_GetPairingRequest
+            /// Response type for "GetPairing".
+            public typealias Output = Noted_V1_Pairing
+            /// Descriptor for "GetPairing".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AccountService"),
+                method: "GetPairing",
+                type: .unary
+            )
+        }
+        /// Namespace for "ApprovePairing" metadata.
+        public enum ApprovePairing: Sendable {
+            /// Request type for "ApprovePairing".
+            public typealias Input = Noted_V1_ApprovePairingRequest
+            /// Response type for "ApprovePairing".
+            public typealias Output = Noted_V1_Pairing
+            /// Descriptor for "ApprovePairing".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AccountService"),
+                method: "ApprovePairing",
+                type: .unary
+            )
+        }
+        /// Namespace for "DenyPairing" metadata.
+        public enum DenyPairing: Sendable {
+            /// Request type for "DenyPairing".
+            public typealias Input = Noted_V1_DenyPairingRequest
+            /// Response type for "DenyPairing".
+            public typealias Output = SwiftProtobuf.Google_Protobuf_Empty
+            /// Descriptor for "DenyPairing".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AccountService"),
+                method: "DenyPairing",
+                type: .unary
+            )
+        }
+        /// Descriptors for all methods in the "noted.v1.AccountService" service.
+        public static let descriptors: [GRPCCore.MethodDescriptor] = [
+            SignInWithApple.descriptor,
+            LinkApple.descriptor,
+            UnlinkApple.descriptor,
+            GetAccount.descriptor,
+            SignUp.descriptor,
+            SignIn.descriptor,
+            SetEmailPassword.descriptor,
+            CreateToken.descriptor,
+            ListTokens.descriptor,
+            RevokeToken.descriptor,
+            GetPairing.descriptor,
+            ApprovePairing.descriptor,
+            DenyPairing.descriptor
+        ]
+    }
+}
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension GRPCCore.ServiceDescriptor {
+    /// Service descriptor for the "noted.v1.AccountService" service.
+    public static let noted_v1_AccountService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AccountService")
+}
+
+// MARK: noted.v1.AccountService (server)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_AccountService {
+    /// Streaming variant of the service protocol for the "noted.v1.AccountService" service.
+    ///
+    /// This protocol is the lowest-level of the service protocols generated for this service
+    /// giving you the most flexibility over the implementation of your service. This comes at
+    /// the cost of more verbose and less strict APIs. Each RPC requires you to implement it in
+    /// terms of a request stream and response stream. Where the RPC expects only a single
+    /// request or response message, you are responsible for ensuring your implementation
+    /// maintains this invariant.
+    ///
+    /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
+    /// or ``SimpleServiceProtocol`` instead.
+    public protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+        /// Handle the "SignInWithApple" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Public: needs no token. Fails with FAILED_PRECONDITION when the Apple ID is
+        /// > not linked to anyone and the server does not accept new sign-ups.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_SignInWithAppleRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_SignInWithAppleResponse` messages.
+        func signInWithApple(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_SignInWithAppleRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_SignInWithAppleResponse>
+
+        /// Handle the "LinkApple" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_LinkAppleRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Account` messages.
+        func linkApple(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_LinkAppleRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Account>
+
+        /// Handle the "UnlinkApple" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_UnlinkAppleRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Account` messages.
+        func unlinkApple(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_UnlinkAppleRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Account>
+
+        /// Handle the "GetAccount" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetAccountRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Account` messages.
+        func getAccount(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetAccountRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Account>
+
+        /// Handle the "SignUp" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Public. Creates a user signed in by email + password and returns its first
+        /// > token. FAILED_PRECONDITION when the server does not accept sign-ups,
+        /// > ALREADY_EXISTS when the email is taken.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_SignUpRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_SignInResponse` messages.
+        func signUp(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_SignUpRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_SignInResponse>
+
+        /// Handle the "SignIn" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Public. UNAUTHENTICATED with one message for a wrong email or password.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_SignInRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_SignInResponse` messages.
+        func signIn(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_SignInRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_SignInResponse>
+
+        /// Handle the "SetEmailPassword" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Adds an email + password to the calling account (e.g. one made with Sign
+        /// > in with Apple) or changes them. PERMISSION_DENIED when current_password is
+        /// > missing or wrong, ALREADY_EXISTS when another account has the email.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_SetEmailPasswordRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Account` messages.
+        func setEmailPassword(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_SetEmailPasswordRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Account>
+
+        /// Handle the "CreateToken" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Mints another token for the calling user.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_CreateTokenRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_CreateTokenResponse` messages.
+        func createToken(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_CreateTokenRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_CreateTokenResponse>
+
+        /// Handle the "ListTokens" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListTokensRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListTokensResponse` messages.
+        func listTokens(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListTokensRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListTokensResponse>
+
+        /// Handle the "RevokeToken" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Deletes one of the caller's tokens; it stops working immediately. Revoking
+        /// > the token making the call is allowed. NOT_FOUND for an unknown id or one
+        /// > that belongs to someone else.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_RevokeTokenRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        func revokeToken(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_RevokeTokenRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "GetPairing" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Pairing a client that signs in through the browser (MCP OAuth, e.g. Claude
+        /// > Code): the server's sign-in page shows a code and a QR code
+        /// > (noted://pair?code=...&server=...), and the signed-in App approves it,
+        /// > which issues that client a token of the calling user. NOT_FOUND for an
+        /// > unknown, expired or already used code.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetPairingRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Pairing` messages.
+        func getPairing(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetPairingRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Pairing>
+
+        /// Handle the "ApprovePairing" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ApprovePairingRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Pairing` messages.
+        func approvePairing(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ApprovePairingRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Pairing>
+
+        /// Handle the "DenyPairing" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_DenyPairingRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        func denyPairing(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_DenyPairingRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+    }
+
+    /// Service protocol for the "noted.v1.AccountService" service.
+    ///
+    /// This protocol is higher level than ``StreamingServiceProtocol`` but lower level than
+    /// the ``SimpleServiceProtocol``, it provides access to request and response metadata and
+    /// trailing response metadata. If you don't need these then consider using
+    /// the ``SimpleServiceProtocol``. If you need fine grained control over your RPCs then
+    /// use ``StreamingServiceProtocol``.
+    public protocol ServiceProtocol: Noted_V1_AccountService.StreamingServiceProtocol {
+        /// Handle the "SignInWithApple" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Public: needs no token. Fails with FAILED_PRECONDITION when the Apple ID is
+        /// > not linked to anyone and the server does not accept new sign-ups.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SignInWithAppleRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_SignInWithAppleResponse` message.
+        func signInWithApple(
+            request: GRPCCore.ServerRequest<Noted_V1_SignInWithAppleRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_SignInWithAppleResponse>
+
+        /// Handle the "LinkApple" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_LinkAppleRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Account` message.
+        func linkApple(
+            request: GRPCCore.ServerRequest<Noted_V1_LinkAppleRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Account>
+
+        /// Handle the "UnlinkApple" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_UnlinkAppleRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Account` message.
+        func unlinkApple(
+            request: GRPCCore.ServerRequest<Noted_V1_UnlinkAppleRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Account>
+
+        /// Handle the "GetAccount" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetAccountRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Account` message.
+        func getAccount(
+            request: GRPCCore.ServerRequest<Noted_V1_GetAccountRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Account>
+
+        /// Handle the "SignUp" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Public. Creates a user signed in by email + password and returns its first
+        /// > token. FAILED_PRECONDITION when the server does not accept sign-ups,
+        /// > ALREADY_EXISTS when the email is taken.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SignUpRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_SignInResponse` message.
+        func signUp(
+            request: GRPCCore.ServerRequest<Noted_V1_SignUpRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_SignInResponse>
+
+        /// Handle the "SignIn" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Public. UNAUTHENTICATED with one message for a wrong email or password.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SignInRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_SignInResponse` message.
+        func signIn(
+            request: GRPCCore.ServerRequest<Noted_V1_SignInRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_SignInResponse>
+
+        /// Handle the "SetEmailPassword" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Adds an email + password to the calling account (e.g. one made with Sign
+        /// > in with Apple) or changes them. PERMISSION_DENIED when current_password is
+        /// > missing or wrong, ALREADY_EXISTS when another account has the email.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SetEmailPasswordRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Account` message.
+        func setEmailPassword(
+            request: GRPCCore.ServerRequest<Noted_V1_SetEmailPasswordRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Account>
+
+        /// Handle the "CreateToken" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Mints another token for the calling user.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_CreateTokenRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_CreateTokenResponse` message.
+        func createToken(
+            request: GRPCCore.ServerRequest<Noted_V1_CreateTokenRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_CreateTokenResponse>
+
+        /// Handle the "ListTokens" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListTokensRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListTokensResponse` message.
+        func listTokens(
+            request: GRPCCore.ServerRequest<Noted_V1_ListTokensRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListTokensResponse>
+
+        /// Handle the "RevokeToken" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Deletes one of the caller's tokens; it stops working immediately. Revoking
+        /// > the token making the call is allowed. NOT_FOUND for an unknown id or one
+        /// > that belongs to someone else.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_RevokeTokenRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `SwiftProtobuf.Google_Protobuf_Empty` message.
+        func revokeToken(
+            request: GRPCCore.ServerRequest<Noted_V1_RevokeTokenRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+
+        /// Handle the "GetPairing" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Pairing a client that signs in through the browser (MCP OAuth, e.g. Claude
+        /// > Code): the server's sign-in page shows a code and a QR code
+        /// > (noted://pair?code=...&server=...), and the signed-in App approves it,
+        /// > which issues that client a token of the calling user. NOT_FOUND for an
+        /// > unknown, expired or already used code.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetPairingRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Pairing` message.
+        func getPairing(
+            request: GRPCCore.ServerRequest<Noted_V1_GetPairingRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Pairing>
+
+        /// Handle the "ApprovePairing" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ApprovePairingRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Pairing` message.
+        func approvePairing(
+            request: GRPCCore.ServerRequest<Noted_V1_ApprovePairingRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Pairing>
+
+        /// Handle the "DenyPairing" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DenyPairingRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `SwiftProtobuf.Google_Protobuf_Empty` message.
+        func denyPairing(
+            request: GRPCCore.ServerRequest<Noted_V1_DenyPairingRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>
+    }
+
+    /// Simple service protocol for the "noted.v1.AccountService" service.
+    ///
+    /// This is the highest level protocol for the service. The API is the easiest to use but
+    /// doesn't provide access to request or response metadata. If you need access to these
+    /// then use ``ServiceProtocol`` instead.
+    public protocol SimpleServiceProtocol: Noted_V1_AccountService.ServiceProtocol {
+        /// Handle the "SignInWithApple" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Public: needs no token. Fails with FAILED_PRECONDITION when the Apple ID is
+        /// > not linked to anyone and the server does not accept new sign-ups.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_SignInWithAppleRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_SignInWithAppleResponse` to respond with.
+        func signInWithApple(
+            request: Noted_V1_SignInWithAppleRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_SignInWithAppleResponse
+
+        /// Handle the "LinkApple" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_LinkAppleRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Account` to respond with.
+        func linkApple(
+            request: Noted_V1_LinkAppleRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Account
+
+        /// Handle the "UnlinkApple" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_UnlinkAppleRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Account` to respond with.
+        func unlinkApple(
+            request: Noted_V1_UnlinkAppleRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Account
+
+        /// Handle the "GetAccount" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetAccountRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Account` to respond with.
+        func getAccount(
+            request: Noted_V1_GetAccountRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Account
+
+        /// Handle the "SignUp" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Public. Creates a user signed in by email + password and returns its first
+        /// > token. FAILED_PRECONDITION when the server does not accept sign-ups,
+        /// > ALREADY_EXISTS when the email is taken.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_SignUpRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_SignInResponse` to respond with.
+        func signUp(
+            request: Noted_V1_SignUpRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_SignInResponse
+
+        /// Handle the "SignIn" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Public. UNAUTHENTICATED with one message for a wrong email or password.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_SignInRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_SignInResponse` to respond with.
+        func signIn(
+            request: Noted_V1_SignInRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_SignInResponse
+
+        /// Handle the "SetEmailPassword" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Adds an email + password to the calling account (e.g. one made with Sign
+        /// > in with Apple) or changes them. PERMISSION_DENIED when current_password is
+        /// > missing or wrong, ALREADY_EXISTS when another account has the email.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_SetEmailPasswordRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Account` to respond with.
+        func setEmailPassword(
+            request: Noted_V1_SetEmailPasswordRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Account
+
+        /// Handle the "CreateToken" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Mints another token for the calling user.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_CreateTokenRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_CreateTokenResponse` to respond with.
+        func createToken(
+            request: Noted_V1_CreateTokenRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_CreateTokenResponse
+
+        /// Handle the "ListTokens" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListTokensRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListTokensResponse` to respond with.
+        func listTokens(
+            request: Noted_V1_ListTokensRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListTokensResponse
+
+        /// Handle the "RevokeToken" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Deletes one of the caller's tokens; it stops working immediately. Revoking
+        /// > the token making the call is allowed. NOT_FOUND for an unknown id or one
+        /// > that belongs to someone else.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_RevokeTokenRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `SwiftProtobuf.Google_Protobuf_Empty` to respond with.
+        func revokeToken(
+            request: Noted_V1_RevokeTokenRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> SwiftProtobuf.Google_Protobuf_Empty
+
+        /// Handle the "GetPairing" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Pairing a client that signs in through the browser (MCP OAuth, e.g. Claude
+        /// > Code): the server's sign-in page shows a code and a QR code
+        /// > (noted://pair?code=...&server=...), and the signed-in App approves it,
+        /// > which issues that client a token of the calling user. NOT_FOUND for an
+        /// > unknown, expired or already used code.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetPairingRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Pairing` to respond with.
+        func getPairing(
+            request: Noted_V1_GetPairingRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Pairing
+
+        /// Handle the "ApprovePairing" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ApprovePairingRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Pairing` to respond with.
+        func approvePairing(
+            request: Noted_V1_ApprovePairingRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Pairing
+
+        /// Handle the "DenyPairing" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_DenyPairingRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `SwiftProtobuf.Google_Protobuf_Empty` to respond with.
+        func denyPairing(
+            request: Noted_V1_DenyPairingRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> SwiftProtobuf.Google_Protobuf_Empty
+    }
+}
+
+// Default implementation of 'registerMethods(with:)'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_AccountService.StreamingServiceProtocol {
+    public func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
+        router.registerHandler(
+            forMethod: Noted_V1_AccountService.Method.SignInWithApple.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_SignInWithAppleRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_SignInWithAppleResponse>(),
+            handler: { request, context in
+                try await self.signInWithApple(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AccountService.Method.LinkApple.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_LinkAppleRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Account>(),
+            handler: { request, context in
+                try await self.linkApple(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AccountService.Method.UnlinkApple.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_UnlinkAppleRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Account>(),
+            handler: { request, context in
+                try await self.unlinkApple(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AccountService.Method.GetAccount.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetAccountRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Account>(),
+            handler: { request, context in
+                try await self.getAccount(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AccountService.Method.SignUp.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_SignUpRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_SignInResponse>(),
+            handler: { request, context in
+                try await self.signUp(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AccountService.Method.SignIn.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_SignInRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_SignInResponse>(),
+            handler: { request, context in
+                try await self.signIn(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AccountService.Method.SetEmailPassword.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_SetEmailPasswordRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Account>(),
+            handler: { request, context in
+                try await self.setEmailPassword(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AccountService.Method.CreateToken.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_CreateTokenRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_CreateTokenResponse>(),
+            handler: { request, context in
+                try await self.createToken(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AccountService.Method.ListTokens.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListTokensRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListTokensResponse>(),
+            handler: { request, context in
+                try await self.listTokens(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AccountService.Method.RevokeToken.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_RevokeTokenRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+            handler: { request, context in
+                try await self.revokeToken(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AccountService.Method.GetPairing.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetPairingRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Pairing>(),
+            handler: { request, context in
+                try await self.getPairing(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AccountService.Method.ApprovePairing.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ApprovePairingRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Pairing>(),
+            handler: { request, context in
+                try await self.approvePairing(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_AccountService.Method.DenyPairing.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_DenyPairingRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+            handler: { request, context in
+                try await self.denyPairing(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+    }
+}
+
+// Default implementation of streaming methods from 'StreamingServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_AccountService.ServiceProtocol {
+    public func signInWithApple(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_SignInWithAppleRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_SignInWithAppleResponse> {
+        let response = try await self.signInWithApple(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func linkApple(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_LinkAppleRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Account> {
+        let response = try await self.linkApple(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func unlinkApple(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_UnlinkAppleRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Account> {
+        let response = try await self.unlinkApple(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func getAccount(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetAccountRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Account> {
+        let response = try await self.getAccount(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func signUp(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_SignUpRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_SignInResponse> {
+        let response = try await self.signUp(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func signIn(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_SignInRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_SignInResponse> {
+        let response = try await self.signIn(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func setEmailPassword(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_SetEmailPasswordRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Account> {
+        let response = try await self.setEmailPassword(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func createToken(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_CreateTokenRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_CreateTokenResponse> {
+        let response = try await self.createToken(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func listTokens(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListTokensRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListTokensResponse> {
+        let response = try await self.listTokens(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func revokeToken(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_RevokeTokenRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        let response = try await self.revokeToken(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func getPairing(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetPairingRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Pairing> {
+        let response = try await self.getPairing(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func approvePairing(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ApprovePairingRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Pairing> {
+        let response = try await self.approvePairing(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func denyPairing(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_DenyPairingRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        let response = try await self.denyPairing(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+}
+
+// Default implementation of methods from 'ServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_AccountService.SimpleServiceProtocol {
+    public func signInWithApple(
+        request: GRPCCore.ServerRequest<Noted_V1_SignInWithAppleRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_SignInWithAppleResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_SignInWithAppleResponse>(
+            message: try await self.signInWithApple(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func linkApple(
+        request: GRPCCore.ServerRequest<Noted_V1_LinkAppleRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Account> {
+        return GRPCCore.ServerResponse<Noted_V1_Account>(
+            message: try await self.linkApple(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func unlinkApple(
+        request: GRPCCore.ServerRequest<Noted_V1_UnlinkAppleRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Account> {
+        return GRPCCore.ServerResponse<Noted_V1_Account>(
+            message: try await self.unlinkApple(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func getAccount(
+        request: GRPCCore.ServerRequest<Noted_V1_GetAccountRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Account> {
+        return GRPCCore.ServerResponse<Noted_V1_Account>(
+            message: try await self.getAccount(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func signUp(
+        request: GRPCCore.ServerRequest<Noted_V1_SignUpRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_SignInResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_SignInResponse>(
+            message: try await self.signUp(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func signIn(
+        request: GRPCCore.ServerRequest<Noted_V1_SignInRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_SignInResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_SignInResponse>(
+            message: try await self.signIn(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func setEmailPassword(
+        request: GRPCCore.ServerRequest<Noted_V1_SetEmailPasswordRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Account> {
+        return GRPCCore.ServerResponse<Noted_V1_Account>(
+            message: try await self.setEmailPassword(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func createToken(
+        request: GRPCCore.ServerRequest<Noted_V1_CreateTokenRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_CreateTokenResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_CreateTokenResponse>(
+            message: try await self.createToken(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func listTokens(
+        request: GRPCCore.ServerRequest<Noted_V1_ListTokensRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListTokensResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListTokensResponse>(
+            message: try await self.listTokens(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func revokeToken(
+        request: GRPCCore.ServerRequest<Noted_V1_RevokeTokenRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        return GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>(
+            message: try await self.revokeToken(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func getPairing(
+        request: GRPCCore.ServerRequest<Noted_V1_GetPairingRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Pairing> {
+        return GRPCCore.ServerResponse<Noted_V1_Pairing>(
+            message: try await self.getPairing(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func approvePairing(
+        request: GRPCCore.ServerRequest<Noted_V1_ApprovePairingRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Pairing> {
+        return GRPCCore.ServerResponse<Noted_V1_Pairing>(
+            message: try await self.approvePairing(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func denyPairing(
+        request: GRPCCore.ServerRequest<Noted_V1_DenyPairingRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty> {
+        return GRPCCore.ServerResponse<SwiftProtobuf.Google_Protobuf_Empty>(
+            message: try await self.denyPairing(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+}
+
+// MARK: noted.v1.AccountService (client)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_AccountService {
+    /// Generated client protocol for the "noted.v1.AccountService" service.
+    ///
+    /// You don't need to implement this protocol directly, use the generated
+    /// implementation, ``Client``.
+    public protocol ClientProtocol: Sendable {
+        /// Call the "SignInWithApple" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Public: needs no token. Fails with FAILED_PRECONDITION when the Apple ID is
+        /// > not linked to anyone and the server does not accept new sign-ups.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SignInWithAppleRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_SignInWithAppleRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_SignInWithAppleResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func signInWithApple<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_SignInWithAppleRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_SignInWithAppleRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_SignInWithAppleResponse>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_SignInWithAppleResponse>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "LinkApple" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_LinkAppleRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_LinkAppleRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Account` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func linkApple<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_LinkAppleRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_LinkAppleRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Account>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Account>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "UnlinkApple" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_UnlinkAppleRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_UnlinkAppleRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Account` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func unlinkApple<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_UnlinkAppleRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_UnlinkAppleRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Account>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Account>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "GetAccount" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetAccountRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_GetAccountRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Account` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func getAccount<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_GetAccountRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_GetAccountRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Account>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Account>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "SignUp" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Public. Creates a user signed in by email + password and returns its first
+        /// > token. FAILED_PRECONDITION when the server does not accept sign-ups,
+        /// > ALREADY_EXISTS when the email is taken.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SignUpRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_SignUpRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_SignInResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func signUp<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_SignUpRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_SignUpRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_SignInResponse>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_SignInResponse>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "SignIn" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Public. UNAUTHENTICATED with one message for a wrong email or password.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SignInRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_SignInRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_SignInResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func signIn<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_SignInRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_SignInRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_SignInResponse>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_SignInResponse>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "SetEmailPassword" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Adds an email + password to the calling account (e.g. one made with Sign
+        /// > in with Apple) or changes them. PERMISSION_DENIED when current_password is
+        /// > missing or wrong, ALREADY_EXISTS when another account has the email.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SetEmailPasswordRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_SetEmailPasswordRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Account` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func setEmailPassword<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_SetEmailPasswordRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_SetEmailPasswordRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Account>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Account>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "CreateToken" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Mints another token for the calling user.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_CreateTokenRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_CreateTokenRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_CreateTokenResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func createToken<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_CreateTokenRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_CreateTokenRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_CreateTokenResponse>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_CreateTokenResponse>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "ListTokens" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListTokensRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_ListTokensRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_ListTokensResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func listTokens<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_ListTokensRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_ListTokensRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_ListTokensResponse>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListTokensResponse>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "RevokeToken" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Deletes one of the caller's tokens; it stops working immediately. Revoking
+        /// > the token making the call is allowed. NOT_FOUND for an unknown id or one
+        /// > that belongs to someone else.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_RevokeTokenRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_RevokeTokenRequest` messages.
+        ///   - deserializer: A deserializer for `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func revokeToken<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_RevokeTokenRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_RevokeTokenRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<SwiftProtobuf.Google_Protobuf_Empty>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<SwiftProtobuf.Google_Protobuf_Empty>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "GetPairing" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Pairing a client that signs in through the browser (MCP OAuth, e.g. Claude
+        /// > Code): the server's sign-in page shows a code and a QR code
+        /// > (noted://pair?code=...&server=...), and the signed-in App approves it,
+        /// > which issues that client a token of the calling user. NOT_FOUND for an
+        /// > unknown, expired or already used code.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetPairingRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_GetPairingRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Pairing` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func getPairing<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_GetPairingRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_GetPairingRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Pairing>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Pairing>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "ApprovePairing" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ApprovePairingRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_ApprovePairingRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Pairing` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func approvePairing<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_ApprovePairingRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_ApprovePairingRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Pairing>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Pairing>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "DenyPairing" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DenyPairingRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_DenyPairingRequest` messages.
+        ///   - deserializer: A deserializer for `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func denyPairing<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_DenyPairingRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_DenyPairingRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<SwiftProtobuf.Google_Protobuf_Empty>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<SwiftProtobuf.Google_Protobuf_Empty>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+    }
+
+    /// Generated client for the "noted.v1.AccountService" service.
+    ///
+    /// The ``Client`` provides an implementation of ``ClientProtocol`` which wraps
+    /// a `GRPCCore.GRPCCClient`. The underlying `GRPCClient` provides the long-lived
+    /// means of communication with the remote peer.
+    public struct Client<Transport>: ClientProtocol where Transport: GRPCCore.ClientTransport {
+        private let client: GRPCCore.GRPCClient<Transport>
+
+        /// Creates a new client wrapping the provided `GRPCCore.GRPCClient`.
+        ///
+        /// - Parameters:
+        ///   - client: A `GRPCCore.GRPCClient` providing a communication channel to the service.
+        public init(wrapping client: GRPCCore.GRPCClient<Transport>) {
+            self.client = client
+        }
+
+        /// Call the "SignInWithApple" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Public: needs no token. Fails with FAILED_PRECONDITION when the Apple ID is
+        /// > not linked to anyone and the server does not accept new sign-ups.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SignInWithAppleRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_SignInWithAppleRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_SignInWithAppleResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func signInWithApple<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_SignInWithAppleRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_SignInWithAppleRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_SignInWithAppleResponse>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_SignInWithAppleResponse>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AccountService.Method.SignInWithApple.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "LinkApple" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_LinkAppleRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_LinkAppleRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Account` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func linkApple<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_LinkAppleRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_LinkAppleRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Account>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Account>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AccountService.Method.LinkApple.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "UnlinkApple" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_UnlinkAppleRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_UnlinkAppleRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Account` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func unlinkApple<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_UnlinkAppleRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_UnlinkAppleRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Account>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Account>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AccountService.Method.UnlinkApple.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "GetAccount" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetAccountRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_GetAccountRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Account` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func getAccount<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_GetAccountRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_GetAccountRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Account>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Account>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AccountService.Method.GetAccount.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "SignUp" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Public. Creates a user signed in by email + password and returns its first
+        /// > token. FAILED_PRECONDITION when the server does not accept sign-ups,
+        /// > ALREADY_EXISTS when the email is taken.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SignUpRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_SignUpRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_SignInResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func signUp<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_SignUpRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_SignUpRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_SignInResponse>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_SignInResponse>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AccountService.Method.SignUp.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "SignIn" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Public. UNAUTHENTICATED with one message for a wrong email or password.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SignInRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_SignInRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_SignInResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func signIn<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_SignInRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_SignInRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_SignInResponse>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_SignInResponse>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AccountService.Method.SignIn.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "SetEmailPassword" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Adds an email + password to the calling account (e.g. one made with Sign
+        /// > in with Apple) or changes them. PERMISSION_DENIED when current_password is
+        /// > missing or wrong, ALREADY_EXISTS when another account has the email.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SetEmailPasswordRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_SetEmailPasswordRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Account` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func setEmailPassword<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_SetEmailPasswordRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_SetEmailPasswordRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Account>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Account>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AccountService.Method.SetEmailPassword.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "CreateToken" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Mints another token for the calling user.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_CreateTokenRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_CreateTokenRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_CreateTokenResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func createToken<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_CreateTokenRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_CreateTokenRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_CreateTokenResponse>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_CreateTokenResponse>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AccountService.Method.CreateToken.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "ListTokens" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListTokensRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_ListTokensRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_ListTokensResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func listTokens<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_ListTokensRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_ListTokensRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_ListTokensResponse>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListTokensResponse>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AccountService.Method.ListTokens.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "RevokeToken" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Deletes one of the caller's tokens; it stops working immediately. Revoking
+        /// > the token making the call is allowed. NOT_FOUND for an unknown id or one
+        /// > that belongs to someone else.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_RevokeTokenRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_RevokeTokenRequest` messages.
+        ///   - deserializer: A deserializer for `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func revokeToken<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_RevokeTokenRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_RevokeTokenRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<SwiftProtobuf.Google_Protobuf_Empty>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<SwiftProtobuf.Google_Protobuf_Empty>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AccountService.Method.RevokeToken.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "GetPairing" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Pairing a client that signs in through the browser (MCP OAuth, e.g. Claude
+        /// > Code): the server's sign-in page shows a code and a QR code
+        /// > (noted://pair?code=...&server=...), and the signed-in App approves it,
+        /// > which issues that client a token of the calling user. NOT_FOUND for an
+        /// > unknown, expired or already used code.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetPairingRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_GetPairingRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Pairing` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func getPairing<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_GetPairingRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_GetPairingRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Pairing>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Pairing>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AccountService.Method.GetPairing.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "ApprovePairing" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ApprovePairingRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_ApprovePairingRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Pairing` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func approvePairing<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_ApprovePairingRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_ApprovePairingRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Pairing>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Pairing>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AccountService.Method.ApprovePairing.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "DenyPairing" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_DenyPairingRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_DenyPairingRequest` messages.
+        ///   - deserializer: A deserializer for `SwiftProtobuf.Google_Protobuf_Empty` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func denyPairing<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_DenyPairingRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_DenyPairingRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<SwiftProtobuf.Google_Protobuf_Empty>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<SwiftProtobuf.Google_Protobuf_Empty>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AccountService.Method.DenyPairing.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+    }
+}
+
+// Helpers providing default arguments to 'ClientProtocol' methods.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_AccountService.ClientProtocol {
+    /// Call the "SignInWithApple" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Public: needs no token. Fails with FAILED_PRECONDITION when the Apple ID is
+    /// > not linked to anyone and the server does not accept new sign-ups.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_SignInWithAppleRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func signInWithApple<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_SignInWithAppleRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_SignInWithAppleResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.signInWithApple(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_SignInWithAppleRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_SignInWithAppleResponse>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "LinkApple" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_LinkAppleRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func linkApple<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_LinkAppleRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Account>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.linkApple(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_LinkAppleRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_Account>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "UnlinkApple" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_UnlinkAppleRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func unlinkApple<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_UnlinkAppleRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Account>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.unlinkApple(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_UnlinkAppleRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_Account>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "GetAccount" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_GetAccountRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func getAccount<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_GetAccountRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Account>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.getAccount(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_GetAccountRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_Account>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "SignUp" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Public. Creates a user signed in by email + password and returns its first
+    /// > token. FAILED_PRECONDITION when the server does not accept sign-ups,
+    /// > ALREADY_EXISTS when the email is taken.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_SignUpRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func signUp<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_SignUpRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_SignInResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.signUp(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_SignUpRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_SignInResponse>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "SignIn" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Public. UNAUTHENTICATED with one message for a wrong email or password.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_SignInRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func signIn<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_SignInRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_SignInResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.signIn(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_SignInRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_SignInResponse>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "SetEmailPassword" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Adds an email + password to the calling account (e.g. one made with Sign
+    /// > in with Apple) or changes them. PERMISSION_DENIED when current_password is
+    /// > missing or wrong, ALREADY_EXISTS when another account has the email.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_SetEmailPasswordRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func setEmailPassword<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_SetEmailPasswordRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Account>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.setEmailPassword(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_SetEmailPasswordRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_Account>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "CreateToken" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Mints another token for the calling user.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_CreateTokenRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func createToken<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_CreateTokenRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_CreateTokenResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.createToken(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_CreateTokenRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_CreateTokenResponse>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "ListTokens" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_ListTokensRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func listTokens<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_ListTokensRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListTokensResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.listTokens(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListTokensRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListTokensResponse>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "RevokeToken" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Deletes one of the caller's tokens; it stops working immediately. Revoking
+    /// > the token making the call is allowed. NOT_FOUND for an unknown id or one
+    /// > that belongs to someone else.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_RevokeTokenRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func revokeToken<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_RevokeTokenRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<SwiftProtobuf.Google_Protobuf_Empty>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.revokeToken(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_RevokeTokenRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "GetPairing" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Pairing a client that signs in through the browser (MCP OAuth, e.g. Claude
+    /// > Code): the server's sign-in page shows a code and a QR code
+    /// > (noted://pair?code=...&server=...), and the signed-in App approves it,
+    /// > which issues that client a token of the calling user. NOT_FOUND for an
+    /// > unknown, expired or already used code.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_GetPairingRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func getPairing<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_GetPairingRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Pairing>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.getPairing(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_GetPairingRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_Pairing>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "ApprovePairing" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_ApprovePairingRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func approvePairing<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_ApprovePairingRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Pairing>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.approvePairing(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ApprovePairingRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_Pairing>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DenyPairing" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_DenyPairingRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func denyPairing<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_DenyPairingRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<SwiftProtobuf.Google_Protobuf_Empty>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.denyPairing(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_DenyPairingRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<SwiftProtobuf.Google_Protobuf_Empty>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+}
+
+// Helpers providing sugared APIs for 'ClientProtocol' methods.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_AccountService.ClientProtocol {
+    /// Call the "SignInWithApple" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Public: needs no token. Fails with FAILED_PRECONDITION when the Apple ID is
+    /// > not linked to anyone and the server does not accept new sign-ups.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func signInWithApple<Result>(
+        _ message: Noted_V1_SignInWithAppleRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_SignInWithAppleResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_SignInWithAppleRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.signInWithApple(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "LinkApple" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func linkApple<Result>(
+        _ message: Noted_V1_LinkAppleRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Account>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_LinkAppleRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.linkApple(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "UnlinkApple" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func unlinkApple<Result>(
+        _ message: Noted_V1_UnlinkAppleRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Account>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_UnlinkAppleRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.unlinkApple(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "GetAccount" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func getAccount<Result>(
+        _ message: Noted_V1_GetAccountRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Account>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_GetAccountRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.getAccount(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "SignUp" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Public. Creates a user signed in by email + password and returns its first
+    /// > token. FAILED_PRECONDITION when the server does not accept sign-ups,
+    /// > ALREADY_EXISTS when the email is taken.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func signUp<Result>(
+        _ message: Noted_V1_SignUpRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_SignInResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_SignUpRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.signUp(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "SignIn" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Public. UNAUTHENTICATED with one message for a wrong email or password.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func signIn<Result>(
+        _ message: Noted_V1_SignInRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_SignInResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_SignInRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.signIn(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "SetEmailPassword" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Adds an email + password to the calling account (e.g. one made with Sign
+    /// > in with Apple) or changes them. PERMISSION_DENIED when current_password is
+    /// > missing or wrong, ALREADY_EXISTS when another account has the email.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func setEmailPassword<Result>(
+        _ message: Noted_V1_SetEmailPasswordRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Account>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_SetEmailPasswordRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.setEmailPassword(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "CreateToken" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Mints another token for the calling user.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func createToken<Result>(
+        _ message: Noted_V1_CreateTokenRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_CreateTokenResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_CreateTokenRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.createToken(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "ListTokens" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func listTokens<Result>(
+        _ message: Noted_V1_ListTokensRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListTokensResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_ListTokensRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.listTokens(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "RevokeToken" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Deletes one of the caller's tokens; it stops working immediately. Revoking
+    /// > the token making the call is allowed. NOT_FOUND for an unknown id or one
+    /// > that belongs to someone else.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func revokeToken<Result>(
+        _ message: Noted_V1_RevokeTokenRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<SwiftProtobuf.Google_Protobuf_Empty>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_RevokeTokenRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.revokeToken(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "GetPairing" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Pairing a client that signs in through the browser (MCP OAuth, e.g. Claude
+    /// > Code): the server's sign-in page shows a code and a QR code
+    /// > (noted://pair?code=...&server=...), and the signed-in App approves it,
+    /// > which issues that client a token of the calling user. NOT_FOUND for an
+    /// > unknown, expired or already used code.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func getPairing<Result>(
+        _ message: Noted_V1_GetPairingRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Pairing>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_GetPairingRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.getPairing(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "ApprovePairing" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func approvePairing<Result>(
+        _ message: Noted_V1_ApprovePairingRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Pairing>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_ApprovePairingRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.approvePairing(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "DenyPairing" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func denyPairing<Result>(
+        _ message: Noted_V1_DenyPairingRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<SwiftProtobuf.Google_Protobuf_Empty>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_DenyPairingRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.denyPairing(
             request: request,
             options: options,
             onResponse: handleResponse

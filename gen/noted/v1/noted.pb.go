@@ -236,6 +236,61 @@ func (Horizon) EnumDescriptor() ([]byte, []int) {
 	return file_noted_v1_noted_proto_rawDescGZIP(), []int{3}
 }
 
+type TimeGroupBy int32
+
+const (
+	TimeGroupBy_TIME_GROUP_BY_UNSPECIFIED TimeGroupBy = 0 // same as TITLE
+	TimeGroupBy_TIME_GROUP_BY_TITLE       TimeGroupBy = 1 // by activity, ignoring case and surrounding space
+	TimeGroupBy_TIME_GROUP_BY_PROJECT     TimeGroupBy = 2
+	TimeGroupBy_TIME_GROUP_BY_GOAL        TimeGroupBy = 3
+	TimeGroupBy_TIME_GROUP_BY_DAY         TimeGroupBy = 4 // by the day of start_time in time_zone
+)
+
+// Enum value maps for TimeGroupBy.
+var (
+	TimeGroupBy_name = map[int32]string{
+		0: "TIME_GROUP_BY_UNSPECIFIED",
+		1: "TIME_GROUP_BY_TITLE",
+		2: "TIME_GROUP_BY_PROJECT",
+		3: "TIME_GROUP_BY_GOAL",
+		4: "TIME_GROUP_BY_DAY",
+	}
+	TimeGroupBy_value = map[string]int32{
+		"TIME_GROUP_BY_UNSPECIFIED": 0,
+		"TIME_GROUP_BY_TITLE":       1,
+		"TIME_GROUP_BY_PROJECT":     2,
+		"TIME_GROUP_BY_GOAL":        3,
+		"TIME_GROUP_BY_DAY":         4,
+	}
+)
+
+func (x TimeGroupBy) Enum() *TimeGroupBy {
+	p := new(TimeGroupBy)
+	*p = x
+	return p
+}
+
+func (x TimeGroupBy) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TimeGroupBy) Descriptor() protoreflect.EnumDescriptor {
+	return file_noted_v1_noted_proto_enumTypes[4].Descriptor()
+}
+
+func (TimeGroupBy) Type() protoreflect.EnumType {
+	return &file_noted_v1_noted_proto_enumTypes[4]
+}
+
+func (x TimeGroupBy) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TimeGroupBy.Descriptor instead.
+func (TimeGroupBy) EnumDescriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{4}
+}
+
 type ListTasksRequest_Filter int32
 
 const (
@@ -272,11 +327,11 @@ func (x ListTasksRequest_Filter) String() string {
 }
 
 func (ListTasksRequest_Filter) Descriptor() protoreflect.EnumDescriptor {
-	return file_noted_v1_noted_proto_enumTypes[4].Descriptor()
+	return file_noted_v1_noted_proto_enumTypes[5].Descriptor()
 }
 
 func (ListTasksRequest_Filter) Type() protoreflect.EnumType {
-	return &file_noted_v1_noted_proto_enumTypes[4]
+	return &file_noted_v1_noted_proto_enumTypes[5]
 }
 
 func (x ListTasksRequest_Filter) Number() protoreflect.EnumNumber {
@@ -285,7 +340,7 @@ func (x ListTasksRequest_Filter) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use ListTasksRequest_Filter.Descriptor instead.
 func (ListTasksRequest_Filter) EnumDescriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{23, 0}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{24, 0}
 }
 
 type Reminder_Kind int32
@@ -321,11 +376,11 @@ func (x Reminder_Kind) String() string {
 }
 
 func (Reminder_Kind) Descriptor() protoreflect.EnumDescriptor {
-	return file_noted_v1_noted_proto_enumTypes[5].Descriptor()
+	return file_noted_v1_noted_proto_enumTypes[6].Descriptor()
 }
 
 func (Reminder_Kind) Type() protoreflect.EnumType {
-	return &file_noted_v1_noted_proto_enumTypes[5]
+	return &file_noted_v1_noted_proto_enumTypes[6]
 }
 
 func (x Reminder_Kind) Number() protoreflect.EnumNumber {
@@ -334,7 +389,7 @@ func (x Reminder_Kind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Reminder_Kind.Descriptor instead.
 func (Reminder_Kind) EnumDescriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{25, 0}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{30, 0}
 }
 
 type Note struct {
@@ -1475,20 +1530,33 @@ func (x *ListEventsResponse) GetOccurrences() []*Occurrence {
 }
 
 type Task struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	Notes         string                 `protobuf:"bytes,3,opt,name=notes,proto3" json:"notes,omitempty"`
-	DueTime       *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=due_time,json=dueTime,proto3" json:"due_time,omitempty"`
-	Priority      Priority               `protobuf:"varint,5,opt,name=priority,proto3,enum=noted.v1.Priority" json:"priority,omitempty"`
-	Completed     bool                   `protobuf:"varint,6,opt,name=completed,proto3" json:"completed,omitempty"`
-	CompleteTime  *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=complete_time,json=completeTime,proto3" json:"complete_time,omitempty"`
-	RemindTime    *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=remind_time,json=remindTime,proto3" json:"remind_time,omitempty"`
-	Tags          []string               `protobuf:"bytes,9,rep,name=tags,proto3" json:"tags,omitempty"`
-	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	UpdateTime    *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
-	ProjectId     string                 `protobuf:"bytes,12,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"` // optional: the project this task belongs to
-	Space         Space                  `protobuf:"varint,13,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	Id           string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title        string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Notes        string                 `protobuf:"bytes,3,opt,name=notes,proto3" json:"notes,omitempty"`
+	DueTime      *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=due_time,json=dueTime,proto3" json:"due_time,omitempty"`
+	Priority     Priority               `protobuf:"varint,5,opt,name=priority,proto3,enum=noted.v1.Priority" json:"priority,omitempty"`
+	Completed    bool                   `protobuf:"varint,6,opt,name=completed,proto3" json:"completed,omitempty"`
+	CompleteTime *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=complete_time,json=completeTime,proto3" json:"complete_time,omitempty"`
+	RemindTime   *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=remind_time,json=remindTime,proto3" json:"remind_time,omitempty"`
+	Tags         []string               `protobuf:"bytes,9,rep,name=tags,proto3" json:"tags,omitempty"`
+	CreateTime   *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	UpdateTime   *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	ProjectId    string                 `protobuf:"bytes,12,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"` // optional: the project this task belongs to
+	Space        Space                  `protobuf:"varint,13,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
+	// Work done over several sittings, kept up to date by LogTaskWork and
+	// DeleteTaskWork. Read-only.
+	Progress       int32                  `protobuf:"varint,14,opt,name=progress,proto3" json:"progress,omitempty"`                                // 0-100: the latest progress a sitting gave; 0 when none did
+	WorkedMinutes  int32                  `protobuf:"varint,15,opt,name=worked_minutes,json=workedMinutes,proto3" json:"worked_minutes,omitempty"` // sum of the sittings' minutes
+	WorkSessions   int32                  `protobuf:"varint,16,opt,name=work_sessions,json=workSessions,proto3" json:"work_sessions,omitempty"`    // number of sittings logged
+	LastWorkedTime *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=last_worked_time,json=lastWorkedTime,proto3" json:"last_worked_time,omitempty"`
+	// Repetition, the same RFC 5545 RRULE subset as Event.rrule: FREQ
+	// (DAILY|WEEKLY|MONTHLY|YEARLY), INTERVAL, COUNT, UNTIL, BYDAY (weekly only).
+	// Empty means one-off. Anchored on due_time, which a repeating task needs.
+	// Completing it keeps it as done and adds the next one, due at the rule's
+	// next occurrence (wall clock in the server's zone), with the reminder moved
+	// by the same amount; none once COUNT or UNTIL ends the series.
+	Rrule         string `protobuf:"bytes,18,opt,name=rrule,proto3" json:"rrule,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1614,6 +1682,126 @@ func (x *Task) GetSpace() Space {
 	return Space_SPACE_UNSPECIFIED
 }
 
+func (x *Task) GetProgress() int32 {
+	if x != nil {
+		return x.Progress
+	}
+	return 0
+}
+
+func (x *Task) GetWorkedMinutes() int32 {
+	if x != nil {
+		return x.WorkedMinutes
+	}
+	return 0
+}
+
+func (x *Task) GetWorkSessions() int32 {
+	if x != nil {
+		return x.WorkSessions
+	}
+	return 0
+}
+
+func (x *Task) GetLastWorkedTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastWorkedTime
+	}
+	return nil
+}
+
+func (x *Task) GetRrule() string {
+	if x != nil {
+		return x.Rrule
+	}
+	return ""
+}
+
+// One sitting on a task: some time spent, maybe a progress estimate, maybe a note.
+type TaskWork struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	TaskId        string                 `protobuf:"bytes,2,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
+	Time          *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty"`
+	Minutes       int32                  `protobuf:"varint,4,opt,name=minutes,proto3" json:"minutes,omitempty"`
+	Progress      int32                  `protobuf:"varint,5,opt,name=progress,proto3" json:"progress,omitempty"` // 0-100, -1 = not given
+	Note          string                 `protobuf:"bytes,6,opt,name=note,proto3" json:"note,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TaskWork) Reset() {
+	*x = TaskWork{}
+	mi := &file_noted_v1_noted_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TaskWork) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TaskWork) ProtoMessage() {}
+
+func (x *TaskWork) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TaskWork.ProtoReflect.Descriptor instead.
+func (*TaskWork) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *TaskWork) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *TaskWork) GetTaskId() string {
+	if x != nil {
+		return x.TaskId
+	}
+	return ""
+}
+
+func (x *TaskWork) GetTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Time
+	}
+	return nil
+}
+
+func (x *TaskWork) GetMinutes() int32 {
+	if x != nil {
+		return x.Minutes
+	}
+	return 0
+}
+
+func (x *TaskWork) GetProgress() int32 {
+	if x != nil {
+		return x.Progress
+	}
+	return 0
+}
+
+func (x *TaskWork) GetNote() string {
+	if x != nil {
+		return x.Note
+	}
+	return ""
+}
+
 type CreateTaskRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Task          *Task                  `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
@@ -1623,7 +1811,7 @@ type CreateTaskRequest struct {
 
 func (x *CreateTaskRequest) Reset() {
 	*x = CreateTaskRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[19]
+	mi := &file_noted_v1_noted_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1635,7 +1823,7 @@ func (x *CreateTaskRequest) String() string {
 func (*CreateTaskRequest) ProtoMessage() {}
 
 func (x *CreateTaskRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[19]
+	mi := &file_noted_v1_noted_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1648,7 +1836,7 @@ func (x *CreateTaskRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTaskRequest.ProtoReflect.Descriptor instead.
 func (*CreateTaskRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{19}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *CreateTaskRequest) GetTask() *Task {
@@ -1667,7 +1855,7 @@ type GetTaskRequest struct {
 
 func (x *GetTaskRequest) Reset() {
 	*x = GetTaskRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[20]
+	mi := &file_noted_v1_noted_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1679,7 +1867,7 @@ func (x *GetTaskRequest) String() string {
 func (*GetTaskRequest) ProtoMessage() {}
 
 func (x *GetTaskRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[20]
+	mi := &file_noted_v1_noted_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1692,7 +1880,7 @@ func (x *GetTaskRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTaskRequest.ProtoReflect.Descriptor instead.
 func (*GetTaskRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{20}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *GetTaskRequest) GetId() string {
@@ -1705,7 +1893,8 @@ func (x *GetTaskRequest) GetId() string {
 type UpdateTaskRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Task  *Task                  `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
-	// title, notes, due_time, priority, completed, remind_time, tags, project_id, space
+	// title, notes, due_time, priority, completed, remind_time, tags, project_id,
+	// space, rrule
 	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1713,7 +1902,7 @@ type UpdateTaskRequest struct {
 
 func (x *UpdateTaskRequest) Reset() {
 	*x = UpdateTaskRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[21]
+	mi := &file_noted_v1_noted_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1725,7 +1914,7 @@ func (x *UpdateTaskRequest) String() string {
 func (*UpdateTaskRequest) ProtoMessage() {}
 
 func (x *UpdateTaskRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[21]
+	mi := &file_noted_v1_noted_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1738,7 +1927,7 @@ func (x *UpdateTaskRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateTaskRequest.ProtoReflect.Descriptor instead.
 func (*UpdateTaskRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{21}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *UpdateTaskRequest) GetTask() *Task {
@@ -1764,7 +1953,7 @@ type DeleteTaskRequest struct {
 
 func (x *DeleteTaskRequest) Reset() {
 	*x = DeleteTaskRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[22]
+	mi := &file_noted_v1_noted_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1776,7 +1965,7 @@ func (x *DeleteTaskRequest) String() string {
 func (*DeleteTaskRequest) ProtoMessage() {}
 
 func (x *DeleteTaskRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[22]
+	mi := &file_noted_v1_noted_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1789,7 +1978,7 @@ func (x *DeleteTaskRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteTaskRequest.ProtoReflect.Descriptor instead.
 func (*DeleteTaskRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{22}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *DeleteTaskRequest) GetId() string {
@@ -1814,7 +2003,7 @@ type ListTasksRequest struct {
 
 func (x *ListTasksRequest) Reset() {
 	*x = ListTasksRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[23]
+	mi := &file_noted_v1_noted_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1826,7 +2015,7 @@ func (x *ListTasksRequest) String() string {
 func (*ListTasksRequest) ProtoMessage() {}
 
 func (x *ListTasksRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[23]
+	mi := &file_noted_v1_noted_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1839,7 +2028,7 @@ func (x *ListTasksRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTasksRequest.ProtoReflect.Descriptor instead.
 func (*ListTasksRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{23}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ListTasksRequest) GetPageSize() int32 {
@@ -1901,7 +2090,7 @@ type ListTasksResponse struct {
 
 func (x *ListTasksResponse) Reset() {
 	*x = ListTasksResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[24]
+	mi := &file_noted_v1_noted_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1913,7 +2102,7 @@ func (x *ListTasksResponse) String() string {
 func (*ListTasksResponse) ProtoMessage() {}
 
 func (x *ListTasksResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[24]
+	mi := &file_noted_v1_noted_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1926,7 +2115,7 @@ func (x *ListTasksResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTasksResponse.ProtoReflect.Descriptor instead.
 func (*ListTasksResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{24}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ListTasksResponse) GetTasks() []*Task {
@@ -1939,6 +2128,215 @@ func (x *ListTasksResponse) GetTasks() []*Task {
 func (x *ListTasksResponse) GetNextPageToken() string {
 	if x != nil {
 		return x.NextPageToken
+	}
+	return ""
+}
+
+// Needs at least one of minutes > 0, progress or a note.
+type LogTaskWorkRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TaskId        string                 `protobuf:"bytes,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
+	Time          *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=time,proto3" json:"time,omitempty"`                // default now
+	Minutes       int32                  `protobuf:"varint,3,opt,name=minutes,proto3" json:"minutes,omitempty"`         // 0 to 1440
+	Progress      *int32                 `protobuf:"varint,4,opt,name=progress,proto3,oneof" json:"progress,omitempty"` // 0-100; 100 completes the task
+	Note          string                 `protobuf:"bytes,5,opt,name=note,proto3" json:"note,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogTaskWorkRequest) Reset() {
+	*x = LogTaskWorkRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogTaskWorkRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogTaskWorkRequest) ProtoMessage() {}
+
+func (x *LogTaskWorkRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogTaskWorkRequest.ProtoReflect.Descriptor instead.
+func (*LogTaskWorkRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *LogTaskWorkRequest) GetTaskId() string {
+	if x != nil {
+		return x.TaskId
+	}
+	return ""
+}
+
+func (x *LogTaskWorkRequest) GetTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Time
+	}
+	return nil
+}
+
+func (x *LogTaskWorkRequest) GetMinutes() int32 {
+	if x != nil {
+		return x.Minutes
+	}
+	return 0
+}
+
+func (x *LogTaskWorkRequest) GetProgress() int32 {
+	if x != nil && x.Progress != nil {
+		return *x.Progress
+	}
+	return 0
+}
+
+func (x *LogTaskWorkRequest) GetNote() string {
+	if x != nil {
+		return x.Note
+	}
+	return ""
+}
+
+type ListTaskWorkRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TaskId        string                 `protobuf:"bytes,1,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListTaskWorkRequest) Reset() {
+	*x = ListTaskWorkRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListTaskWorkRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListTaskWorkRequest) ProtoMessage() {}
+
+func (x *ListTaskWorkRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListTaskWorkRequest.ProtoReflect.Descriptor instead.
+func (*ListTaskWorkRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *ListTaskWorkRequest) GetTaskId() string {
+	if x != nil {
+		return x.TaskId
+	}
+	return ""
+}
+
+type ListTaskWorkResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Entries       []*TaskWork            `protobuf:"bytes,1,rep,name=entries,proto3" json:"entries,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListTaskWorkResponse) Reset() {
+	*x = ListTaskWorkResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListTaskWorkResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListTaskWorkResponse) ProtoMessage() {}
+
+func (x *ListTaskWorkResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListTaskWorkResponse.ProtoReflect.Descriptor instead.
+func (*ListTaskWorkResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *ListTaskWorkResponse) GetEntries() []*TaskWork {
+	if x != nil {
+		return x.Entries
+	}
+	return nil
+}
+
+type DeleteTaskWorkRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteTaskWorkRequest) Reset() {
+	*x = DeleteTaskWorkRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteTaskWorkRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteTaskWorkRequest) ProtoMessage() {}
+
+func (x *DeleteTaskWorkRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteTaskWorkRequest.ProtoReflect.Descriptor instead.
+func (*DeleteTaskWorkRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *DeleteTaskWorkRequest) GetId() string {
+	if x != nil {
+		return x.Id
 	}
 	return ""
 }
@@ -1958,7 +2356,7 @@ type Reminder struct {
 
 func (x *Reminder) Reset() {
 	*x = Reminder{}
-	mi := &file_noted_v1_noted_proto_msgTypes[25]
+	mi := &file_noted_v1_noted_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1970,7 +2368,7 @@ func (x *Reminder) String() string {
 func (*Reminder) ProtoMessage() {}
 
 func (x *Reminder) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[25]
+	mi := &file_noted_v1_noted_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1983,7 +2381,7 @@ func (x *Reminder) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Reminder.ProtoReflect.Descriptor instead.
 func (*Reminder) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{25}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *Reminder) GetId() string {
@@ -2044,7 +2442,7 @@ type WatchRemindersRequest struct {
 
 func (x *WatchRemindersRequest) Reset() {
 	*x = WatchRemindersRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[26]
+	mi := &file_noted_v1_noted_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2056,7 +2454,7 @@ func (x *WatchRemindersRequest) String() string {
 func (*WatchRemindersRequest) ProtoMessage() {}
 
 func (x *WatchRemindersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[26]
+	mi := &file_noted_v1_noted_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2069,7 +2467,7 @@ func (x *WatchRemindersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchRemindersRequest.ProtoReflect.Descriptor instead.
 func (*WatchRemindersRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{26}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *WatchRemindersRequest) GetSpace() Space {
@@ -2090,7 +2488,7 @@ type ListRemindersRequest struct {
 
 func (x *ListRemindersRequest) Reset() {
 	*x = ListRemindersRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[27]
+	mi := &file_noted_v1_noted_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2102,7 +2500,7 @@ func (x *ListRemindersRequest) String() string {
 func (*ListRemindersRequest) ProtoMessage() {}
 
 func (x *ListRemindersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[27]
+	mi := &file_noted_v1_noted_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2115,7 +2513,7 @@ func (x *ListRemindersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRemindersRequest.ProtoReflect.Descriptor instead.
 func (*ListRemindersRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{27}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *ListRemindersRequest) GetSince() *timestamppb.Timestamp {
@@ -2148,7 +2546,7 @@ type ListRemindersResponse struct {
 
 func (x *ListRemindersResponse) Reset() {
 	*x = ListRemindersResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[28]
+	mi := &file_noted_v1_noted_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2160,7 +2558,7 @@ func (x *ListRemindersResponse) String() string {
 func (*ListRemindersResponse) ProtoMessage() {}
 
 func (x *ListRemindersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[28]
+	mi := &file_noted_v1_noted_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2173,7 +2571,7 @@ func (x *ListRemindersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRemindersResponse.ProtoReflect.Descriptor instead.
 func (*ListRemindersResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{28}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *ListRemindersResponse) GetReminders() []*Reminder {
@@ -2191,7 +2589,7 @@ type GetStatusRequest struct {
 
 func (x *GetStatusRequest) Reset() {
 	*x = GetStatusRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[29]
+	mi := &file_noted_v1_noted_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2203,7 +2601,7 @@ func (x *GetStatusRequest) String() string {
 func (*GetStatusRequest) ProtoMessage() {}
 
 func (x *GetStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[29]
+	mi := &file_noted_v1_noted_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2216,7 +2614,7 @@ func (x *GetStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetStatusRequest.ProtoReflect.Descriptor instead.
 func (*GetStatusRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{29}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{34}
 }
 
 type GetStatusResponse struct {
@@ -2231,7 +2629,7 @@ type GetStatusResponse struct {
 
 func (x *GetStatusResponse) Reset() {
 	*x = GetStatusResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[30]
+	mi := &file_noted_v1_noted_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2243,7 +2641,7 @@ func (x *GetStatusResponse) String() string {
 func (*GetStatusResponse) ProtoMessage() {}
 
 func (x *GetStatusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[30]
+	mi := &file_noted_v1_noted_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2256,7 +2654,7 @@ func (x *GetStatusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetStatusResponse.ProtoReflect.Descriptor instead.
 func (*GetStatusResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{30}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *GetStatusResponse) GetEnabled() bool {
@@ -2304,7 +2702,7 @@ type AskRequest struct {
 
 func (x *AskRequest) Reset() {
 	*x = AskRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[31]
+	mi := &file_noted_v1_noted_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2316,7 +2714,7 @@ func (x *AskRequest) String() string {
 func (*AskRequest) ProtoMessage() {}
 
 func (x *AskRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[31]
+	mi := &file_noted_v1_noted_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2329,7 +2727,7 @@ func (x *AskRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AskRequest.ProtoReflect.Descriptor instead.
 func (*AskRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{31}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *AskRequest) GetMessage() string {
@@ -2377,7 +2775,7 @@ type AskResponse struct {
 
 func (x *AskResponse) Reset() {
 	*x = AskResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[32]
+	mi := &file_noted_v1_noted_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2389,7 +2787,7 @@ func (x *AskResponse) String() string {
 func (*AskResponse) ProtoMessage() {}
 
 func (x *AskResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[32]
+	mi := &file_noted_v1_noted_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2402,7 +2800,7 @@ func (x *AskResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AskResponse.ProtoReflect.Descriptor instead.
 func (*AskResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{32}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *AskResponse) GetReply() string {
@@ -2460,7 +2858,7 @@ type Reference struct {
 
 func (x *Reference) Reset() {
 	*x = Reference{}
-	mi := &file_noted_v1_noted_proto_msgTypes[33]
+	mi := &file_noted_v1_noted_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2472,7 +2870,7 @@ func (x *Reference) String() string {
 func (*Reference) ProtoMessage() {}
 
 func (x *Reference) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[33]
+	mi := &file_noted_v1_noted_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2485,7 +2883,7 @@ func (x *Reference) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Reference.ProtoReflect.Descriptor instead.
 func (*Reference) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{33}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *Reference) GetKind() string {
@@ -2525,7 +2923,7 @@ type SummarizeNoteRequest struct {
 
 func (x *SummarizeNoteRequest) Reset() {
 	*x = SummarizeNoteRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[34]
+	mi := &file_noted_v1_noted_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2537,7 +2935,7 @@ func (x *SummarizeNoteRequest) String() string {
 func (*SummarizeNoteRequest) ProtoMessage() {}
 
 func (x *SummarizeNoteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[34]
+	mi := &file_noted_v1_noted_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2550,7 +2948,7 @@ func (x *SummarizeNoteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SummarizeNoteRequest.ProtoReflect.Descriptor instead.
 func (*SummarizeNoteRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{34}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *SummarizeNoteRequest) GetNoteId() string {
@@ -2569,7 +2967,7 @@ type SummarizeNoteResponse struct {
 
 func (x *SummarizeNoteResponse) Reset() {
 	*x = SummarizeNoteResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[35]
+	mi := &file_noted_v1_noted_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2581,7 +2979,7 @@ func (x *SummarizeNoteResponse) String() string {
 func (*SummarizeNoteResponse) ProtoMessage() {}
 
 func (x *SummarizeNoteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[35]
+	mi := &file_noted_v1_noted_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2594,7 +2992,7 @@ func (x *SummarizeNoteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SummarizeNoteResponse.ProtoReflect.Descriptor instead.
 func (*SummarizeNoteResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{35}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *SummarizeNoteResponse) GetSummary() string {
@@ -2614,7 +3012,7 @@ type SuggestTagsRequest struct {
 
 func (x *SuggestTagsRequest) Reset() {
 	*x = SuggestTagsRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[36]
+	mi := &file_noted_v1_noted_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2626,7 +3024,7 @@ func (x *SuggestTagsRequest) String() string {
 func (*SuggestTagsRequest) ProtoMessage() {}
 
 func (x *SuggestTagsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[36]
+	mi := &file_noted_v1_noted_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2639,7 +3037,7 @@ func (x *SuggestTagsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SuggestTagsRequest.ProtoReflect.Descriptor instead.
 func (*SuggestTagsRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{36}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *SuggestTagsRequest) GetNoteId() string {
@@ -2665,7 +3063,7 @@ type SuggestTagsResponse struct {
 
 func (x *SuggestTagsResponse) Reset() {
 	*x = SuggestTagsResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[37]
+	mi := &file_noted_v1_noted_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2677,7 +3075,7 @@ func (x *SuggestTagsResponse) String() string {
 func (*SuggestTagsResponse) ProtoMessage() {}
 
 func (x *SuggestTagsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[37]
+	mi := &file_noted_v1_noted_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2690,7 +3088,7 @@ func (x *SuggestTagsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SuggestTagsResponse.ProtoReflect.Descriptor instead.
 func (*SuggestTagsResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{37}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *SuggestTagsResponse) GetTags() []string {
@@ -2712,7 +3110,7 @@ type DailyBriefingRequest struct {
 
 func (x *DailyBriefingRequest) Reset() {
 	*x = DailyBriefingRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[38]
+	mi := &file_noted_v1_noted_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2724,7 +3122,7 @@ func (x *DailyBriefingRequest) String() string {
 func (*DailyBriefingRequest) ProtoMessage() {}
 
 func (x *DailyBriefingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[38]
+	mi := &file_noted_v1_noted_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2737,7 +3135,7 @@ func (x *DailyBriefingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DailyBriefingRequest.ProtoReflect.Descriptor instead.
 func (*DailyBriefingRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{38}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *DailyBriefingRequest) GetDay() *timestamppb.Timestamp {
@@ -2770,7 +3168,7 @@ type DailyBriefingResponse struct {
 
 func (x *DailyBriefingResponse) Reset() {
 	*x = DailyBriefingResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[39]
+	mi := &file_noted_v1_noted_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2782,7 +3180,7 @@ func (x *DailyBriefingResponse) String() string {
 func (*DailyBriefingResponse) ProtoMessage() {}
 
 func (x *DailyBriefingResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[39]
+	mi := &file_noted_v1_noted_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2795,7 +3193,7 @@ func (x *DailyBriefingResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DailyBriefingResponse.ProtoReflect.Descriptor instead.
 func (*DailyBriefingResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{39}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *DailyBriefingResponse) GetBriefing() string {
@@ -2817,7 +3215,7 @@ type AIFeatures struct {
 
 func (x *AIFeatures) Reset() {
 	*x = AIFeatures{}
-	mi := &file_noted_v1_noted_proto_msgTypes[40]
+	mi := &file_noted_v1_noted_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2829,7 +3227,7 @@ func (x *AIFeatures) String() string {
 func (*AIFeatures) ProtoMessage() {}
 
 func (x *AIFeatures) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[40]
+	mi := &file_noted_v1_noted_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2842,7 +3240,7 @@ func (x *AIFeatures) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AIFeatures.ProtoReflect.Descriptor instead.
 func (*AIFeatures) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{40}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *AIFeatures) GetDailyBriefing() bool {
@@ -2881,7 +3279,7 @@ type GetAIFeaturesRequest struct {
 
 func (x *GetAIFeaturesRequest) Reset() {
 	*x = GetAIFeaturesRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[41]
+	mi := &file_noted_v1_noted_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2893,7 +3291,7 @@ func (x *GetAIFeaturesRequest) String() string {
 func (*GetAIFeaturesRequest) ProtoMessage() {}
 
 func (x *GetAIFeaturesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[41]
+	mi := &file_noted_v1_noted_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2906,7 +3304,7 @@ func (x *GetAIFeaturesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAIFeaturesRequest.ProtoReflect.Descriptor instead.
 func (*GetAIFeaturesRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{41}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{46}
 }
 
 type SetAIFeaturesRequest struct {
@@ -2921,7 +3319,7 @@ type SetAIFeaturesRequest struct {
 
 func (x *SetAIFeaturesRequest) Reset() {
 	*x = SetAIFeaturesRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[42]
+	mi := &file_noted_v1_noted_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2933,7 +3331,7 @@ func (x *SetAIFeaturesRequest) String() string {
 func (*SetAIFeaturesRequest) ProtoMessage() {}
 
 func (x *SetAIFeaturesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[42]
+	mi := &file_noted_v1_noted_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2946,7 +3344,7 @@ func (x *SetAIFeaturesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetAIFeaturesRequest.ProtoReflect.Descriptor instead.
 func (*SetAIFeaturesRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{42}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *SetAIFeaturesRequest) GetDailyBriefing() bool {
@@ -2987,7 +3385,7 @@ type AIAccess struct {
 
 func (x *AIAccess) Reset() {
 	*x = AIAccess{}
-	mi := &file_noted_v1_noted_proto_msgTypes[43]
+	mi := &file_noted_v1_noted_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2999,7 +3397,7 @@ func (x *AIAccess) String() string {
 func (*AIAccess) ProtoMessage() {}
 
 func (x *AIAccess) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[43]
+	mi := &file_noted_v1_noted_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3012,7 +3410,7 @@ func (x *AIAccess) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AIAccess.ProtoReflect.Descriptor instead.
 func (*AIAccess) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{43}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *AIAccess) GetAllowWork() bool {
@@ -3037,7 +3435,7 @@ type GetAIAccessRequest struct {
 
 func (x *GetAIAccessRequest) Reset() {
 	*x = GetAIAccessRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[44]
+	mi := &file_noted_v1_noted_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3049,7 +3447,7 @@ func (x *GetAIAccessRequest) String() string {
 func (*GetAIAccessRequest) ProtoMessage() {}
 
 func (x *GetAIAccessRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[44]
+	mi := &file_noted_v1_noted_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3062,7 +3460,7 @@ func (x *GetAIAccessRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAIAccessRequest.ProtoReflect.Descriptor instead.
 func (*GetAIAccessRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{44}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{49}
 }
 
 type SetAIAccessRequest struct {
@@ -3075,7 +3473,7 @@ type SetAIAccessRequest struct {
 
 func (x *SetAIAccessRequest) Reset() {
 	*x = SetAIAccessRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[45]
+	mi := &file_noted_v1_noted_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3087,7 +3485,7 @@ func (x *SetAIAccessRequest) String() string {
 func (*SetAIAccessRequest) ProtoMessage() {}
 
 func (x *SetAIAccessRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[45]
+	mi := &file_noted_v1_noted_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3100,7 +3498,7 @@ func (x *SetAIAccessRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetAIAccessRequest.ProtoReflect.Descriptor instead.
 func (*SetAIAccessRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{45}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *SetAIAccessRequest) GetAllowWork() bool {
@@ -3127,7 +3525,7 @@ type PlanFromTextRequest struct {
 
 func (x *PlanFromTextRequest) Reset() {
 	*x = PlanFromTextRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[46]
+	mi := &file_noted_v1_noted_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3139,7 +3537,7 @@ func (x *PlanFromTextRequest) String() string {
 func (*PlanFromTextRequest) ProtoMessage() {}
 
 func (x *PlanFromTextRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[46]
+	mi := &file_noted_v1_noted_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3152,7 +3550,7 @@ func (x *PlanFromTextRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlanFromTextRequest.ProtoReflect.Descriptor instead.
 func (*PlanFromTextRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{46}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *PlanFromTextRequest) GetText() string {
@@ -3178,7 +3576,7 @@ type ExtractTasksRequest struct {
 
 func (x *ExtractTasksRequest) Reset() {
 	*x = ExtractTasksRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[47]
+	mi := &file_noted_v1_noted_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3190,7 +3588,7 @@ func (x *ExtractTasksRequest) String() string {
 func (*ExtractTasksRequest) ProtoMessage() {}
 
 func (x *ExtractTasksRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[47]
+	mi := &file_noted_v1_noted_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3203,7 +3601,7 @@ func (x *ExtractTasksRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExtractTasksRequest.ProtoReflect.Descriptor instead.
 func (*ExtractTasksRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{47}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *ExtractTasksRequest) GetNoteId() string {
@@ -3225,7 +3623,7 @@ type Milestone struct {
 
 func (x *Milestone) Reset() {
 	*x = Milestone{}
-	mi := &file_noted_v1_noted_proto_msgTypes[48]
+	mi := &file_noted_v1_noted_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3237,7 +3635,7 @@ func (x *Milestone) String() string {
 func (*Milestone) ProtoMessage() {}
 
 func (x *Milestone) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[48]
+	mi := &file_noted_v1_noted_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3250,7 +3648,7 @@ func (x *Milestone) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Milestone.ProtoReflect.Descriptor instead.
 func (*Milestone) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{48}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *Milestone) GetId() string {
@@ -3291,7 +3689,7 @@ type DayTotal struct {
 
 func (x *DayTotal) Reset() {
 	*x = DayTotal{}
-	mi := &file_noted_v1_noted_proto_msgTypes[49]
+	mi := &file_noted_v1_noted_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3303,7 +3701,7 @@ func (x *DayTotal) String() string {
 func (*DayTotal) ProtoMessage() {}
 
 func (x *DayTotal) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[49]
+	mi := &file_noted_v1_noted_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3316,7 +3714,7 @@ func (x *DayTotal) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DayTotal.ProtoReflect.Descriptor instead.
 func (*DayTotal) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{49}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *DayTotal) GetDate() string {
@@ -3361,7 +3759,7 @@ type GoalProgress struct {
 
 func (x *GoalProgress) Reset() {
 	*x = GoalProgress{}
-	mi := &file_noted_v1_noted_proto_msgTypes[50]
+	mi := &file_noted_v1_noted_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3373,7 +3771,7 @@ func (x *GoalProgress) String() string {
 func (*GoalProgress) ProtoMessage() {}
 
 func (x *GoalProgress) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[50]
+	mi := &file_noted_v1_noted_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3386,7 +3784,7 @@ func (x *GoalProgress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GoalProgress.ProtoReflect.Descriptor instead.
 func (*GoalProgress) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{50}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *GoalProgress) GetPeriodStart() *timestamppb.Timestamp {
@@ -3523,13 +3921,14 @@ type Goal struct {
 	CounterTarget float64 `protobuf:"fixed64,16,opt,name=counter_target,json=counterTarget,proto3" json:"counter_target,omitempty"`
 	// The objective (a larger goal such as losing weight) this goal is a dimension of.
 	ObjectiveId   string `protobuf:"bytes,17,opt,name=objective_id,json=objectiveId,proto3" json:"objective_id,omitempty"`
+	ProjectId     string `protobuf:"bytes,18,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"` // optional: the project this goal belongs to
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Goal) Reset() {
 	*x = Goal{}
-	mi := &file_noted_v1_noted_proto_msgTypes[51]
+	mi := &file_noted_v1_noted_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3541,7 +3940,7 @@ func (x *Goal) String() string {
 func (*Goal) ProtoMessage() {}
 
 func (x *Goal) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[51]
+	mi := &file_noted_v1_noted_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3554,7 +3953,7 @@ func (x *Goal) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Goal.ProtoReflect.Descriptor instead.
 func (*Goal) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{51}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *Goal) GetId() string {
@@ -3676,21 +4075,31 @@ func (x *Goal) GetObjectiveId() string {
 	return ""
 }
 
+func (x *Goal) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
 type CheckIn struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	GoalId        string                 `protobuf:"bytes,2,opt,name=goal_id,json=goalId,proto3" json:"goal_id,omitempty"`
-	Time          *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty"`
-	Amount        float64                `protobuf:"fixed64,4,opt,name=amount,proto3" json:"amount,omitempty"`
-	Note          string                 `protobuf:"bytes,5,opt,name=note,proto3" json:"note,omitempty"`
-	Count         float64                `protobuf:"fixed64,6,opt,name=count,proto3" json:"count,omitempty"` // added to the running total
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Id     string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	GoalId string                 `protobuf:"bytes,2,opt,name=goal_id,json=goalId,proto3" json:"goal_id,omitempty"`
+	Time   *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=time,proto3" json:"time,omitempty"`
+	Amount float64                `protobuf:"fixed64,4,opt,name=amount,proto3" json:"amount,omitempty"`
+	Note   string                 `protobuf:"bytes,5,opt,name=note,proto3" json:"note,omitempty"`
+	Count  float64                `protobuf:"fixed64,6,opt,name=count,proto3" json:"count,omitempty"` // added to the running total
+	// Set when a time entry made this check-in; it follows that entry and
+	// DeleteCheckIn refuses it.
+	TimeEntryId   string `protobuf:"bytes,7,opt,name=time_entry_id,json=timeEntryId,proto3" json:"time_entry_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CheckIn) Reset() {
 	*x = CheckIn{}
-	mi := &file_noted_v1_noted_proto_msgTypes[52]
+	mi := &file_noted_v1_noted_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3702,7 +4111,7 @@ func (x *CheckIn) String() string {
 func (*CheckIn) ProtoMessage() {}
 
 func (x *CheckIn) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[52]
+	mi := &file_noted_v1_noted_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3715,7 +4124,7 @@ func (x *CheckIn) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckIn.ProtoReflect.Descriptor instead.
 func (*CheckIn) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{52}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *CheckIn) GetId() string {
@@ -3760,6 +4169,13 @@ func (x *CheckIn) GetCount() float64 {
 	return 0
 }
 
+func (x *CheckIn) GetTimeEntryId() string {
+	if x != nil {
+		return x.TimeEntryId
+	}
+	return ""
+}
+
 type CreateGoalRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Goal          *Goal                  `protobuf:"bytes,1,opt,name=goal,proto3" json:"goal,omitempty"`
@@ -3769,7 +4185,7 @@ type CreateGoalRequest struct {
 
 func (x *CreateGoalRequest) Reset() {
 	*x = CreateGoalRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[53]
+	mi := &file_noted_v1_noted_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3781,7 +4197,7 @@ func (x *CreateGoalRequest) String() string {
 func (*CreateGoalRequest) ProtoMessage() {}
 
 func (x *CreateGoalRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[53]
+	mi := &file_noted_v1_noted_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3794,7 +4210,7 @@ func (x *CreateGoalRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateGoalRequest.ProtoReflect.Descriptor instead.
 func (*CreateGoalRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{53}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *CreateGoalRequest) GetGoal() *Goal {
@@ -3813,7 +4229,7 @@ type GetGoalRequest struct {
 
 func (x *GetGoalRequest) Reset() {
 	*x = GetGoalRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[54]
+	mi := &file_noted_v1_noted_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3825,7 +4241,7 @@ func (x *GetGoalRequest) String() string {
 func (*GetGoalRequest) ProtoMessage() {}
 
 func (x *GetGoalRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[54]
+	mi := &file_noted_v1_noted_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3838,7 +4254,7 @@ func (x *GetGoalRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetGoalRequest.ProtoReflect.Descriptor instead.
 func (*GetGoalRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{54}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *GetGoalRequest) GetId() string {
@@ -3861,7 +4277,7 @@ type UpdateGoalRequest struct {
 
 func (x *UpdateGoalRequest) Reset() {
 	*x = UpdateGoalRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[55]
+	mi := &file_noted_v1_noted_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3873,7 +4289,7 @@ func (x *UpdateGoalRequest) String() string {
 func (*UpdateGoalRequest) ProtoMessage() {}
 
 func (x *UpdateGoalRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[55]
+	mi := &file_noted_v1_noted_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3886,7 +4302,7 @@ func (x *UpdateGoalRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateGoalRequest.ProtoReflect.Descriptor instead.
 func (*UpdateGoalRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{55}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *UpdateGoalRequest) GetGoal() *Goal {
@@ -3912,7 +4328,7 @@ type DeleteGoalRequest struct {
 
 func (x *DeleteGoalRequest) Reset() {
 	*x = DeleteGoalRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[56]
+	mi := &file_noted_v1_noted_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3924,7 +4340,7 @@ func (x *DeleteGoalRequest) String() string {
 func (*DeleteGoalRequest) ProtoMessage() {}
 
 func (x *DeleteGoalRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[56]
+	mi := &file_noted_v1_noted_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3937,7 +4353,7 @@ func (x *DeleteGoalRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteGoalRequest.ProtoReflect.Descriptor instead.
 func (*DeleteGoalRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{56}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *DeleteGoalRequest) GetId() string {
@@ -3957,7 +4373,7 @@ type ListGoalsRequest struct {
 
 func (x *ListGoalsRequest) Reset() {
 	*x = ListGoalsRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[57]
+	mi := &file_noted_v1_noted_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3969,7 +4385,7 @@ func (x *ListGoalsRequest) String() string {
 func (*ListGoalsRequest) ProtoMessage() {}
 
 func (x *ListGoalsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[57]
+	mi := &file_noted_v1_noted_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3982,7 +4398,7 @@ func (x *ListGoalsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListGoalsRequest.ProtoReflect.Descriptor instead.
 func (*ListGoalsRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{57}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *ListGoalsRequest) GetIncludeArchived() bool {
@@ -4008,7 +4424,7 @@ type ListGoalsResponse struct {
 
 func (x *ListGoalsResponse) Reset() {
 	*x = ListGoalsResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[58]
+	mi := &file_noted_v1_noted_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4020,7 +4436,7 @@ func (x *ListGoalsResponse) String() string {
 func (*ListGoalsResponse) ProtoMessage() {}
 
 func (x *ListGoalsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[58]
+	mi := &file_noted_v1_noted_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4033,7 +4449,7 @@ func (x *ListGoalsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListGoalsResponse.ProtoReflect.Descriptor instead.
 func (*ListGoalsResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{58}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *ListGoalsResponse) GetGoals() []*Goal {
@@ -4059,7 +4475,7 @@ type RecordCheckInRequest struct {
 
 func (x *RecordCheckInRequest) Reset() {
 	*x = RecordCheckInRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[59]
+	mi := &file_noted_v1_noted_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4071,7 +4487,7 @@ func (x *RecordCheckInRequest) String() string {
 func (*RecordCheckInRequest) ProtoMessage() {}
 
 func (x *RecordCheckInRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[59]
+	mi := &file_noted_v1_noted_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4084,7 +4500,7 @@ func (x *RecordCheckInRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecordCheckInRequest.ProtoReflect.Descriptor instead.
 func (*RecordCheckInRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{59}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *RecordCheckInRequest) GetGoalId() string {
@@ -4132,7 +4548,7 @@ type RecordCheckInResponse struct {
 
 func (x *RecordCheckInResponse) Reset() {
 	*x = RecordCheckInResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[60]
+	mi := &file_noted_v1_noted_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4144,7 +4560,7 @@ func (x *RecordCheckInResponse) String() string {
 func (*RecordCheckInResponse) ProtoMessage() {}
 
 func (x *RecordCheckInResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[60]
+	mi := &file_noted_v1_noted_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4157,7 +4573,7 @@ func (x *RecordCheckInResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecordCheckInResponse.ProtoReflect.Descriptor instead.
 func (*RecordCheckInResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{60}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *RecordCheckInResponse) GetCheckIn() *CheckIn {
@@ -4183,7 +4599,7 @@ type DeleteCheckInRequest struct {
 
 func (x *DeleteCheckInRequest) Reset() {
 	*x = DeleteCheckInRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[61]
+	mi := &file_noted_v1_noted_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4195,7 +4611,7 @@ func (x *DeleteCheckInRequest) String() string {
 func (*DeleteCheckInRequest) ProtoMessage() {}
 
 func (x *DeleteCheckInRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[61]
+	mi := &file_noted_v1_noted_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4208,7 +4624,7 @@ func (x *DeleteCheckInRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCheckInRequest.ProtoReflect.Descriptor instead.
 func (*DeleteCheckInRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{61}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *DeleteCheckInRequest) GetId() string {
@@ -4230,7 +4646,7 @@ type ListCheckInsRequest struct {
 
 func (x *ListCheckInsRequest) Reset() {
 	*x = ListCheckInsRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[62]
+	mi := &file_noted_v1_noted_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4242,7 +4658,7 @@ func (x *ListCheckInsRequest) String() string {
 func (*ListCheckInsRequest) ProtoMessage() {}
 
 func (x *ListCheckInsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[62]
+	mi := &file_noted_v1_noted_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4255,7 +4671,7 @@ func (x *ListCheckInsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCheckInsRequest.ProtoReflect.Descriptor instead.
 func (*ListCheckInsRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{62}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *ListCheckInsRequest) GetGoalId() string {
@@ -4295,7 +4711,7 @@ type ListCheckInsResponse struct {
 
 func (x *ListCheckInsResponse) Reset() {
 	*x = ListCheckInsResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[63]
+	mi := &file_noted_v1_noted_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4307,7 +4723,7 @@ func (x *ListCheckInsResponse) String() string {
 func (*ListCheckInsResponse) ProtoMessage() {}
 
 func (x *ListCheckInsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[63]
+	mi := &file_noted_v1_noted_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4320,7 +4736,7 @@ func (x *ListCheckInsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCheckInsResponse.ProtoReflect.Descriptor instead.
 func (*ListCheckInsResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{63}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *ListCheckInsResponse) GetCheckIns() []*CheckIn {
@@ -4341,7 +4757,7 @@ type SetMilestoneDoneRequest struct {
 
 func (x *SetMilestoneDoneRequest) Reset() {
 	*x = SetMilestoneDoneRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[64]
+	mi := &file_noted_v1_noted_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4353,7 +4769,7 @@ func (x *SetMilestoneDoneRequest) String() string {
 func (*SetMilestoneDoneRequest) ProtoMessage() {}
 
 func (x *SetMilestoneDoneRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[64]
+	mi := &file_noted_v1_noted_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4366,7 +4782,7 @@ func (x *SetMilestoneDoneRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetMilestoneDoneRequest.ProtoReflect.Descriptor instead.
 func (*SetMilestoneDoneRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{64}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *SetMilestoneDoneRequest) GetGoalId() string {
@@ -4409,14 +4825,15 @@ type Objective struct {
 	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	UpdateTime    *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
 	Progress      *ObjectiveProgress     `protobuf:"bytes,14,opt,name=progress,proto3" json:"progress,omitempty"`
-	Goals         []*Goal                `protobuf:"bytes,15,rep,name=goals,proto3" json:"goals,omitempty"` // the dimensions, with their progress
+	Goals         []*Goal                `protobuf:"bytes,15,rep,name=goals,proto3" json:"goals,omitempty"`                          // the dimensions, with their progress
+	ProjectId     string                 `protobuf:"bytes,16,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"` // optional: the project this objective belongs to
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Objective) Reset() {
 	*x = Objective{}
-	mi := &file_noted_v1_noted_proto_msgTypes[65]
+	mi := &file_noted_v1_noted_proto_msgTypes[70]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4428,7 +4845,7 @@ func (x *Objective) String() string {
 func (*Objective) ProtoMessage() {}
 
 func (x *Objective) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[65]
+	mi := &file_noted_v1_noted_proto_msgTypes[70]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4441,7 +4858,7 @@ func (x *Objective) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Objective.ProtoReflect.Descriptor instead.
 func (*Objective) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{65}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *Objective) GetId() string {
@@ -4549,6 +4966,13 @@ func (x *Objective) GetGoals() []*Goal {
 	return nil
 }
 
+func (x *Objective) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
 type ObjectiveProgress struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	GoalsTotal      int32                  `protobuf:"varint,1,opt,name=goals_total,json=goalsTotal,proto3" json:"goals_total,omitempty"`
@@ -4570,7 +4994,7 @@ type ObjectiveProgress struct {
 
 func (x *ObjectiveProgress) Reset() {
 	*x = ObjectiveProgress{}
-	mi := &file_noted_v1_noted_proto_msgTypes[66]
+	mi := &file_noted_v1_noted_proto_msgTypes[71]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4582,7 +5006,7 @@ func (x *ObjectiveProgress) String() string {
 func (*ObjectiveProgress) ProtoMessage() {}
 
 func (x *ObjectiveProgress) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[66]
+	mi := &file_noted_v1_noted_proto_msgTypes[71]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4595,7 +5019,7 @@ func (x *ObjectiveProgress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObjectiveProgress.ProtoReflect.Descriptor instead.
 func (*ObjectiveProgress) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{66}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{71}
 }
 
 func (x *ObjectiveProgress) GetGoalsTotal() int32 {
@@ -4702,7 +5126,7 @@ type Measurement struct {
 
 func (x *Measurement) Reset() {
 	*x = Measurement{}
-	mi := &file_noted_v1_noted_proto_msgTypes[67]
+	mi := &file_noted_v1_noted_proto_msgTypes[72]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4714,7 +5138,7 @@ func (x *Measurement) String() string {
 func (*Measurement) ProtoMessage() {}
 
 func (x *Measurement) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[67]
+	mi := &file_noted_v1_noted_proto_msgTypes[72]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4727,7 +5151,7 @@ func (x *Measurement) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Measurement.ProtoReflect.Descriptor instead.
 func (*Measurement) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{67}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *Measurement) GetId() string {
@@ -4774,7 +5198,7 @@ type CreateObjectiveRequest struct {
 
 func (x *CreateObjectiveRequest) Reset() {
 	*x = CreateObjectiveRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[68]
+	mi := &file_noted_v1_noted_proto_msgTypes[73]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4786,7 +5210,7 @@ func (x *CreateObjectiveRequest) String() string {
 func (*CreateObjectiveRequest) ProtoMessage() {}
 
 func (x *CreateObjectiveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[68]
+	mi := &file_noted_v1_noted_proto_msgTypes[73]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4799,7 +5223,7 @@ func (x *CreateObjectiveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateObjectiveRequest.ProtoReflect.Descriptor instead.
 func (*CreateObjectiveRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{68}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *CreateObjectiveRequest) GetObjective() *Objective {
@@ -4818,7 +5242,7 @@ type GetObjectiveRequest struct {
 
 func (x *GetObjectiveRequest) Reset() {
 	*x = GetObjectiveRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[69]
+	mi := &file_noted_v1_noted_proto_msgTypes[74]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4830,7 +5254,7 @@ func (x *GetObjectiveRequest) String() string {
 func (*GetObjectiveRequest) ProtoMessage() {}
 
 func (x *GetObjectiveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[69]
+	mi := &file_noted_v1_noted_proto_msgTypes[74]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4843,7 +5267,7 @@ func (x *GetObjectiveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetObjectiveRequest.ProtoReflect.Descriptor instead.
 func (*GetObjectiveRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{69}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *GetObjectiveRequest) GetId() string {
@@ -4866,7 +5290,7 @@ type UpdateObjectiveRequest struct {
 
 func (x *UpdateObjectiveRequest) Reset() {
 	*x = UpdateObjectiveRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[70]
+	mi := &file_noted_v1_noted_proto_msgTypes[75]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4878,7 +5302,7 @@ func (x *UpdateObjectiveRequest) String() string {
 func (*UpdateObjectiveRequest) ProtoMessage() {}
 
 func (x *UpdateObjectiveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[70]
+	mi := &file_noted_v1_noted_proto_msgTypes[75]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4891,7 +5315,7 @@ func (x *UpdateObjectiveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateObjectiveRequest.ProtoReflect.Descriptor instead.
 func (*UpdateObjectiveRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{70}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{75}
 }
 
 func (x *UpdateObjectiveRequest) GetObjective() *Objective {
@@ -4917,7 +5341,7 @@ type DeleteObjectiveRequest struct {
 
 func (x *DeleteObjectiveRequest) Reset() {
 	*x = DeleteObjectiveRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[71]
+	mi := &file_noted_v1_noted_proto_msgTypes[76]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4929,7 +5353,7 @@ func (x *DeleteObjectiveRequest) String() string {
 func (*DeleteObjectiveRequest) ProtoMessage() {}
 
 func (x *DeleteObjectiveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[71]
+	mi := &file_noted_v1_noted_proto_msgTypes[76]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4942,7 +5366,7 @@ func (x *DeleteObjectiveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteObjectiveRequest.ProtoReflect.Descriptor instead.
 func (*DeleteObjectiveRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{71}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{76}
 }
 
 func (x *DeleteObjectiveRequest) GetId() string {
@@ -4962,7 +5386,7 @@ type ListObjectivesRequest struct {
 
 func (x *ListObjectivesRequest) Reset() {
 	*x = ListObjectivesRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[72]
+	mi := &file_noted_v1_noted_proto_msgTypes[77]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4974,7 +5398,7 @@ func (x *ListObjectivesRequest) String() string {
 func (*ListObjectivesRequest) ProtoMessage() {}
 
 func (x *ListObjectivesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[72]
+	mi := &file_noted_v1_noted_proto_msgTypes[77]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4987,7 +5411,7 @@ func (x *ListObjectivesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListObjectivesRequest.ProtoReflect.Descriptor instead.
 func (*ListObjectivesRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{72}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{77}
 }
 
 func (x *ListObjectivesRequest) GetIncludeArchived() bool {
@@ -5013,7 +5437,7 @@ type ListObjectivesResponse struct {
 
 func (x *ListObjectivesResponse) Reset() {
 	*x = ListObjectivesResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[73]
+	mi := &file_noted_v1_noted_proto_msgTypes[78]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5025,7 +5449,7 @@ func (x *ListObjectivesResponse) String() string {
 func (*ListObjectivesResponse) ProtoMessage() {}
 
 func (x *ListObjectivesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[73]
+	mi := &file_noted_v1_noted_proto_msgTypes[78]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5038,7 +5462,7 @@ func (x *ListObjectivesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListObjectivesResponse.ProtoReflect.Descriptor instead.
 func (*ListObjectivesResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{73}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{78}
 }
 
 func (x *ListObjectivesResponse) GetObjectives() []*Objective {
@@ -5060,7 +5484,7 @@ type RecordMeasurementRequest struct {
 
 func (x *RecordMeasurementRequest) Reset() {
 	*x = RecordMeasurementRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[74]
+	mi := &file_noted_v1_noted_proto_msgTypes[79]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5072,7 +5496,7 @@ func (x *RecordMeasurementRequest) String() string {
 func (*RecordMeasurementRequest) ProtoMessage() {}
 
 func (x *RecordMeasurementRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[74]
+	mi := &file_noted_v1_noted_proto_msgTypes[79]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5085,7 +5509,7 @@ func (x *RecordMeasurementRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecordMeasurementRequest.ProtoReflect.Descriptor instead.
 func (*RecordMeasurementRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{74}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{79}
 }
 
 func (x *RecordMeasurementRequest) GetObjectiveId() string {
@@ -5125,7 +5549,7 @@ type DeleteMeasurementRequest struct {
 
 func (x *DeleteMeasurementRequest) Reset() {
 	*x = DeleteMeasurementRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[75]
+	mi := &file_noted_v1_noted_proto_msgTypes[80]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5137,7 +5561,7 @@ func (x *DeleteMeasurementRequest) String() string {
 func (*DeleteMeasurementRequest) ProtoMessage() {}
 
 func (x *DeleteMeasurementRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[75]
+	mi := &file_noted_v1_noted_proto_msgTypes[80]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5150,7 +5574,7 @@ func (x *DeleteMeasurementRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteMeasurementRequest.ProtoReflect.Descriptor instead.
 func (*DeleteMeasurementRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{75}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{80}
 }
 
 func (x *DeleteMeasurementRequest) GetId() string {
@@ -5172,7 +5596,7 @@ type ListMeasurementsRequest struct {
 
 func (x *ListMeasurementsRequest) Reset() {
 	*x = ListMeasurementsRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[76]
+	mi := &file_noted_v1_noted_proto_msgTypes[81]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5184,7 +5608,7 @@ func (x *ListMeasurementsRequest) String() string {
 func (*ListMeasurementsRequest) ProtoMessage() {}
 
 func (x *ListMeasurementsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[76]
+	mi := &file_noted_v1_noted_proto_msgTypes[81]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5197,7 +5621,7 @@ func (x *ListMeasurementsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMeasurementsRequest.ProtoReflect.Descriptor instead.
 func (*ListMeasurementsRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{76}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{81}
 }
 
 func (x *ListMeasurementsRequest) GetObjectiveId() string {
@@ -5237,7 +5661,7 @@ type ListMeasurementsResponse struct {
 
 func (x *ListMeasurementsResponse) Reset() {
 	*x = ListMeasurementsResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[77]
+	mi := &file_noted_v1_noted_proto_msgTypes[82]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5249,7 +5673,7 @@ func (x *ListMeasurementsResponse) String() string {
 func (*ListMeasurementsResponse) ProtoMessage() {}
 
 func (x *ListMeasurementsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[77]
+	mi := &file_noted_v1_noted_proto_msgTypes[82]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5262,7 +5686,7 @@ func (x *ListMeasurementsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMeasurementsResponse.ProtoReflect.Descriptor instead.
 func (*ListMeasurementsResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{77}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{82}
 }
 
 func (x *ListMeasurementsResponse) GetMeasurements() []*Measurement {
@@ -5286,13 +5710,14 @@ type ProjectProgress struct {
 	// past. Unset when the project has neither.
 	DaysLeft      *int32 `protobuf:"varint,8,opt,name=days_left,json=daysLeft,proto3,oneof" json:"days_left,omitempty"`
 	TasksOverdue  int32  `protobuf:"varint,9,opt,name=tasks_overdue,json=tasksOverdue,proto3" json:"tasks_overdue,omitempty"`
+	TimeMinutes   int32  `protobuf:"varint,10,opt,name=time_minutes,json=timeMinutes,proto3" json:"time_minutes,omitempty"` // finished time entries of the project, in total
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ProjectProgress) Reset() {
 	*x = ProjectProgress{}
-	mi := &file_noted_v1_noted_proto_msgTypes[78]
+	mi := &file_noted_v1_noted_proto_msgTypes[83]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5304,7 +5729,7 @@ func (x *ProjectProgress) String() string {
 func (*ProjectProgress) ProtoMessage() {}
 
 func (x *ProjectProgress) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[78]
+	mi := &file_noted_v1_noted_proto_msgTypes[83]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5317,7 +5742,7 @@ func (x *ProjectProgress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectProgress.ProtoReflect.Descriptor instead.
 func (*ProjectProgress) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{78}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{83}
 }
 
 func (x *ProjectProgress) GetTasksTotal() int32 {
@@ -5383,6 +5808,13 @@ func (x *ProjectProgress) GetTasksOverdue() int32 {
 	return 0
 }
 
+func (x *ProjectProgress) GetTimeMinutes() int32 {
+	if x != nil {
+		return x.TimeMinutes
+	}
+	return 0
+}
+
 type Project struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -5402,7 +5834,7 @@ type Project struct {
 
 func (x *Project) Reset() {
 	*x = Project{}
-	mi := &file_noted_v1_noted_proto_msgTypes[79]
+	mi := &file_noted_v1_noted_proto_msgTypes[84]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5414,7 +5846,7 @@ func (x *Project) String() string {
 func (*Project) ProtoMessage() {}
 
 func (x *Project) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[79]
+	mi := &file_noted_v1_noted_proto_msgTypes[84]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5427,7 +5859,7 @@ func (x *Project) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Project.ProtoReflect.Descriptor instead.
 func (*Project) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{79}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{84}
 }
 
 func (x *Project) GetId() string {
@@ -5516,7 +5948,7 @@ type CreateProjectRequest struct {
 
 func (x *CreateProjectRequest) Reset() {
 	*x = CreateProjectRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[80]
+	mi := &file_noted_v1_noted_proto_msgTypes[85]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5528,7 +5960,7 @@ func (x *CreateProjectRequest) String() string {
 func (*CreateProjectRequest) ProtoMessage() {}
 
 func (x *CreateProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[80]
+	mi := &file_noted_v1_noted_proto_msgTypes[85]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5541,7 +5973,7 @@ func (x *CreateProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateProjectRequest.ProtoReflect.Descriptor instead.
 func (*CreateProjectRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{80}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{85}
 }
 
 func (x *CreateProjectRequest) GetProject() *Project {
@@ -5560,7 +5992,7 @@ type GetProjectRequest struct {
 
 func (x *GetProjectRequest) Reset() {
 	*x = GetProjectRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[81]
+	mi := &file_noted_v1_noted_proto_msgTypes[86]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5572,7 +6004,7 @@ func (x *GetProjectRequest) String() string {
 func (*GetProjectRequest) ProtoMessage() {}
 
 func (x *GetProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[81]
+	mi := &file_noted_v1_noted_proto_msgTypes[86]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5585,7 +6017,7 @@ func (x *GetProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProjectRequest.ProtoReflect.Descriptor instead.
 func (*GetProjectRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{81}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{86}
 }
 
 func (x *GetProjectRequest) GetId() string {
@@ -5598,16 +6030,19 @@ func (x *GetProjectRequest) GetId() string {
 type ProjectDetail struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Project       *Project               `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
-	Tasks         []*Task                `protobuf:"bytes,2,rep,name=tasks,proto3" json:"tasks,omitempty"`   // open first (by due date), then completed
-	Events        []*Event               `protobuf:"bytes,3,rep,name=events,proto3" json:"events,omitempty"` // by start time
-	Notes         []*Note                `protobuf:"bytes,4,rep,name=notes,proto3" json:"notes,omitempty"`   // newest first
+	Tasks         []*Task                `protobuf:"bytes,2,rep,name=tasks,proto3" json:"tasks,omitempty"`                                // open first (by due date), then completed
+	Events        []*Event               `protobuf:"bytes,3,rep,name=events,proto3" json:"events,omitempty"`                              // by start time
+	Notes         []*Note                `protobuf:"bytes,4,rep,name=notes,proto3" json:"notes,omitempty"`                                // newest first
+	Goals         []*Goal                `protobuf:"bytes,5,rep,name=goals,proto3" json:"goals,omitempty"`                                // stand-alone goals of the project, with progress
+	Objectives    []*Objective           `protobuf:"bytes,6,rep,name=objectives,proto3" json:"objectives,omitempty"`                      // larger goals of the project, with their dimensions
+	TimeEntries   []*TimeEntry           `protobuf:"bytes,7,rep,name=time_entries,json=timeEntries,proto3" json:"time_entries,omitempty"` // the latest 20, newest first; the total is in project.progress
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ProjectDetail) Reset() {
 	*x = ProjectDetail{}
-	mi := &file_noted_v1_noted_proto_msgTypes[82]
+	mi := &file_noted_v1_noted_proto_msgTypes[87]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5619,7 +6054,7 @@ func (x *ProjectDetail) String() string {
 func (*ProjectDetail) ProtoMessage() {}
 
 func (x *ProjectDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[82]
+	mi := &file_noted_v1_noted_proto_msgTypes[87]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5632,7 +6067,7 @@ func (x *ProjectDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProjectDetail.ProtoReflect.Descriptor instead.
 func (*ProjectDetail) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{82}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{87}
 }
 
 func (x *ProjectDetail) GetProject() *Project {
@@ -5663,6 +6098,27 @@ func (x *ProjectDetail) GetNotes() []*Note {
 	return nil
 }
 
+func (x *ProjectDetail) GetGoals() []*Goal {
+	if x != nil {
+		return x.Goals
+	}
+	return nil
+}
+
+func (x *ProjectDetail) GetObjectives() []*Objective {
+	if x != nil {
+		return x.Objectives
+	}
+	return nil
+}
+
+func (x *ProjectDetail) GetTimeEntries() []*TimeEntry {
+	if x != nil {
+		return x.TimeEntries
+	}
+	return nil
+}
+
 type UpdateProjectRequest struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Project *Project               `protobuf:"bytes,1,opt,name=project,proto3" json:"project,omitempty"`
@@ -5674,7 +6130,7 @@ type UpdateProjectRequest struct {
 
 func (x *UpdateProjectRequest) Reset() {
 	*x = UpdateProjectRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[83]
+	mi := &file_noted_v1_noted_proto_msgTypes[88]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5686,7 +6142,7 @@ func (x *UpdateProjectRequest) String() string {
 func (*UpdateProjectRequest) ProtoMessage() {}
 
 func (x *UpdateProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[83]
+	mi := &file_noted_v1_noted_proto_msgTypes[88]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5699,7 +6155,7 @@ func (x *UpdateProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateProjectRequest.ProtoReflect.Descriptor instead.
 func (*UpdateProjectRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{83}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{88}
 }
 
 func (x *UpdateProjectRequest) GetProject() *Project {
@@ -5720,7 +6176,8 @@ type DeleteProjectRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Also delete the project's tasks, events and notes. By default they are
-	// kept and simply leave the project.
+	// kept and simply leave the project. Goals, objectives, time entries and
+	// alarms always stay and leave the project.
 	DeleteItems   bool `protobuf:"varint,2,opt,name=delete_items,json=deleteItems,proto3" json:"delete_items,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -5728,7 +6185,7 @@ type DeleteProjectRequest struct {
 
 func (x *DeleteProjectRequest) Reset() {
 	*x = DeleteProjectRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[84]
+	mi := &file_noted_v1_noted_proto_msgTypes[89]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5740,7 +6197,7 @@ func (x *DeleteProjectRequest) String() string {
 func (*DeleteProjectRequest) ProtoMessage() {}
 
 func (x *DeleteProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[84]
+	mi := &file_noted_v1_noted_proto_msgTypes[89]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5753,7 +6210,7 @@ func (x *DeleteProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteProjectRequest.ProtoReflect.Descriptor instead.
 func (*DeleteProjectRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{84}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{89}
 }
 
 func (x *DeleteProjectRequest) GetId() string {
@@ -5781,7 +6238,7 @@ type ListProjectsRequest struct {
 
 func (x *ListProjectsRequest) Reset() {
 	*x = ListProjectsRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[85]
+	mi := &file_noted_v1_noted_proto_msgTypes[90]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5793,7 +6250,7 @@ func (x *ListProjectsRequest) String() string {
 func (*ListProjectsRequest) ProtoMessage() {}
 
 func (x *ListProjectsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[85]
+	mi := &file_noted_v1_noted_proto_msgTypes[90]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5806,7 +6263,7 @@ func (x *ListProjectsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProjectsRequest.ProtoReflect.Descriptor instead.
 func (*ListProjectsRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{85}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{90}
 }
 
 func (x *ListProjectsRequest) GetIncludeArchived() bool {
@@ -5839,7 +6296,7 @@ type ListProjectsResponse struct {
 
 func (x *ListProjectsResponse) Reset() {
 	*x = ListProjectsResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[86]
+	mi := &file_noted_v1_noted_proto_msgTypes[91]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5851,7 +6308,7 @@ func (x *ListProjectsResponse) String() string {
 func (*ListProjectsResponse) ProtoMessage() {}
 
 func (x *ListProjectsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[86]
+	mi := &file_noted_v1_noted_proto_msgTypes[91]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5864,7 +6321,7 @@ func (x *ListProjectsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProjectsResponse.ProtoReflect.Descriptor instead.
 func (*ListProjectsResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{86}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{91}
 }
 
 func (x *ListProjectsResponse) GetProjects() []*Project {
@@ -5885,7 +6342,7 @@ type GetFocusRequest struct {
 
 func (x *GetFocusRequest) Reset() {
 	*x = GetFocusRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[87]
+	mi := &file_noted_v1_noted_proto_msgTypes[92]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5897,7 +6354,7 @@ func (x *GetFocusRequest) String() string {
 func (*GetFocusRequest) ProtoMessage() {}
 
 func (x *GetFocusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[87]
+	mi := &file_noted_v1_noted_proto_msgTypes[92]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5910,7 +6367,7 @@ func (x *GetFocusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFocusRequest.ProtoReflect.Descriptor instead.
 func (*GetFocusRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{87}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{92}
 }
 
 func (x *GetFocusRequest) GetHorizon() Horizon {
@@ -5951,7 +6408,7 @@ type FocusItem struct {
 
 func (x *FocusItem) Reset() {
 	*x = FocusItem{}
-	mi := &file_noted_v1_noted_proto_msgTypes[88]
+	mi := &file_noted_v1_noted_proto_msgTypes[93]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5963,7 +6420,7 @@ func (x *FocusItem) String() string {
 func (*FocusItem) ProtoMessage() {}
 
 func (x *FocusItem) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[88]
+	mi := &file_noted_v1_noted_proto_msgTypes[93]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5976,7 +6433,7 @@ func (x *FocusItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FocusItem.ProtoReflect.Descriptor instead.
 func (*FocusItem) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{88}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{93}
 }
 
 func (x *FocusItem) GetItem() isFocusItem_Item {
@@ -6057,13 +6514,14 @@ type GetFocusResponse struct {
 	Goals          []*Goal                `protobuf:"bytes,5,rep,name=goals,proto3" json:"goals,omitempty"` // active goals, behind pace first
 	PinnedProjects []*Project             `protobuf:"bytes,6,rep,name=pinned_projects,json=pinnedProjects,proto3" json:"pinned_projects,omitempty"`
 	Space          Space                  `protobuf:"varint,7,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
+	RunningTimer   *TimeEntry             `protobuf:"bytes,8,opt,name=running_timer,json=runningTimer,proto3" json:"running_timer,omitempty"` // unset when no timer runs (or it is in the other space)
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetFocusResponse) Reset() {
 	*x = GetFocusResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[89]
+	mi := &file_noted_v1_noted_proto_msgTypes[94]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6075,7 +6533,7 @@ func (x *GetFocusResponse) String() string {
 func (*GetFocusResponse) ProtoMessage() {}
 
 func (x *GetFocusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[89]
+	mi := &file_noted_v1_noted_proto_msgTypes[94]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6088,7 +6546,7 @@ func (x *GetFocusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetFocusResponse.ProtoReflect.Descriptor instead.
 func (*GetFocusResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{89}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{94}
 }
 
 func (x *GetFocusResponse) GetHorizon() Horizon {
@@ -6140,6 +6598,13 @@ func (x *GetFocusResponse) GetSpace() Space {
 	return Space_SPACE_UNSPECIFIED
 }
 
+func (x *GetFocusResponse) GetRunningTimer() *TimeEntry {
+	if x != nil {
+		return x.RunningTimer
+	}
+	return nil
+}
+
 type Preference struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
@@ -6152,7 +6617,7 @@ type Preference struct {
 
 func (x *Preference) Reset() {
 	*x = Preference{}
-	mi := &file_noted_v1_noted_proto_msgTypes[90]
+	mi := &file_noted_v1_noted_proto_msgTypes[95]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6164,7 +6629,7 @@ func (x *Preference) String() string {
 func (*Preference) ProtoMessage() {}
 
 func (x *Preference) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[90]
+	mi := &file_noted_v1_noted_proto_msgTypes[95]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6177,7 +6642,7 @@ func (x *Preference) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Preference.ProtoReflect.Descriptor instead.
 func (*Preference) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{90}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{95}
 }
 
 func (x *Preference) GetKey() string {
@@ -6217,7 +6682,7 @@ type GetPreferenceRequest struct {
 
 func (x *GetPreferenceRequest) Reset() {
 	*x = GetPreferenceRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[91]
+	mi := &file_noted_v1_noted_proto_msgTypes[96]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6229,7 +6694,7 @@ func (x *GetPreferenceRequest) String() string {
 func (*GetPreferenceRequest) ProtoMessage() {}
 
 func (x *GetPreferenceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[91]
+	mi := &file_noted_v1_noted_proto_msgTypes[96]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6242,7 +6707,7 @@ func (x *GetPreferenceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPreferenceRequest.ProtoReflect.Descriptor instead.
 func (*GetPreferenceRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{91}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{96}
 }
 
 func (x *GetPreferenceRequest) GetKey() string {
@@ -6265,7 +6730,7 @@ type SetPreferenceRequest struct {
 
 func (x *SetPreferenceRequest) Reset() {
 	*x = SetPreferenceRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[92]
+	mi := &file_noted_v1_noted_proto_msgTypes[97]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6277,7 +6742,7 @@ func (x *SetPreferenceRequest) String() string {
 func (*SetPreferenceRequest) ProtoMessage() {}
 
 func (x *SetPreferenceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[92]
+	mi := &file_noted_v1_noted_proto_msgTypes[97]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6290,7 +6755,7 @@ func (x *SetPreferenceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetPreferenceRequest.ProtoReflect.Descriptor instead.
 func (*SetPreferenceRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{92}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{97}
 }
 
 func (x *SetPreferenceRequest) GetKey() string {
@@ -6323,7 +6788,7 @@ type DeletePreferenceRequest struct {
 
 func (x *DeletePreferenceRequest) Reset() {
 	*x = DeletePreferenceRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[93]
+	mi := &file_noted_v1_noted_proto_msgTypes[98]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6335,7 +6800,7 @@ func (x *DeletePreferenceRequest) String() string {
 func (*DeletePreferenceRequest) ProtoMessage() {}
 
 func (x *DeletePreferenceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[93]
+	mi := &file_noted_v1_noted_proto_msgTypes[98]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6348,7 +6813,7 @@ func (x *DeletePreferenceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeletePreferenceRequest.ProtoReflect.Descriptor instead.
 func (*DeletePreferenceRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{93}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{98}
 }
 
 func (x *DeletePreferenceRequest) GetKey() string {
@@ -6367,7 +6832,7 @@ type ListPreferencesRequest struct {
 
 func (x *ListPreferencesRequest) Reset() {
 	*x = ListPreferencesRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[94]
+	mi := &file_noted_v1_noted_proto_msgTypes[99]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6379,7 +6844,7 @@ func (x *ListPreferencesRequest) String() string {
 func (*ListPreferencesRequest) ProtoMessage() {}
 
 func (x *ListPreferencesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[94]
+	mi := &file_noted_v1_noted_proto_msgTypes[99]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6392,7 +6857,7 @@ func (x *ListPreferencesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPreferencesRequest.ProtoReflect.Descriptor instead.
 func (*ListPreferencesRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{94}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{99}
 }
 
 func (x *ListPreferencesRequest) GetPrefix() string {
@@ -6411,7 +6876,7 @@ type ListPreferencesResponse struct {
 
 func (x *ListPreferencesResponse) Reset() {
 	*x = ListPreferencesResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[95]
+	mi := &file_noted_v1_noted_proto_msgTypes[100]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6423,7 +6888,7 @@ func (x *ListPreferencesResponse) String() string {
 func (*ListPreferencesResponse) ProtoMessage() {}
 
 func (x *ListPreferencesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[95]
+	mi := &file_noted_v1_noted_proto_msgTypes[100]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6436,7 +6901,7 @@ func (x *ListPreferencesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPreferencesResponse.ProtoReflect.Descriptor instead.
 func (*ListPreferencesResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{95}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{100}
 }
 
 func (x *ListPreferencesResponse) GetPreferences() []*Preference {
@@ -6454,7 +6919,7 @@ type ExportRequest struct {
 
 func (x *ExportRequest) Reset() {
 	*x = ExportRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[96]
+	mi := &file_noted_v1_noted_proto_msgTypes[101]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6466,7 +6931,7 @@ func (x *ExportRequest) String() string {
 func (*ExportRequest) ProtoMessage() {}
 
 func (x *ExportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[96]
+	mi := &file_noted_v1_noted_proto_msgTypes[101]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6479,7 +6944,7 @@ func (x *ExportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExportRequest.ProtoReflect.Descriptor instead.
 func (*ExportRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{96}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{101}
 }
 
 type ExportChunk struct {
@@ -6492,7 +6957,7 @@ type ExportChunk struct {
 
 func (x *ExportChunk) Reset() {
 	*x = ExportChunk{}
-	mi := &file_noted_v1_noted_proto_msgTypes[97]
+	mi := &file_noted_v1_noted_proto_msgTypes[102]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6504,7 +6969,7 @@ func (x *ExportChunk) String() string {
 func (*ExportChunk) ProtoMessage() {}
 
 func (x *ExportChunk) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[97]
+	mi := &file_noted_v1_noted_proto_msgTypes[102]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6517,7 +6982,7 @@ func (x *ExportChunk) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExportChunk.ProtoReflect.Descriptor instead.
 func (*ExportChunk) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{97}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{102}
 }
 
 func (x *ExportChunk) GetFilename() string {
@@ -6547,7 +7012,7 @@ type Operation struct {
 
 func (x *Operation) Reset() {
 	*x = Operation{}
-	mi := &file_noted_v1_noted_proto_msgTypes[98]
+	mi := &file_noted_v1_noted_proto_msgTypes[103]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6559,7 +7024,7 @@ func (x *Operation) String() string {
 func (*Operation) ProtoMessage() {}
 
 func (x *Operation) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[98]
+	mi := &file_noted_v1_noted_proto_msgTypes[103]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6572,7 +7037,7 @@ func (x *Operation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Operation.ProtoReflect.Descriptor instead.
 func (*Operation) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{98}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{103}
 }
 
 func (x *Operation) GetType() string {
@@ -6609,7 +7074,7 @@ type ProposalInput struct {
 
 func (x *ProposalInput) Reset() {
 	*x = ProposalInput{}
-	mi := &file_noted_v1_noted_proto_msgTypes[99]
+	mi := &file_noted_v1_noted_proto_msgTypes[104]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6621,7 +7086,7 @@ func (x *ProposalInput) String() string {
 func (*ProposalInput) ProtoMessage() {}
 
 func (x *ProposalInput) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[99]
+	mi := &file_noted_v1_noted_proto_msgTypes[104]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6634,7 +7099,7 @@ func (x *ProposalInput) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProposalInput.ProtoReflect.Descriptor instead.
 func (*ProposalInput) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{99}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{104}
 }
 
 func (x *ProposalInput) GetName() string {
@@ -6686,7 +7151,7 @@ type Proposal struct {
 
 func (x *Proposal) Reset() {
 	*x = Proposal{}
-	mi := &file_noted_v1_noted_proto_msgTypes[100]
+	mi := &file_noted_v1_noted_proto_msgTypes[105]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6698,7 +7163,7 @@ func (x *Proposal) String() string {
 func (*Proposal) ProtoMessage() {}
 
 func (x *Proposal) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[100]
+	mi := &file_noted_v1_noted_proto_msgTypes[105]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6711,7 +7176,7 @@ func (x *Proposal) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Proposal.ProtoReflect.Descriptor instead.
 func (*Proposal) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{100}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{105}
 }
 
 func (x *Proposal) GetId() string {
@@ -6806,7 +7271,7 @@ type Change struct {
 
 func (x *Change) Reset() {
 	*x = Change{}
-	mi := &file_noted_v1_noted_proto_msgTypes[101]
+	mi := &file_noted_v1_noted_proto_msgTypes[106]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6818,7 +7283,7 @@ func (x *Change) String() string {
 func (*Change) ProtoMessage() {}
 
 func (x *Change) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[101]
+	mi := &file_noted_v1_noted_proto_msgTypes[106]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6831,7 +7296,7 @@ func (x *Change) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Change.ProtoReflect.Descriptor instead.
 func (*Change) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{101}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{106}
 }
 
 func (x *Change) GetId() string {
@@ -6896,7 +7361,7 @@ type ListProposalsRequest struct {
 
 func (x *ListProposalsRequest) Reset() {
 	*x = ListProposalsRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[102]
+	mi := &file_noted_v1_noted_proto_msgTypes[107]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6908,7 +7373,7 @@ func (x *ListProposalsRequest) String() string {
 func (*ListProposalsRequest) ProtoMessage() {}
 
 func (x *ListProposalsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[102]
+	mi := &file_noted_v1_noted_proto_msgTypes[107]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6921,7 +7386,7 @@ func (x *ListProposalsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProposalsRequest.ProtoReflect.Descriptor instead.
 func (*ListProposalsRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{102}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{107}
 }
 
 func (x *ListProposalsRequest) GetSpace() Space {
@@ -6954,7 +7419,7 @@ type ListProposalsResponse struct {
 
 func (x *ListProposalsResponse) Reset() {
 	*x = ListProposalsResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[103]
+	mi := &file_noted_v1_noted_proto_msgTypes[108]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6966,7 +7431,7 @@ func (x *ListProposalsResponse) String() string {
 func (*ListProposalsResponse) ProtoMessage() {}
 
 func (x *ListProposalsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[103]
+	mi := &file_noted_v1_noted_proto_msgTypes[108]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6979,7 +7444,7 @@ func (x *ListProposalsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProposalsResponse.ProtoReflect.Descriptor instead.
 func (*ListProposalsResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{103}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{108}
 }
 
 func (x *ListProposalsResponse) GetProposals() []*Proposal {
@@ -6998,7 +7463,7 @@ type OperationSelection struct {
 
 func (x *OperationSelection) Reset() {
 	*x = OperationSelection{}
-	mi := &file_noted_v1_noted_proto_msgTypes[104]
+	mi := &file_noted_v1_noted_proto_msgTypes[109]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7010,7 +7475,7 @@ func (x *OperationSelection) String() string {
 func (*OperationSelection) ProtoMessage() {}
 
 func (x *OperationSelection) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[104]
+	mi := &file_noted_v1_noted_proto_msgTypes[109]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7023,7 +7488,7 @@ func (x *OperationSelection) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OperationSelection.ProtoReflect.Descriptor instead.
 func (*OperationSelection) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{104}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{109}
 }
 
 func (x *OperationSelection) GetIndexes() []int32 {
@@ -7046,7 +7511,7 @@ type AcceptProposalRequest struct {
 
 func (x *AcceptProposalRequest) Reset() {
 	*x = AcceptProposalRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[105]
+	mi := &file_noted_v1_noted_proto_msgTypes[110]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7058,7 +7523,7 @@ func (x *AcceptProposalRequest) String() string {
 func (*AcceptProposalRequest) ProtoMessage() {}
 
 func (x *AcceptProposalRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[105]
+	mi := &file_noted_v1_noted_proto_msgTypes[110]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7071,7 +7536,7 @@ func (x *AcceptProposalRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AcceptProposalRequest.ProtoReflect.Descriptor instead.
 func (*AcceptProposalRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{105}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{110}
 }
 
 func (x *AcceptProposalRequest) GetId() string {
@@ -7105,7 +7570,7 @@ type AcceptProposalResponse struct {
 
 func (x *AcceptProposalResponse) Reset() {
 	*x = AcceptProposalResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[106]
+	mi := &file_noted_v1_noted_proto_msgTypes[111]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7117,7 +7582,7 @@ func (x *AcceptProposalResponse) String() string {
 func (*AcceptProposalResponse) ProtoMessage() {}
 
 func (x *AcceptProposalResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[106]
+	mi := &file_noted_v1_noted_proto_msgTypes[111]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7130,7 +7595,7 @@ func (x *AcceptProposalResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AcceptProposalResponse.ProtoReflect.Descriptor instead.
 func (*AcceptProposalResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{106}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{111}
 }
 
 func (x *AcceptProposalResponse) GetProposal() *Proposal {
@@ -7156,7 +7621,7 @@ type DismissProposalRequest struct {
 
 func (x *DismissProposalRequest) Reset() {
 	*x = DismissProposalRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[107]
+	mi := &file_noted_v1_noted_proto_msgTypes[112]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7168,7 +7633,7 @@ func (x *DismissProposalRequest) String() string {
 func (*DismissProposalRequest) ProtoMessage() {}
 
 func (x *DismissProposalRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[107]
+	mi := &file_noted_v1_noted_proto_msgTypes[112]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7181,7 +7646,7 @@ func (x *DismissProposalRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DismissProposalRequest.ProtoReflect.Descriptor instead.
 func (*DismissProposalRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{107}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{112}
 }
 
 func (x *DismissProposalRequest) GetId() string {
@@ -7203,7 +7668,7 @@ type ProposeScheduleRequest struct {
 
 func (x *ProposeScheduleRequest) Reset() {
 	*x = ProposeScheduleRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[108]
+	mi := &file_noted_v1_noted_proto_msgTypes[113]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7215,7 +7680,7 @@ func (x *ProposeScheduleRequest) String() string {
 func (*ProposeScheduleRequest) ProtoMessage() {}
 
 func (x *ProposeScheduleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[108]
+	mi := &file_noted_v1_noted_proto_msgTypes[113]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7228,7 +7693,7 @@ func (x *ProposeScheduleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProposeScheduleRequest.ProtoReflect.Descriptor instead.
 func (*ProposeScheduleRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{108}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{113}
 }
 
 func (x *ProposeScheduleRequest) GetTaskIds() []string {
@@ -7270,7 +7735,7 @@ type GetWeeklyReviewRequest struct {
 
 func (x *GetWeeklyReviewRequest) Reset() {
 	*x = GetWeeklyReviewRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[109]
+	mi := &file_noted_v1_noted_proto_msgTypes[114]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7282,7 +7747,7 @@ func (x *GetWeeklyReviewRequest) String() string {
 func (*GetWeeklyReviewRequest) ProtoMessage() {}
 
 func (x *GetWeeklyReviewRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[109]
+	mi := &file_noted_v1_noted_proto_msgTypes[114]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7295,7 +7760,7 @@ func (x *GetWeeklyReviewRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetWeeklyReviewRequest.ProtoReflect.Descriptor instead.
 func (*GetWeeklyReviewRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{109}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{114}
 }
 
 func (x *GetWeeklyReviewRequest) GetWeekOf() *timestamppb.Timestamp {
@@ -7324,17 +7789,19 @@ type WeeklyReview struct {
 	From          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
 	To            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
 	TasksDone     int32                  `protobuf:"varint,3,opt,name=tasks_done,json=tasksDone,proto3" json:"tasks_done,omitempty"`
-	TasksTotal    int32                  `protobuf:"varint,4,opt,name=tasks_total,json=tasksTotal,proto3" json:"tasks_total,omitempty"`      // finished this week plus open ones that were due this week
-	Goals         []*Goal                `protobuf:"bytes,5,rep,name=goals,proto3" json:"goals,omitempty"`                                   // progress as it stood at the end of the week
-	CarriedTasks  []*Task                `protobuf:"bytes,6,rep,name=carried_tasks,json=carriedTasks,proto3" json:"carried_tasks,omitempty"` // open and due this week: they slipped
-	NextWeek      *Proposal              `protobuf:"bytes,7,opt,name=next_week,json=nextWeek,proto3" json:"next_week,omitempty"`             // stored as pending; unset when there is nothing to suggest
+	TasksTotal    int32                  `protobuf:"varint,4,opt,name=tasks_total,json=tasksTotal,proto3" json:"tasks_total,omitempty"`         // finished this week plus open ones that were due this week
+	Goals         []*Goal                `protobuf:"bytes,5,rep,name=goals,proto3" json:"goals,omitempty"`                                      // progress as it stood at the end of the week
+	CarriedTasks  []*Task                `protobuf:"bytes,6,rep,name=carried_tasks,json=carriedTasks,proto3" json:"carried_tasks,omitempty"`    // open and due this week: they slipped
+	NextWeek      *Proposal              `protobuf:"bytes,7,opt,name=next_week,json=nextWeek,proto3" json:"next_week,omitempty"`                // stored as pending; unset when there is nothing to suggest
+	TimeMinutes   int32                  `protobuf:"varint,8,opt,name=time_minutes,json=timeMinutes,proto3" json:"time_minutes,omitempty"`      // time entries that started this week
+	TopActivities []*TimeSummaryRow      `protobuf:"bytes,9,rep,name=top_activities,json=topActivities,proto3" json:"top_activities,omitempty"` // the week's five biggest activities by minutes
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *WeeklyReview) Reset() {
 	*x = WeeklyReview{}
-	mi := &file_noted_v1_noted_proto_msgTypes[110]
+	mi := &file_noted_v1_noted_proto_msgTypes[115]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7346,7 +7813,7 @@ func (x *WeeklyReview) String() string {
 func (*WeeklyReview) ProtoMessage() {}
 
 func (x *WeeklyReview) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[110]
+	mi := &file_noted_v1_noted_proto_msgTypes[115]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7359,7 +7826,7 @@ func (x *WeeklyReview) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WeeklyReview.ProtoReflect.Descriptor instead.
 func (*WeeklyReview) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{110}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{115}
 }
 
 func (x *WeeklyReview) GetFrom() *timestamppb.Timestamp {
@@ -7411,6 +7878,20 @@ func (x *WeeklyReview) GetNextWeek() *Proposal {
 	return nil
 }
 
+func (x *WeeklyReview) GetTimeMinutes() int32 {
+	if x != nil {
+		return x.TimeMinutes
+	}
+	return 0
+}
+
+func (x *WeeklyReview) GetTopActivities() []*TimeSummaryRow {
+	if x != nil {
+		return x.TopActivities
+	}
+	return nil
+}
+
 type ListChangesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Limit         int32                  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"` // default 50, max 200
@@ -7420,7 +7901,7 @@ type ListChangesRequest struct {
 
 func (x *ListChangesRequest) Reset() {
 	*x = ListChangesRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[111]
+	mi := &file_noted_v1_noted_proto_msgTypes[116]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7432,7 +7913,7 @@ func (x *ListChangesRequest) String() string {
 func (*ListChangesRequest) ProtoMessage() {}
 
 func (x *ListChangesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[111]
+	mi := &file_noted_v1_noted_proto_msgTypes[116]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7445,7 +7926,7 @@ func (x *ListChangesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChangesRequest.ProtoReflect.Descriptor instead.
 func (*ListChangesRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{111}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{116}
 }
 
 func (x *ListChangesRequest) GetLimit() int32 {
@@ -7464,7 +7945,7 @@ type ListChangesResponse struct {
 
 func (x *ListChangesResponse) Reset() {
 	*x = ListChangesResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[112]
+	mi := &file_noted_v1_noted_proto_msgTypes[117]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7476,7 +7957,7 @@ func (x *ListChangesResponse) String() string {
 func (*ListChangesResponse) ProtoMessage() {}
 
 func (x *ListChangesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[112]
+	mi := &file_noted_v1_noted_proto_msgTypes[117]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7489,7 +7970,7 @@ func (x *ListChangesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChangesResponse.ProtoReflect.Descriptor instead.
 func (*ListChangesResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{112}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{117}
 }
 
 func (x *ListChangesResponse) GetChanges() []*Change {
@@ -7508,7 +7989,7 @@ type UndoChangeRequest struct {
 
 func (x *UndoChangeRequest) Reset() {
 	*x = UndoChangeRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[113]
+	mi := &file_noted_v1_noted_proto_msgTypes[118]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7520,7 +8001,7 @@ func (x *UndoChangeRequest) String() string {
 func (*UndoChangeRequest) ProtoMessage() {}
 
 func (x *UndoChangeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[113]
+	mi := &file_noted_v1_noted_proto_msgTypes[118]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7533,7 +8014,7 @@ func (x *UndoChangeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UndoChangeRequest.ProtoReflect.Descriptor instead.
 func (*UndoChangeRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{113}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{118}
 }
 
 func (x *UndoChangeRequest) GetId() string {
@@ -7571,7 +8052,7 @@ type Holding struct {
 
 func (x *Holding) Reset() {
 	*x = Holding{}
-	mi := &file_noted_v1_noted_proto_msgTypes[114]
+	mi := &file_noted_v1_noted_proto_msgTypes[119]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7583,7 +8064,7 @@ func (x *Holding) String() string {
 func (*Holding) ProtoMessage() {}
 
 func (x *Holding) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[114]
+	mi := &file_noted_v1_noted_proto_msgTypes[119]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7596,7 +8077,7 @@ func (x *Holding) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Holding.ProtoReflect.Descriptor instead.
 func (*Holding) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{114}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{119}
 }
 
 func (x *Holding) GetId() string {
@@ -7730,7 +8211,7 @@ type Position struct {
 
 func (x *Position) Reset() {
 	*x = Position{}
-	mi := &file_noted_v1_noted_proto_msgTypes[115]
+	mi := &file_noted_v1_noted_proto_msgTypes[120]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7742,7 +8223,7 @@ func (x *Position) String() string {
 func (*Position) ProtoMessage() {}
 
 func (x *Position) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[115]
+	mi := &file_noted_v1_noted_proto_msgTypes[120]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7755,7 +8236,7 @@ func (x *Position) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Position.ProtoReflect.Descriptor instead.
 func (*Position) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{115}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{120}
 }
 
 func (x *Position) GetShares() float64 {
@@ -7848,7 +8329,7 @@ type DcaStatus struct {
 
 func (x *DcaStatus) Reset() {
 	*x = DcaStatus{}
-	mi := &file_noted_v1_noted_proto_msgTypes[116]
+	mi := &file_noted_v1_noted_proto_msgTypes[121]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7860,7 +8341,7 @@ func (x *DcaStatus) String() string {
 func (*DcaStatus) ProtoMessage() {}
 
 func (x *DcaStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[116]
+	mi := &file_noted_v1_noted_proto_msgTypes[121]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7873,7 +8354,7 @@ func (x *DcaStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DcaStatus.ProtoReflect.Descriptor instead.
 func (*DcaStatus) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{116}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{121}
 }
 
 func (x *DcaStatus) GetActive() bool {
@@ -7927,7 +8408,7 @@ type Trade struct {
 
 func (x *Trade) Reset() {
 	*x = Trade{}
-	mi := &file_noted_v1_noted_proto_msgTypes[117]
+	mi := &file_noted_v1_noted_proto_msgTypes[122]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7939,7 +8420,7 @@ func (x *Trade) String() string {
 func (*Trade) ProtoMessage() {}
 
 func (x *Trade) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[117]
+	mi := &file_noted_v1_noted_proto_msgTypes[122]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7952,7 +8433,7 @@ func (x *Trade) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Trade.ProtoReflect.Descriptor instead.
 func (*Trade) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{117}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{122}
 }
 
 func (x *Trade) GetId() string {
@@ -8020,7 +8501,7 @@ type CreateHoldingRequest struct {
 
 func (x *CreateHoldingRequest) Reset() {
 	*x = CreateHoldingRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[118]
+	mi := &file_noted_v1_noted_proto_msgTypes[123]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8032,7 +8513,7 @@ func (x *CreateHoldingRequest) String() string {
 func (*CreateHoldingRequest) ProtoMessage() {}
 
 func (x *CreateHoldingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[118]
+	mi := &file_noted_v1_noted_proto_msgTypes[123]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8045,7 +8526,7 @@ func (x *CreateHoldingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateHoldingRequest.ProtoReflect.Descriptor instead.
 func (*CreateHoldingRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{118}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{123}
 }
 
 func (x *CreateHoldingRequest) GetHolding() *Holding {
@@ -8064,7 +8545,7 @@ type GetHoldingRequest struct {
 
 func (x *GetHoldingRequest) Reset() {
 	*x = GetHoldingRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[119]
+	mi := &file_noted_v1_noted_proto_msgTypes[124]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8076,7 +8557,7 @@ func (x *GetHoldingRequest) String() string {
 func (*GetHoldingRequest) ProtoMessage() {}
 
 func (x *GetHoldingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[119]
+	mi := &file_noted_v1_noted_proto_msgTypes[124]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8089,7 +8570,7 @@ func (x *GetHoldingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHoldingRequest.ProtoReflect.Descriptor instead.
 func (*GetHoldingRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{119}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{124}
 }
 
 func (x *GetHoldingRequest) GetId() string {
@@ -8111,7 +8592,7 @@ type UpdateHoldingRequest struct {
 
 func (x *UpdateHoldingRequest) Reset() {
 	*x = UpdateHoldingRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[120]
+	mi := &file_noted_v1_noted_proto_msgTypes[125]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8123,7 +8604,7 @@ func (x *UpdateHoldingRequest) String() string {
 func (*UpdateHoldingRequest) ProtoMessage() {}
 
 func (x *UpdateHoldingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[120]
+	mi := &file_noted_v1_noted_proto_msgTypes[125]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8136,7 +8617,7 @@ func (x *UpdateHoldingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateHoldingRequest.ProtoReflect.Descriptor instead.
 func (*UpdateHoldingRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{120}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{125}
 }
 
 func (x *UpdateHoldingRequest) GetHolding() *Holding {
@@ -8162,7 +8643,7 @@ type DeleteHoldingRequest struct {
 
 func (x *DeleteHoldingRequest) Reset() {
 	*x = DeleteHoldingRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[121]
+	mi := &file_noted_v1_noted_proto_msgTypes[126]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8174,7 +8655,7 @@ func (x *DeleteHoldingRequest) String() string {
 func (*DeleteHoldingRequest) ProtoMessage() {}
 
 func (x *DeleteHoldingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[121]
+	mi := &file_noted_v1_noted_proto_msgTypes[126]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8187,7 +8668,7 @@ func (x *DeleteHoldingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteHoldingRequest.ProtoReflect.Descriptor instead.
 func (*DeleteHoldingRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{121}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{126}
 }
 
 func (x *DeleteHoldingRequest) GetId() string {
@@ -8206,7 +8687,7 @@ type ListHoldingsRequest struct {
 
 func (x *ListHoldingsRequest) Reset() {
 	*x = ListHoldingsRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[122]
+	mi := &file_noted_v1_noted_proto_msgTypes[127]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8218,7 +8699,7 @@ func (x *ListHoldingsRequest) String() string {
 func (*ListHoldingsRequest) ProtoMessage() {}
 
 func (x *ListHoldingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[122]
+	mi := &file_noted_v1_noted_proto_msgTypes[127]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8231,7 +8712,7 @@ func (x *ListHoldingsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListHoldingsRequest.ProtoReflect.Descriptor instead.
 func (*ListHoldingsRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{122}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{127}
 }
 
 func (x *ListHoldingsRequest) GetIncludeArchived() bool {
@@ -8250,7 +8731,7 @@ type ListHoldingsResponse struct {
 
 func (x *ListHoldingsResponse) Reset() {
 	*x = ListHoldingsResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[123]
+	mi := &file_noted_v1_noted_proto_msgTypes[128]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8262,7 +8743,7 @@ func (x *ListHoldingsResponse) String() string {
 func (*ListHoldingsResponse) ProtoMessage() {}
 
 func (x *ListHoldingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[123]
+	mi := &file_noted_v1_noted_proto_msgTypes[128]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8275,7 +8756,7 @@ func (x *ListHoldingsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListHoldingsResponse.ProtoReflect.Descriptor instead.
 func (*ListHoldingsResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{123}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{128}
 }
 
 func (x *ListHoldingsResponse) GetHoldings() []*Holding {
@@ -8295,7 +8776,7 @@ type RecordTradeRequest struct {
 
 func (x *RecordTradeRequest) Reset() {
 	*x = RecordTradeRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[124]
+	mi := &file_noted_v1_noted_proto_msgTypes[129]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8307,7 +8788,7 @@ func (x *RecordTradeRequest) String() string {
 func (*RecordTradeRequest) ProtoMessage() {}
 
 func (x *RecordTradeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[124]
+	mi := &file_noted_v1_noted_proto_msgTypes[129]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8320,7 +8801,7 @@ func (x *RecordTradeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecordTradeRequest.ProtoReflect.Descriptor instead.
 func (*RecordTradeRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{124}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{129}
 }
 
 func (x *RecordTradeRequest) GetHoldingId() string {
@@ -8346,7 +8827,7 @@ type DeleteTradeRequest struct {
 
 func (x *DeleteTradeRequest) Reset() {
 	*x = DeleteTradeRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[125]
+	mi := &file_noted_v1_noted_proto_msgTypes[130]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8358,7 +8839,7 @@ func (x *DeleteTradeRequest) String() string {
 func (*DeleteTradeRequest) ProtoMessage() {}
 
 func (x *DeleteTradeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[125]
+	mi := &file_noted_v1_noted_proto_msgTypes[130]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8371,7 +8852,7 @@ func (x *DeleteTradeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteTradeRequest.ProtoReflect.Descriptor instead.
 func (*DeleteTradeRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{125}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{130}
 }
 
 func (x *DeleteTradeRequest) GetId() string {
@@ -8390,7 +8871,7 @@ type ListTradesRequest struct {
 
 func (x *ListTradesRequest) Reset() {
 	*x = ListTradesRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[126]
+	mi := &file_noted_v1_noted_proto_msgTypes[131]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8402,7 +8883,7 @@ func (x *ListTradesRequest) String() string {
 func (*ListTradesRequest) ProtoMessage() {}
 
 func (x *ListTradesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[126]
+	mi := &file_noted_v1_noted_proto_msgTypes[131]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8415,7 +8896,7 @@ func (x *ListTradesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTradesRequest.ProtoReflect.Descriptor instead.
 func (*ListTradesRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{126}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{131}
 }
 
 func (x *ListTradesRequest) GetHoldingId() string {
@@ -8434,7 +8915,7 @@ type ListTradesResponse struct {
 
 func (x *ListTradesResponse) Reset() {
 	*x = ListTradesResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[127]
+	mi := &file_noted_v1_noted_proto_msgTypes[132]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8446,7 +8927,7 @@ func (x *ListTradesResponse) String() string {
 func (*ListTradesResponse) ProtoMessage() {}
 
 func (x *ListTradesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[127]
+	mi := &file_noted_v1_noted_proto_msgTypes[132]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8459,7 +8940,7 @@ func (x *ListTradesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTradesResponse.ProtoReflect.Descriptor instead.
 func (*ListTradesResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{127}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{132}
 }
 
 func (x *ListTradesResponse) GetTrades() []*Trade {
@@ -8467,6 +8948,2938 @@ func (x *ListTradesResponse) GetTrades() []*Trade {
 		return x.Trades
 	}
 	return nil
+}
+
+type TimeEntry struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"` // the activity, e.g. "游泳"; required, trimmed
+	// 1-1440. On a running timer, read-only: the whole minutes elapsed so far.
+	Minutes int32 `protobuf:"varint,3,opt,name=minutes,proto3" json:"minutes,omitempty"`
+	// When it started. Default on create: end_time minus minutes, else now minus
+	// minutes (then timed is false).
+	StartTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	// start_time + minutes; unset while the timer runs. On create, start_time and
+	// end_time without minutes give the minutes between them.
+	EndTime   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	Note      string                 `protobuf:"bytes,6,opt,name=note,proto3" json:"note,omitempty"`
+	ProjectId string                 `protobuf:"bytes,7,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"` // optional
+	GoalId    string                 `protobuf:"bytes,8,opt,name=goal_id,json=goalId,proto3" json:"goal_id,omitempty"`          // optional: the entry counts toward this goal
+	// UNSPECIFIED on create: the project's, else the goal's, else LIFE.
+	Space      Space                  `protobuf:"varint,9,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
+	Running    bool                   `protobuf:"varint,10,opt,name=running,proto3" json:"running,omitempty"`                       // a timer that has not been stopped; read-only
+	CheckInId  string                 `protobuf:"bytes,11,opt,name=check_in_id,json=checkInId,proto3" json:"check_in_id,omitempty"` // the goal check-in this entry made; read-only
+	CreateTime *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	UpdateTime *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	// Read-only. True when start_time and end_time are what the person gave or a
+	// timer measured; false when only a duration was given and the start was
+	// defaulted (to the time it was logged minus the minutes), so the range is
+	// not when it happened and only the day and the minutes should be shown.
+	// Setting start_time or end_time makes an entry timed.
+	Timed         bool `protobuf:"varint,14,opt,name=timed,proto3" json:"timed,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TimeEntry) Reset() {
+	*x = TimeEntry{}
+	mi := &file_noted_v1_noted_proto_msgTypes[133]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TimeEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TimeEntry) ProtoMessage() {}
+
+func (x *TimeEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[133]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TimeEntry.ProtoReflect.Descriptor instead.
+func (*TimeEntry) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{133}
+}
+
+func (x *TimeEntry) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *TimeEntry) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *TimeEntry) GetMinutes() int32 {
+	if x != nil {
+		return x.Minutes
+	}
+	return 0
+}
+
+func (x *TimeEntry) GetStartTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.StartTime
+	}
+	return nil
+}
+
+func (x *TimeEntry) GetEndTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.EndTime
+	}
+	return nil
+}
+
+func (x *TimeEntry) GetNote() string {
+	if x != nil {
+		return x.Note
+	}
+	return ""
+}
+
+func (x *TimeEntry) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *TimeEntry) GetGoalId() string {
+	if x != nil {
+		return x.GoalId
+	}
+	return ""
+}
+
+func (x *TimeEntry) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+func (x *TimeEntry) GetRunning() bool {
+	if x != nil {
+		return x.Running
+	}
+	return false
+}
+
+func (x *TimeEntry) GetCheckInId() string {
+	if x != nil {
+		return x.CheckInId
+	}
+	return ""
+}
+
+func (x *TimeEntry) GetCreateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreateTime
+	}
+	return nil
+}
+
+func (x *TimeEntry) GetUpdateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdateTime
+	}
+	return nil
+}
+
+func (x *TimeEntry) GetTimed() bool {
+	if x != nil {
+		return x.Timed
+	}
+	return false
+}
+
+type CreateTimeEntryRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Entry         *TimeEntry             `protobuf:"bytes,1,opt,name=entry,proto3" json:"entry,omitempty"` // id, running, timed, check_in_id and the times of record are ignored
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateTimeEntryRequest) Reset() {
+	*x = CreateTimeEntryRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[134]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateTimeEntryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateTimeEntryRequest) ProtoMessage() {}
+
+func (x *CreateTimeEntryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[134]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateTimeEntryRequest.ProtoReflect.Descriptor instead.
+func (*CreateTimeEntryRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{134}
+}
+
+func (x *CreateTimeEntryRequest) GetEntry() *TimeEntry {
+	if x != nil {
+		return x.Entry
+	}
+	return nil
+}
+
+type GetTimeEntryRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTimeEntryRequest) Reset() {
+	*x = GetTimeEntryRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[135]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTimeEntryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTimeEntryRequest) ProtoMessage() {}
+
+func (x *GetTimeEntryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[135]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTimeEntryRequest.ProtoReflect.Descriptor instead.
+func (*GetTimeEntryRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{135}
+}
+
+func (x *GetTimeEntryRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type UpdateTimeEntryRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Entry *TimeEntry             `protobuf:"bytes,1,opt,name=entry,proto3" json:"entry,omitempty"`
+	// title, minutes, start_time, end_time, note, project_id, goal_id, space.
+	// Moving start_time keeps the minutes; end_time (without minutes) sets the
+	// minutes to the time from the start, except on an entry that is not timed,
+	// where it keeps the minutes and moves the start. Either makes the entry
+	// timed. A running timer's minutes and end are set by StopTimer.
+	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateTimeEntryRequest) Reset() {
+	*x = UpdateTimeEntryRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[136]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateTimeEntryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateTimeEntryRequest) ProtoMessage() {}
+
+func (x *UpdateTimeEntryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[136]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateTimeEntryRequest.ProtoReflect.Descriptor instead.
+func (*UpdateTimeEntryRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{136}
+}
+
+func (x *UpdateTimeEntryRequest) GetEntry() *TimeEntry {
+	if x != nil {
+		return x.Entry
+	}
+	return nil
+}
+
+func (x *UpdateTimeEntryRequest) GetUpdateMask() *fieldmaskpb.FieldMask {
+	if x != nil {
+		return x.UpdateMask
+	}
+	return nil
+}
+
+type DeleteTimeEntryRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteTimeEntryRequest) Reset() {
+	*x = DeleteTimeEntryRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[137]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteTimeEntryRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteTimeEntryRequest) ProtoMessage() {}
+
+func (x *DeleteTimeEntryRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[137]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteTimeEntryRequest.ProtoReflect.Descriptor instead.
+func (*DeleteTimeEntryRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{137}
+}
+
+func (x *DeleteTimeEntryRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type ListTimeEntriesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PageSize      int32                  `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"` // default 50, max 200
+	PageToken     string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	From          *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=from,proto3" json:"from,omitempty"` // start_time at or after; unset: no bound
+	To            *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=to,proto3" json:"to,omitempty"`     // start_time before; unset: no bound
+	ProjectId     string                 `protobuf:"bytes,5,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	GoalId        string                 `protobuf:"bytes,6,opt,name=goal_id,json=goalId,proto3" json:"goal_id,omitempty"`
+	Title         string                 `protobuf:"bytes,7,opt,name=title,proto3" json:"title,omitempty"`                      // activity names containing this, ignoring case
+	Space         Space                  `protobuf:"varint,8,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"` // UNSPECIFIED: both
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListTimeEntriesRequest) Reset() {
+	*x = ListTimeEntriesRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[138]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListTimeEntriesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListTimeEntriesRequest) ProtoMessage() {}
+
+func (x *ListTimeEntriesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[138]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListTimeEntriesRequest.ProtoReflect.Descriptor instead.
+func (*ListTimeEntriesRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{138}
+}
+
+func (x *ListTimeEntriesRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListTimeEntriesRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+func (x *ListTimeEntriesRequest) GetFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.From
+	}
+	return nil
+}
+
+func (x *ListTimeEntriesRequest) GetTo() *timestamppb.Timestamp {
+	if x != nil {
+		return x.To
+	}
+	return nil
+}
+
+func (x *ListTimeEntriesRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *ListTimeEntriesRequest) GetGoalId() string {
+	if x != nil {
+		return x.GoalId
+	}
+	return ""
+}
+
+func (x *ListTimeEntriesRequest) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *ListTimeEntriesRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+type ListTimeEntriesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Entries       []*TimeEntry           `protobuf:"bytes,1,rep,name=entries,proto3" json:"entries,omitempty"` // newest start first; a running timer included
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListTimeEntriesResponse) Reset() {
+	*x = ListTimeEntriesResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[139]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListTimeEntriesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListTimeEntriesResponse) ProtoMessage() {}
+
+func (x *ListTimeEntriesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[139]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListTimeEntriesResponse.ProtoReflect.Descriptor instead.
+func (*ListTimeEntriesResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{139}
+}
+
+func (x *ListTimeEntriesResponse) GetEntries() []*TimeEntry {
+	if x != nil {
+		return x.Entries
+	}
+	return nil
+}
+
+func (x *ListTimeEntriesResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+type StartTimerRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	ProjectId     string                 `protobuf:"bytes,2,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	GoalId        string                 `protobuf:"bytes,3,opt,name=goal_id,json=goalId,proto3" json:"goal_id,omitempty"`
+	Note          string                 `protobuf:"bytes,4,opt,name=note,proto3" json:"note,omitempty"`
+	Space         Space                  `protobuf:"varint,5,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
+	StartTime     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"` // default now
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StartTimerRequest) Reset() {
+	*x = StartTimerRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[140]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StartTimerRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartTimerRequest) ProtoMessage() {}
+
+func (x *StartTimerRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[140]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartTimerRequest.ProtoReflect.Descriptor instead.
+func (*StartTimerRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{140}
+}
+
+func (x *StartTimerRequest) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *StartTimerRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *StartTimerRequest) GetGoalId() string {
+	if x != nil {
+		return x.GoalId
+	}
+	return ""
+}
+
+func (x *StartTimerRequest) GetNote() string {
+	if x != nil {
+		return x.Note
+	}
+	return ""
+}
+
+func (x *StartTimerRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+func (x *StartTimerRequest) GetStartTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.StartTime
+	}
+	return nil
+}
+
+type StopTimerRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Default now. Under a minute counts as one; more than 24 hours is refused.
+	EndTime       *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StopTimerRequest) Reset() {
+	*x = StopTimerRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[141]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StopTimerRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StopTimerRequest) ProtoMessage() {}
+
+func (x *StopTimerRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[141]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StopTimerRequest.ProtoReflect.Descriptor instead.
+func (*StopTimerRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{141}
+}
+
+func (x *StopTimerRequest) GetEndTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.EndTime
+	}
+	return nil
+}
+
+type GetRunningTimerRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRunningTimerRequest) Reset() {
+	*x = GetRunningTimerRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[142]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRunningTimerRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRunningTimerRequest) ProtoMessage() {}
+
+func (x *GetRunningTimerRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[142]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRunningTimerRequest.ProtoReflect.Descriptor instead.
+func (*GetRunningTimerRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{142}
+}
+
+type GetRunningTimerResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Entry         *TimeEntry             `protobuf:"bytes,1,opt,name=entry,proto3" json:"entry,omitempty"` // unset when no timer runs
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetRunningTimerResponse) Reset() {
+	*x = GetRunningTimerResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[143]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetRunningTimerResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetRunningTimerResponse) ProtoMessage() {}
+
+func (x *GetRunningTimerResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[143]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetRunningTimerResponse.ProtoReflect.Descriptor instead.
+func (*GetRunningTimerResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{143}
+}
+
+func (x *GetRunningTimerResponse) GetEntry() *TimeEntry {
+	if x != nil {
+		return x.Entry
+	}
+	return nil
+}
+
+type SummarizeTimeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	From          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"` // default: 7 days before to
+	To            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`     // default now
+	GroupBy       TimeGroupBy            `protobuf:"varint,3,opt,name=group_by,json=groupBy,proto3,enum=noted.v1.TimeGroupBy" json:"group_by,omitempty"`
+	Space         Space                  `protobuf:"varint,4,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`     // UNSPECIFIED: both
+	TimeZone      string                 `protobuf:"bytes,5,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"`    // IANA, for DAY; default the server's zone
+	ProjectId     string                 `protobuf:"bytes,6,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"` // only this project's entries
+	GoalId        string                 `protobuf:"bytes,7,opt,name=goal_id,json=goalId,proto3" json:"goal_id,omitempty"`          // only this goal's entries
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SummarizeTimeRequest) Reset() {
+	*x = SummarizeTimeRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[144]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SummarizeTimeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SummarizeTimeRequest) ProtoMessage() {}
+
+func (x *SummarizeTimeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[144]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SummarizeTimeRequest.ProtoReflect.Descriptor instead.
+func (*SummarizeTimeRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{144}
+}
+
+func (x *SummarizeTimeRequest) GetFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.From
+	}
+	return nil
+}
+
+func (x *SummarizeTimeRequest) GetTo() *timestamppb.Timestamp {
+	if x != nil {
+		return x.To
+	}
+	return nil
+}
+
+func (x *SummarizeTimeRequest) GetGroupBy() TimeGroupBy {
+	if x != nil {
+		return x.GroupBy
+	}
+	return TimeGroupBy_TIME_GROUP_BY_UNSPECIFIED
+}
+
+func (x *SummarizeTimeRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+func (x *SummarizeTimeRequest) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
+}
+
+func (x *SummarizeTimeRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *SummarizeTimeRequest) GetGoalId() string {
+	if x != nil {
+		return x.GoalId
+	}
+	return ""
+}
+
+type TimeSummaryRow struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// TITLE: the activity in lower case; PROJECT and GOAL: the id, empty for
+	// entries without one; DAY: YYYY-MM-DD.
+	Key           string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Label         string `protobuf:"bytes,2,opt,name=label,proto3" json:"label,omitempty"` // the activity as last written, the project or goal title, or the day
+	Minutes       int32  `protobuf:"varint,3,opt,name=minutes,proto3" json:"minutes,omitempty"`
+	Count         int32  `protobuf:"varint,4,opt,name=count,proto3" json:"count,omitempty"` // entries
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TimeSummaryRow) Reset() {
+	*x = TimeSummaryRow{}
+	mi := &file_noted_v1_noted_proto_msgTypes[145]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TimeSummaryRow) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TimeSummaryRow) ProtoMessage() {}
+
+func (x *TimeSummaryRow) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[145]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TimeSummaryRow.ProtoReflect.Descriptor instead.
+func (*TimeSummaryRow) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{145}
+}
+
+func (x *TimeSummaryRow) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *TimeSummaryRow) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *TimeSummaryRow) GetMinutes() int32 {
+	if x != nil {
+		return x.Minutes
+	}
+	return 0
+}
+
+func (x *TimeSummaryRow) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+// Finished entries that started in [from, to); a running timer is left out.
+type TimeSummary struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	From          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	To            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
+	GroupBy       TimeGroupBy            `protobuf:"varint,3,opt,name=group_by,json=groupBy,proto3,enum=noted.v1.TimeGroupBy" json:"group_by,omitempty"`
+	Rows          []*TimeSummaryRow      `protobuf:"bytes,4,rep,name=rows,proto3" json:"rows,omitempty"` // most minutes first; DAY: by date
+	TotalMinutes  int32                  `protobuf:"varint,5,opt,name=total_minutes,json=totalMinutes,proto3" json:"total_minutes,omitempty"`
+	TotalCount    int32                  `protobuf:"varint,6,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TimeSummary) Reset() {
+	*x = TimeSummary{}
+	mi := &file_noted_v1_noted_proto_msgTypes[146]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TimeSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TimeSummary) ProtoMessage() {}
+
+func (x *TimeSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[146]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TimeSummary.ProtoReflect.Descriptor instead.
+func (*TimeSummary) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{146}
+}
+
+func (x *TimeSummary) GetFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.From
+	}
+	return nil
+}
+
+func (x *TimeSummary) GetTo() *timestamppb.Timestamp {
+	if x != nil {
+		return x.To
+	}
+	return nil
+}
+
+func (x *TimeSummary) GetGroupBy() TimeGroupBy {
+	if x != nil {
+		return x.GroupBy
+	}
+	return TimeGroupBy_TIME_GROUP_BY_UNSPECIFIED
+}
+
+func (x *TimeSummary) GetRows() []*TimeSummaryRow {
+	if x != nil {
+		return x.Rows
+	}
+	return nil
+}
+
+func (x *TimeSummary) GetTotalMinutes() int32 {
+	if x != nil {
+		return x.TotalMinutes
+	}
+	return 0
+}
+
+func (x *TimeSummary) GetTotalCount() int32 {
+	if x != nil {
+		return x.TotalCount
+	}
+	return 0
+}
+
+type AlarmRecurrence struct {
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Freq       string                 `protobuf:"bytes,1,opt,name=freq,proto3" json:"freq,omitempty"`                                  // minutely, hourly, daily, weekly or monthly
+	Interval   int32                  `protobuf:"varint,2,opt,name=interval,proto3" json:"interval,omitempty"`                         // every N units; 0 on write means 1
+	ByDay      []string               `protobuf:"bytes,3,rep,name=by_day,json=byDay,proto3" json:"by_day,omitempty"`                   // weekly: MON..SUN; default the anchor's weekday
+	ByMonthDay int32                  `protobuf:"varint,4,opt,name=by_month_day,json=byMonthDay,proto3" json:"by_month_day,omitempty"` // monthly: 1-31; default the anchor's day; months without it are skipped
+	ByTime     []string               `protobuf:"bytes,5,rep,name=by_time,json=byTime,proto3" json:"by_time,omitempty"`                // daily: several "HH:MM" a day, instead of the schedule's time
+	Until      string                 `protobuf:"bytes,6,opt,name=until,proto3" json:"until,omitempty"`                                // "YYYY-MM-DD", the last day it may ring; empty: no end
+	Count      int32                  `protobuf:"varint,7,opt,name=count,proto3" json:"count,omitempty"`                               // rings in all, counted from the anchor; 0: no limit
+	// minutely/hourly: "HH:MM", the day's last possible ring; empty means 22:00.
+	// Without until or count, a minutely/hourly alarm rings on its anchor day only.
+	EndTime       string `protobuf:"bytes,8,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AlarmRecurrence) Reset() {
+	*x = AlarmRecurrence{}
+	mi := &file_noted_v1_noted_proto_msgTypes[147]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AlarmRecurrence) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AlarmRecurrence) ProtoMessage() {}
+
+func (x *AlarmRecurrence) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[147]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AlarmRecurrence.ProtoReflect.Descriptor instead.
+func (*AlarmRecurrence) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{147}
+}
+
+func (x *AlarmRecurrence) GetFreq() string {
+	if x != nil {
+		return x.Freq
+	}
+	return ""
+}
+
+func (x *AlarmRecurrence) GetInterval() int32 {
+	if x != nil {
+		return x.Interval
+	}
+	return 0
+}
+
+func (x *AlarmRecurrence) GetByDay() []string {
+	if x != nil {
+		return x.ByDay
+	}
+	return nil
+}
+
+func (x *AlarmRecurrence) GetByMonthDay() int32 {
+	if x != nil {
+		return x.ByMonthDay
+	}
+	return 0
+}
+
+func (x *AlarmRecurrence) GetByTime() []string {
+	if x != nil {
+		return x.ByTime
+	}
+	return nil
+}
+
+func (x *AlarmRecurrence) GetUntil() string {
+	if x != nil {
+		return x.Until
+	}
+	return ""
+}
+
+func (x *AlarmRecurrence) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+func (x *AlarmRecurrence) GetEndTime() string {
+	if x != nil {
+		return x.EndTime
+	}
+	return ""
+}
+
+type AlarmSchedule struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Kind          string                 `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"`                         // oneShot or recurring
+	At            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=at,proto3" json:"at,omitempty"`                             // oneShot: when it rings
+	Anchor        string                 `protobuf:"bytes,3,opt,name=anchor,proto3" json:"anchor,omitempty"`                     // recurring: "YYYY-MM-DD", the first day it may ring
+	Time          string                 `protobuf:"bytes,4,opt,name=time,proto3" json:"time,omitempty"`                         // recurring: "HH:MM"; minutely/hourly: the day's first ring
+	TimeZone      string                 `protobuf:"bytes,5,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"` // IANA; empty on write: the server's zone
+	Recurrence    *AlarmRecurrence       `protobuf:"bytes,6,opt,name=recurrence,proto3" json:"recurrence,omitempty"`             // recurring only
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AlarmSchedule) Reset() {
+	*x = AlarmSchedule{}
+	mi := &file_noted_v1_noted_proto_msgTypes[148]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AlarmSchedule) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AlarmSchedule) ProtoMessage() {}
+
+func (x *AlarmSchedule) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[148]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AlarmSchedule.ProtoReflect.Descriptor instead.
+func (*AlarmSchedule) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{148}
+}
+
+func (x *AlarmSchedule) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *AlarmSchedule) GetAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.At
+	}
+	return nil
+}
+
+func (x *AlarmSchedule) GetAnchor() string {
+	if x != nil {
+		return x.Anchor
+	}
+	return ""
+}
+
+func (x *AlarmSchedule) GetTime() string {
+	if x != nil {
+		return x.Time
+	}
+	return ""
+}
+
+func (x *AlarmSchedule) GetTimeZone() string {
+	if x != nil {
+		return x.TimeZone
+	}
+	return ""
+}
+
+func (x *AlarmSchedule) GetRecurrence() *AlarmRecurrence {
+	if x != nil {
+		return x.Recurrence
+	}
+	return nil
+}
+
+type Alarm struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                  // a UUID
+	Label         string                 `protobuf:"bytes,2,opt,name=label,proto3" json:"label,omitempty"`            // what it is for, e.g. 起床; required
+	Mode          string                 `protobuf:"bytes,3,opt,name=mode,proto3" json:"mode,omitempty"`              // alarm (default; rings through silent mode) or reminder (a notification)
+	Enabled       *bool                  `protobuf:"varint,4,opt,name=enabled,proto3,oneof" json:"enabled,omitempty"` // unset on create: true; always set when read
+	Schedule      *AlarmSchedule         `protobuf:"bytes,5,opt,name=schedule,proto3" json:"schedule,omitempty"`
+	HolidayPolicy string                 `protobuf:"bytes,6,opt,name=holiday_policy,json=holidayPolicy,proto3" json:"holiday_policy,omitempty"` // none (default), skipHoliday, workdayOnly or followStatutory
+	// CN (mainland China's 法定节假日 and 调休) or "" (none: workdays are Monday
+	// to Friday and skipHoliday skips nothing). Unset on create: CN when the
+	// schedule's zone is a mainland China zone, else "".
+	Region       *string                `protobuf:"bytes,7,opt,name=region,proto3,oneof" json:"region,omitempty"`
+	Note         string                 `protobuf:"bytes,8,opt,name=note,proto3" json:"note,omitempty"`
+	ProjectId    string                 `protobuf:"bytes,9,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	Space        Space                  `protobuf:"varint,10,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`              // UNSPECIFIED on create: the project's, else LIFE
+	OriginalText string                 `protobuf:"bytes,11,opt,name=original_text,json=originalText,proto3" json:"original_text,omitempty"` // the words the user said, kept for reference
+	CreateTime   *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	UpdateTime   *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	// Read-only: the next rings after now (at most 5), holidays applied; empty
+	// when disabled or finished.
+	NextFires     []*timestamppb.Timestamp `protobuf:"bytes,14,rep,name=next_fires,json=nextFires,proto3" json:"next_fires,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Alarm) Reset() {
+	*x = Alarm{}
+	mi := &file_noted_v1_noted_proto_msgTypes[149]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Alarm) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Alarm) ProtoMessage() {}
+
+func (x *Alarm) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[149]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Alarm.ProtoReflect.Descriptor instead.
+func (*Alarm) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{149}
+}
+
+func (x *Alarm) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Alarm) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *Alarm) GetMode() string {
+	if x != nil {
+		return x.Mode
+	}
+	return ""
+}
+
+func (x *Alarm) GetEnabled() bool {
+	if x != nil && x.Enabled != nil {
+		return *x.Enabled
+	}
+	return false
+}
+
+func (x *Alarm) GetSchedule() *AlarmSchedule {
+	if x != nil {
+		return x.Schedule
+	}
+	return nil
+}
+
+func (x *Alarm) GetHolidayPolicy() string {
+	if x != nil {
+		return x.HolidayPolicy
+	}
+	return ""
+}
+
+func (x *Alarm) GetRegion() string {
+	if x != nil && x.Region != nil {
+		return *x.Region
+	}
+	return ""
+}
+
+func (x *Alarm) GetNote() string {
+	if x != nil {
+		return x.Note
+	}
+	return ""
+}
+
+func (x *Alarm) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *Alarm) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+func (x *Alarm) GetOriginalText() string {
+	if x != nil {
+		return x.OriginalText
+	}
+	return ""
+}
+
+func (x *Alarm) GetCreateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreateTime
+	}
+	return nil
+}
+
+func (x *Alarm) GetUpdateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdateTime
+	}
+	return nil
+}
+
+func (x *Alarm) GetNextFires() []*timestamppb.Timestamp {
+	if x != nil {
+		return x.NextFires
+	}
+	return nil
+}
+
+type CreateAlarmRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Alarm         *Alarm                 `protobuf:"bytes,1,opt,name=alarm,proto3" json:"alarm,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateAlarmRequest) Reset() {
+	*x = CreateAlarmRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[150]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateAlarmRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateAlarmRequest) ProtoMessage() {}
+
+func (x *CreateAlarmRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[150]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateAlarmRequest.ProtoReflect.Descriptor instead.
+func (*CreateAlarmRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{150}
+}
+
+func (x *CreateAlarmRequest) GetAlarm() *Alarm {
+	if x != nil {
+		return x.Alarm
+	}
+	return nil
+}
+
+type GetAlarmRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAlarmRequest) Reset() {
+	*x = GetAlarmRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[151]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAlarmRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAlarmRequest) ProtoMessage() {}
+
+func (x *GetAlarmRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[151]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAlarmRequest.ProtoReflect.Descriptor instead.
+func (*GetAlarmRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{151}
+}
+
+func (x *GetAlarmRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type UpdateAlarmRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Alarm *Alarm                 `protobuf:"bytes,1,opt,name=alarm,proto3" json:"alarm,omitempty"`
+	// label, mode, enabled, schedule (replaced whole), holiday_policy, region,
+	// note, project_id, space, original_text
+	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateAlarmRequest) Reset() {
+	*x = UpdateAlarmRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[152]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateAlarmRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateAlarmRequest) ProtoMessage() {}
+
+func (x *UpdateAlarmRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[152]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateAlarmRequest.ProtoReflect.Descriptor instead.
+func (*UpdateAlarmRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{152}
+}
+
+func (x *UpdateAlarmRequest) GetAlarm() *Alarm {
+	if x != nil {
+		return x.Alarm
+	}
+	return nil
+}
+
+func (x *UpdateAlarmRequest) GetUpdateMask() *fieldmaskpb.FieldMask {
+	if x != nil {
+		return x.UpdateMask
+	}
+	return nil
+}
+
+type DeleteAlarmRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteAlarmRequest) Reset() {
+	*x = DeleteAlarmRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[153]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteAlarmRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAlarmRequest) ProtoMessage() {}
+
+func (x *DeleteAlarmRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[153]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteAlarmRequest.ProtoReflect.Descriptor instead.
+func (*DeleteAlarmRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{153}
+}
+
+func (x *DeleteAlarmRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type ListAlarmsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Enabled       *bool                  `protobuf:"varint,1,opt,name=enabled,proto3,oneof" json:"enabled,omitempty"`           // unset: both
+	Space         Space                  `protobuf:"varint,2,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"` // UNSPECIFIED: both
+	ProjectId     string                 `protobuf:"bytes,3,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListAlarmsRequest) Reset() {
+	*x = ListAlarmsRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[154]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListAlarmsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListAlarmsRequest) ProtoMessage() {}
+
+func (x *ListAlarmsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[154]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListAlarmsRequest.ProtoReflect.Descriptor instead.
+func (*ListAlarmsRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{154}
+}
+
+func (x *ListAlarmsRequest) GetEnabled() bool {
+	if x != nil && x.Enabled != nil {
+		return *x.Enabled
+	}
+	return false
+}
+
+func (x *ListAlarmsRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+func (x *ListAlarmsRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+type ListAlarmsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Alarms        []*Alarm               `protobuf:"bytes,1,rep,name=alarms,proto3" json:"alarms,omitempty"`   // oldest first
+	Version       string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"` // as GetAlarmsVersion, read with the list
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListAlarmsResponse) Reset() {
+	*x = ListAlarmsResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[155]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListAlarmsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListAlarmsResponse) ProtoMessage() {}
+
+func (x *ListAlarmsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[155]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListAlarmsResponse.ProtoReflect.Descriptor instead.
+func (*ListAlarmsResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{155}
+}
+
+func (x *ListAlarmsResponse) GetAlarms() []*Alarm {
+	if x != nil {
+		return x.Alarms
+	}
+	return nil
+}
+
+func (x *ListAlarmsResponse) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+type GetAlarmsVersionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAlarmsVersionRequest) Reset() {
+	*x = GetAlarmsVersionRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[156]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAlarmsVersionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAlarmsVersionRequest) ProtoMessage() {}
+
+func (x *GetAlarmsVersionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[156]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAlarmsVersionRequest.ProtoReflect.Descriptor instead.
+func (*GetAlarmsVersionRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{156}
+}
+
+type GetAlarmsVersionResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Opaque; changes whenever any of the user's alarms is created, changed or
+	// deleted. A client compares it with the one it last synced at.
+	Version       string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAlarmsVersionResponse) Reset() {
+	*x = GetAlarmsVersionResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[157]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAlarmsVersionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAlarmsVersionResponse) ProtoMessage() {}
+
+func (x *GetAlarmsVersionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[157]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAlarmsVersionResponse.ProtoReflect.Descriptor instead.
+func (*GetAlarmsVersionResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{157}
+}
+
+func (x *GetAlarmsVersionResponse) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+// The statutory holiday calendar alarms follow. Only CN has one.
+type GetHolidaysRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Year          int32                  `protobuf:"varint,1,opt,name=year,proto3" json:"year,omitempty"`    // 0: this year in the server's zone
+	Region        string                 `protobuf:"bytes,2,opt,name=region,proto3" json:"region,omitempty"` // empty: CN
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetHolidaysRequest) Reset() {
+	*x = GetHolidaysRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[158]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetHolidaysRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetHolidaysRequest) ProtoMessage() {}
+
+func (x *GetHolidaysRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[158]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetHolidaysRequest.ProtoReflect.Descriptor instead.
+func (*GetHolidaysRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{158}
+}
+
+func (x *GetHolidaysRequest) GetYear() int32 {
+	if x != nil {
+		return x.Year
+	}
+	return 0
+}
+
+func (x *GetHolidaysRequest) GetRegion() string {
+	if x != nil {
+		return x.Region
+	}
+	return ""
+}
+
+type HolidayDay struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"` // "YYYY-MM-DD"
+	Kind          string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"` // holiday (a day off) or workday (a weekend day worked, 调休补班)
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"` // e.g. 国庆节
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HolidayDay) Reset() {
+	*x = HolidayDay{}
+	mi := &file_noted_v1_noted_proto_msgTypes[159]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HolidayDay) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HolidayDay) ProtoMessage() {}
+
+func (x *HolidayDay) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[159]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HolidayDay.ProtoReflect.Descriptor instead.
+func (*HolidayDay) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{159}
+}
+
+func (x *HolidayDay) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *HolidayDay) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *HolidayDay) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type GetHolidaysResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Year           int32                  `protobuf:"varint,1,opt,name=year,proto3" json:"year,omitempty"`
+	Region         string                 `protobuf:"bytes,2,opt,name=region,proto3" json:"region,omitempty"`
+	Days           []*HolidayDay          `protobuf:"bytes,3,rep,name=days,proto3" json:"days,omitempty"` // by date; empty when the year has no data (then every day is ordinary)
+	AvailableYears []int32                `protobuf:"varint,4,rep,packed,name=available_years,json=availableYears,proto3" json:"available_years,omitempty"`
+	Version        string                 `protobuf:"bytes,5,opt,name=version,proto3" json:"version,omitempty"` // changes when the data does
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *GetHolidaysResponse) Reset() {
+	*x = GetHolidaysResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[160]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetHolidaysResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetHolidaysResponse) ProtoMessage() {}
+
+func (x *GetHolidaysResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[160]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetHolidaysResponse.ProtoReflect.Descriptor instead.
+func (*GetHolidaysResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{160}
+}
+
+func (x *GetHolidaysResponse) GetYear() int32 {
+	if x != nil {
+		return x.Year
+	}
+	return 0
+}
+
+func (x *GetHolidaysResponse) GetRegion() string {
+	if x != nil {
+		return x.Region
+	}
+	return ""
+}
+
+func (x *GetHolidaysResponse) GetDays() []*HolidayDay {
+	if x != nil {
+		return x.Days
+	}
+	return nil
+}
+
+func (x *GetHolidaysResponse) GetAvailableYears() []int32 {
+	if x != nil {
+		return x.AvailableYears
+	}
+	return nil
+}
+
+func (x *GetHolidaysResponse) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+// Sign in with Apple. The app gets an identity token from the system and the
+// server checks it against Apple's public keys; no Apple password ever reaches
+// noted. An Apple ID is linked to a user once (LinkApple, from a device that
+// already has a token), and later devices sign in with it instead of a token.
+type SignInWithAppleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	IdentityToken string                 `protobuf:"bytes,1,opt,name=identity_token,json=identityToken,proto3" json:"identity_token,omitempty"` // the JWT from ASAuthorizationAppleIDCredential
+	// The random string whose SHA-256 hex was given to Apple as the request nonce.
+	Nonce         string `protobuf:"bytes,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	DeviceLabel   string `protobuf:"bytes,3,opt,name=device_label,json=deviceLabel,proto3" json:"device_label,omitempty"` // names the token this mints, e.g. "iPhone"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SignInWithAppleRequest) Reset() {
+	*x = SignInWithAppleRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[161]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SignInWithAppleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SignInWithAppleRequest) ProtoMessage() {}
+
+func (x *SignInWithAppleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[161]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SignInWithAppleRequest.ProtoReflect.Descriptor instead.
+func (*SignInWithAppleRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{161}
+}
+
+func (x *SignInWithAppleRequest) GetIdentityToken() string {
+	if x != nil {
+		return x.IdentityToken
+	}
+	return ""
+}
+
+func (x *SignInWithAppleRequest) GetNonce() string {
+	if x != nil {
+		return x.Nonce
+	}
+	return ""
+}
+
+func (x *SignInWithAppleRequest) GetDeviceLabel() string {
+	if x != nil {
+		return x.DeviceLabel
+	}
+	return ""
+}
+
+type SignInWithAppleResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"` // a new bearer token for the linked user
+	UserName      string                 `protobuf:"bytes,2,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SignInWithAppleResponse) Reset() {
+	*x = SignInWithAppleResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[162]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SignInWithAppleResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SignInWithAppleResponse) ProtoMessage() {}
+
+func (x *SignInWithAppleResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[162]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SignInWithAppleResponse.ProtoReflect.Descriptor instead.
+func (*SignInWithAppleResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{162}
+}
+
+func (x *SignInWithAppleResponse) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+func (x *SignInWithAppleResponse) GetUserName() string {
+	if x != nil {
+		return x.UserName
+	}
+	return ""
+}
+
+type LinkAppleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	IdentityToken string                 `protobuf:"bytes,1,opt,name=identity_token,json=identityToken,proto3" json:"identity_token,omitempty"`
+	Nonce         string                 `protobuf:"bytes,2,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LinkAppleRequest) Reset() {
+	*x = LinkAppleRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[163]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LinkAppleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LinkAppleRequest) ProtoMessage() {}
+
+func (x *LinkAppleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[163]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LinkAppleRequest.ProtoReflect.Descriptor instead.
+func (*LinkAppleRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{163}
+}
+
+func (x *LinkAppleRequest) GetIdentityToken() string {
+	if x != nil {
+		return x.IdentityToken
+	}
+	return ""
+}
+
+func (x *LinkAppleRequest) GetNonce() string {
+	if x != nil {
+		return x.Nonce
+	}
+	return ""
+}
+
+type UnlinkAppleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnlinkAppleRequest) Reset() {
+	*x = UnlinkAppleRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[164]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnlinkAppleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnlinkAppleRequest) ProtoMessage() {}
+
+func (x *UnlinkAppleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[164]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnlinkAppleRequest.ProtoReflect.Descriptor instead.
+func (*UnlinkAppleRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{164}
+}
+
+type GetAccountRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAccountRequest) Reset() {
+	*x = GetAccountRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[165]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAccountRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAccountRequest) ProtoMessage() {}
+
+func (x *GetAccountRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[165]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAccountRequest.ProtoReflect.Descriptor instead.
+func (*GetAccountRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{165}
+}
+
+type Account struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserName      string                 `protobuf:"bytes,1,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
+	AppleEnabled  bool                   `protobuf:"varint,2,opt,name=apple_enabled,json=appleEnabled,proto3" json:"apple_enabled,omitempty"` // the server accepts Sign in with Apple
+	AppleLinked   bool                   `protobuf:"varint,3,opt,name=apple_linked,json=appleLinked,proto3" json:"apple_linked,omitempty"`    // an Apple ID is linked to this user
+	Pro           bool                   `protobuf:"varint,4,opt,name=pro,proto3" json:"pro,omitempty"`                                       // Noted Pro was granted by the server, outside the App Store
+	Email         string                 `protobuf:"bytes,6,opt,name=email,proto3" json:"email,omitempty"`                                    // the sign-in email, empty when none is set (SetEmailPassword)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Account) Reset() {
+	*x = Account{}
+	mi := &file_noted_v1_noted_proto_msgTypes[166]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Account) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Account) ProtoMessage() {}
+
+func (x *Account) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[166]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Account.ProtoReflect.Descriptor instead.
+func (*Account) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{166}
+}
+
+func (x *Account) GetUserName() string {
+	if x != nil {
+		return x.UserName
+	}
+	return ""
+}
+
+func (x *Account) GetAppleEnabled() bool {
+	if x != nil {
+		return x.AppleEnabled
+	}
+	return false
+}
+
+func (x *Account) GetAppleLinked() bool {
+	if x != nil {
+		return x.AppleLinked
+	}
+	return false
+}
+
+func (x *Account) GetPro() bool {
+	if x != nil {
+		return x.Pro
+	}
+	return false
+}
+
+func (x *Account) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+// Email + password accounts. The email is case-insensitive and stored
+// lowercased; the password is 8 to 128 characters and kept only as a bcrypt
+// hash. After 5 failed sign-ins in 10 minutes for one email or from one
+// address, sign-in is refused for 10 minutes with RESOURCE_EXHAUSTED.
+type SignUpRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	DeviceLabel   string                 `protobuf:"bytes,3,opt,name=device_label,json=deviceLabel,proto3" json:"device_label,omitempty"` // names the token this mints, e.g. "iPhone"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SignUpRequest) Reset() {
+	*x = SignUpRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[167]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SignUpRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SignUpRequest) ProtoMessage() {}
+
+func (x *SignUpRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[167]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SignUpRequest.ProtoReflect.Descriptor instead.
+func (*SignUpRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{167}
+}
+
+func (x *SignUpRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *SignUpRequest) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+func (x *SignUpRequest) GetDeviceLabel() string {
+	if x != nil {
+		return x.DeviceLabel
+	}
+	return ""
+}
+
+type SignInRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	DeviceLabel   string                 `protobuf:"bytes,3,opt,name=device_label,json=deviceLabel,proto3" json:"device_label,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SignInRequest) Reset() {
+	*x = SignInRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[168]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SignInRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SignInRequest) ProtoMessage() {}
+
+func (x *SignInRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[168]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SignInRequest.ProtoReflect.Descriptor instead.
+func (*SignInRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{168}
+}
+
+func (x *SignInRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *SignInRequest) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+func (x *SignInRequest) GetDeviceLabel() string {
+	if x != nil {
+		return x.DeviceLabel
+	}
+	return ""
+}
+
+type SignInResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"` // a new bearer token for the user
+	UserName      string                 `protobuf:"bytes,2,opt,name=user_name,json=userName,proto3" json:"user_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SignInResponse) Reset() {
+	*x = SignInResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[169]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SignInResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SignInResponse) ProtoMessage() {}
+
+func (x *SignInResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[169]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SignInResponse.ProtoReflect.Descriptor instead.
+func (*SignInResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{169}
+}
+
+func (x *SignInResponse) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+func (x *SignInResponse) GetUserName() string {
+	if x != nil {
+		return x.UserName
+	}
+	return ""
+}
+
+type SetEmailPasswordRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Email           string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`                                            // empty keeps the current email (required when there is none)
+	Password        string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`                                      // the new password
+	CurrentPassword string                 `protobuf:"bytes,3,opt,name=current_password,json=currentPassword,proto3" json:"current_password,omitempty"` // required when the account already has a password
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *SetEmailPasswordRequest) Reset() {
+	*x = SetEmailPasswordRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[170]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetEmailPasswordRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetEmailPasswordRequest) ProtoMessage() {}
+
+func (x *SetEmailPasswordRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[170]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetEmailPasswordRequest.ProtoReflect.Descriptor instead.
+func (*SetEmailPasswordRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{170}
+}
+
+func (x *SetEmailPasswordRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *SetEmailPasswordRequest) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+func (x *SetEmailPasswordRequest) GetCurrentPassword() string {
+	if x != nil {
+		return x.CurrentPassword
+	}
+	return ""
+}
+
+// Bearer tokens of the calling user, e.g. one per AI assistant connected over
+// MCP. The server keeps only a hash, so a token's secret is shown once, by
+// CreateToken.
+type TokenInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`       // stable public id, used by RevokeToken
+	Label         string                 `protobuf:"bytes,2,opt,name=label,proto3" json:"label,omitempty"` // where the token is used, e.g. "Claude Code"
+	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	LastUsedTime  *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_used_time,json=lastUsedTime,proto3" json:"last_used_time,omitempty"` // unset: never used (updated at most once a minute)
+	Current       bool                   `protobuf:"varint,5,opt,name=current,proto3" json:"current,omitempty"`                                // the token making this call
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TokenInfo) Reset() {
+	*x = TokenInfo{}
+	mi := &file_noted_v1_noted_proto_msgTypes[171]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TokenInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TokenInfo) ProtoMessage() {}
+
+func (x *TokenInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[171]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TokenInfo.ProtoReflect.Descriptor instead.
+func (*TokenInfo) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{171}
+}
+
+func (x *TokenInfo) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *TokenInfo) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *TokenInfo) GetCreateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreateTime
+	}
+	return nil
+}
+
+func (x *TokenInfo) GetLastUsedTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastUsedTime
+	}
+	return nil
+}
+
+func (x *TokenInfo) GetCurrent() bool {
+	if x != nil {
+		return x.Current
+	}
+	return false
+}
+
+type CreateTokenRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Label         string                 `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"` // trimmed, at most 60 characters; empty means "AI 助手"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateTokenRequest) Reset() {
+	*x = CreateTokenRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[172]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateTokenRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateTokenRequest) ProtoMessage() {}
+
+func (x *CreateTokenRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[172]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateTokenRequest.ProtoReflect.Descriptor instead.
+func (*CreateTokenRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{172}
+}
+
+func (x *CreateTokenRequest) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+type CreateTokenResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"` // the secret, shown only here
+	Info          *TokenInfo             `protobuf:"bytes,2,opt,name=info,proto3" json:"info,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateTokenResponse) Reset() {
+	*x = CreateTokenResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[173]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateTokenResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateTokenResponse) ProtoMessage() {}
+
+func (x *CreateTokenResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[173]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateTokenResponse.ProtoReflect.Descriptor instead.
+func (*CreateTokenResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{173}
+}
+
+func (x *CreateTokenResponse) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+func (x *CreateTokenResponse) GetInfo() *TokenInfo {
+	if x != nil {
+		return x.Info
+	}
+	return nil
+}
+
+type ListTokensRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListTokensRequest) Reset() {
+	*x = ListTokensRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[174]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListTokensRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListTokensRequest) ProtoMessage() {}
+
+func (x *ListTokensRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[174]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListTokensRequest.ProtoReflect.Descriptor instead.
+func (*ListTokensRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{174}
+}
+
+type ListTokensResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Tokens        []*TokenInfo           `protobuf:"bytes,1,rep,name=tokens,proto3" json:"tokens,omitempty"` // newest first
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListTokensResponse) Reset() {
+	*x = ListTokensResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[175]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListTokensResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListTokensResponse) ProtoMessage() {}
+
+func (x *ListTokensResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[175]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListTokensResponse.ProtoReflect.Descriptor instead.
+func (*ListTokensResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{175}
+}
+
+func (x *ListTokensResponse) GetTokens() []*TokenInfo {
+	if x != nil {
+		return x.Tokens
+	}
+	return nil
+}
+
+type RevokeTokenRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokeTokenRequest) Reset() {
+	*x = RevokeTokenRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[176]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokeTokenRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokeTokenRequest) ProtoMessage() {}
+
+func (x *RevokeTokenRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[176]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokeTokenRequest.ProtoReflect.Descriptor instead.
+func (*RevokeTokenRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{176}
+}
+
+func (x *RevokeTokenRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type Pairing struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`                               // normalised, e.g. "K7QM29XD" (shown as K7QM-29XD)
+	ClientName    string                 `protobuf:"bytes,2,opt,name=client_name,json=clientName,proto3" json:"client_name,omitempty"` // what the client calls itself, e.g. "Claude Code"
+	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	ExpireTime    *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=expire_time,json=expireTime,proto3" json:"expire_time,omitempty"`
+	Approved      bool                   `protobuf:"varint,5,opt,name=approved,proto3" json:"approved,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Pairing) Reset() {
+	*x = Pairing{}
+	mi := &file_noted_v1_noted_proto_msgTypes[177]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Pairing) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Pairing) ProtoMessage() {}
+
+func (x *Pairing) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[177]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Pairing.ProtoReflect.Descriptor instead.
+func (*Pairing) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{177}
+}
+
+func (x *Pairing) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *Pairing) GetClientName() string {
+	if x != nil {
+		return x.ClientName
+	}
+	return ""
+}
+
+func (x *Pairing) GetCreateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreateTime
+	}
+	return nil
+}
+
+func (x *Pairing) GetExpireTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpireTime
+	}
+	return nil
+}
+
+func (x *Pairing) GetApproved() bool {
+	if x != nil {
+		return x.Approved
+	}
+	return false
+}
+
+type GetPairingRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"` // case-insensitive; spaces and dashes are ignored
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPairingRequest) Reset() {
+	*x = GetPairingRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[178]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPairingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPairingRequest) ProtoMessage() {}
+
+func (x *GetPairingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[178]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPairingRequest.ProtoReflect.Descriptor instead.
+func (*GetPairingRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{178}
+}
+
+func (x *GetPairingRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+type ApprovePairingRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	Label         string                 `protobuf:"bytes,2,opt,name=label,proto3" json:"label,omitempty"` // the token's label; empty: client_name
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ApprovePairingRequest) Reset() {
+	*x = ApprovePairingRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[179]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApprovePairingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApprovePairingRequest) ProtoMessage() {}
+
+func (x *ApprovePairingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[179]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApprovePairingRequest.ProtoReflect.Descriptor instead.
+func (*ApprovePairingRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{179}
+}
+
+func (x *ApprovePairingRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *ApprovePairingRequest) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+type DenyPairingRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DenyPairingRequest) Reset() {
+	*x = DenyPairingRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[180]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DenyPairingRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DenyPairingRequest) ProtoMessage() {}
+
+func (x *DenyPairingRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[180]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DenyPairingRequest.ProtoReflect.Descriptor instead.
+func (*DenyPairingRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{180}
+}
+
+func (x *DenyPairingRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
 }
 
 var File_noted_v1_noted_proto protoreflect.FileDescriptor
@@ -8568,7 +11981,7 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"start_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tstartTime\x125\n" +
 	"\bend_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\aendTime\"L\n" +
 	"\x12ListEventsResponse\x126\n" +
-	"\voccurrences\x18\x01 \x03(\v2\x14.noted.v1.OccurrenceR\voccurrences\"\x99\x04\n" +
+	"\voccurrences\x18\x01 \x03(\v2\x14.noted.v1.OccurrenceR\voccurrences\"\xdd\x05\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
@@ -8587,7 +12000,19 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"updateTime\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\f \x01(\tR\tprojectId\x12%\n" +
-	"\x05space\x18\r \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\"7\n" +
+	"\x05space\x18\r \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12\x1a\n" +
+	"\bprogress\x18\x0e \x01(\x05R\bprogress\x12%\n" +
+	"\x0eworked_minutes\x18\x0f \x01(\x05R\rworkedMinutes\x12#\n" +
+	"\rwork_sessions\x18\x10 \x01(\x05R\fworkSessions\x12D\n" +
+	"\x10last_worked_time\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\x0elastWorkedTime\x12\x14\n" +
+	"\x05rrule\x18\x12 \x01(\tR\x05rrule\"\xad\x01\n" +
+	"\bTaskWork\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
+	"\atask_id\x18\x02 \x01(\tR\x06taskId\x12.\n" +
+	"\x04time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\x12\x18\n" +
+	"\aminutes\x18\x04 \x01(\x05R\aminutes\x12\x1a\n" +
+	"\bprogress\x18\x05 \x01(\x05R\bprogress\x12\x12\n" +
+	"\x04note\x18\x06 \x01(\tR\x04note\"7\n" +
 	"\x11CreateTaskRequest\x12\"\n" +
 	"\x04task\x18\x01 \x01(\v2\x0e.noted.v1.TaskR\x04task\" \n" +
 	"\x0eGetTaskRequest\x12\x0e\n" +
@@ -8617,7 +12042,20 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"FILTER_ALL\x10\x03\"a\n" +
 	"\x11ListTasksResponse\x12$\n" +
 	"\x05tasks\x18\x01 \x03(\v2\x0e.noted.v1.TaskR\x05tasks\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xc8\x02\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xb9\x01\n" +
+	"\x12LogTaskWorkRequest\x12\x17\n" +
+	"\atask_id\x18\x01 \x01(\tR\x06taskId\x12.\n" +
+	"\x04time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\x12\x18\n" +
+	"\aminutes\x18\x03 \x01(\x05R\aminutes\x12\x1f\n" +
+	"\bprogress\x18\x04 \x01(\x05H\x00R\bprogress\x88\x01\x01\x12\x12\n" +
+	"\x04note\x18\x05 \x01(\tR\x04noteB\v\n" +
+	"\t_progress\".\n" +
+	"\x13ListTaskWorkRequest\x12\x17\n" +
+	"\atask_id\x18\x01 \x01(\tR\x06taskId\"D\n" +
+	"\x14ListTaskWorkResponse\x12,\n" +
+	"\aentries\x18\x01 \x03(\v2\x12.noted.v1.TaskWorkR\aentries\"'\n" +
+	"\x15DeleteTaskWorkRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xc8\x02\n" +
 	"\bReminder\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12+\n" +
 	"\x04kind\x18\x02 \x01(\x0e2\x17.noted.v1.Reminder.KindR\x04kind\x12\x15\n" +
@@ -8740,7 +12178,7 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\x10milestones_total\x18\r \x01(\x05R\x0fmilestonesTotal\x12+\n" +
 	"\x11milestone_percent\x18\x0e \x01(\x01R\x10milestonePercent\x12!\n" +
 	"\fcounter_done\x18\x0f \x01(\x01R\vcounterDone\x12'\n" +
-	"\x0fcounter_percent\x18\x10 \x01(\x01R\x0ecounterPercent\"\xe7\x04\n" +
+	"\x0fcounter_percent\x18\x10 \x01(\x01R\x0ecounterPercent\"\x86\x05\n" +
 	"\x04Goal\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
@@ -8763,14 +12201,17 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\x05space\x18\x0e \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12!\n" +
 	"\fcounter_unit\x18\x0f \x01(\tR\vcounterUnit\x12%\n" +
 	"\x0ecounter_target\x18\x10 \x01(\x01R\rcounterTarget\x12!\n" +
-	"\fobjective_id\x18\x11 \x01(\tR\vobjectiveId\"\xa4\x01\n" +
+	"\fobjective_id\x18\x11 \x01(\tR\vobjectiveId\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x12 \x01(\tR\tprojectId\"\xc8\x01\n" +
 	"\aCheckIn\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\agoal_id\x18\x02 \x01(\tR\x06goalId\x12.\n" +
 	"\x04time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x04time\x12\x16\n" +
 	"\x06amount\x18\x04 \x01(\x01R\x06amount\x12\x12\n" +
 	"\x04note\x18\x05 \x01(\tR\x04note\x12\x14\n" +
-	"\x05count\x18\x06 \x01(\x01R\x05count\"7\n" +
+	"\x05count\x18\x06 \x01(\x01R\x05count\x12\"\n" +
+	"\rtime_entry_id\x18\a \x01(\tR\vtimeEntryId\"7\n" +
 	"\x11CreateGoalRequest\x12\"\n" +
 	"\x04goal\x18\x01 \x01(\v2\x0e.noted.v1.GoalR\x04goal\" \n" +
 	"\x0eGetGoalRequest\x12\x0e\n" +
@@ -8807,7 +12248,7 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\x17SetMilestoneDoneRequest\x12\x17\n" +
 	"\agoal_id\x18\x01 \x01(\tR\x06goalId\x12!\n" +
 	"\fmilestone_id\x18\x02 \x01(\tR\vmilestoneId\x12\x12\n" +
-	"\x04done\x18\x03 \x01(\bR\x04done\"\xdf\x04\n" +
+	"\x04done\x18\x03 \x01(\bR\x04done\"\xfe\x04\n" +
 	"\tObjective\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
@@ -8829,7 +12270,9 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\vupdate_time\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"updateTime\x127\n" +
 	"\bprogress\x18\x0e \x01(\v2\x1b.noted.v1.ObjectiveProgressR\bprogress\x12$\n" +
-	"\x05goals\x18\x0f \x03(\v2\x0e.noted.v1.GoalR\x05goals\"\xf8\x03\n" +
+	"\x05goals\x18\x0f \x03(\v2\x0e.noted.v1.GoalR\x05goals\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x10 \x01(\tR\tprojectId\"\xf8\x03\n" +
 	"\x11ObjectiveProgress\x12\x1f\n" +
 	"\vgoals_total\x18\x01 \x01(\x05R\n" +
 	"goalsTotal\x12%\n" +
@@ -8886,7 +12329,7 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\x02to\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12\x14\n" +
 	"\x05limit\x18\x04 \x01(\x05R\x05limit\"U\n" +
 	"\x18ListMeasurementsResponse\x129\n" +
-	"\fmeasurements\x18\x01 \x03(\v2\x15.noted.v1.MeasurementR\fmeasurements\"\xe2\x02\n" +
+	"\fmeasurements\x18\x01 \x03(\v2\x15.noted.v1.MeasurementR\fmeasurements\"\x85\x03\n" +
 	"\x0fProjectProgress\x12\x1f\n" +
 	"\vtasks_total\x18\x01 \x01(\x05R\n" +
 	"tasksTotal\x12\x1d\n" +
@@ -8900,7 +12343,9 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\n" +
 	"next_title\x18\a \x01(\tR\tnextTitle\x12 \n" +
 	"\tdays_left\x18\b \x01(\x05H\x00R\bdaysLeft\x88\x01\x01\x12#\n" +
-	"\rtasks_overdue\x18\t \x01(\x05R\ftasksOverdueB\f\n" +
+	"\rtasks_overdue\x18\t \x01(\x05R\ftasksOverdue\x12!\n" +
+	"\ftime_minutes\x18\n" +
+	" \x01(\x05R\vtimeMinutesB\f\n" +
 	"\n" +
 	"_days_left\"\xc3\x03\n" +
 	"\aProject\x12\x0e\n" +
@@ -8922,12 +12367,17 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\x14CreateProjectRequest\x12+\n" +
 	"\aproject\x18\x01 \x01(\v2\x11.noted.v1.ProjectR\aproject\"#\n" +
 	"\x11GetProjectRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\xb1\x01\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xc4\x02\n" +
 	"\rProjectDetail\x12+\n" +
 	"\aproject\x18\x01 \x01(\v2\x11.noted.v1.ProjectR\aproject\x12$\n" +
 	"\x05tasks\x18\x02 \x03(\v2\x0e.noted.v1.TaskR\x05tasks\x12'\n" +
 	"\x06events\x18\x03 \x03(\v2\x0f.noted.v1.EventR\x06events\x12$\n" +
-	"\x05notes\x18\x04 \x03(\v2\x0e.noted.v1.NoteR\x05notes\"\x80\x01\n" +
+	"\x05notes\x18\x04 \x03(\v2\x0e.noted.v1.NoteR\x05notes\x12$\n" +
+	"\x05goals\x18\x05 \x03(\v2\x0e.noted.v1.GoalR\x05goals\x123\n" +
+	"\n" +
+	"objectives\x18\x06 \x03(\v2\x13.noted.v1.ObjectiveR\n" +
+	"objectives\x126\n" +
+	"\ftime_entries\x18\a \x03(\v2\x13.noted.v1.TimeEntryR\vtimeEntries\"\x80\x01\n" +
 	"\x14UpdateProjectRequest\x12+\n" +
 	"\aproject\x18\x01 \x01(\v2\x11.noted.v1.ProjectR\aproject\x12;\n" +
 	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
@@ -8954,7 +12404,7 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\n" +
 	"project_id\x18\x05 \x01(\tR\tprojectId\x12#\n" +
 	"\rproject_title\x18\x06 \x01(\tR\fprojectTitleB\x06\n" +
-	"\x04item\"\xcf\x02\n" +
+	"\x04item\"\x89\x03\n" +
 	"\x10GetFocusResponse\x12+\n" +
 	"\ahorizon\x18\x01 \x01(\x0e2\x11.noted.v1.HorizonR\ahorizon\x12.\n" +
 	"\x04from\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
@@ -8962,7 +12412,8 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\x05items\x18\x04 \x03(\v2\x13.noted.v1.FocusItemR\x05items\x12$\n" +
 	"\x05goals\x18\x05 \x03(\v2\x0e.noted.v1.GoalR\x05goals\x12:\n" +
 	"\x0fpinned_projects\x18\x06 \x03(\v2\x11.noted.v1.ProjectR\x0epinnedProjects\x12%\n" +
-	"\x05space\x18\a \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\"\x8b\x01\n" +
+	"\x05space\x18\a \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x128\n" +
+	"\rrunning_timer\x18\b \x01(\v2\x13.noted.v1.TimeEntryR\frunningTimer\"\x8b\x01\n" +
 	"\n" +
 	"Preference\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -9053,7 +12504,7 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\x16GetWeeklyReviewRequest\x123\n" +
 	"\aweek_of\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x06weekOf\x12%\n" +
 	"\x05space\x18\x02 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12\x1b\n" +
-	"\ttime_zone\x18\x03 \x01(\tR\btimeZone\"\xb6\x02\n" +
+	"\ttime_zone\x18\x03 \x01(\tR\btimeZone\"\x9a\x03\n" +
 	"\fWeeklyReview\x12.\n" +
 	"\x04from\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
 	"\x02to\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12\x1d\n" +
@@ -9063,7 +12514,9 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"tasksTotal\x12$\n" +
 	"\x05goals\x18\x05 \x03(\v2\x0e.noted.v1.GoalR\x05goals\x123\n" +
 	"\rcarried_tasks\x18\x06 \x03(\v2\x0e.noted.v1.TaskR\fcarriedTasks\x12/\n" +
-	"\tnext_week\x18\a \x01(\v2\x12.noted.v1.ProposalR\bnextWeek\"*\n" +
+	"\tnext_week\x18\a \x01(\v2\x12.noted.v1.ProposalR\bnextWeek\x12!\n" +
+	"\ftime_minutes\x18\b \x01(\x05R\vtimeMinutes\x12?\n" +
+	"\x0etop_activities\x18\t \x03(\v2\x18.noted.v1.TimeSummaryRowR\rtopActivities\"*\n" +
 	"\x12ListChangesRequest\x12\x14\n" +
 	"\x05limit\x18\x01 \x01(\x05R\x05limit\"A\n" +
 	"\x13ListChangesResponse\x12*\n" +
@@ -9148,7 +12601,232 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\n" +
 	"holding_id\x18\x01 \x01(\tR\tholdingId\"=\n" +
 	"\x12ListTradesResponse\x12'\n" +
-	"\x06trades\x18\x01 \x03(\v2\x0f.noted.v1.TradeR\x06trades*>\n" +
+	"\x06trades\x18\x01 \x03(\v2\x0f.noted.v1.TradeR\x06trades\"\xfa\x03\n" +
+	"\tTimeEntry\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
+	"\aminutes\x18\x03 \x01(\x05R\aminutes\x129\n" +
+	"\n" +
+	"start_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tstartTime\x125\n" +
+	"\bend_time\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\aendTime\x12\x12\n" +
+	"\x04note\x18\x06 \x01(\tR\x04note\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\a \x01(\tR\tprojectId\x12\x17\n" +
+	"\agoal_id\x18\b \x01(\tR\x06goalId\x12%\n" +
+	"\x05space\x18\t \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12\x18\n" +
+	"\arunning\x18\n" +
+	" \x01(\bR\arunning\x12\x1e\n" +
+	"\vcheck_in_id\x18\v \x01(\tR\tcheckInId\x12;\n" +
+	"\vcreate_time\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"createTime\x12;\n" +
+	"\vupdate_time\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"updateTime\x12\x14\n" +
+	"\x05timed\x18\x0e \x01(\bR\x05timed\"C\n" +
+	"\x16CreateTimeEntryRequest\x12)\n" +
+	"\x05entry\x18\x01 \x01(\v2\x13.noted.v1.TimeEntryR\x05entry\"%\n" +
+	"\x13GetTimeEntryRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x80\x01\n" +
+	"\x16UpdateTimeEntryRequest\x12)\n" +
+	"\x05entry\x18\x01 \x01(\v2\x13.noted.v1.TimeEntryR\x05entry\x12;\n" +
+	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
+	"updateMask\"(\n" +
+	"\x16DeleteTimeEntryRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xa5\x02\n" +
+	"\x16ListTimeEntriesRequest\x12\x1b\n" +
+	"\tpage_size\x18\x01 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x02 \x01(\tR\tpageToken\x12.\n" +
+	"\x04from\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
+	"\x02to\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x05 \x01(\tR\tprojectId\x12\x17\n" +
+	"\agoal_id\x18\x06 \x01(\tR\x06goalId\x12\x14\n" +
+	"\x05title\x18\a \x01(\tR\x05title\x12%\n" +
+	"\x05space\x18\b \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\"p\n" +
+	"\x17ListTimeEntriesResponse\x12-\n" +
+	"\aentries\x18\x01 \x03(\v2\x13.noted.v1.TimeEntryR\aentries\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xd7\x01\n" +
+	"\x11StartTimerRequest\x12\x14\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x02 \x01(\tR\tprojectId\x12\x17\n" +
+	"\agoal_id\x18\x03 \x01(\tR\x06goalId\x12\x12\n" +
+	"\x04note\x18\x04 \x01(\tR\x04note\x12%\n" +
+	"\x05space\x18\x05 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x129\n" +
+	"\n" +
+	"start_time\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tstartTime\"I\n" +
+	"\x10StopTimerRequest\x125\n" +
+	"\bend_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\aendTime\"\x18\n" +
+	"\x16GetRunningTimerRequest\"D\n" +
+	"\x17GetRunningTimerResponse\x12)\n" +
+	"\x05entry\x18\x01 \x01(\v2\x13.noted.v1.TimeEntryR\x05entry\"\xa0\x02\n" +
+	"\x14SummarizeTimeRequest\x12.\n" +
+	"\x04from\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
+	"\x02to\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x120\n" +
+	"\bgroup_by\x18\x03 \x01(\x0e2\x15.noted.v1.TimeGroupByR\agroupBy\x12%\n" +
+	"\x05space\x18\x04 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12\x1b\n" +
+	"\ttime_zone\x18\x05 \x01(\tR\btimeZone\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x06 \x01(\tR\tprojectId\x12\x17\n" +
+	"\agoal_id\x18\a \x01(\tR\x06goalId\"h\n" +
+	"\x0eTimeSummaryRow\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05label\x18\x02 \x01(\tR\x05label\x12\x18\n" +
+	"\aminutes\x18\x03 \x01(\x05R\aminutes\x12\x14\n" +
+	"\x05count\x18\x04 \x01(\x05R\x05count\"\x8f\x02\n" +
+	"\vTimeSummary\x12.\n" +
+	"\x04from\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
+	"\x02to\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x120\n" +
+	"\bgroup_by\x18\x03 \x01(\x0e2\x15.noted.v1.TimeGroupByR\agroupBy\x12,\n" +
+	"\x04rows\x18\x04 \x03(\v2\x18.noted.v1.TimeSummaryRowR\x04rows\x12#\n" +
+	"\rtotal_minutes\x18\x05 \x01(\x05R\ftotalMinutes\x12\x1f\n" +
+	"\vtotal_count\x18\x06 \x01(\x05R\n" +
+	"totalCount\"\xda\x01\n" +
+	"\x0fAlarmRecurrence\x12\x12\n" +
+	"\x04freq\x18\x01 \x01(\tR\x04freq\x12\x1a\n" +
+	"\binterval\x18\x02 \x01(\x05R\binterval\x12\x15\n" +
+	"\x06by_day\x18\x03 \x03(\tR\x05byDay\x12 \n" +
+	"\fby_month_day\x18\x04 \x01(\x05R\n" +
+	"byMonthDay\x12\x17\n" +
+	"\aby_time\x18\x05 \x03(\tR\x06byTime\x12\x14\n" +
+	"\x05until\x18\x06 \x01(\tR\x05until\x12\x14\n" +
+	"\x05count\x18\a \x01(\x05R\x05count\x12\x19\n" +
+	"\bend_time\x18\b \x01(\tR\aendTime\"\xd3\x01\n" +
+	"\rAlarmSchedule\x12\x12\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\x12*\n" +
+	"\x02at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02at\x12\x16\n" +
+	"\x06anchor\x18\x03 \x01(\tR\x06anchor\x12\x12\n" +
+	"\x04time\x18\x04 \x01(\tR\x04time\x12\x1b\n" +
+	"\ttime_zone\x18\x05 \x01(\tR\btimeZone\x129\n" +
+	"\n" +
+	"recurrence\x18\x06 \x01(\v2\x19.noted.v1.AlarmRecurrenceR\n" +
+	"recurrence\"\xa4\x04\n" +
+	"\x05Alarm\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05label\x18\x02 \x01(\tR\x05label\x12\x12\n" +
+	"\x04mode\x18\x03 \x01(\tR\x04mode\x12\x1d\n" +
+	"\aenabled\x18\x04 \x01(\bH\x00R\aenabled\x88\x01\x01\x123\n" +
+	"\bschedule\x18\x05 \x01(\v2\x17.noted.v1.AlarmScheduleR\bschedule\x12%\n" +
+	"\x0eholiday_policy\x18\x06 \x01(\tR\rholidayPolicy\x12\x1b\n" +
+	"\x06region\x18\a \x01(\tH\x01R\x06region\x88\x01\x01\x12\x12\n" +
+	"\x04note\x18\b \x01(\tR\x04note\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\t \x01(\tR\tprojectId\x12%\n" +
+	"\x05space\x18\n" +
+	" \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12#\n" +
+	"\roriginal_text\x18\v \x01(\tR\foriginalText\x12;\n" +
+	"\vcreate_time\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"createTime\x12;\n" +
+	"\vupdate_time\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"updateTime\x129\n" +
+	"\n" +
+	"next_fires\x18\x0e \x03(\v2\x1a.google.protobuf.TimestampR\tnextFiresB\n" +
+	"\n" +
+	"\b_enabledB\t\n" +
+	"\a_region\";\n" +
+	"\x12CreateAlarmRequest\x12%\n" +
+	"\x05alarm\x18\x01 \x01(\v2\x0f.noted.v1.AlarmR\x05alarm\"!\n" +
+	"\x0fGetAlarmRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"x\n" +
+	"\x12UpdateAlarmRequest\x12%\n" +
+	"\x05alarm\x18\x01 \x01(\v2\x0f.noted.v1.AlarmR\x05alarm\x12;\n" +
+	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
+	"updateMask\"$\n" +
+	"\x12DeleteAlarmRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x84\x01\n" +
+	"\x11ListAlarmsRequest\x12\x1d\n" +
+	"\aenabled\x18\x01 \x01(\bH\x00R\aenabled\x88\x01\x01\x12%\n" +
+	"\x05space\x18\x02 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x03 \x01(\tR\tprojectIdB\n" +
+	"\n" +
+	"\b_enabled\"W\n" +
+	"\x12ListAlarmsResponse\x12'\n" +
+	"\x06alarms\x18\x01 \x03(\v2\x0f.noted.v1.AlarmR\x06alarms\x12\x18\n" +
+	"\aversion\x18\x02 \x01(\tR\aversion\"\x19\n" +
+	"\x17GetAlarmsVersionRequest\"4\n" +
+	"\x18GetAlarmsVersionResponse\x12\x18\n" +
+	"\aversion\x18\x01 \x01(\tR\aversion\"@\n" +
+	"\x12GetHolidaysRequest\x12\x12\n" +
+	"\x04year\x18\x01 \x01(\x05R\x04year\x12\x16\n" +
+	"\x06region\x18\x02 \x01(\tR\x06region\"H\n" +
+	"\n" +
+	"HolidayDay\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x12\x12\n" +
+	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\"\xae\x01\n" +
+	"\x13GetHolidaysResponse\x12\x12\n" +
+	"\x04year\x18\x01 \x01(\x05R\x04year\x12\x16\n" +
+	"\x06region\x18\x02 \x01(\tR\x06region\x12(\n" +
+	"\x04days\x18\x03 \x03(\v2\x14.noted.v1.HolidayDayR\x04days\x12'\n" +
+	"\x0favailable_years\x18\x04 \x03(\x05R\x0eavailableYears\x12\x18\n" +
+	"\aversion\x18\x05 \x01(\tR\aversion\"x\n" +
+	"\x16SignInWithAppleRequest\x12%\n" +
+	"\x0eidentity_token\x18\x01 \x01(\tR\ridentityToken\x12\x14\n" +
+	"\x05nonce\x18\x02 \x01(\tR\x05nonce\x12!\n" +
+	"\fdevice_label\x18\x03 \x01(\tR\vdeviceLabel\"L\n" +
+	"\x17SignInWithAppleResponse\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\x12\x1b\n" +
+	"\tuser_name\x18\x02 \x01(\tR\buserName\"O\n" +
+	"\x10LinkAppleRequest\x12%\n" +
+	"\x0eidentity_token\x18\x01 \x01(\tR\ridentityToken\x12\x14\n" +
+	"\x05nonce\x18\x02 \x01(\tR\x05nonce\"\x14\n" +
+	"\x12UnlinkAppleRequest\"\x13\n" +
+	"\x11GetAccountRequest\"\x96\x01\n" +
+	"\aAccount\x12\x1b\n" +
+	"\tuser_name\x18\x01 \x01(\tR\buserName\x12#\n" +
+	"\rapple_enabled\x18\x02 \x01(\bR\fappleEnabled\x12!\n" +
+	"\fapple_linked\x18\x03 \x01(\bR\vappleLinked\x12\x10\n" +
+	"\x03pro\x18\x04 \x01(\bR\x03pro\x12\x14\n" +
+	"\x05email\x18\x06 \x01(\tR\x05email\"d\n" +
+	"\rSignUpRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\x12!\n" +
+	"\fdevice_label\x18\x03 \x01(\tR\vdeviceLabel\"d\n" +
+	"\rSignInRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\x12!\n" +
+	"\fdevice_label\x18\x03 \x01(\tR\vdeviceLabel\"C\n" +
+	"\x0eSignInResponse\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\x12\x1b\n" +
+	"\tuser_name\x18\x02 \x01(\tR\buserName\"v\n" +
+	"\x17SetEmailPasswordRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\x12)\n" +
+	"\x10current_password\x18\x03 \x01(\tR\x0fcurrentPassword\"\xca\x01\n" +
+	"\tTokenInfo\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05label\x18\x02 \x01(\tR\x05label\x12;\n" +
+	"\vcreate_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"createTime\x12@\n" +
+	"\x0elast_used_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\flastUsedTime\x12\x18\n" +
+	"\acurrent\x18\x05 \x01(\bR\acurrent\"*\n" +
+	"\x12CreateTokenRequest\x12\x14\n" +
+	"\x05label\x18\x01 \x01(\tR\x05label\"T\n" +
+	"\x13CreateTokenResponse\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\x12'\n" +
+	"\x04info\x18\x02 \x01(\v2\x13.noted.v1.TokenInfoR\x04info\"\x13\n" +
+	"\x11ListTokensRequest\"A\n" +
+	"\x12ListTokensResponse\x12+\n" +
+	"\x06tokens\x18\x01 \x03(\v2\x13.noted.v1.TokenInfoR\x06tokens\"$\n" +
+	"\x12RevokeTokenRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xd4\x01\n" +
+	"\aPairing\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\x12\x1f\n" +
+	"\vclient_name\x18\x02 \x01(\tR\n" +
+	"clientName\x12;\n" +
+	"\vcreate_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"createTime\x12;\n" +
+	"\vexpire_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"expireTime\x12\x1a\n" +
+	"\bapproved\x18\x05 \x01(\bR\bapproved\"'\n" +
+	"\x11GetPairingRequest\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\"A\n" +
+	"\x15ApprovePairingRequest\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\x12\x14\n" +
+	"\x05label\x18\x02 \x01(\tR\x05label\"(\n" +
+	"\x12DenyPairingRequest\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code*>\n" +
 	"\x05Space\x12\x15\n" +
 	"\x11SPACE_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -9171,7 +12849,13 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\rHORIZON_TODAY\x10\x01\x12\x14\n" +
 	"\x10HORIZON_UPCOMING\x10\x02\x12\x10\n" +
 	"\fHORIZON_WEEK\x10\x03\x12\x11\n" +
-	"\rHORIZON_MONTH\x10\x042\x8d\x03\n" +
+	"\rHORIZON_MONTH\x10\x04*\x8f\x01\n" +
+	"\vTimeGroupBy\x12\x1d\n" +
+	"\x19TIME_GROUP_BY_UNSPECIFIED\x10\x00\x12\x17\n" +
+	"\x13TIME_GROUP_BY_TITLE\x10\x01\x12\x19\n" +
+	"\x15TIME_GROUP_BY_PROJECT\x10\x02\x12\x16\n" +
+	"\x12TIME_GROUP_BY_GOAL\x10\x03\x12\x15\n" +
+	"\x11TIME_GROUP_BY_DAY\x10\x042\x8d\x03\n" +
 	"\vNoteService\x129\n" +
 	"\n" +
 	"CreateNote\x12\x1b.noted.v1.CreateNoteRequest\x1a\x0e.noted.v1.Note\x123\n" +
@@ -9181,7 +12865,7 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\n" +
 	"DeleteNote\x12\x1b.noted.v1.DeleteNoteRequest\x1a\x16.google.protobuf.Empty\x12D\n" +
 	"\tListNotes\x12\x1a.noted.v1.ListNotesRequest\x1a\x1b.noted.v1.ListNotesResponse\x12J\n" +
-	"\vSearchNotes\x12\x1c.noted.v1.SearchNotesRequest\x1a\x1d.noted.v1.SearchNotesResponse2\xa2\x06\n" +
+	"\vSearchNotes\x12\x1c.noted.v1.SearchNotesRequest\x1a\x1d.noted.v1.SearchNotesResponse2\xf1\a\n" +
 	"\x0fCalendarService\x12<\n" +
 	"\vCreateEvent\x12\x1c.noted.v1.CreateEventRequest\x1a\x0f.noted.v1.Event\x126\n" +
 	"\bGetEvent\x12\x19.noted.v1.GetEventRequest\x1a\x0f.noted.v1.Event\x12<\n" +
@@ -9196,7 +12880,10 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"UpdateTask\x12\x1b.noted.v1.UpdateTaskRequest\x1a\x0e.noted.v1.Task\x12A\n" +
 	"\n" +
 	"DeleteTask\x12\x1b.noted.v1.DeleteTaskRequest\x1a\x16.google.protobuf.Empty\x12D\n" +
-	"\tListTasks\x12\x1a.noted.v1.ListTasksRequest\x1a\x1b.noted.v1.ListTasksResponse\x12G\n" +
+	"\tListTasks\x12\x1a.noted.v1.ListTasksRequest\x1a\x1b.noted.v1.ListTasksResponse\x12;\n" +
+	"\vLogTaskWork\x12\x1c.noted.v1.LogTaskWorkRequest\x1a\x0e.noted.v1.Task\x12M\n" +
+	"\fListTaskWork\x12\x1d.noted.v1.ListTaskWorkRequest\x1a\x1e.noted.v1.ListTaskWorkResponse\x12A\n" +
+	"\x0eDeleteTaskWork\x12\x1f.noted.v1.DeleteTaskWorkRequest\x1a\x0e.noted.v1.Task\x12G\n" +
 	"\x0eWatchReminders\x12\x1f.noted.v1.WatchRemindersRequest\x1a\x12.noted.v1.Reminder0\x01\x12P\n" +
 	"\rListReminders\x12\x1e.noted.v1.ListRemindersRequest\x1a\x1f.noted.v1.ListRemindersResponse2\x8b\x06\n" +
 	"\tAIService\x12D\n" +
@@ -9268,7 +12955,45 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\vRecordTrade\x12\x1c.noted.v1.RecordTradeRequest\x1a\x11.noted.v1.Holding\x12C\n" +
 	"\vDeleteTrade\x12\x1c.noted.v1.DeleteTradeRequest\x1a\x16.google.protobuf.Empty\x12G\n" +
 	"\n" +
-	"ListTrades\x12\x1b.noted.v1.ListTradesRequest\x1a\x1c.noted.v1.ListTradesResponseB\x8d\x01\n" +
+	"ListTrades\x12\x1b.noted.v1.ListTradesRequest\x1a\x1c.noted.v1.ListTradesResponse2\xa8\x05\n" +
+	"\vTimeService\x12H\n" +
+	"\x0fCreateTimeEntry\x12 .noted.v1.CreateTimeEntryRequest\x1a\x13.noted.v1.TimeEntry\x12B\n" +
+	"\fGetTimeEntry\x12\x1d.noted.v1.GetTimeEntryRequest\x1a\x13.noted.v1.TimeEntry\x12H\n" +
+	"\x0fUpdateTimeEntry\x12 .noted.v1.UpdateTimeEntryRequest\x1a\x13.noted.v1.TimeEntry\x12K\n" +
+	"\x0fDeleteTimeEntry\x12 .noted.v1.DeleteTimeEntryRequest\x1a\x16.google.protobuf.Empty\x12V\n" +
+	"\x0fListTimeEntries\x12 .noted.v1.ListTimeEntriesRequest\x1a!.noted.v1.ListTimeEntriesResponse\x12>\n" +
+	"\n" +
+	"StartTimer\x12\x1b.noted.v1.StartTimerRequest\x1a\x13.noted.v1.TimeEntry\x12<\n" +
+	"\tStopTimer\x12\x1a.noted.v1.StopTimerRequest\x1a\x13.noted.v1.TimeEntry\x12V\n" +
+	"\x0fGetRunningTimer\x12 .noted.v1.GetRunningTimerRequest\x1a!.noted.v1.GetRunningTimerResponse\x12F\n" +
+	"\rSummarizeTime\x12\x1e.noted.v1.SummarizeTimeRequest\x1a\x15.noted.v1.TimeSummary2\xab\x03\n" +
+	"\fAlarmService\x12<\n" +
+	"\vCreateAlarm\x12\x1c.noted.v1.CreateAlarmRequest\x1a\x0f.noted.v1.Alarm\x126\n" +
+	"\bGetAlarm\x12\x19.noted.v1.GetAlarmRequest\x1a\x0f.noted.v1.Alarm\x12<\n" +
+	"\vUpdateAlarm\x12\x1c.noted.v1.UpdateAlarmRequest\x1a\x0f.noted.v1.Alarm\x12C\n" +
+	"\vDeleteAlarm\x12\x1c.noted.v1.DeleteAlarmRequest\x1a\x16.google.protobuf.Empty\x12G\n" +
+	"\n" +
+	"ListAlarms\x12\x1b.noted.v1.ListAlarmsRequest\x1a\x1c.noted.v1.ListAlarmsResponse\x12Y\n" +
+	"\x10GetAlarmsVersion\x12!.noted.v1.GetAlarmsVersionRequest\x1a\".noted.v1.GetAlarmsVersionResponse2\\\n" +
+	"\x0eHolidayService\x12J\n" +
+	"\vGetHolidays\x12\x1c.noted.v1.GetHolidaysRequest\x1a\x1d.noted.v1.GetHolidaysResponse2\x89\a\n" +
+	"\x0eAccountService\x12V\n" +
+	"\x0fSignInWithApple\x12 .noted.v1.SignInWithAppleRequest\x1a!.noted.v1.SignInWithAppleResponse\x12:\n" +
+	"\tLinkApple\x12\x1a.noted.v1.LinkAppleRequest\x1a\x11.noted.v1.Account\x12>\n" +
+	"\vUnlinkApple\x12\x1c.noted.v1.UnlinkAppleRequest\x1a\x11.noted.v1.Account\x12<\n" +
+	"\n" +
+	"GetAccount\x12\x1b.noted.v1.GetAccountRequest\x1a\x11.noted.v1.Account\x12;\n" +
+	"\x06SignUp\x12\x17.noted.v1.SignUpRequest\x1a\x18.noted.v1.SignInResponse\x12;\n" +
+	"\x06SignIn\x12\x17.noted.v1.SignInRequest\x1a\x18.noted.v1.SignInResponse\x12H\n" +
+	"\x10SetEmailPassword\x12!.noted.v1.SetEmailPasswordRequest\x1a\x11.noted.v1.Account\x12J\n" +
+	"\vCreateToken\x12\x1c.noted.v1.CreateTokenRequest\x1a\x1d.noted.v1.CreateTokenResponse\x12G\n" +
+	"\n" +
+	"ListTokens\x12\x1b.noted.v1.ListTokensRequest\x1a\x1c.noted.v1.ListTokensResponse\x12C\n" +
+	"\vRevokeToken\x12\x1c.noted.v1.RevokeTokenRequest\x1a\x16.google.protobuf.Empty\x12<\n" +
+	"\n" +
+	"GetPairing\x12\x1b.noted.v1.GetPairingRequest\x1a\x11.noted.v1.Pairing\x12D\n" +
+	"\x0eApprovePairing\x12\x1f.noted.v1.ApprovePairingRequest\x1a\x11.noted.v1.Pairing\x12C\n" +
+	"\vDenyPairing\x12\x1c.noted.v1.DenyPairingRequest\x1a\x16.google.protobuf.EmptyB\x8d\x01\n" +
 	"\fcom.noted.v1B\n" +
 	"NotedProtoP\x01Z0github.com/liliang-cn/noted/gen/noted/v1;notedv1\xa2\x02\x03NXX\xaa\x02\bNoted.V1\xca\x02\bNoted\\V1\xe2\x02\x14Noted\\V1\\GPBMetadata\xea\x02\tNoted::V1b\x06proto3"
 
@@ -9284,461 +13009,631 @@ func file_noted_v1_noted_proto_rawDescGZIP() []byte {
 	return file_noted_v1_noted_proto_rawDescData
 }
 
-var file_noted_v1_noted_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
-var file_noted_v1_noted_proto_msgTypes = make([]protoimpl.MessageInfo, 129)
+var file_noted_v1_noted_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
+var file_noted_v1_noted_proto_msgTypes = make([]protoimpl.MessageInfo, 182)
 var file_noted_v1_noted_proto_goTypes = []any{
 	(Space)(0),                       // 0: noted.v1.Space
 	(Priority)(0),                    // 1: noted.v1.Priority
 	(GoalPeriod)(0),                  // 2: noted.v1.GoalPeriod
 	(Horizon)(0),                     // 3: noted.v1.Horizon
-	(ListTasksRequest_Filter)(0),     // 4: noted.v1.ListTasksRequest.Filter
-	(Reminder_Kind)(0),               // 5: noted.v1.Reminder.Kind
-	(*Note)(nil),                     // 6: noted.v1.Note
-	(*CreateNoteRequest)(nil),        // 7: noted.v1.CreateNoteRequest
-	(*GetNoteRequest)(nil),           // 8: noted.v1.GetNoteRequest
-	(*UpdateNoteRequest)(nil),        // 9: noted.v1.UpdateNoteRequest
-	(*DeleteNoteRequest)(nil),        // 10: noted.v1.DeleteNoteRequest
-	(*ListNotesRequest)(nil),         // 11: noted.v1.ListNotesRequest
-	(*ListNotesResponse)(nil),        // 12: noted.v1.ListNotesResponse
-	(*SearchNotesRequest)(nil),       // 13: noted.v1.SearchNotesRequest
-	(*NoteHit)(nil),                  // 14: noted.v1.NoteHit
-	(*SearchNotesResponse)(nil),      // 15: noted.v1.SearchNotesResponse
-	(*Event)(nil),                    // 16: noted.v1.Event
-	(*CreateEventRequest)(nil),       // 17: noted.v1.CreateEventRequest
-	(*GetEventRequest)(nil),          // 18: noted.v1.GetEventRequest
-	(*UpdateEventRequest)(nil),       // 19: noted.v1.UpdateEventRequest
-	(*DeleteEventRequest)(nil),       // 20: noted.v1.DeleteEventRequest
-	(*ListEventsRequest)(nil),        // 21: noted.v1.ListEventsRequest
-	(*Occurrence)(nil),               // 22: noted.v1.Occurrence
-	(*ListEventsResponse)(nil),       // 23: noted.v1.ListEventsResponse
-	(*Task)(nil),                     // 24: noted.v1.Task
-	(*CreateTaskRequest)(nil),        // 25: noted.v1.CreateTaskRequest
-	(*GetTaskRequest)(nil),           // 26: noted.v1.GetTaskRequest
-	(*UpdateTaskRequest)(nil),        // 27: noted.v1.UpdateTaskRequest
-	(*DeleteTaskRequest)(nil),        // 28: noted.v1.DeleteTaskRequest
-	(*ListTasksRequest)(nil),         // 29: noted.v1.ListTasksRequest
-	(*ListTasksResponse)(nil),        // 30: noted.v1.ListTasksResponse
-	(*Reminder)(nil),                 // 31: noted.v1.Reminder
-	(*WatchRemindersRequest)(nil),    // 32: noted.v1.WatchRemindersRequest
-	(*ListRemindersRequest)(nil),     // 33: noted.v1.ListRemindersRequest
-	(*ListRemindersResponse)(nil),    // 34: noted.v1.ListRemindersResponse
-	(*GetStatusRequest)(nil),         // 35: noted.v1.GetStatusRequest
-	(*GetStatusResponse)(nil),        // 36: noted.v1.GetStatusResponse
-	(*AskRequest)(nil),               // 37: noted.v1.AskRequest
-	(*AskResponse)(nil),              // 38: noted.v1.AskResponse
-	(*Reference)(nil),                // 39: noted.v1.Reference
-	(*SummarizeNoteRequest)(nil),     // 40: noted.v1.SummarizeNoteRequest
-	(*SummarizeNoteResponse)(nil),    // 41: noted.v1.SummarizeNoteResponse
-	(*SuggestTagsRequest)(nil),       // 42: noted.v1.SuggestTagsRequest
-	(*SuggestTagsResponse)(nil),      // 43: noted.v1.SuggestTagsResponse
-	(*DailyBriefingRequest)(nil),     // 44: noted.v1.DailyBriefingRequest
-	(*DailyBriefingResponse)(nil),    // 45: noted.v1.DailyBriefingResponse
-	(*AIFeatures)(nil),               // 46: noted.v1.AIFeatures
-	(*GetAIFeaturesRequest)(nil),     // 47: noted.v1.GetAIFeaturesRequest
-	(*SetAIFeaturesRequest)(nil),     // 48: noted.v1.SetAIFeaturesRequest
-	(*AIAccess)(nil),                 // 49: noted.v1.AIAccess
-	(*GetAIAccessRequest)(nil),       // 50: noted.v1.GetAIAccessRequest
-	(*SetAIAccessRequest)(nil),       // 51: noted.v1.SetAIAccessRequest
-	(*PlanFromTextRequest)(nil),      // 52: noted.v1.PlanFromTextRequest
-	(*ExtractTasksRequest)(nil),      // 53: noted.v1.ExtractTasksRequest
-	(*Milestone)(nil),                // 54: noted.v1.Milestone
-	(*DayTotal)(nil),                 // 55: noted.v1.DayTotal
-	(*GoalProgress)(nil),             // 56: noted.v1.GoalProgress
-	(*Goal)(nil),                     // 57: noted.v1.Goal
-	(*CheckIn)(nil),                  // 58: noted.v1.CheckIn
-	(*CreateGoalRequest)(nil),        // 59: noted.v1.CreateGoalRequest
-	(*GetGoalRequest)(nil),           // 60: noted.v1.GetGoalRequest
-	(*UpdateGoalRequest)(nil),        // 61: noted.v1.UpdateGoalRequest
-	(*DeleteGoalRequest)(nil),        // 62: noted.v1.DeleteGoalRequest
-	(*ListGoalsRequest)(nil),         // 63: noted.v1.ListGoalsRequest
-	(*ListGoalsResponse)(nil),        // 64: noted.v1.ListGoalsResponse
-	(*RecordCheckInRequest)(nil),     // 65: noted.v1.RecordCheckInRequest
-	(*RecordCheckInResponse)(nil),    // 66: noted.v1.RecordCheckInResponse
-	(*DeleteCheckInRequest)(nil),     // 67: noted.v1.DeleteCheckInRequest
-	(*ListCheckInsRequest)(nil),      // 68: noted.v1.ListCheckInsRequest
-	(*ListCheckInsResponse)(nil),     // 69: noted.v1.ListCheckInsResponse
-	(*SetMilestoneDoneRequest)(nil),  // 70: noted.v1.SetMilestoneDoneRequest
-	(*Objective)(nil),                // 71: noted.v1.Objective
-	(*ObjectiveProgress)(nil),        // 72: noted.v1.ObjectiveProgress
-	(*Measurement)(nil),              // 73: noted.v1.Measurement
-	(*CreateObjectiveRequest)(nil),   // 74: noted.v1.CreateObjectiveRequest
-	(*GetObjectiveRequest)(nil),      // 75: noted.v1.GetObjectiveRequest
-	(*UpdateObjectiveRequest)(nil),   // 76: noted.v1.UpdateObjectiveRequest
-	(*DeleteObjectiveRequest)(nil),   // 77: noted.v1.DeleteObjectiveRequest
-	(*ListObjectivesRequest)(nil),    // 78: noted.v1.ListObjectivesRequest
-	(*ListObjectivesResponse)(nil),   // 79: noted.v1.ListObjectivesResponse
-	(*RecordMeasurementRequest)(nil), // 80: noted.v1.RecordMeasurementRequest
-	(*DeleteMeasurementRequest)(nil), // 81: noted.v1.DeleteMeasurementRequest
-	(*ListMeasurementsRequest)(nil),  // 82: noted.v1.ListMeasurementsRequest
-	(*ListMeasurementsResponse)(nil), // 83: noted.v1.ListMeasurementsResponse
-	(*ProjectProgress)(nil),          // 84: noted.v1.ProjectProgress
-	(*Project)(nil),                  // 85: noted.v1.Project
-	(*CreateProjectRequest)(nil),     // 86: noted.v1.CreateProjectRequest
-	(*GetProjectRequest)(nil),        // 87: noted.v1.GetProjectRequest
-	(*ProjectDetail)(nil),            // 88: noted.v1.ProjectDetail
-	(*UpdateProjectRequest)(nil),     // 89: noted.v1.UpdateProjectRequest
-	(*DeleteProjectRequest)(nil),     // 90: noted.v1.DeleteProjectRequest
-	(*ListProjectsRequest)(nil),      // 91: noted.v1.ListProjectsRequest
-	(*ListProjectsResponse)(nil),     // 92: noted.v1.ListProjectsResponse
-	(*GetFocusRequest)(nil),          // 93: noted.v1.GetFocusRequest
-	(*FocusItem)(nil),                // 94: noted.v1.FocusItem
-	(*GetFocusResponse)(nil),         // 95: noted.v1.GetFocusResponse
-	(*Preference)(nil),               // 96: noted.v1.Preference
-	(*GetPreferenceRequest)(nil),     // 97: noted.v1.GetPreferenceRequest
-	(*SetPreferenceRequest)(nil),     // 98: noted.v1.SetPreferenceRequest
-	(*DeletePreferenceRequest)(nil),  // 99: noted.v1.DeletePreferenceRequest
-	(*ListPreferencesRequest)(nil),   // 100: noted.v1.ListPreferencesRequest
-	(*ListPreferencesResponse)(nil),  // 101: noted.v1.ListPreferencesResponse
-	(*ExportRequest)(nil),            // 102: noted.v1.ExportRequest
-	(*ExportChunk)(nil),              // 103: noted.v1.ExportChunk
-	(*Operation)(nil),                // 104: noted.v1.Operation
-	(*ProposalInput)(nil),            // 105: noted.v1.ProposalInput
-	(*Proposal)(nil),                 // 106: noted.v1.Proposal
-	(*Change)(nil),                   // 107: noted.v1.Change
-	(*ListProposalsRequest)(nil),     // 108: noted.v1.ListProposalsRequest
-	(*ListProposalsResponse)(nil),    // 109: noted.v1.ListProposalsResponse
-	(*OperationSelection)(nil),       // 110: noted.v1.OperationSelection
-	(*AcceptProposalRequest)(nil),    // 111: noted.v1.AcceptProposalRequest
-	(*AcceptProposalResponse)(nil),   // 112: noted.v1.AcceptProposalResponse
-	(*DismissProposalRequest)(nil),   // 113: noted.v1.DismissProposalRequest
-	(*ProposeScheduleRequest)(nil),   // 114: noted.v1.ProposeScheduleRequest
-	(*GetWeeklyReviewRequest)(nil),   // 115: noted.v1.GetWeeklyReviewRequest
-	(*WeeklyReview)(nil),             // 116: noted.v1.WeeklyReview
-	(*ListChangesRequest)(nil),       // 117: noted.v1.ListChangesRequest
-	(*ListChangesResponse)(nil),      // 118: noted.v1.ListChangesResponse
-	(*UndoChangeRequest)(nil),        // 119: noted.v1.UndoChangeRequest
-	(*Holding)(nil),                  // 120: noted.v1.Holding
-	(*Position)(nil),                 // 121: noted.v1.Position
-	(*DcaStatus)(nil),                // 122: noted.v1.DcaStatus
-	(*Trade)(nil),                    // 123: noted.v1.Trade
-	(*CreateHoldingRequest)(nil),     // 124: noted.v1.CreateHoldingRequest
-	(*GetHoldingRequest)(nil),        // 125: noted.v1.GetHoldingRequest
-	(*UpdateHoldingRequest)(nil),     // 126: noted.v1.UpdateHoldingRequest
-	(*DeleteHoldingRequest)(nil),     // 127: noted.v1.DeleteHoldingRequest
-	(*ListHoldingsRequest)(nil),      // 128: noted.v1.ListHoldingsRequest
-	(*ListHoldingsResponse)(nil),     // 129: noted.v1.ListHoldingsResponse
-	(*RecordTradeRequest)(nil),       // 130: noted.v1.RecordTradeRequest
-	(*DeleteTradeRequest)(nil),       // 131: noted.v1.DeleteTradeRequest
-	(*ListTradesRequest)(nil),        // 132: noted.v1.ListTradesRequest
-	(*ListTradesResponse)(nil),       // 133: noted.v1.ListTradesResponse
-	nil,                              // 134: noted.v1.AcceptProposalRequest.InputsEntry
-	(*timestamppb.Timestamp)(nil),    // 135: google.protobuf.Timestamp
-	(*fieldmaskpb.FieldMask)(nil),    // 136: google.protobuf.FieldMask
-	(*structpb.Struct)(nil),          // 137: google.protobuf.Struct
-	(*emptypb.Empty)(nil),            // 138: google.protobuf.Empty
+	(TimeGroupBy)(0),                 // 4: noted.v1.TimeGroupBy
+	(ListTasksRequest_Filter)(0),     // 5: noted.v1.ListTasksRequest.Filter
+	(Reminder_Kind)(0),               // 6: noted.v1.Reminder.Kind
+	(*Note)(nil),                     // 7: noted.v1.Note
+	(*CreateNoteRequest)(nil),        // 8: noted.v1.CreateNoteRequest
+	(*GetNoteRequest)(nil),           // 9: noted.v1.GetNoteRequest
+	(*UpdateNoteRequest)(nil),        // 10: noted.v1.UpdateNoteRequest
+	(*DeleteNoteRequest)(nil),        // 11: noted.v1.DeleteNoteRequest
+	(*ListNotesRequest)(nil),         // 12: noted.v1.ListNotesRequest
+	(*ListNotesResponse)(nil),        // 13: noted.v1.ListNotesResponse
+	(*SearchNotesRequest)(nil),       // 14: noted.v1.SearchNotesRequest
+	(*NoteHit)(nil),                  // 15: noted.v1.NoteHit
+	(*SearchNotesResponse)(nil),      // 16: noted.v1.SearchNotesResponse
+	(*Event)(nil),                    // 17: noted.v1.Event
+	(*CreateEventRequest)(nil),       // 18: noted.v1.CreateEventRequest
+	(*GetEventRequest)(nil),          // 19: noted.v1.GetEventRequest
+	(*UpdateEventRequest)(nil),       // 20: noted.v1.UpdateEventRequest
+	(*DeleteEventRequest)(nil),       // 21: noted.v1.DeleteEventRequest
+	(*ListEventsRequest)(nil),        // 22: noted.v1.ListEventsRequest
+	(*Occurrence)(nil),               // 23: noted.v1.Occurrence
+	(*ListEventsResponse)(nil),       // 24: noted.v1.ListEventsResponse
+	(*Task)(nil),                     // 25: noted.v1.Task
+	(*TaskWork)(nil),                 // 26: noted.v1.TaskWork
+	(*CreateTaskRequest)(nil),        // 27: noted.v1.CreateTaskRequest
+	(*GetTaskRequest)(nil),           // 28: noted.v1.GetTaskRequest
+	(*UpdateTaskRequest)(nil),        // 29: noted.v1.UpdateTaskRequest
+	(*DeleteTaskRequest)(nil),        // 30: noted.v1.DeleteTaskRequest
+	(*ListTasksRequest)(nil),         // 31: noted.v1.ListTasksRequest
+	(*ListTasksResponse)(nil),        // 32: noted.v1.ListTasksResponse
+	(*LogTaskWorkRequest)(nil),       // 33: noted.v1.LogTaskWorkRequest
+	(*ListTaskWorkRequest)(nil),      // 34: noted.v1.ListTaskWorkRequest
+	(*ListTaskWorkResponse)(nil),     // 35: noted.v1.ListTaskWorkResponse
+	(*DeleteTaskWorkRequest)(nil),    // 36: noted.v1.DeleteTaskWorkRequest
+	(*Reminder)(nil),                 // 37: noted.v1.Reminder
+	(*WatchRemindersRequest)(nil),    // 38: noted.v1.WatchRemindersRequest
+	(*ListRemindersRequest)(nil),     // 39: noted.v1.ListRemindersRequest
+	(*ListRemindersResponse)(nil),    // 40: noted.v1.ListRemindersResponse
+	(*GetStatusRequest)(nil),         // 41: noted.v1.GetStatusRequest
+	(*GetStatusResponse)(nil),        // 42: noted.v1.GetStatusResponse
+	(*AskRequest)(nil),               // 43: noted.v1.AskRequest
+	(*AskResponse)(nil),              // 44: noted.v1.AskResponse
+	(*Reference)(nil),                // 45: noted.v1.Reference
+	(*SummarizeNoteRequest)(nil),     // 46: noted.v1.SummarizeNoteRequest
+	(*SummarizeNoteResponse)(nil),    // 47: noted.v1.SummarizeNoteResponse
+	(*SuggestTagsRequest)(nil),       // 48: noted.v1.SuggestTagsRequest
+	(*SuggestTagsResponse)(nil),      // 49: noted.v1.SuggestTagsResponse
+	(*DailyBriefingRequest)(nil),     // 50: noted.v1.DailyBriefingRequest
+	(*DailyBriefingResponse)(nil),    // 51: noted.v1.DailyBriefingResponse
+	(*AIFeatures)(nil),               // 52: noted.v1.AIFeatures
+	(*GetAIFeaturesRequest)(nil),     // 53: noted.v1.GetAIFeaturesRequest
+	(*SetAIFeaturesRequest)(nil),     // 54: noted.v1.SetAIFeaturesRequest
+	(*AIAccess)(nil),                 // 55: noted.v1.AIAccess
+	(*GetAIAccessRequest)(nil),       // 56: noted.v1.GetAIAccessRequest
+	(*SetAIAccessRequest)(nil),       // 57: noted.v1.SetAIAccessRequest
+	(*PlanFromTextRequest)(nil),      // 58: noted.v1.PlanFromTextRequest
+	(*ExtractTasksRequest)(nil),      // 59: noted.v1.ExtractTasksRequest
+	(*Milestone)(nil),                // 60: noted.v1.Milestone
+	(*DayTotal)(nil),                 // 61: noted.v1.DayTotal
+	(*GoalProgress)(nil),             // 62: noted.v1.GoalProgress
+	(*Goal)(nil),                     // 63: noted.v1.Goal
+	(*CheckIn)(nil),                  // 64: noted.v1.CheckIn
+	(*CreateGoalRequest)(nil),        // 65: noted.v1.CreateGoalRequest
+	(*GetGoalRequest)(nil),           // 66: noted.v1.GetGoalRequest
+	(*UpdateGoalRequest)(nil),        // 67: noted.v1.UpdateGoalRequest
+	(*DeleteGoalRequest)(nil),        // 68: noted.v1.DeleteGoalRequest
+	(*ListGoalsRequest)(nil),         // 69: noted.v1.ListGoalsRequest
+	(*ListGoalsResponse)(nil),        // 70: noted.v1.ListGoalsResponse
+	(*RecordCheckInRequest)(nil),     // 71: noted.v1.RecordCheckInRequest
+	(*RecordCheckInResponse)(nil),    // 72: noted.v1.RecordCheckInResponse
+	(*DeleteCheckInRequest)(nil),     // 73: noted.v1.DeleteCheckInRequest
+	(*ListCheckInsRequest)(nil),      // 74: noted.v1.ListCheckInsRequest
+	(*ListCheckInsResponse)(nil),     // 75: noted.v1.ListCheckInsResponse
+	(*SetMilestoneDoneRequest)(nil),  // 76: noted.v1.SetMilestoneDoneRequest
+	(*Objective)(nil),                // 77: noted.v1.Objective
+	(*ObjectiveProgress)(nil),        // 78: noted.v1.ObjectiveProgress
+	(*Measurement)(nil),              // 79: noted.v1.Measurement
+	(*CreateObjectiveRequest)(nil),   // 80: noted.v1.CreateObjectiveRequest
+	(*GetObjectiveRequest)(nil),      // 81: noted.v1.GetObjectiveRequest
+	(*UpdateObjectiveRequest)(nil),   // 82: noted.v1.UpdateObjectiveRequest
+	(*DeleteObjectiveRequest)(nil),   // 83: noted.v1.DeleteObjectiveRequest
+	(*ListObjectivesRequest)(nil),    // 84: noted.v1.ListObjectivesRequest
+	(*ListObjectivesResponse)(nil),   // 85: noted.v1.ListObjectivesResponse
+	(*RecordMeasurementRequest)(nil), // 86: noted.v1.RecordMeasurementRequest
+	(*DeleteMeasurementRequest)(nil), // 87: noted.v1.DeleteMeasurementRequest
+	(*ListMeasurementsRequest)(nil),  // 88: noted.v1.ListMeasurementsRequest
+	(*ListMeasurementsResponse)(nil), // 89: noted.v1.ListMeasurementsResponse
+	(*ProjectProgress)(nil),          // 90: noted.v1.ProjectProgress
+	(*Project)(nil),                  // 91: noted.v1.Project
+	(*CreateProjectRequest)(nil),     // 92: noted.v1.CreateProjectRequest
+	(*GetProjectRequest)(nil),        // 93: noted.v1.GetProjectRequest
+	(*ProjectDetail)(nil),            // 94: noted.v1.ProjectDetail
+	(*UpdateProjectRequest)(nil),     // 95: noted.v1.UpdateProjectRequest
+	(*DeleteProjectRequest)(nil),     // 96: noted.v1.DeleteProjectRequest
+	(*ListProjectsRequest)(nil),      // 97: noted.v1.ListProjectsRequest
+	(*ListProjectsResponse)(nil),     // 98: noted.v1.ListProjectsResponse
+	(*GetFocusRequest)(nil),          // 99: noted.v1.GetFocusRequest
+	(*FocusItem)(nil),                // 100: noted.v1.FocusItem
+	(*GetFocusResponse)(nil),         // 101: noted.v1.GetFocusResponse
+	(*Preference)(nil),               // 102: noted.v1.Preference
+	(*GetPreferenceRequest)(nil),     // 103: noted.v1.GetPreferenceRequest
+	(*SetPreferenceRequest)(nil),     // 104: noted.v1.SetPreferenceRequest
+	(*DeletePreferenceRequest)(nil),  // 105: noted.v1.DeletePreferenceRequest
+	(*ListPreferencesRequest)(nil),   // 106: noted.v1.ListPreferencesRequest
+	(*ListPreferencesResponse)(nil),  // 107: noted.v1.ListPreferencesResponse
+	(*ExportRequest)(nil),            // 108: noted.v1.ExportRequest
+	(*ExportChunk)(nil),              // 109: noted.v1.ExportChunk
+	(*Operation)(nil),                // 110: noted.v1.Operation
+	(*ProposalInput)(nil),            // 111: noted.v1.ProposalInput
+	(*Proposal)(nil),                 // 112: noted.v1.Proposal
+	(*Change)(nil),                   // 113: noted.v1.Change
+	(*ListProposalsRequest)(nil),     // 114: noted.v1.ListProposalsRequest
+	(*ListProposalsResponse)(nil),    // 115: noted.v1.ListProposalsResponse
+	(*OperationSelection)(nil),       // 116: noted.v1.OperationSelection
+	(*AcceptProposalRequest)(nil),    // 117: noted.v1.AcceptProposalRequest
+	(*AcceptProposalResponse)(nil),   // 118: noted.v1.AcceptProposalResponse
+	(*DismissProposalRequest)(nil),   // 119: noted.v1.DismissProposalRequest
+	(*ProposeScheduleRequest)(nil),   // 120: noted.v1.ProposeScheduleRequest
+	(*GetWeeklyReviewRequest)(nil),   // 121: noted.v1.GetWeeklyReviewRequest
+	(*WeeklyReview)(nil),             // 122: noted.v1.WeeklyReview
+	(*ListChangesRequest)(nil),       // 123: noted.v1.ListChangesRequest
+	(*ListChangesResponse)(nil),      // 124: noted.v1.ListChangesResponse
+	(*UndoChangeRequest)(nil),        // 125: noted.v1.UndoChangeRequest
+	(*Holding)(nil),                  // 126: noted.v1.Holding
+	(*Position)(nil),                 // 127: noted.v1.Position
+	(*DcaStatus)(nil),                // 128: noted.v1.DcaStatus
+	(*Trade)(nil),                    // 129: noted.v1.Trade
+	(*CreateHoldingRequest)(nil),     // 130: noted.v1.CreateHoldingRequest
+	(*GetHoldingRequest)(nil),        // 131: noted.v1.GetHoldingRequest
+	(*UpdateHoldingRequest)(nil),     // 132: noted.v1.UpdateHoldingRequest
+	(*DeleteHoldingRequest)(nil),     // 133: noted.v1.DeleteHoldingRequest
+	(*ListHoldingsRequest)(nil),      // 134: noted.v1.ListHoldingsRequest
+	(*ListHoldingsResponse)(nil),     // 135: noted.v1.ListHoldingsResponse
+	(*RecordTradeRequest)(nil),       // 136: noted.v1.RecordTradeRequest
+	(*DeleteTradeRequest)(nil),       // 137: noted.v1.DeleteTradeRequest
+	(*ListTradesRequest)(nil),        // 138: noted.v1.ListTradesRequest
+	(*ListTradesResponse)(nil),       // 139: noted.v1.ListTradesResponse
+	(*TimeEntry)(nil),                // 140: noted.v1.TimeEntry
+	(*CreateTimeEntryRequest)(nil),   // 141: noted.v1.CreateTimeEntryRequest
+	(*GetTimeEntryRequest)(nil),      // 142: noted.v1.GetTimeEntryRequest
+	(*UpdateTimeEntryRequest)(nil),   // 143: noted.v1.UpdateTimeEntryRequest
+	(*DeleteTimeEntryRequest)(nil),   // 144: noted.v1.DeleteTimeEntryRequest
+	(*ListTimeEntriesRequest)(nil),   // 145: noted.v1.ListTimeEntriesRequest
+	(*ListTimeEntriesResponse)(nil),  // 146: noted.v1.ListTimeEntriesResponse
+	(*StartTimerRequest)(nil),        // 147: noted.v1.StartTimerRequest
+	(*StopTimerRequest)(nil),         // 148: noted.v1.StopTimerRequest
+	(*GetRunningTimerRequest)(nil),   // 149: noted.v1.GetRunningTimerRequest
+	(*GetRunningTimerResponse)(nil),  // 150: noted.v1.GetRunningTimerResponse
+	(*SummarizeTimeRequest)(nil),     // 151: noted.v1.SummarizeTimeRequest
+	(*TimeSummaryRow)(nil),           // 152: noted.v1.TimeSummaryRow
+	(*TimeSummary)(nil),              // 153: noted.v1.TimeSummary
+	(*AlarmRecurrence)(nil),          // 154: noted.v1.AlarmRecurrence
+	(*AlarmSchedule)(nil),            // 155: noted.v1.AlarmSchedule
+	(*Alarm)(nil),                    // 156: noted.v1.Alarm
+	(*CreateAlarmRequest)(nil),       // 157: noted.v1.CreateAlarmRequest
+	(*GetAlarmRequest)(nil),          // 158: noted.v1.GetAlarmRequest
+	(*UpdateAlarmRequest)(nil),       // 159: noted.v1.UpdateAlarmRequest
+	(*DeleteAlarmRequest)(nil),       // 160: noted.v1.DeleteAlarmRequest
+	(*ListAlarmsRequest)(nil),        // 161: noted.v1.ListAlarmsRequest
+	(*ListAlarmsResponse)(nil),       // 162: noted.v1.ListAlarmsResponse
+	(*GetAlarmsVersionRequest)(nil),  // 163: noted.v1.GetAlarmsVersionRequest
+	(*GetAlarmsVersionResponse)(nil), // 164: noted.v1.GetAlarmsVersionResponse
+	(*GetHolidaysRequest)(nil),       // 165: noted.v1.GetHolidaysRequest
+	(*HolidayDay)(nil),               // 166: noted.v1.HolidayDay
+	(*GetHolidaysResponse)(nil),      // 167: noted.v1.GetHolidaysResponse
+	(*SignInWithAppleRequest)(nil),   // 168: noted.v1.SignInWithAppleRequest
+	(*SignInWithAppleResponse)(nil),  // 169: noted.v1.SignInWithAppleResponse
+	(*LinkAppleRequest)(nil),         // 170: noted.v1.LinkAppleRequest
+	(*UnlinkAppleRequest)(nil),       // 171: noted.v1.UnlinkAppleRequest
+	(*GetAccountRequest)(nil),        // 172: noted.v1.GetAccountRequest
+	(*Account)(nil),                  // 173: noted.v1.Account
+	(*SignUpRequest)(nil),            // 174: noted.v1.SignUpRequest
+	(*SignInRequest)(nil),            // 175: noted.v1.SignInRequest
+	(*SignInResponse)(nil),           // 176: noted.v1.SignInResponse
+	(*SetEmailPasswordRequest)(nil),  // 177: noted.v1.SetEmailPasswordRequest
+	(*TokenInfo)(nil),                // 178: noted.v1.TokenInfo
+	(*CreateTokenRequest)(nil),       // 179: noted.v1.CreateTokenRequest
+	(*CreateTokenResponse)(nil),      // 180: noted.v1.CreateTokenResponse
+	(*ListTokensRequest)(nil),        // 181: noted.v1.ListTokensRequest
+	(*ListTokensResponse)(nil),       // 182: noted.v1.ListTokensResponse
+	(*RevokeTokenRequest)(nil),       // 183: noted.v1.RevokeTokenRequest
+	(*Pairing)(nil),                  // 184: noted.v1.Pairing
+	(*GetPairingRequest)(nil),        // 185: noted.v1.GetPairingRequest
+	(*ApprovePairingRequest)(nil),    // 186: noted.v1.ApprovePairingRequest
+	(*DenyPairingRequest)(nil),       // 187: noted.v1.DenyPairingRequest
+	nil,                              // 188: noted.v1.AcceptProposalRequest.InputsEntry
+	(*timestamppb.Timestamp)(nil),    // 189: google.protobuf.Timestamp
+	(*fieldmaskpb.FieldMask)(nil),    // 190: google.protobuf.FieldMask
+	(*structpb.Struct)(nil),          // 191: google.protobuf.Struct
+	(*emptypb.Empty)(nil),            // 192: google.protobuf.Empty
 }
 var file_noted_v1_noted_proto_depIdxs = []int32{
-	135, // 0: noted.v1.Note.create_time:type_name -> google.protobuf.Timestamp
-	135, // 1: noted.v1.Note.update_time:type_name -> google.protobuf.Timestamp
+	189, // 0: noted.v1.Note.create_time:type_name -> google.protobuf.Timestamp
+	189, // 1: noted.v1.Note.update_time:type_name -> google.protobuf.Timestamp
 	0,   // 2: noted.v1.Note.space:type_name -> noted.v1.Space
-	6,   // 3: noted.v1.CreateNoteRequest.note:type_name -> noted.v1.Note
-	6,   // 4: noted.v1.UpdateNoteRequest.note:type_name -> noted.v1.Note
-	136, // 5: noted.v1.UpdateNoteRequest.update_mask:type_name -> google.protobuf.FieldMask
+	7,   // 3: noted.v1.CreateNoteRequest.note:type_name -> noted.v1.Note
+	7,   // 4: noted.v1.UpdateNoteRequest.note:type_name -> noted.v1.Note
+	190, // 5: noted.v1.UpdateNoteRequest.update_mask:type_name -> google.protobuf.FieldMask
 	0,   // 6: noted.v1.ListNotesRequest.space:type_name -> noted.v1.Space
-	6,   // 7: noted.v1.ListNotesResponse.notes:type_name -> noted.v1.Note
+	7,   // 7: noted.v1.ListNotesResponse.notes:type_name -> noted.v1.Note
 	0,   // 8: noted.v1.SearchNotesRequest.space:type_name -> noted.v1.Space
-	6,   // 9: noted.v1.NoteHit.note:type_name -> noted.v1.Note
-	14,  // 10: noted.v1.SearchNotesResponse.hits:type_name -> noted.v1.NoteHit
-	135, // 11: noted.v1.Event.start_time:type_name -> google.protobuf.Timestamp
-	135, // 12: noted.v1.Event.end_time:type_name -> google.protobuf.Timestamp
-	135, // 13: noted.v1.Event.create_time:type_name -> google.protobuf.Timestamp
-	135, // 14: noted.v1.Event.update_time:type_name -> google.protobuf.Timestamp
+	7,   // 9: noted.v1.NoteHit.note:type_name -> noted.v1.Note
+	15,  // 10: noted.v1.SearchNotesResponse.hits:type_name -> noted.v1.NoteHit
+	189, // 11: noted.v1.Event.start_time:type_name -> google.protobuf.Timestamp
+	189, // 12: noted.v1.Event.end_time:type_name -> google.protobuf.Timestamp
+	189, // 13: noted.v1.Event.create_time:type_name -> google.protobuf.Timestamp
+	189, // 14: noted.v1.Event.update_time:type_name -> google.protobuf.Timestamp
 	0,   // 15: noted.v1.Event.space:type_name -> noted.v1.Space
-	16,  // 16: noted.v1.CreateEventRequest.event:type_name -> noted.v1.Event
-	16,  // 17: noted.v1.UpdateEventRequest.event:type_name -> noted.v1.Event
-	136, // 18: noted.v1.UpdateEventRequest.update_mask:type_name -> google.protobuf.FieldMask
-	135, // 19: noted.v1.ListEventsRequest.from:type_name -> google.protobuf.Timestamp
-	135, // 20: noted.v1.ListEventsRequest.to:type_name -> google.protobuf.Timestamp
+	17,  // 16: noted.v1.CreateEventRequest.event:type_name -> noted.v1.Event
+	17,  // 17: noted.v1.UpdateEventRequest.event:type_name -> noted.v1.Event
+	190, // 18: noted.v1.UpdateEventRequest.update_mask:type_name -> google.protobuf.FieldMask
+	189, // 19: noted.v1.ListEventsRequest.from:type_name -> google.protobuf.Timestamp
+	189, // 20: noted.v1.ListEventsRequest.to:type_name -> google.protobuf.Timestamp
 	0,   // 21: noted.v1.ListEventsRequest.space:type_name -> noted.v1.Space
-	16,  // 22: noted.v1.Occurrence.event:type_name -> noted.v1.Event
-	135, // 23: noted.v1.Occurrence.start_time:type_name -> google.protobuf.Timestamp
-	135, // 24: noted.v1.Occurrence.end_time:type_name -> google.protobuf.Timestamp
-	22,  // 25: noted.v1.ListEventsResponse.occurrences:type_name -> noted.v1.Occurrence
-	135, // 26: noted.v1.Task.due_time:type_name -> google.protobuf.Timestamp
+	17,  // 22: noted.v1.Occurrence.event:type_name -> noted.v1.Event
+	189, // 23: noted.v1.Occurrence.start_time:type_name -> google.protobuf.Timestamp
+	189, // 24: noted.v1.Occurrence.end_time:type_name -> google.protobuf.Timestamp
+	23,  // 25: noted.v1.ListEventsResponse.occurrences:type_name -> noted.v1.Occurrence
+	189, // 26: noted.v1.Task.due_time:type_name -> google.protobuf.Timestamp
 	1,   // 27: noted.v1.Task.priority:type_name -> noted.v1.Priority
-	135, // 28: noted.v1.Task.complete_time:type_name -> google.protobuf.Timestamp
-	135, // 29: noted.v1.Task.remind_time:type_name -> google.protobuf.Timestamp
-	135, // 30: noted.v1.Task.create_time:type_name -> google.protobuf.Timestamp
-	135, // 31: noted.v1.Task.update_time:type_name -> google.protobuf.Timestamp
+	189, // 28: noted.v1.Task.complete_time:type_name -> google.protobuf.Timestamp
+	189, // 29: noted.v1.Task.remind_time:type_name -> google.protobuf.Timestamp
+	189, // 30: noted.v1.Task.create_time:type_name -> google.protobuf.Timestamp
+	189, // 31: noted.v1.Task.update_time:type_name -> google.protobuf.Timestamp
 	0,   // 32: noted.v1.Task.space:type_name -> noted.v1.Space
-	24,  // 33: noted.v1.CreateTaskRequest.task:type_name -> noted.v1.Task
-	24,  // 34: noted.v1.UpdateTaskRequest.task:type_name -> noted.v1.Task
-	136, // 35: noted.v1.UpdateTaskRequest.update_mask:type_name -> google.protobuf.FieldMask
-	4,   // 36: noted.v1.ListTasksRequest.filter:type_name -> noted.v1.ListTasksRequest.Filter
-	135, // 37: noted.v1.ListTasksRequest.due_before:type_name -> google.protobuf.Timestamp
-	0,   // 38: noted.v1.ListTasksRequest.space:type_name -> noted.v1.Space
-	24,  // 39: noted.v1.ListTasksResponse.tasks:type_name -> noted.v1.Task
-	5,   // 40: noted.v1.Reminder.kind:type_name -> noted.v1.Reminder.Kind
-	135, // 41: noted.v1.Reminder.due_time:type_name -> google.protobuf.Timestamp
-	135, // 42: noted.v1.Reminder.fire_time:type_name -> google.protobuf.Timestamp
-	0,   // 43: noted.v1.Reminder.space:type_name -> noted.v1.Space
-	0,   // 44: noted.v1.WatchRemindersRequest.space:type_name -> noted.v1.Space
-	135, // 45: noted.v1.ListRemindersRequest.since:type_name -> google.protobuf.Timestamp
-	0,   // 46: noted.v1.ListRemindersRequest.space:type_name -> noted.v1.Space
-	31,  // 47: noted.v1.ListRemindersResponse.reminders:type_name -> noted.v1.Reminder
-	0,   // 48: noted.v1.AskRequest.space:type_name -> noted.v1.Space
-	106, // 49: noted.v1.AskResponse.proposal:type_name -> noted.v1.Proposal
-	107, // 50: noted.v1.AskResponse.change:type_name -> noted.v1.Change
-	39,  // 51: noted.v1.AskResponse.references:type_name -> noted.v1.Reference
-	135, // 52: noted.v1.Reference.time:type_name -> google.protobuf.Timestamp
-	135, // 53: noted.v1.DailyBriefingRequest.day:type_name -> google.protobuf.Timestamp
-	0,   // 54: noted.v1.DailyBriefingRequest.space:type_name -> noted.v1.Space
-	0,   // 55: noted.v1.PlanFromTextRequest.space:type_name -> noted.v1.Space
-	135, // 56: noted.v1.Milestone.done_time:type_name -> google.protobuf.Timestamp
-	135, // 57: noted.v1.GoalProgress.period_start:type_name -> google.protobuf.Timestamp
-	135, // 58: noted.v1.GoalProgress.period_end:type_name -> google.protobuf.Timestamp
-	55,  // 59: noted.v1.GoalProgress.days:type_name -> noted.v1.DayTotal
-	55,  // 60: noted.v1.GoalProgress.recent:type_name -> noted.v1.DayTotal
-	2,   // 61: noted.v1.Goal.period:type_name -> noted.v1.GoalPeriod
-	54,  // 62: noted.v1.Goal.milestones:type_name -> noted.v1.Milestone
-	135, // 63: noted.v1.Goal.create_time:type_name -> google.protobuf.Timestamp
-	135, // 64: noted.v1.Goal.update_time:type_name -> google.protobuf.Timestamp
-	56,  // 65: noted.v1.Goal.progress:type_name -> noted.v1.GoalProgress
-	0,   // 66: noted.v1.Goal.space:type_name -> noted.v1.Space
-	135, // 67: noted.v1.CheckIn.time:type_name -> google.protobuf.Timestamp
-	57,  // 68: noted.v1.CreateGoalRequest.goal:type_name -> noted.v1.Goal
-	57,  // 69: noted.v1.UpdateGoalRequest.goal:type_name -> noted.v1.Goal
-	136, // 70: noted.v1.UpdateGoalRequest.update_mask:type_name -> google.protobuf.FieldMask
-	0,   // 71: noted.v1.ListGoalsRequest.space:type_name -> noted.v1.Space
-	57,  // 72: noted.v1.ListGoalsResponse.goals:type_name -> noted.v1.Goal
-	135, // 73: noted.v1.RecordCheckInRequest.time:type_name -> google.protobuf.Timestamp
-	58,  // 74: noted.v1.RecordCheckInResponse.check_in:type_name -> noted.v1.CheckIn
-	57,  // 75: noted.v1.RecordCheckInResponse.goal:type_name -> noted.v1.Goal
-	135, // 76: noted.v1.ListCheckInsRequest.from:type_name -> google.protobuf.Timestamp
-	135, // 77: noted.v1.ListCheckInsRequest.to:type_name -> google.protobuf.Timestamp
-	58,  // 78: noted.v1.ListCheckInsResponse.check_ins:type_name -> noted.v1.CheckIn
-	0,   // 79: noted.v1.Objective.space:type_name -> noted.v1.Space
-	135, // 80: noted.v1.Objective.start_time:type_name -> google.protobuf.Timestamp
-	135, // 81: noted.v1.Objective.due_time:type_name -> google.protobuf.Timestamp
-	135, // 82: noted.v1.Objective.create_time:type_name -> google.protobuf.Timestamp
-	135, // 83: noted.v1.Objective.update_time:type_name -> google.protobuf.Timestamp
-	72,  // 84: noted.v1.Objective.progress:type_name -> noted.v1.ObjectiveProgress
-	57,  // 85: noted.v1.Objective.goals:type_name -> noted.v1.Goal
-	135, // 86: noted.v1.ObjectiveProgress.last_reading_time:type_name -> google.protobuf.Timestamp
-	135, // 87: noted.v1.Measurement.time:type_name -> google.protobuf.Timestamp
-	71,  // 88: noted.v1.CreateObjectiveRequest.objective:type_name -> noted.v1.Objective
-	71,  // 89: noted.v1.UpdateObjectiveRequest.objective:type_name -> noted.v1.Objective
-	136, // 90: noted.v1.UpdateObjectiveRequest.update_mask:type_name -> google.protobuf.FieldMask
-	0,   // 91: noted.v1.ListObjectivesRequest.space:type_name -> noted.v1.Space
-	71,  // 92: noted.v1.ListObjectivesResponse.objectives:type_name -> noted.v1.Objective
-	135, // 93: noted.v1.RecordMeasurementRequest.time:type_name -> google.protobuf.Timestamp
-	135, // 94: noted.v1.ListMeasurementsRequest.from:type_name -> google.protobuf.Timestamp
-	135, // 95: noted.v1.ListMeasurementsRequest.to:type_name -> google.protobuf.Timestamp
-	73,  // 96: noted.v1.ListMeasurementsResponse.measurements:type_name -> noted.v1.Measurement
-	135, // 97: noted.v1.ProjectProgress.next_time:type_name -> google.protobuf.Timestamp
-	135, // 98: noted.v1.Project.start_time:type_name -> google.protobuf.Timestamp
-	135, // 99: noted.v1.Project.due_time:type_name -> google.protobuf.Timestamp
-	135, // 100: noted.v1.Project.create_time:type_name -> google.protobuf.Timestamp
-	135, // 101: noted.v1.Project.update_time:type_name -> google.protobuf.Timestamp
-	84,  // 102: noted.v1.Project.progress:type_name -> noted.v1.ProjectProgress
-	0,   // 103: noted.v1.Project.space:type_name -> noted.v1.Space
-	85,  // 104: noted.v1.CreateProjectRequest.project:type_name -> noted.v1.Project
-	85,  // 105: noted.v1.ProjectDetail.project:type_name -> noted.v1.Project
-	24,  // 106: noted.v1.ProjectDetail.tasks:type_name -> noted.v1.Task
-	16,  // 107: noted.v1.ProjectDetail.events:type_name -> noted.v1.Event
-	6,   // 108: noted.v1.ProjectDetail.notes:type_name -> noted.v1.Note
-	85,  // 109: noted.v1.UpdateProjectRequest.project:type_name -> noted.v1.Project
-	136, // 110: noted.v1.UpdateProjectRequest.update_mask:type_name -> google.protobuf.FieldMask
-	0,   // 111: noted.v1.ListProjectsRequest.space:type_name -> noted.v1.Space
-	85,  // 112: noted.v1.ListProjectsResponse.projects:type_name -> noted.v1.Project
-	3,   // 113: noted.v1.GetFocusRequest.horizon:type_name -> noted.v1.Horizon
-	0,   // 114: noted.v1.GetFocusRequest.space:type_name -> noted.v1.Space
-	22,  // 115: noted.v1.FocusItem.event:type_name -> noted.v1.Occurrence
-	24,  // 116: noted.v1.FocusItem.task:type_name -> noted.v1.Task
-	135, // 117: noted.v1.FocusItem.sort_time:type_name -> google.protobuf.Timestamp
-	3,   // 118: noted.v1.GetFocusResponse.horizon:type_name -> noted.v1.Horizon
-	135, // 119: noted.v1.GetFocusResponse.from:type_name -> google.protobuf.Timestamp
-	135, // 120: noted.v1.GetFocusResponse.to:type_name -> google.protobuf.Timestamp
-	94,  // 121: noted.v1.GetFocusResponse.items:type_name -> noted.v1.FocusItem
-	57,  // 122: noted.v1.GetFocusResponse.goals:type_name -> noted.v1.Goal
-	85,  // 123: noted.v1.GetFocusResponse.pinned_projects:type_name -> noted.v1.Project
-	0,   // 124: noted.v1.GetFocusResponse.space:type_name -> noted.v1.Space
-	135, // 125: noted.v1.Preference.update_time:type_name -> google.protobuf.Timestamp
-	96,  // 126: noted.v1.ListPreferencesResponse.preferences:type_name -> noted.v1.Preference
-	137, // 127: noted.v1.Operation.args:type_name -> google.protobuf.Struct
-	0,   // 128: noted.v1.Proposal.space:type_name -> noted.v1.Space
-	104, // 129: noted.v1.Proposal.operations:type_name -> noted.v1.Operation
-	105, // 130: noted.v1.Proposal.inputs:type_name -> noted.v1.ProposalInput
-	135, // 131: noted.v1.Proposal.create_time:type_name -> google.protobuf.Timestamp
-	135, // 132: noted.v1.Proposal.decide_time:type_name -> google.protobuf.Timestamp
-	135, // 133: noted.v1.Change.create_time:type_name -> google.protobuf.Timestamp
-	135, // 134: noted.v1.Change.undo_time:type_name -> google.protobuf.Timestamp
-	0,   // 135: noted.v1.ListProposalsRequest.space:type_name -> noted.v1.Space
-	106, // 136: noted.v1.ListProposalsResponse.proposals:type_name -> noted.v1.Proposal
-	134, // 137: noted.v1.AcceptProposalRequest.inputs:type_name -> noted.v1.AcceptProposalRequest.InputsEntry
-	110, // 138: noted.v1.AcceptProposalRequest.selection:type_name -> noted.v1.OperationSelection
-	106, // 139: noted.v1.AcceptProposalResponse.proposal:type_name -> noted.v1.Proposal
-	107, // 140: noted.v1.AcceptProposalResponse.change:type_name -> noted.v1.Change
-	135, // 141: noted.v1.GetWeeklyReviewRequest.week_of:type_name -> google.protobuf.Timestamp
-	0,   // 142: noted.v1.GetWeeklyReviewRequest.space:type_name -> noted.v1.Space
-	135, // 143: noted.v1.WeeklyReview.from:type_name -> google.protobuf.Timestamp
-	135, // 144: noted.v1.WeeklyReview.to:type_name -> google.protobuf.Timestamp
-	57,  // 145: noted.v1.WeeklyReview.goals:type_name -> noted.v1.Goal
-	24,  // 146: noted.v1.WeeklyReview.carried_tasks:type_name -> noted.v1.Task
-	106, // 147: noted.v1.WeeklyReview.next_week:type_name -> noted.v1.Proposal
-	107, // 148: noted.v1.ListChangesResponse.changes:type_name -> noted.v1.Change
-	135, // 149: noted.v1.Holding.last_price_time:type_name -> google.protobuf.Timestamp
-	135, // 150: noted.v1.Holding.create_time:type_name -> google.protobuf.Timestamp
-	135, // 151: noted.v1.Holding.update_time:type_name -> google.protobuf.Timestamp
-	121, // 152: noted.v1.Holding.position:type_name -> noted.v1.Position
-	122, // 153: noted.v1.Position.dca:type_name -> noted.v1.DcaStatus
-	135, // 154: noted.v1.DcaStatus.next_time:type_name -> google.protobuf.Timestamp
-	135, // 155: noted.v1.Trade.time:type_name -> google.protobuf.Timestamp
-	120, // 156: noted.v1.CreateHoldingRequest.holding:type_name -> noted.v1.Holding
-	120, // 157: noted.v1.UpdateHoldingRequest.holding:type_name -> noted.v1.Holding
-	136, // 158: noted.v1.UpdateHoldingRequest.update_mask:type_name -> google.protobuf.FieldMask
-	120, // 159: noted.v1.ListHoldingsResponse.holdings:type_name -> noted.v1.Holding
-	123, // 160: noted.v1.RecordTradeRequest.trade:type_name -> noted.v1.Trade
-	123, // 161: noted.v1.ListTradesResponse.trades:type_name -> noted.v1.Trade
-	7,   // 162: noted.v1.NoteService.CreateNote:input_type -> noted.v1.CreateNoteRequest
-	8,   // 163: noted.v1.NoteService.GetNote:input_type -> noted.v1.GetNoteRequest
-	9,   // 164: noted.v1.NoteService.UpdateNote:input_type -> noted.v1.UpdateNoteRequest
-	10,  // 165: noted.v1.NoteService.DeleteNote:input_type -> noted.v1.DeleteNoteRequest
-	11,  // 166: noted.v1.NoteService.ListNotes:input_type -> noted.v1.ListNotesRequest
-	13,  // 167: noted.v1.NoteService.SearchNotes:input_type -> noted.v1.SearchNotesRequest
-	17,  // 168: noted.v1.CalendarService.CreateEvent:input_type -> noted.v1.CreateEventRequest
-	18,  // 169: noted.v1.CalendarService.GetEvent:input_type -> noted.v1.GetEventRequest
-	19,  // 170: noted.v1.CalendarService.UpdateEvent:input_type -> noted.v1.UpdateEventRequest
-	20,  // 171: noted.v1.CalendarService.DeleteEvent:input_type -> noted.v1.DeleteEventRequest
-	21,  // 172: noted.v1.CalendarService.ListEvents:input_type -> noted.v1.ListEventsRequest
-	25,  // 173: noted.v1.CalendarService.CreateTask:input_type -> noted.v1.CreateTaskRequest
-	26,  // 174: noted.v1.CalendarService.GetTask:input_type -> noted.v1.GetTaskRequest
-	27,  // 175: noted.v1.CalendarService.UpdateTask:input_type -> noted.v1.UpdateTaskRequest
-	28,  // 176: noted.v1.CalendarService.DeleteTask:input_type -> noted.v1.DeleteTaskRequest
-	29,  // 177: noted.v1.CalendarService.ListTasks:input_type -> noted.v1.ListTasksRequest
-	32,  // 178: noted.v1.CalendarService.WatchReminders:input_type -> noted.v1.WatchRemindersRequest
-	33,  // 179: noted.v1.CalendarService.ListReminders:input_type -> noted.v1.ListRemindersRequest
-	35,  // 180: noted.v1.AIService.GetStatus:input_type -> noted.v1.GetStatusRequest
-	37,  // 181: noted.v1.AIService.Ask:input_type -> noted.v1.AskRequest
-	40,  // 182: noted.v1.AIService.SummarizeNote:input_type -> noted.v1.SummarizeNoteRequest
-	42,  // 183: noted.v1.AIService.SuggestTags:input_type -> noted.v1.SuggestTagsRequest
-	44,  // 184: noted.v1.AIService.DailyBriefing:input_type -> noted.v1.DailyBriefingRequest
-	52,  // 185: noted.v1.AIService.PlanFromText:input_type -> noted.v1.PlanFromTextRequest
-	53,  // 186: noted.v1.AIService.ExtractTasks:input_type -> noted.v1.ExtractTasksRequest
-	50,  // 187: noted.v1.AIService.GetAIAccess:input_type -> noted.v1.GetAIAccessRequest
-	51,  // 188: noted.v1.AIService.SetAIAccess:input_type -> noted.v1.SetAIAccessRequest
-	47,  // 189: noted.v1.AIService.GetAIFeatures:input_type -> noted.v1.GetAIFeaturesRequest
-	48,  // 190: noted.v1.AIService.SetAIFeatures:input_type -> noted.v1.SetAIFeaturesRequest
-	59,  // 191: noted.v1.GoalService.CreateGoal:input_type -> noted.v1.CreateGoalRequest
-	60,  // 192: noted.v1.GoalService.GetGoal:input_type -> noted.v1.GetGoalRequest
-	61,  // 193: noted.v1.GoalService.UpdateGoal:input_type -> noted.v1.UpdateGoalRequest
-	62,  // 194: noted.v1.GoalService.DeleteGoal:input_type -> noted.v1.DeleteGoalRequest
-	63,  // 195: noted.v1.GoalService.ListGoals:input_type -> noted.v1.ListGoalsRequest
-	65,  // 196: noted.v1.GoalService.RecordCheckIn:input_type -> noted.v1.RecordCheckInRequest
-	67,  // 197: noted.v1.GoalService.DeleteCheckIn:input_type -> noted.v1.DeleteCheckInRequest
-	68,  // 198: noted.v1.GoalService.ListCheckIns:input_type -> noted.v1.ListCheckInsRequest
-	70,  // 199: noted.v1.GoalService.SetMilestoneDone:input_type -> noted.v1.SetMilestoneDoneRequest
-	74,  // 200: noted.v1.ObjectiveService.CreateObjective:input_type -> noted.v1.CreateObjectiveRequest
-	75,  // 201: noted.v1.ObjectiveService.GetObjective:input_type -> noted.v1.GetObjectiveRequest
-	76,  // 202: noted.v1.ObjectiveService.UpdateObjective:input_type -> noted.v1.UpdateObjectiveRequest
-	77,  // 203: noted.v1.ObjectiveService.DeleteObjective:input_type -> noted.v1.DeleteObjectiveRequest
-	78,  // 204: noted.v1.ObjectiveService.ListObjectives:input_type -> noted.v1.ListObjectivesRequest
-	80,  // 205: noted.v1.ObjectiveService.RecordMeasurement:input_type -> noted.v1.RecordMeasurementRequest
-	81,  // 206: noted.v1.ObjectiveService.DeleteMeasurement:input_type -> noted.v1.DeleteMeasurementRequest
-	82,  // 207: noted.v1.ObjectiveService.ListMeasurements:input_type -> noted.v1.ListMeasurementsRequest
-	86,  // 208: noted.v1.ProjectService.CreateProject:input_type -> noted.v1.CreateProjectRequest
-	87,  // 209: noted.v1.ProjectService.GetProject:input_type -> noted.v1.GetProjectRequest
-	89,  // 210: noted.v1.ProjectService.UpdateProject:input_type -> noted.v1.UpdateProjectRequest
-	90,  // 211: noted.v1.ProjectService.DeleteProject:input_type -> noted.v1.DeleteProjectRequest
-	91,  // 212: noted.v1.ProjectService.ListProjects:input_type -> noted.v1.ListProjectsRequest
-	93,  // 213: noted.v1.FocusService.GetFocus:input_type -> noted.v1.GetFocusRequest
-	97,  // 214: noted.v1.PreferenceService.GetPreference:input_type -> noted.v1.GetPreferenceRequest
-	98,  // 215: noted.v1.PreferenceService.SetPreference:input_type -> noted.v1.SetPreferenceRequest
-	99,  // 216: noted.v1.PreferenceService.DeletePreference:input_type -> noted.v1.DeletePreferenceRequest
-	100, // 217: noted.v1.PreferenceService.ListPreferences:input_type -> noted.v1.ListPreferencesRequest
-	102, // 218: noted.v1.ExportService.Export:input_type -> noted.v1.ExportRequest
-	108, // 219: noted.v1.SuggestionService.ListProposals:input_type -> noted.v1.ListProposalsRequest
-	111, // 220: noted.v1.SuggestionService.AcceptProposal:input_type -> noted.v1.AcceptProposalRequest
-	113, // 221: noted.v1.SuggestionService.DismissProposal:input_type -> noted.v1.DismissProposalRequest
-	114, // 222: noted.v1.SuggestionService.ProposeSchedule:input_type -> noted.v1.ProposeScheduleRequest
-	115, // 223: noted.v1.SuggestionService.GetWeeklyReview:input_type -> noted.v1.GetWeeklyReviewRequest
-	117, // 224: noted.v1.SuggestionService.ListChanges:input_type -> noted.v1.ListChangesRequest
-	119, // 225: noted.v1.SuggestionService.UndoChange:input_type -> noted.v1.UndoChangeRequest
-	124, // 226: noted.v1.HoldingService.CreateHolding:input_type -> noted.v1.CreateHoldingRequest
-	125, // 227: noted.v1.HoldingService.GetHolding:input_type -> noted.v1.GetHoldingRequest
-	126, // 228: noted.v1.HoldingService.UpdateHolding:input_type -> noted.v1.UpdateHoldingRequest
-	127, // 229: noted.v1.HoldingService.DeleteHolding:input_type -> noted.v1.DeleteHoldingRequest
-	128, // 230: noted.v1.HoldingService.ListHoldings:input_type -> noted.v1.ListHoldingsRequest
-	130, // 231: noted.v1.HoldingService.RecordTrade:input_type -> noted.v1.RecordTradeRequest
-	131, // 232: noted.v1.HoldingService.DeleteTrade:input_type -> noted.v1.DeleteTradeRequest
-	132, // 233: noted.v1.HoldingService.ListTrades:input_type -> noted.v1.ListTradesRequest
-	6,   // 234: noted.v1.NoteService.CreateNote:output_type -> noted.v1.Note
-	6,   // 235: noted.v1.NoteService.GetNote:output_type -> noted.v1.Note
-	6,   // 236: noted.v1.NoteService.UpdateNote:output_type -> noted.v1.Note
-	138, // 237: noted.v1.NoteService.DeleteNote:output_type -> google.protobuf.Empty
-	12,  // 238: noted.v1.NoteService.ListNotes:output_type -> noted.v1.ListNotesResponse
-	15,  // 239: noted.v1.NoteService.SearchNotes:output_type -> noted.v1.SearchNotesResponse
-	16,  // 240: noted.v1.CalendarService.CreateEvent:output_type -> noted.v1.Event
-	16,  // 241: noted.v1.CalendarService.GetEvent:output_type -> noted.v1.Event
-	16,  // 242: noted.v1.CalendarService.UpdateEvent:output_type -> noted.v1.Event
-	138, // 243: noted.v1.CalendarService.DeleteEvent:output_type -> google.protobuf.Empty
-	23,  // 244: noted.v1.CalendarService.ListEvents:output_type -> noted.v1.ListEventsResponse
-	24,  // 245: noted.v1.CalendarService.CreateTask:output_type -> noted.v1.Task
-	24,  // 246: noted.v1.CalendarService.GetTask:output_type -> noted.v1.Task
-	24,  // 247: noted.v1.CalendarService.UpdateTask:output_type -> noted.v1.Task
-	138, // 248: noted.v1.CalendarService.DeleteTask:output_type -> google.protobuf.Empty
-	30,  // 249: noted.v1.CalendarService.ListTasks:output_type -> noted.v1.ListTasksResponse
-	31,  // 250: noted.v1.CalendarService.WatchReminders:output_type -> noted.v1.Reminder
-	34,  // 251: noted.v1.CalendarService.ListReminders:output_type -> noted.v1.ListRemindersResponse
-	36,  // 252: noted.v1.AIService.GetStatus:output_type -> noted.v1.GetStatusResponse
-	38,  // 253: noted.v1.AIService.Ask:output_type -> noted.v1.AskResponse
-	41,  // 254: noted.v1.AIService.SummarizeNote:output_type -> noted.v1.SummarizeNoteResponse
-	43,  // 255: noted.v1.AIService.SuggestTags:output_type -> noted.v1.SuggestTagsResponse
-	45,  // 256: noted.v1.AIService.DailyBriefing:output_type -> noted.v1.DailyBriefingResponse
-	106, // 257: noted.v1.AIService.PlanFromText:output_type -> noted.v1.Proposal
-	106, // 258: noted.v1.AIService.ExtractTasks:output_type -> noted.v1.Proposal
-	49,  // 259: noted.v1.AIService.GetAIAccess:output_type -> noted.v1.AIAccess
-	49,  // 260: noted.v1.AIService.SetAIAccess:output_type -> noted.v1.AIAccess
-	46,  // 261: noted.v1.AIService.GetAIFeatures:output_type -> noted.v1.AIFeatures
-	46,  // 262: noted.v1.AIService.SetAIFeatures:output_type -> noted.v1.AIFeatures
-	57,  // 263: noted.v1.GoalService.CreateGoal:output_type -> noted.v1.Goal
-	57,  // 264: noted.v1.GoalService.GetGoal:output_type -> noted.v1.Goal
-	57,  // 265: noted.v1.GoalService.UpdateGoal:output_type -> noted.v1.Goal
-	138, // 266: noted.v1.GoalService.DeleteGoal:output_type -> google.protobuf.Empty
-	64,  // 267: noted.v1.GoalService.ListGoals:output_type -> noted.v1.ListGoalsResponse
-	66,  // 268: noted.v1.GoalService.RecordCheckIn:output_type -> noted.v1.RecordCheckInResponse
-	57,  // 269: noted.v1.GoalService.DeleteCheckIn:output_type -> noted.v1.Goal
-	69,  // 270: noted.v1.GoalService.ListCheckIns:output_type -> noted.v1.ListCheckInsResponse
-	57,  // 271: noted.v1.GoalService.SetMilestoneDone:output_type -> noted.v1.Goal
-	71,  // 272: noted.v1.ObjectiveService.CreateObjective:output_type -> noted.v1.Objective
-	71,  // 273: noted.v1.ObjectiveService.GetObjective:output_type -> noted.v1.Objective
-	71,  // 274: noted.v1.ObjectiveService.UpdateObjective:output_type -> noted.v1.Objective
-	138, // 275: noted.v1.ObjectiveService.DeleteObjective:output_type -> google.protobuf.Empty
-	79,  // 276: noted.v1.ObjectiveService.ListObjectives:output_type -> noted.v1.ListObjectivesResponse
-	71,  // 277: noted.v1.ObjectiveService.RecordMeasurement:output_type -> noted.v1.Objective
-	138, // 278: noted.v1.ObjectiveService.DeleteMeasurement:output_type -> google.protobuf.Empty
-	83,  // 279: noted.v1.ObjectiveService.ListMeasurements:output_type -> noted.v1.ListMeasurementsResponse
-	85,  // 280: noted.v1.ProjectService.CreateProject:output_type -> noted.v1.Project
-	88,  // 281: noted.v1.ProjectService.GetProject:output_type -> noted.v1.ProjectDetail
-	85,  // 282: noted.v1.ProjectService.UpdateProject:output_type -> noted.v1.Project
-	138, // 283: noted.v1.ProjectService.DeleteProject:output_type -> google.protobuf.Empty
-	92,  // 284: noted.v1.ProjectService.ListProjects:output_type -> noted.v1.ListProjectsResponse
-	95,  // 285: noted.v1.FocusService.GetFocus:output_type -> noted.v1.GetFocusResponse
-	96,  // 286: noted.v1.PreferenceService.GetPreference:output_type -> noted.v1.Preference
-	96,  // 287: noted.v1.PreferenceService.SetPreference:output_type -> noted.v1.Preference
-	138, // 288: noted.v1.PreferenceService.DeletePreference:output_type -> google.protobuf.Empty
-	101, // 289: noted.v1.PreferenceService.ListPreferences:output_type -> noted.v1.ListPreferencesResponse
-	103, // 290: noted.v1.ExportService.Export:output_type -> noted.v1.ExportChunk
-	109, // 291: noted.v1.SuggestionService.ListProposals:output_type -> noted.v1.ListProposalsResponse
-	112, // 292: noted.v1.SuggestionService.AcceptProposal:output_type -> noted.v1.AcceptProposalResponse
-	106, // 293: noted.v1.SuggestionService.DismissProposal:output_type -> noted.v1.Proposal
-	106, // 294: noted.v1.SuggestionService.ProposeSchedule:output_type -> noted.v1.Proposal
-	116, // 295: noted.v1.SuggestionService.GetWeeklyReview:output_type -> noted.v1.WeeklyReview
-	118, // 296: noted.v1.SuggestionService.ListChanges:output_type -> noted.v1.ListChangesResponse
-	107, // 297: noted.v1.SuggestionService.UndoChange:output_type -> noted.v1.Change
-	120, // 298: noted.v1.HoldingService.CreateHolding:output_type -> noted.v1.Holding
-	120, // 299: noted.v1.HoldingService.GetHolding:output_type -> noted.v1.Holding
-	120, // 300: noted.v1.HoldingService.UpdateHolding:output_type -> noted.v1.Holding
-	138, // 301: noted.v1.HoldingService.DeleteHolding:output_type -> google.protobuf.Empty
-	129, // 302: noted.v1.HoldingService.ListHoldings:output_type -> noted.v1.ListHoldingsResponse
-	120, // 303: noted.v1.HoldingService.RecordTrade:output_type -> noted.v1.Holding
-	138, // 304: noted.v1.HoldingService.DeleteTrade:output_type -> google.protobuf.Empty
-	133, // 305: noted.v1.HoldingService.ListTrades:output_type -> noted.v1.ListTradesResponse
-	234, // [234:306] is the sub-list for method output_type
-	162, // [162:234] is the sub-list for method input_type
-	162, // [162:162] is the sub-list for extension type_name
-	162, // [162:162] is the sub-list for extension extendee
-	0,   // [0:162] is the sub-list for field type_name
+	189, // 33: noted.v1.Task.last_worked_time:type_name -> google.protobuf.Timestamp
+	189, // 34: noted.v1.TaskWork.time:type_name -> google.protobuf.Timestamp
+	25,  // 35: noted.v1.CreateTaskRequest.task:type_name -> noted.v1.Task
+	25,  // 36: noted.v1.UpdateTaskRequest.task:type_name -> noted.v1.Task
+	190, // 37: noted.v1.UpdateTaskRequest.update_mask:type_name -> google.protobuf.FieldMask
+	5,   // 38: noted.v1.ListTasksRequest.filter:type_name -> noted.v1.ListTasksRequest.Filter
+	189, // 39: noted.v1.ListTasksRequest.due_before:type_name -> google.protobuf.Timestamp
+	0,   // 40: noted.v1.ListTasksRequest.space:type_name -> noted.v1.Space
+	25,  // 41: noted.v1.ListTasksResponse.tasks:type_name -> noted.v1.Task
+	189, // 42: noted.v1.LogTaskWorkRequest.time:type_name -> google.protobuf.Timestamp
+	26,  // 43: noted.v1.ListTaskWorkResponse.entries:type_name -> noted.v1.TaskWork
+	6,   // 44: noted.v1.Reminder.kind:type_name -> noted.v1.Reminder.Kind
+	189, // 45: noted.v1.Reminder.due_time:type_name -> google.protobuf.Timestamp
+	189, // 46: noted.v1.Reminder.fire_time:type_name -> google.protobuf.Timestamp
+	0,   // 47: noted.v1.Reminder.space:type_name -> noted.v1.Space
+	0,   // 48: noted.v1.WatchRemindersRequest.space:type_name -> noted.v1.Space
+	189, // 49: noted.v1.ListRemindersRequest.since:type_name -> google.protobuf.Timestamp
+	0,   // 50: noted.v1.ListRemindersRequest.space:type_name -> noted.v1.Space
+	37,  // 51: noted.v1.ListRemindersResponse.reminders:type_name -> noted.v1.Reminder
+	0,   // 52: noted.v1.AskRequest.space:type_name -> noted.v1.Space
+	112, // 53: noted.v1.AskResponse.proposal:type_name -> noted.v1.Proposal
+	113, // 54: noted.v1.AskResponse.change:type_name -> noted.v1.Change
+	45,  // 55: noted.v1.AskResponse.references:type_name -> noted.v1.Reference
+	189, // 56: noted.v1.Reference.time:type_name -> google.protobuf.Timestamp
+	189, // 57: noted.v1.DailyBriefingRequest.day:type_name -> google.protobuf.Timestamp
+	0,   // 58: noted.v1.DailyBriefingRequest.space:type_name -> noted.v1.Space
+	0,   // 59: noted.v1.PlanFromTextRequest.space:type_name -> noted.v1.Space
+	189, // 60: noted.v1.Milestone.done_time:type_name -> google.protobuf.Timestamp
+	189, // 61: noted.v1.GoalProgress.period_start:type_name -> google.protobuf.Timestamp
+	189, // 62: noted.v1.GoalProgress.period_end:type_name -> google.protobuf.Timestamp
+	61,  // 63: noted.v1.GoalProgress.days:type_name -> noted.v1.DayTotal
+	61,  // 64: noted.v1.GoalProgress.recent:type_name -> noted.v1.DayTotal
+	2,   // 65: noted.v1.Goal.period:type_name -> noted.v1.GoalPeriod
+	60,  // 66: noted.v1.Goal.milestones:type_name -> noted.v1.Milestone
+	189, // 67: noted.v1.Goal.create_time:type_name -> google.protobuf.Timestamp
+	189, // 68: noted.v1.Goal.update_time:type_name -> google.protobuf.Timestamp
+	62,  // 69: noted.v1.Goal.progress:type_name -> noted.v1.GoalProgress
+	0,   // 70: noted.v1.Goal.space:type_name -> noted.v1.Space
+	189, // 71: noted.v1.CheckIn.time:type_name -> google.protobuf.Timestamp
+	63,  // 72: noted.v1.CreateGoalRequest.goal:type_name -> noted.v1.Goal
+	63,  // 73: noted.v1.UpdateGoalRequest.goal:type_name -> noted.v1.Goal
+	190, // 74: noted.v1.UpdateGoalRequest.update_mask:type_name -> google.protobuf.FieldMask
+	0,   // 75: noted.v1.ListGoalsRequest.space:type_name -> noted.v1.Space
+	63,  // 76: noted.v1.ListGoalsResponse.goals:type_name -> noted.v1.Goal
+	189, // 77: noted.v1.RecordCheckInRequest.time:type_name -> google.protobuf.Timestamp
+	64,  // 78: noted.v1.RecordCheckInResponse.check_in:type_name -> noted.v1.CheckIn
+	63,  // 79: noted.v1.RecordCheckInResponse.goal:type_name -> noted.v1.Goal
+	189, // 80: noted.v1.ListCheckInsRequest.from:type_name -> google.protobuf.Timestamp
+	189, // 81: noted.v1.ListCheckInsRequest.to:type_name -> google.protobuf.Timestamp
+	64,  // 82: noted.v1.ListCheckInsResponse.check_ins:type_name -> noted.v1.CheckIn
+	0,   // 83: noted.v1.Objective.space:type_name -> noted.v1.Space
+	189, // 84: noted.v1.Objective.start_time:type_name -> google.protobuf.Timestamp
+	189, // 85: noted.v1.Objective.due_time:type_name -> google.protobuf.Timestamp
+	189, // 86: noted.v1.Objective.create_time:type_name -> google.protobuf.Timestamp
+	189, // 87: noted.v1.Objective.update_time:type_name -> google.protobuf.Timestamp
+	78,  // 88: noted.v1.Objective.progress:type_name -> noted.v1.ObjectiveProgress
+	63,  // 89: noted.v1.Objective.goals:type_name -> noted.v1.Goal
+	189, // 90: noted.v1.ObjectiveProgress.last_reading_time:type_name -> google.protobuf.Timestamp
+	189, // 91: noted.v1.Measurement.time:type_name -> google.protobuf.Timestamp
+	77,  // 92: noted.v1.CreateObjectiveRequest.objective:type_name -> noted.v1.Objective
+	77,  // 93: noted.v1.UpdateObjectiveRequest.objective:type_name -> noted.v1.Objective
+	190, // 94: noted.v1.UpdateObjectiveRequest.update_mask:type_name -> google.protobuf.FieldMask
+	0,   // 95: noted.v1.ListObjectivesRequest.space:type_name -> noted.v1.Space
+	77,  // 96: noted.v1.ListObjectivesResponse.objectives:type_name -> noted.v1.Objective
+	189, // 97: noted.v1.RecordMeasurementRequest.time:type_name -> google.protobuf.Timestamp
+	189, // 98: noted.v1.ListMeasurementsRequest.from:type_name -> google.protobuf.Timestamp
+	189, // 99: noted.v1.ListMeasurementsRequest.to:type_name -> google.protobuf.Timestamp
+	79,  // 100: noted.v1.ListMeasurementsResponse.measurements:type_name -> noted.v1.Measurement
+	189, // 101: noted.v1.ProjectProgress.next_time:type_name -> google.protobuf.Timestamp
+	189, // 102: noted.v1.Project.start_time:type_name -> google.protobuf.Timestamp
+	189, // 103: noted.v1.Project.due_time:type_name -> google.protobuf.Timestamp
+	189, // 104: noted.v1.Project.create_time:type_name -> google.protobuf.Timestamp
+	189, // 105: noted.v1.Project.update_time:type_name -> google.protobuf.Timestamp
+	90,  // 106: noted.v1.Project.progress:type_name -> noted.v1.ProjectProgress
+	0,   // 107: noted.v1.Project.space:type_name -> noted.v1.Space
+	91,  // 108: noted.v1.CreateProjectRequest.project:type_name -> noted.v1.Project
+	91,  // 109: noted.v1.ProjectDetail.project:type_name -> noted.v1.Project
+	25,  // 110: noted.v1.ProjectDetail.tasks:type_name -> noted.v1.Task
+	17,  // 111: noted.v1.ProjectDetail.events:type_name -> noted.v1.Event
+	7,   // 112: noted.v1.ProjectDetail.notes:type_name -> noted.v1.Note
+	63,  // 113: noted.v1.ProjectDetail.goals:type_name -> noted.v1.Goal
+	77,  // 114: noted.v1.ProjectDetail.objectives:type_name -> noted.v1.Objective
+	140, // 115: noted.v1.ProjectDetail.time_entries:type_name -> noted.v1.TimeEntry
+	91,  // 116: noted.v1.UpdateProjectRequest.project:type_name -> noted.v1.Project
+	190, // 117: noted.v1.UpdateProjectRequest.update_mask:type_name -> google.protobuf.FieldMask
+	0,   // 118: noted.v1.ListProjectsRequest.space:type_name -> noted.v1.Space
+	91,  // 119: noted.v1.ListProjectsResponse.projects:type_name -> noted.v1.Project
+	3,   // 120: noted.v1.GetFocusRequest.horizon:type_name -> noted.v1.Horizon
+	0,   // 121: noted.v1.GetFocusRequest.space:type_name -> noted.v1.Space
+	23,  // 122: noted.v1.FocusItem.event:type_name -> noted.v1.Occurrence
+	25,  // 123: noted.v1.FocusItem.task:type_name -> noted.v1.Task
+	189, // 124: noted.v1.FocusItem.sort_time:type_name -> google.protobuf.Timestamp
+	3,   // 125: noted.v1.GetFocusResponse.horizon:type_name -> noted.v1.Horizon
+	189, // 126: noted.v1.GetFocusResponse.from:type_name -> google.protobuf.Timestamp
+	189, // 127: noted.v1.GetFocusResponse.to:type_name -> google.protobuf.Timestamp
+	100, // 128: noted.v1.GetFocusResponse.items:type_name -> noted.v1.FocusItem
+	63,  // 129: noted.v1.GetFocusResponse.goals:type_name -> noted.v1.Goal
+	91,  // 130: noted.v1.GetFocusResponse.pinned_projects:type_name -> noted.v1.Project
+	0,   // 131: noted.v1.GetFocusResponse.space:type_name -> noted.v1.Space
+	140, // 132: noted.v1.GetFocusResponse.running_timer:type_name -> noted.v1.TimeEntry
+	189, // 133: noted.v1.Preference.update_time:type_name -> google.protobuf.Timestamp
+	102, // 134: noted.v1.ListPreferencesResponse.preferences:type_name -> noted.v1.Preference
+	191, // 135: noted.v1.Operation.args:type_name -> google.protobuf.Struct
+	0,   // 136: noted.v1.Proposal.space:type_name -> noted.v1.Space
+	110, // 137: noted.v1.Proposal.operations:type_name -> noted.v1.Operation
+	111, // 138: noted.v1.Proposal.inputs:type_name -> noted.v1.ProposalInput
+	189, // 139: noted.v1.Proposal.create_time:type_name -> google.protobuf.Timestamp
+	189, // 140: noted.v1.Proposal.decide_time:type_name -> google.protobuf.Timestamp
+	189, // 141: noted.v1.Change.create_time:type_name -> google.protobuf.Timestamp
+	189, // 142: noted.v1.Change.undo_time:type_name -> google.protobuf.Timestamp
+	0,   // 143: noted.v1.ListProposalsRequest.space:type_name -> noted.v1.Space
+	112, // 144: noted.v1.ListProposalsResponse.proposals:type_name -> noted.v1.Proposal
+	188, // 145: noted.v1.AcceptProposalRequest.inputs:type_name -> noted.v1.AcceptProposalRequest.InputsEntry
+	116, // 146: noted.v1.AcceptProposalRequest.selection:type_name -> noted.v1.OperationSelection
+	112, // 147: noted.v1.AcceptProposalResponse.proposal:type_name -> noted.v1.Proposal
+	113, // 148: noted.v1.AcceptProposalResponse.change:type_name -> noted.v1.Change
+	189, // 149: noted.v1.GetWeeklyReviewRequest.week_of:type_name -> google.protobuf.Timestamp
+	0,   // 150: noted.v1.GetWeeklyReviewRequest.space:type_name -> noted.v1.Space
+	189, // 151: noted.v1.WeeklyReview.from:type_name -> google.protobuf.Timestamp
+	189, // 152: noted.v1.WeeklyReview.to:type_name -> google.protobuf.Timestamp
+	63,  // 153: noted.v1.WeeklyReview.goals:type_name -> noted.v1.Goal
+	25,  // 154: noted.v1.WeeklyReview.carried_tasks:type_name -> noted.v1.Task
+	112, // 155: noted.v1.WeeklyReview.next_week:type_name -> noted.v1.Proposal
+	152, // 156: noted.v1.WeeklyReview.top_activities:type_name -> noted.v1.TimeSummaryRow
+	113, // 157: noted.v1.ListChangesResponse.changes:type_name -> noted.v1.Change
+	189, // 158: noted.v1.Holding.last_price_time:type_name -> google.protobuf.Timestamp
+	189, // 159: noted.v1.Holding.create_time:type_name -> google.protobuf.Timestamp
+	189, // 160: noted.v1.Holding.update_time:type_name -> google.protobuf.Timestamp
+	127, // 161: noted.v1.Holding.position:type_name -> noted.v1.Position
+	128, // 162: noted.v1.Position.dca:type_name -> noted.v1.DcaStatus
+	189, // 163: noted.v1.DcaStatus.next_time:type_name -> google.protobuf.Timestamp
+	189, // 164: noted.v1.Trade.time:type_name -> google.protobuf.Timestamp
+	126, // 165: noted.v1.CreateHoldingRequest.holding:type_name -> noted.v1.Holding
+	126, // 166: noted.v1.UpdateHoldingRequest.holding:type_name -> noted.v1.Holding
+	190, // 167: noted.v1.UpdateHoldingRequest.update_mask:type_name -> google.protobuf.FieldMask
+	126, // 168: noted.v1.ListHoldingsResponse.holdings:type_name -> noted.v1.Holding
+	129, // 169: noted.v1.RecordTradeRequest.trade:type_name -> noted.v1.Trade
+	129, // 170: noted.v1.ListTradesResponse.trades:type_name -> noted.v1.Trade
+	189, // 171: noted.v1.TimeEntry.start_time:type_name -> google.protobuf.Timestamp
+	189, // 172: noted.v1.TimeEntry.end_time:type_name -> google.protobuf.Timestamp
+	0,   // 173: noted.v1.TimeEntry.space:type_name -> noted.v1.Space
+	189, // 174: noted.v1.TimeEntry.create_time:type_name -> google.protobuf.Timestamp
+	189, // 175: noted.v1.TimeEntry.update_time:type_name -> google.protobuf.Timestamp
+	140, // 176: noted.v1.CreateTimeEntryRequest.entry:type_name -> noted.v1.TimeEntry
+	140, // 177: noted.v1.UpdateTimeEntryRequest.entry:type_name -> noted.v1.TimeEntry
+	190, // 178: noted.v1.UpdateTimeEntryRequest.update_mask:type_name -> google.protobuf.FieldMask
+	189, // 179: noted.v1.ListTimeEntriesRequest.from:type_name -> google.protobuf.Timestamp
+	189, // 180: noted.v1.ListTimeEntriesRequest.to:type_name -> google.protobuf.Timestamp
+	0,   // 181: noted.v1.ListTimeEntriesRequest.space:type_name -> noted.v1.Space
+	140, // 182: noted.v1.ListTimeEntriesResponse.entries:type_name -> noted.v1.TimeEntry
+	0,   // 183: noted.v1.StartTimerRequest.space:type_name -> noted.v1.Space
+	189, // 184: noted.v1.StartTimerRequest.start_time:type_name -> google.protobuf.Timestamp
+	189, // 185: noted.v1.StopTimerRequest.end_time:type_name -> google.protobuf.Timestamp
+	140, // 186: noted.v1.GetRunningTimerResponse.entry:type_name -> noted.v1.TimeEntry
+	189, // 187: noted.v1.SummarizeTimeRequest.from:type_name -> google.protobuf.Timestamp
+	189, // 188: noted.v1.SummarizeTimeRequest.to:type_name -> google.protobuf.Timestamp
+	4,   // 189: noted.v1.SummarizeTimeRequest.group_by:type_name -> noted.v1.TimeGroupBy
+	0,   // 190: noted.v1.SummarizeTimeRequest.space:type_name -> noted.v1.Space
+	189, // 191: noted.v1.TimeSummary.from:type_name -> google.protobuf.Timestamp
+	189, // 192: noted.v1.TimeSummary.to:type_name -> google.protobuf.Timestamp
+	4,   // 193: noted.v1.TimeSummary.group_by:type_name -> noted.v1.TimeGroupBy
+	152, // 194: noted.v1.TimeSummary.rows:type_name -> noted.v1.TimeSummaryRow
+	189, // 195: noted.v1.AlarmSchedule.at:type_name -> google.protobuf.Timestamp
+	154, // 196: noted.v1.AlarmSchedule.recurrence:type_name -> noted.v1.AlarmRecurrence
+	155, // 197: noted.v1.Alarm.schedule:type_name -> noted.v1.AlarmSchedule
+	0,   // 198: noted.v1.Alarm.space:type_name -> noted.v1.Space
+	189, // 199: noted.v1.Alarm.create_time:type_name -> google.protobuf.Timestamp
+	189, // 200: noted.v1.Alarm.update_time:type_name -> google.protobuf.Timestamp
+	189, // 201: noted.v1.Alarm.next_fires:type_name -> google.protobuf.Timestamp
+	156, // 202: noted.v1.CreateAlarmRequest.alarm:type_name -> noted.v1.Alarm
+	156, // 203: noted.v1.UpdateAlarmRequest.alarm:type_name -> noted.v1.Alarm
+	190, // 204: noted.v1.UpdateAlarmRequest.update_mask:type_name -> google.protobuf.FieldMask
+	0,   // 205: noted.v1.ListAlarmsRequest.space:type_name -> noted.v1.Space
+	156, // 206: noted.v1.ListAlarmsResponse.alarms:type_name -> noted.v1.Alarm
+	166, // 207: noted.v1.GetHolidaysResponse.days:type_name -> noted.v1.HolidayDay
+	189, // 208: noted.v1.TokenInfo.create_time:type_name -> google.protobuf.Timestamp
+	189, // 209: noted.v1.TokenInfo.last_used_time:type_name -> google.protobuf.Timestamp
+	178, // 210: noted.v1.CreateTokenResponse.info:type_name -> noted.v1.TokenInfo
+	178, // 211: noted.v1.ListTokensResponse.tokens:type_name -> noted.v1.TokenInfo
+	189, // 212: noted.v1.Pairing.create_time:type_name -> google.protobuf.Timestamp
+	189, // 213: noted.v1.Pairing.expire_time:type_name -> google.protobuf.Timestamp
+	8,   // 214: noted.v1.NoteService.CreateNote:input_type -> noted.v1.CreateNoteRequest
+	9,   // 215: noted.v1.NoteService.GetNote:input_type -> noted.v1.GetNoteRequest
+	10,  // 216: noted.v1.NoteService.UpdateNote:input_type -> noted.v1.UpdateNoteRequest
+	11,  // 217: noted.v1.NoteService.DeleteNote:input_type -> noted.v1.DeleteNoteRequest
+	12,  // 218: noted.v1.NoteService.ListNotes:input_type -> noted.v1.ListNotesRequest
+	14,  // 219: noted.v1.NoteService.SearchNotes:input_type -> noted.v1.SearchNotesRequest
+	18,  // 220: noted.v1.CalendarService.CreateEvent:input_type -> noted.v1.CreateEventRequest
+	19,  // 221: noted.v1.CalendarService.GetEvent:input_type -> noted.v1.GetEventRequest
+	20,  // 222: noted.v1.CalendarService.UpdateEvent:input_type -> noted.v1.UpdateEventRequest
+	21,  // 223: noted.v1.CalendarService.DeleteEvent:input_type -> noted.v1.DeleteEventRequest
+	22,  // 224: noted.v1.CalendarService.ListEvents:input_type -> noted.v1.ListEventsRequest
+	27,  // 225: noted.v1.CalendarService.CreateTask:input_type -> noted.v1.CreateTaskRequest
+	28,  // 226: noted.v1.CalendarService.GetTask:input_type -> noted.v1.GetTaskRequest
+	29,  // 227: noted.v1.CalendarService.UpdateTask:input_type -> noted.v1.UpdateTaskRequest
+	30,  // 228: noted.v1.CalendarService.DeleteTask:input_type -> noted.v1.DeleteTaskRequest
+	31,  // 229: noted.v1.CalendarService.ListTasks:input_type -> noted.v1.ListTasksRequest
+	33,  // 230: noted.v1.CalendarService.LogTaskWork:input_type -> noted.v1.LogTaskWorkRequest
+	34,  // 231: noted.v1.CalendarService.ListTaskWork:input_type -> noted.v1.ListTaskWorkRequest
+	36,  // 232: noted.v1.CalendarService.DeleteTaskWork:input_type -> noted.v1.DeleteTaskWorkRequest
+	38,  // 233: noted.v1.CalendarService.WatchReminders:input_type -> noted.v1.WatchRemindersRequest
+	39,  // 234: noted.v1.CalendarService.ListReminders:input_type -> noted.v1.ListRemindersRequest
+	41,  // 235: noted.v1.AIService.GetStatus:input_type -> noted.v1.GetStatusRequest
+	43,  // 236: noted.v1.AIService.Ask:input_type -> noted.v1.AskRequest
+	46,  // 237: noted.v1.AIService.SummarizeNote:input_type -> noted.v1.SummarizeNoteRequest
+	48,  // 238: noted.v1.AIService.SuggestTags:input_type -> noted.v1.SuggestTagsRequest
+	50,  // 239: noted.v1.AIService.DailyBriefing:input_type -> noted.v1.DailyBriefingRequest
+	58,  // 240: noted.v1.AIService.PlanFromText:input_type -> noted.v1.PlanFromTextRequest
+	59,  // 241: noted.v1.AIService.ExtractTasks:input_type -> noted.v1.ExtractTasksRequest
+	56,  // 242: noted.v1.AIService.GetAIAccess:input_type -> noted.v1.GetAIAccessRequest
+	57,  // 243: noted.v1.AIService.SetAIAccess:input_type -> noted.v1.SetAIAccessRequest
+	53,  // 244: noted.v1.AIService.GetAIFeatures:input_type -> noted.v1.GetAIFeaturesRequest
+	54,  // 245: noted.v1.AIService.SetAIFeatures:input_type -> noted.v1.SetAIFeaturesRequest
+	65,  // 246: noted.v1.GoalService.CreateGoal:input_type -> noted.v1.CreateGoalRequest
+	66,  // 247: noted.v1.GoalService.GetGoal:input_type -> noted.v1.GetGoalRequest
+	67,  // 248: noted.v1.GoalService.UpdateGoal:input_type -> noted.v1.UpdateGoalRequest
+	68,  // 249: noted.v1.GoalService.DeleteGoal:input_type -> noted.v1.DeleteGoalRequest
+	69,  // 250: noted.v1.GoalService.ListGoals:input_type -> noted.v1.ListGoalsRequest
+	71,  // 251: noted.v1.GoalService.RecordCheckIn:input_type -> noted.v1.RecordCheckInRequest
+	73,  // 252: noted.v1.GoalService.DeleteCheckIn:input_type -> noted.v1.DeleteCheckInRequest
+	74,  // 253: noted.v1.GoalService.ListCheckIns:input_type -> noted.v1.ListCheckInsRequest
+	76,  // 254: noted.v1.GoalService.SetMilestoneDone:input_type -> noted.v1.SetMilestoneDoneRequest
+	80,  // 255: noted.v1.ObjectiveService.CreateObjective:input_type -> noted.v1.CreateObjectiveRequest
+	81,  // 256: noted.v1.ObjectiveService.GetObjective:input_type -> noted.v1.GetObjectiveRequest
+	82,  // 257: noted.v1.ObjectiveService.UpdateObjective:input_type -> noted.v1.UpdateObjectiveRequest
+	83,  // 258: noted.v1.ObjectiveService.DeleteObjective:input_type -> noted.v1.DeleteObjectiveRequest
+	84,  // 259: noted.v1.ObjectiveService.ListObjectives:input_type -> noted.v1.ListObjectivesRequest
+	86,  // 260: noted.v1.ObjectiveService.RecordMeasurement:input_type -> noted.v1.RecordMeasurementRequest
+	87,  // 261: noted.v1.ObjectiveService.DeleteMeasurement:input_type -> noted.v1.DeleteMeasurementRequest
+	88,  // 262: noted.v1.ObjectiveService.ListMeasurements:input_type -> noted.v1.ListMeasurementsRequest
+	92,  // 263: noted.v1.ProjectService.CreateProject:input_type -> noted.v1.CreateProjectRequest
+	93,  // 264: noted.v1.ProjectService.GetProject:input_type -> noted.v1.GetProjectRequest
+	95,  // 265: noted.v1.ProjectService.UpdateProject:input_type -> noted.v1.UpdateProjectRequest
+	96,  // 266: noted.v1.ProjectService.DeleteProject:input_type -> noted.v1.DeleteProjectRequest
+	97,  // 267: noted.v1.ProjectService.ListProjects:input_type -> noted.v1.ListProjectsRequest
+	99,  // 268: noted.v1.FocusService.GetFocus:input_type -> noted.v1.GetFocusRequest
+	103, // 269: noted.v1.PreferenceService.GetPreference:input_type -> noted.v1.GetPreferenceRequest
+	104, // 270: noted.v1.PreferenceService.SetPreference:input_type -> noted.v1.SetPreferenceRequest
+	105, // 271: noted.v1.PreferenceService.DeletePreference:input_type -> noted.v1.DeletePreferenceRequest
+	106, // 272: noted.v1.PreferenceService.ListPreferences:input_type -> noted.v1.ListPreferencesRequest
+	108, // 273: noted.v1.ExportService.Export:input_type -> noted.v1.ExportRequest
+	114, // 274: noted.v1.SuggestionService.ListProposals:input_type -> noted.v1.ListProposalsRequest
+	117, // 275: noted.v1.SuggestionService.AcceptProposal:input_type -> noted.v1.AcceptProposalRequest
+	119, // 276: noted.v1.SuggestionService.DismissProposal:input_type -> noted.v1.DismissProposalRequest
+	120, // 277: noted.v1.SuggestionService.ProposeSchedule:input_type -> noted.v1.ProposeScheduleRequest
+	121, // 278: noted.v1.SuggestionService.GetWeeklyReview:input_type -> noted.v1.GetWeeklyReviewRequest
+	123, // 279: noted.v1.SuggestionService.ListChanges:input_type -> noted.v1.ListChangesRequest
+	125, // 280: noted.v1.SuggestionService.UndoChange:input_type -> noted.v1.UndoChangeRequest
+	130, // 281: noted.v1.HoldingService.CreateHolding:input_type -> noted.v1.CreateHoldingRequest
+	131, // 282: noted.v1.HoldingService.GetHolding:input_type -> noted.v1.GetHoldingRequest
+	132, // 283: noted.v1.HoldingService.UpdateHolding:input_type -> noted.v1.UpdateHoldingRequest
+	133, // 284: noted.v1.HoldingService.DeleteHolding:input_type -> noted.v1.DeleteHoldingRequest
+	134, // 285: noted.v1.HoldingService.ListHoldings:input_type -> noted.v1.ListHoldingsRequest
+	136, // 286: noted.v1.HoldingService.RecordTrade:input_type -> noted.v1.RecordTradeRequest
+	137, // 287: noted.v1.HoldingService.DeleteTrade:input_type -> noted.v1.DeleteTradeRequest
+	138, // 288: noted.v1.HoldingService.ListTrades:input_type -> noted.v1.ListTradesRequest
+	141, // 289: noted.v1.TimeService.CreateTimeEntry:input_type -> noted.v1.CreateTimeEntryRequest
+	142, // 290: noted.v1.TimeService.GetTimeEntry:input_type -> noted.v1.GetTimeEntryRequest
+	143, // 291: noted.v1.TimeService.UpdateTimeEntry:input_type -> noted.v1.UpdateTimeEntryRequest
+	144, // 292: noted.v1.TimeService.DeleteTimeEntry:input_type -> noted.v1.DeleteTimeEntryRequest
+	145, // 293: noted.v1.TimeService.ListTimeEntries:input_type -> noted.v1.ListTimeEntriesRequest
+	147, // 294: noted.v1.TimeService.StartTimer:input_type -> noted.v1.StartTimerRequest
+	148, // 295: noted.v1.TimeService.StopTimer:input_type -> noted.v1.StopTimerRequest
+	149, // 296: noted.v1.TimeService.GetRunningTimer:input_type -> noted.v1.GetRunningTimerRequest
+	151, // 297: noted.v1.TimeService.SummarizeTime:input_type -> noted.v1.SummarizeTimeRequest
+	157, // 298: noted.v1.AlarmService.CreateAlarm:input_type -> noted.v1.CreateAlarmRequest
+	158, // 299: noted.v1.AlarmService.GetAlarm:input_type -> noted.v1.GetAlarmRequest
+	159, // 300: noted.v1.AlarmService.UpdateAlarm:input_type -> noted.v1.UpdateAlarmRequest
+	160, // 301: noted.v1.AlarmService.DeleteAlarm:input_type -> noted.v1.DeleteAlarmRequest
+	161, // 302: noted.v1.AlarmService.ListAlarms:input_type -> noted.v1.ListAlarmsRequest
+	163, // 303: noted.v1.AlarmService.GetAlarmsVersion:input_type -> noted.v1.GetAlarmsVersionRequest
+	165, // 304: noted.v1.HolidayService.GetHolidays:input_type -> noted.v1.GetHolidaysRequest
+	168, // 305: noted.v1.AccountService.SignInWithApple:input_type -> noted.v1.SignInWithAppleRequest
+	170, // 306: noted.v1.AccountService.LinkApple:input_type -> noted.v1.LinkAppleRequest
+	171, // 307: noted.v1.AccountService.UnlinkApple:input_type -> noted.v1.UnlinkAppleRequest
+	172, // 308: noted.v1.AccountService.GetAccount:input_type -> noted.v1.GetAccountRequest
+	174, // 309: noted.v1.AccountService.SignUp:input_type -> noted.v1.SignUpRequest
+	175, // 310: noted.v1.AccountService.SignIn:input_type -> noted.v1.SignInRequest
+	177, // 311: noted.v1.AccountService.SetEmailPassword:input_type -> noted.v1.SetEmailPasswordRequest
+	179, // 312: noted.v1.AccountService.CreateToken:input_type -> noted.v1.CreateTokenRequest
+	181, // 313: noted.v1.AccountService.ListTokens:input_type -> noted.v1.ListTokensRequest
+	183, // 314: noted.v1.AccountService.RevokeToken:input_type -> noted.v1.RevokeTokenRequest
+	185, // 315: noted.v1.AccountService.GetPairing:input_type -> noted.v1.GetPairingRequest
+	186, // 316: noted.v1.AccountService.ApprovePairing:input_type -> noted.v1.ApprovePairingRequest
+	187, // 317: noted.v1.AccountService.DenyPairing:input_type -> noted.v1.DenyPairingRequest
+	7,   // 318: noted.v1.NoteService.CreateNote:output_type -> noted.v1.Note
+	7,   // 319: noted.v1.NoteService.GetNote:output_type -> noted.v1.Note
+	7,   // 320: noted.v1.NoteService.UpdateNote:output_type -> noted.v1.Note
+	192, // 321: noted.v1.NoteService.DeleteNote:output_type -> google.protobuf.Empty
+	13,  // 322: noted.v1.NoteService.ListNotes:output_type -> noted.v1.ListNotesResponse
+	16,  // 323: noted.v1.NoteService.SearchNotes:output_type -> noted.v1.SearchNotesResponse
+	17,  // 324: noted.v1.CalendarService.CreateEvent:output_type -> noted.v1.Event
+	17,  // 325: noted.v1.CalendarService.GetEvent:output_type -> noted.v1.Event
+	17,  // 326: noted.v1.CalendarService.UpdateEvent:output_type -> noted.v1.Event
+	192, // 327: noted.v1.CalendarService.DeleteEvent:output_type -> google.protobuf.Empty
+	24,  // 328: noted.v1.CalendarService.ListEvents:output_type -> noted.v1.ListEventsResponse
+	25,  // 329: noted.v1.CalendarService.CreateTask:output_type -> noted.v1.Task
+	25,  // 330: noted.v1.CalendarService.GetTask:output_type -> noted.v1.Task
+	25,  // 331: noted.v1.CalendarService.UpdateTask:output_type -> noted.v1.Task
+	192, // 332: noted.v1.CalendarService.DeleteTask:output_type -> google.protobuf.Empty
+	32,  // 333: noted.v1.CalendarService.ListTasks:output_type -> noted.v1.ListTasksResponse
+	25,  // 334: noted.v1.CalendarService.LogTaskWork:output_type -> noted.v1.Task
+	35,  // 335: noted.v1.CalendarService.ListTaskWork:output_type -> noted.v1.ListTaskWorkResponse
+	25,  // 336: noted.v1.CalendarService.DeleteTaskWork:output_type -> noted.v1.Task
+	37,  // 337: noted.v1.CalendarService.WatchReminders:output_type -> noted.v1.Reminder
+	40,  // 338: noted.v1.CalendarService.ListReminders:output_type -> noted.v1.ListRemindersResponse
+	42,  // 339: noted.v1.AIService.GetStatus:output_type -> noted.v1.GetStatusResponse
+	44,  // 340: noted.v1.AIService.Ask:output_type -> noted.v1.AskResponse
+	47,  // 341: noted.v1.AIService.SummarizeNote:output_type -> noted.v1.SummarizeNoteResponse
+	49,  // 342: noted.v1.AIService.SuggestTags:output_type -> noted.v1.SuggestTagsResponse
+	51,  // 343: noted.v1.AIService.DailyBriefing:output_type -> noted.v1.DailyBriefingResponse
+	112, // 344: noted.v1.AIService.PlanFromText:output_type -> noted.v1.Proposal
+	112, // 345: noted.v1.AIService.ExtractTasks:output_type -> noted.v1.Proposal
+	55,  // 346: noted.v1.AIService.GetAIAccess:output_type -> noted.v1.AIAccess
+	55,  // 347: noted.v1.AIService.SetAIAccess:output_type -> noted.v1.AIAccess
+	52,  // 348: noted.v1.AIService.GetAIFeatures:output_type -> noted.v1.AIFeatures
+	52,  // 349: noted.v1.AIService.SetAIFeatures:output_type -> noted.v1.AIFeatures
+	63,  // 350: noted.v1.GoalService.CreateGoal:output_type -> noted.v1.Goal
+	63,  // 351: noted.v1.GoalService.GetGoal:output_type -> noted.v1.Goal
+	63,  // 352: noted.v1.GoalService.UpdateGoal:output_type -> noted.v1.Goal
+	192, // 353: noted.v1.GoalService.DeleteGoal:output_type -> google.protobuf.Empty
+	70,  // 354: noted.v1.GoalService.ListGoals:output_type -> noted.v1.ListGoalsResponse
+	72,  // 355: noted.v1.GoalService.RecordCheckIn:output_type -> noted.v1.RecordCheckInResponse
+	63,  // 356: noted.v1.GoalService.DeleteCheckIn:output_type -> noted.v1.Goal
+	75,  // 357: noted.v1.GoalService.ListCheckIns:output_type -> noted.v1.ListCheckInsResponse
+	63,  // 358: noted.v1.GoalService.SetMilestoneDone:output_type -> noted.v1.Goal
+	77,  // 359: noted.v1.ObjectiveService.CreateObjective:output_type -> noted.v1.Objective
+	77,  // 360: noted.v1.ObjectiveService.GetObjective:output_type -> noted.v1.Objective
+	77,  // 361: noted.v1.ObjectiveService.UpdateObjective:output_type -> noted.v1.Objective
+	192, // 362: noted.v1.ObjectiveService.DeleteObjective:output_type -> google.protobuf.Empty
+	85,  // 363: noted.v1.ObjectiveService.ListObjectives:output_type -> noted.v1.ListObjectivesResponse
+	77,  // 364: noted.v1.ObjectiveService.RecordMeasurement:output_type -> noted.v1.Objective
+	192, // 365: noted.v1.ObjectiveService.DeleteMeasurement:output_type -> google.protobuf.Empty
+	89,  // 366: noted.v1.ObjectiveService.ListMeasurements:output_type -> noted.v1.ListMeasurementsResponse
+	91,  // 367: noted.v1.ProjectService.CreateProject:output_type -> noted.v1.Project
+	94,  // 368: noted.v1.ProjectService.GetProject:output_type -> noted.v1.ProjectDetail
+	91,  // 369: noted.v1.ProjectService.UpdateProject:output_type -> noted.v1.Project
+	192, // 370: noted.v1.ProjectService.DeleteProject:output_type -> google.protobuf.Empty
+	98,  // 371: noted.v1.ProjectService.ListProjects:output_type -> noted.v1.ListProjectsResponse
+	101, // 372: noted.v1.FocusService.GetFocus:output_type -> noted.v1.GetFocusResponse
+	102, // 373: noted.v1.PreferenceService.GetPreference:output_type -> noted.v1.Preference
+	102, // 374: noted.v1.PreferenceService.SetPreference:output_type -> noted.v1.Preference
+	192, // 375: noted.v1.PreferenceService.DeletePreference:output_type -> google.protobuf.Empty
+	107, // 376: noted.v1.PreferenceService.ListPreferences:output_type -> noted.v1.ListPreferencesResponse
+	109, // 377: noted.v1.ExportService.Export:output_type -> noted.v1.ExportChunk
+	115, // 378: noted.v1.SuggestionService.ListProposals:output_type -> noted.v1.ListProposalsResponse
+	118, // 379: noted.v1.SuggestionService.AcceptProposal:output_type -> noted.v1.AcceptProposalResponse
+	112, // 380: noted.v1.SuggestionService.DismissProposal:output_type -> noted.v1.Proposal
+	112, // 381: noted.v1.SuggestionService.ProposeSchedule:output_type -> noted.v1.Proposal
+	122, // 382: noted.v1.SuggestionService.GetWeeklyReview:output_type -> noted.v1.WeeklyReview
+	124, // 383: noted.v1.SuggestionService.ListChanges:output_type -> noted.v1.ListChangesResponse
+	113, // 384: noted.v1.SuggestionService.UndoChange:output_type -> noted.v1.Change
+	126, // 385: noted.v1.HoldingService.CreateHolding:output_type -> noted.v1.Holding
+	126, // 386: noted.v1.HoldingService.GetHolding:output_type -> noted.v1.Holding
+	126, // 387: noted.v1.HoldingService.UpdateHolding:output_type -> noted.v1.Holding
+	192, // 388: noted.v1.HoldingService.DeleteHolding:output_type -> google.protobuf.Empty
+	135, // 389: noted.v1.HoldingService.ListHoldings:output_type -> noted.v1.ListHoldingsResponse
+	126, // 390: noted.v1.HoldingService.RecordTrade:output_type -> noted.v1.Holding
+	192, // 391: noted.v1.HoldingService.DeleteTrade:output_type -> google.protobuf.Empty
+	139, // 392: noted.v1.HoldingService.ListTrades:output_type -> noted.v1.ListTradesResponse
+	140, // 393: noted.v1.TimeService.CreateTimeEntry:output_type -> noted.v1.TimeEntry
+	140, // 394: noted.v1.TimeService.GetTimeEntry:output_type -> noted.v1.TimeEntry
+	140, // 395: noted.v1.TimeService.UpdateTimeEntry:output_type -> noted.v1.TimeEntry
+	192, // 396: noted.v1.TimeService.DeleteTimeEntry:output_type -> google.protobuf.Empty
+	146, // 397: noted.v1.TimeService.ListTimeEntries:output_type -> noted.v1.ListTimeEntriesResponse
+	140, // 398: noted.v1.TimeService.StartTimer:output_type -> noted.v1.TimeEntry
+	140, // 399: noted.v1.TimeService.StopTimer:output_type -> noted.v1.TimeEntry
+	150, // 400: noted.v1.TimeService.GetRunningTimer:output_type -> noted.v1.GetRunningTimerResponse
+	153, // 401: noted.v1.TimeService.SummarizeTime:output_type -> noted.v1.TimeSummary
+	156, // 402: noted.v1.AlarmService.CreateAlarm:output_type -> noted.v1.Alarm
+	156, // 403: noted.v1.AlarmService.GetAlarm:output_type -> noted.v1.Alarm
+	156, // 404: noted.v1.AlarmService.UpdateAlarm:output_type -> noted.v1.Alarm
+	192, // 405: noted.v1.AlarmService.DeleteAlarm:output_type -> google.protobuf.Empty
+	162, // 406: noted.v1.AlarmService.ListAlarms:output_type -> noted.v1.ListAlarmsResponse
+	164, // 407: noted.v1.AlarmService.GetAlarmsVersion:output_type -> noted.v1.GetAlarmsVersionResponse
+	167, // 408: noted.v1.HolidayService.GetHolidays:output_type -> noted.v1.GetHolidaysResponse
+	169, // 409: noted.v1.AccountService.SignInWithApple:output_type -> noted.v1.SignInWithAppleResponse
+	173, // 410: noted.v1.AccountService.LinkApple:output_type -> noted.v1.Account
+	173, // 411: noted.v1.AccountService.UnlinkApple:output_type -> noted.v1.Account
+	173, // 412: noted.v1.AccountService.GetAccount:output_type -> noted.v1.Account
+	176, // 413: noted.v1.AccountService.SignUp:output_type -> noted.v1.SignInResponse
+	176, // 414: noted.v1.AccountService.SignIn:output_type -> noted.v1.SignInResponse
+	173, // 415: noted.v1.AccountService.SetEmailPassword:output_type -> noted.v1.Account
+	180, // 416: noted.v1.AccountService.CreateToken:output_type -> noted.v1.CreateTokenResponse
+	182, // 417: noted.v1.AccountService.ListTokens:output_type -> noted.v1.ListTokensResponse
+	192, // 418: noted.v1.AccountService.RevokeToken:output_type -> google.protobuf.Empty
+	184, // 419: noted.v1.AccountService.GetPairing:output_type -> noted.v1.Pairing
+	184, // 420: noted.v1.AccountService.ApprovePairing:output_type -> noted.v1.Pairing
+	192, // 421: noted.v1.AccountService.DenyPairing:output_type -> google.protobuf.Empty
+	318, // [318:422] is the sub-list for method output_type
+	214, // [214:318] is the sub-list for method input_type
+	214, // [214:214] is the sub-list for extension type_name
+	214, // [214:214] is the sub-list for extension extendee
+	0,   // [0:214] is the sub-list for field type_name
 }
 
 func init() { file_noted_v1_noted_proto_init() }
@@ -9747,23 +13642,26 @@ func file_noted_v1_noted_proto_init() {
 		return
 	}
 	file_noted_v1_noted_proto_msgTypes[10].OneofWrappers = []any{}
-	file_noted_v1_noted_proto_msgTypes[66].OneofWrappers = []any{}
-	file_noted_v1_noted_proto_msgTypes[78].OneofWrappers = []any{}
-	file_noted_v1_noted_proto_msgTypes[88].OneofWrappers = []any{
+	file_noted_v1_noted_proto_msgTypes[26].OneofWrappers = []any{}
+	file_noted_v1_noted_proto_msgTypes[71].OneofWrappers = []any{}
+	file_noted_v1_noted_proto_msgTypes[83].OneofWrappers = []any{}
+	file_noted_v1_noted_proto_msgTypes[93].OneofWrappers = []any{
 		(*FocusItem_Event)(nil),
 		(*FocusItem_Task)(nil),
 	}
-	file_noted_v1_noted_proto_msgTypes[92].OneofWrappers = []any{}
-	file_noted_v1_noted_proto_msgTypes[114].OneofWrappers = []any{}
+	file_noted_v1_noted_proto_msgTypes[97].OneofWrappers = []any{}
+	file_noted_v1_noted_proto_msgTypes[119].OneofWrappers = []any{}
+	file_noted_v1_noted_proto_msgTypes[149].OneofWrappers = []any{}
+	file_noted_v1_noted_proto_msgTypes[154].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_noted_v1_noted_proto_rawDesc), len(file_noted_v1_noted_proto_rawDesc)),
-			NumEnums:      6,
-			NumMessages:   129,
+			NumEnums:      7,
+			NumMessages:   182,
 			NumExtensions: 0,
-			NumServices:   11,
+			NumServices:   15,
 		},
 		GoTypes:           file_noted_v1_noted_proto_goTypes,
 		DependencyIndexes: file_noted_v1_noted_proto_depIdxs,

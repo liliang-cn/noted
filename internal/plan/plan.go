@@ -26,6 +26,7 @@ const (
 	OpCheckIn       = "check_in"
 	OpCreateNote    = "create_note"
 	OpCompleteTask  = "complete_task"
+	OpLogTime       = "log_time"
 )
 
 // Op is one change. Args depend on Type; ids of things an earlier op in the
@@ -49,7 +50,7 @@ type Input struct {
 // Entry records one effect of Apply, enough to reverse it.
 type Entry struct {
 	Action string         `json:"action"` // "created" or "updated"
-	Kind   string         `json:"kind"`   // project, task, event, check_in
+	Kind   string         `json:"kind"`   // project, task, event, check_in, time_entry
 	ID     string         `json:"id"`
 	Before map[string]any `json:"before,omitempty"`
 }
@@ -155,6 +156,9 @@ func (a Applier) timeArg(g args, key string, inputs map[string]string) (*time.Ti
 		name, _ := x["input"].(string)
 		raw := strings.TrimSpace(inputs[name])
 		if raw == "" {
+			if optional, _ := x["optional"].(bool); optional {
+				return nil, nil
+			}
 			return nil, invalid("%q is needed to work out %s", name, key)
 		}
 		base, err := a.parseTime(raw)
@@ -245,8 +249,12 @@ func (a Applier) applyOne(ctx context.Context, userID string, op Op, g args, ref
 		if err != nil {
 			return nil, "", err
 		}
+		remind, err := a.timeArg(g, "remind_at", inputs)
+		if err != nil {
+			return nil, "", err
+		}
 		t, err := st.CreateTask(ctx, store.Task{UserID: userID, Title: g.str("title"), Notes: g.str("notes"), Due: due,
-			Priority: int(g.num("priority")), ProjectID: pid, Space: g.str("space"), Tags: g.strs("tags")})
+			Remind: remind, Priority: int(g.num("priority")), ProjectID: pid, Space: g.str("space"), Tags: g.strs("tags")})
 		if err != nil {
 			return nil, "", err
 		}
@@ -410,6 +418,30 @@ func (a Applier) applyOne(ctx context.Context, userID string, op Op, g args, ref
 			return nil, "", err
 		}
 		return []Entry{{Action: "created", Kind: "check_in", ID: c.ID}}, c.ID, nil
+
+	case OpLogTime:
+		pid, err := ref("project_id")
+		if err != nil {
+			return nil, "", err
+		}
+		gid, err := ref("goal_id")
+		if err != nil {
+			return nil, "", err
+		}
+		at, err := a.timeArg(g, "start", inputs)
+		if err != nil {
+			return nil, "", err
+		}
+		e := store.TimeEntry{UserID: userID, Title: g.str("title"), Minutes: int(g.num("minutes")), Note: g.str("note"),
+			ProjectID: pid, GoalID: gid, Space: g.str("space")}
+		if at != nil {
+			e.Start = *at
+		}
+		out, err := st.CreateTimeEntry(ctx, e, a.now())
+		if err != nil {
+			return nil, "", err
+		}
+		return []Entry{{Action: "created", Kind: "time_entry", ID: out.ID}}, out.ID, nil
 	}
 	return nil, "", invalid("unknown operation %q", op.Type)
 }
@@ -452,6 +484,8 @@ func (a Applier) Undo(ctx context.Context, userID string, entries []Entry) error
 			_, err = st.DeleteCheckIn(ctx, userID, e.ID)
 		case e.Action == "created" && e.Kind == "note":
 			err = st.DeleteNote(ctx, userID, e.ID)
+		case e.Action == "created" && e.Kind == "time_entry":
+			err = st.DeleteTimeEntry(ctx, userID, e.ID)
 		case e.Action == "updated" && e.Kind == "task_done":
 			was, _ := e.Before["done"].(bool)
 			_, err = st.UpdateTask(ctx, userID, e.ID, store.TaskPatch{Done: &was})

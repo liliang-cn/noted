@@ -262,3 +262,217 @@ func TestAnEmptyModelAnswerIsAnErrorNotAnEmptySummary(t *testing.T) {
 		t.Fatalf("an empty briefing: %v", err)
 	}
 }
+
+// A plan with no task counted from the start asks for the start date but does not
+// need it: leaving it empty must still be accepted, and gives a project without one.
+// A task dated without a time of day is due at 09:00, not at midnight.
+func TestPlanFromTextOptionalStartCanBeLeftEmpty(t *testing.T) {
+	f := &fakeProvider{script: answerJSON("break it into ONE project", `{"project":"离线同步上线","start":null,"due":"2030-10-30","space":"work",
+		"tasks":[{"title":"写技术方案"},{"title":"发公告","due":"2030-10-28"}]}`)}
+	e, _ := startWithAI(t, f, false)
+	conn := e.conn(t)
+	ctx := as(e.alice)
+	p, err := pb.NewAIServiceClient(conn).PlanFromText(ctx, &pb.PlanFromTextRequest{Text: "10月30号上线,要写技术方案,上线前两天发公告"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.Inputs) != 1 || p.Inputs[0].Required || p.Inputs[0].Label != "开始日期" {
+		t.Fatalf("the start date should be offered, optional, with a neutral label: %+v", p.Inputs)
+	}
+	if _, err := pb.NewSuggestionServiceClient(conn).AcceptProposal(ctx, &pb.AcceptProposalRequest{Id: p.Id}); err != nil {
+		t.Fatalf("an optional input left empty must not block accepting: %v", err)
+	}
+	l, _ := pb.NewProjectServiceClient(conn).ListProjects(ctx, &pb.ListProjectsRequest{})
+	if len(l.Projects) != 1 || l.Projects[0].StartTime != nil || l.Projects[0].DueTime.AsTime().Format("2006-01-02") != "2030-10-30" {
+		t.Fatalf("%+v", l.Projects)
+	}
+	ts, _ := pb.NewCalendarServiceClient(conn).ListTasks(ctx, &pb.ListTasksRequest{})
+	for _, tk := range ts.Tasks {
+		if tk.Title == "发公告" && tk.DueTime.AsTime().Format("2006-01-02 15:04") != "2030-10-28 09:00" {
+			t.Fatalf("a date-only due should be 09:00 that day: %v", tk.DueTime.AsTime())
+		}
+	}
+}
+
+// "Remind me" on a task becomes a reminder on the task once accepted, and the
+// proposal of a reply asked from the combined mode takes the space its steps share.
+func TestAssistantTaskReminder(t *testing.T) {
+	f := &fakeProvider{}
+	f.script = func(req map[string]any) (string, []map[string]any) {
+		if _, has := toolResult(req); has {
+			return "已准备好。", nil
+		}
+		return "", []map[string]any{toolCall("c1", "create_task", map[string]any{
+			"title": "跟进合同", "due": "2030-05-02T14:00:00Z", "remind_at": "2030-05-02T13:30:00Z", "space": "work"})}
+	}
+	e, _ := startWithAI(t, f, false)
+	conn := e.conn(t)
+	resp, err := pb.NewAIServiceClient(conn).Ask(as(e.alice), &pb.AskRequest{Message: "明天下午两点跟进合同,提前半小时提醒我"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.Proposal == nil || resp.Proposal.Space != pb.Space_SPACE_WORK {
+		t.Fatalf("the proposal should be in the space of its only step: %+v", resp.Proposal)
+	}
+	if _, err := pb.NewSuggestionServiceClient(conn).AcceptProposal(as(e.alice), &pb.AcceptProposalRequest{Id: resp.Proposal.Id}); err != nil {
+		t.Fatal(err)
+	}
+	ts, _ := pb.NewCalendarServiceClient(conn).ListTasks(as(e.alice), &pb.ListTasksRequest{})
+	if len(ts.Tasks) != 1 || ts.Tasks[0].RemindTime == nil || ts.Tasks[0].RemindTime.AsTime().Format("15:04") != "13:30" {
+		t.Fatalf("the task should carry the reminder: %+v", ts.Tasks)
+	}
+}
+
+// turnScript makes the fake model stage calls(turn) once per Ask and then
+// answer. It tells the turns of one conversation apart by the "turn-N" marker
+// in each message, since the session's history keeps earlier tool results.
+func turnScript(calls func(turn string) []map[string]any) func(map[string]any) (string, []map[string]any) {
+	return func(req map[string]any) (string, []map[string]any) {
+		msgs, _ := req["messages"].([]any)
+		turn := ""
+		for _, m := range msgs {
+			mm, _ := m.(map[string]any)
+			c, _ := mm["content"].(string)
+			if mm["role"] == "user" && strings.Contains(c, "turn-") {
+				turn = c[strings.Index(c, "turn-"):]
+			}
+		}
+		first := -1
+		for i, m := range msgs {
+			mm, _ := m.(map[string]any)
+			c, _ := mm["content"].(string)
+			if first < 0 && mm["role"] == "user" && turn != "" && strings.Contains(c, turn) {
+				first = i
+			}
+			if first >= 0 && i > first && mm["role"] == "tool" {
+				return "已准备好。", nil
+			}
+		}
+		return "", calls(turn)
+	}
+}
+
+// A follow-up in the same conversation that proposes again replaces the
+// earlier, still pending proposal: accepting both must not create the project
+// twice. Other conversations' proposals are left alone.
+func TestFollowUpAskSupersedesEarlierProposal(t *testing.T) {
+	f := &fakeProvider{script: turnScript(func(turn string) []map[string]any {
+		return []map[string]any{toolCall("c1", "create_project", map[string]any{"title": "东京之行 " + turn, "space": "life"})}
+	})}
+	e, _ := startWithAI(t, f, false)
+	conn := e.conn(t)
+	ctx := as(e.alice)
+	aic, sug := pb.NewAIServiceClient(conn), pb.NewSuggestionServiceClient(conn)
+
+	other, err := aic.Ask(ctx, &pb.AskRequest{Message: "另一个会话 turn-0"})
+	if err != nil || other.Proposal == nil {
+		t.Fatalf("%v %+v", err, other)
+	}
+	first, err := aic.Ask(ctx, &pb.AskRequest{Message: "下个月去东京 turn-1"})
+	if err != nil || first.Proposal == nil {
+		t.Fatalf("%v %+v", err, first)
+	}
+	second, err := aic.Ask(ctx, &pb.AskRequest{Message: "再加上签证 turn-2", SessionId: first.SessionId})
+	if err != nil || second.Proposal == nil {
+		t.Fatalf("%v %+v", err, second)
+	}
+	if second.Proposal.Id == first.Proposal.Id {
+		t.Fatal("the follow-up should make a new proposal")
+	}
+
+	pending, _ := sug.ListProposals(ctx, &pb.ListProposalsRequest{NoRefresh: true})
+	ids := map[string]bool{}
+	for _, p := range pending.Proposals {
+		ids[p.Id] = true
+	}
+	if ids[first.Proposal.Id] || !ids[second.Proposal.Id] || !ids[other.Proposal.Id] {
+		t.Fatalf("pending should be the follow-up and the other conversation's, got %v", ids)
+	}
+	gone, _ := sug.ListProposals(ctx, &pb.ListProposalsRequest{Status: "superseded", NoRefresh: true})
+	if len(gone.Proposals) != 1 || gone.Proposals[0].Id != first.Proposal.Id {
+		t.Fatalf("the earlier proposal should be superseded: %+v", gone.Proposals)
+	}
+
+	_, err = sug.AcceptProposal(ctx, &pb.AcceptProposalRequest{Id: first.Proposal.Id})
+	if code(err) != codes.FailedPrecondition || !strings.Contains(err.Error(), "superseded") {
+		t.Fatalf("accepting a superseded proposal: %v", err)
+	}
+	if _, err := sug.AcceptProposal(ctx, &pb.AcceptProposalRequest{Id: second.Proposal.Id}); err != nil {
+		t.Fatal(err)
+	}
+	l, _ := pb.NewProjectServiceClient(conn).ListProjects(ctx, &pb.ListProjectsRequest{})
+	if len(l.Projects) != 1 || !strings.Contains(l.Projects[0].Title, "turn-2") {
+		t.Fatalf("only the follow-up's project should exist: %+v", l.Projects)
+	}
+	if _, err := sug.AcceptProposal(ctx, &pb.AcceptProposalRequest{Id: other.Proposal.Id}); err != nil {
+		t.Fatalf("another conversation's proposal must stay acceptable: %v", err)
+	}
+}
+
+// A proposal whose steps span work and life belongs to both spaces: it is not
+// labelled life, and each mode lists it. One whose steps share a space keeps it.
+func TestMixedSpaceProposalIsListedInBothModes(t *testing.T) {
+	f := &fakeProvider{script: turnScript(func(turn string) []map[string]any {
+		if strings.Contains(turn, "turn-mixed") {
+			return []map[string]any{
+				toolCall("c1", "create_task", map[string]any{"title": "写周报", "space": "work"}),
+				toolCall("c2", "create_task", map[string]any{"title": "买菜", "space": "life"}),
+			}
+		}
+		return []map[string]any{toolCall("c1", "create_task", map[string]any{"title": "开会", "space": "work"})}
+	})}
+	e, _ := startWithAI(t, f, false)
+	conn := e.conn(t)
+	ctx := as(e.alice)
+	aic, sug := pb.NewAIServiceClient(conn), pb.NewSuggestionServiceClient(conn)
+
+	mixed, err := aic.Ask(ctx, &pb.AskRequest{Message: "两件事 turn-mixed", Space: pb.Space_SPACE_LIFE})
+	if err != nil || mixed.Proposal == nil {
+		t.Fatalf("%v %+v", err, mixed)
+	}
+	if mixed.Proposal.Space != pb.Space_SPACE_UNSPECIFIED {
+		t.Fatalf("a proposal spanning work and life should be in both, got %v", mixed.Proposal.Space)
+	}
+	work, err := aic.Ask(ctx, &pb.AskRequest{Message: "开会 turn-work"})
+	if err != nil || work.Proposal == nil {
+		t.Fatalf("%v %+v", err, work)
+	}
+	if work.Proposal.Space != pb.Space_SPACE_WORK {
+		t.Fatalf("a proposal whose steps are all work stays work, got %v", work.Proposal.Space)
+	}
+
+	// Last week's slipped tasks, one in each space: the carry-over spans both.
+	cal := pb.NewCalendarServiceClient(conn)
+	lastWeek := time.Now().AddDate(0, 0, -7)
+	due := timestamppb.New(lastWeek)
+	cal.CreateTask(ctx, &pb.CreateTaskRequest{Task: &pb.Task{Title: "Work slipped", DueTime: due, Space: pb.Space_SPACE_WORK}})
+	cal.CreateTask(ctx, &pb.CreateTaskRequest{Task: &pb.Task{Title: "Life slipped", DueTime: due, Space: pb.Space_SPACE_LIFE}})
+	r, err := sug.GetWeeklyReview(ctx, &pb.GetWeeklyReviewRequest{WeekOf: due, TimeZone: "UTC"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.NextWeek == nil || r.NextWeek.Space != pb.Space_SPACE_UNSPECIFIED {
+		t.Fatalf("the review's plan spans both spaces: %+v", r.NextWeek)
+	}
+
+	in := func(space pb.Space) map[string]bool {
+		l, err := sug.ListProposals(ctx, &pb.ListProposalsRequest{Space: space, NoRefresh: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		out := map[string]bool{}
+		for _, p := range l.Proposals {
+			out[p.Id] = true
+		}
+		return out
+	}
+	w, l := in(pb.Space_SPACE_WORK), in(pb.Space_SPACE_LIFE)
+	for _, id := range []string{mixed.Proposal.Id, r.NextWeek.Id} {
+		if !w[id] || !l[id] {
+			t.Fatalf("a mixed proposal must show in both modes: work=%v life=%v", w, l)
+		}
+	}
+	if !w[work.Proposal.Id] || l[work.Proposal.Id] {
+		t.Fatalf("a work proposal shows in work only: work=%v life=%v", w, l)
+	}
+}

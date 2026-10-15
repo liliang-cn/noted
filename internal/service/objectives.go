@@ -21,7 +21,7 @@ func objectiveToPB(v store.ObjectiveView) *pb.Objective {
 	o, p := v.Objective, v.Progress
 	out := &pb.Objective{
 		Id: o.ID, Title: o.Title, Notes: o.Notes, Space: spaceOut(o.Space), StartTime: tsPtr(o.Start), DueTime: tsPtr(o.Due),
-		MetricName: o.MetricName, MetricUnit: o.MetricUnit, MetricStart: o.MetricStart, MetricTarget: o.MetricTarget,
+		MetricName: o.MetricName, MetricUnit: o.MetricUnit, MetricStart: o.MetricStart, MetricTarget: o.MetricTarget, ProjectId: o.ProjectID,
 		Archived: o.Archived, CreateTime: timestamppb.New(o.Created), UpdateTime: timestamppb.New(o.Updated),
 		Progress: &pb.ObjectiveProgress{
 			GoalsTotal: int32(p.GoalsTotal), GoalsAchieved: int32(p.GoalsAchieved), GoalsPercent: p.GoalsPercent, Behind: p.Behind,
@@ -58,7 +58,7 @@ func (s *Objectives) CreateObjective(ctx context.Context, req *pb.CreateObjectiv
 	}
 	o, err := s.Store.CreateObjective(ctx, store.Objective{
 		UserID: u, Title: in.Title, Notes: in.Notes, Space: spaceIn(in.Space), Start: timePtr(in.StartTime), Due: timePtr(in.DueTime),
-		MetricName: in.MetricName, MetricUnit: in.MetricUnit, MetricStart: in.MetricStart, MetricTarget: in.MetricTarget, Archived: in.Archived,
+		MetricName: in.MetricName, MetricUnit: in.MetricUnit, MetricStart: in.MetricStart, MetricTarget: in.MetricTarget, Archived: in.Archived, ProjectID: in.ProjectId,
 	})
 	if err != nil {
 		return nil, toStatus(err)
@@ -83,7 +83,7 @@ func (s *Objectives) UpdateObjective(ctx context.Context, req *pb.UpdateObjectiv
 	if in.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "objective.id is required")
 	}
-	paths, err := maskPaths(req.UpdateMask, "title", "notes", "space", "start_time", "due_time", "metric_name", "metric_unit", "metric_start", "metric_target", "archived")
+	paths, err := maskPaths(req.UpdateMask, "title", "notes", "space", "start_time", "due_time", "metric_name", "metric_unit", "metric_start", "metric_target", "archived", "project_id")
 	if err != nil {
 		return nil, err
 	}
@@ -120,6 +120,9 @@ func (s *Objectives) UpdateObjective(ctx context.Context, req *pb.UpdateObjectiv
 	}
 	if paths["metric_target"] {
 		p.MetricTarget = &in.MetricTarget
+	}
+	if paths["project_id"] {
+		p.ProjectID = &in.ProjectId
 	}
 	if paths["archived"] {
 		p.Archived = &in.Archived

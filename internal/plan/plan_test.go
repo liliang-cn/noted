@@ -398,9 +398,8 @@ func TestWeeklyReview(t *testing.T) {
 	ctx := context.Background()
 	s, uid, _, sg := newEnv(t)
 	// This week: Mon Oct 5 - Sun Oct 11. Now is Thursday.
-	done, _ := s.CreateTask(ctx, store.Task{UserID: uid, Title: "Done one", Due: ptr(at(6, 9))})
-	yes := true
-	s.UpdateTask(ctx, uid, done.ID, store.TaskPatch{Done: &yes})
+	// Finished inside the week, whatever the real clock says.
+	s.CreateTask(ctx, store.Task{UserID: uid, Title: "Done one", Due: ptr(at(6, 9)), Done: true, DoneAt: ptr(at(6, 10))})
 	s.CreateTask(ctx, store.Task{UserID: uid, Title: "Slipped", Due: ptr(at(7, 9)), Space: store.SpaceWork})
 	s.CreateTask(ctx, store.Task{UserID: uid, Title: "Next week's", Due: ptr(at(14, 9))})
 	g, _ := s.CreateGoal(ctx, store.Goal{UserID: uid, Title: "Run", Period: "week", Target: 3, Created: now.AddDate(0, -2, 0)})
@@ -435,5 +434,122 @@ func TestWeeklyReview(t *testing.T) {
 	w, _ := sg.WeeklyReview(ctx, uid, now, store.SpaceWork, now)
 	if w.TasksDone != 0 || len(w.Carried) != 1 || len(w.Goals) != 0 {
 		t.Fatalf("work only: %+v", w)
+	}
+}
+
+// Run on Saturday, a task due on Sunday has not slipped: it is still planned
+// for this week and is not carried over to next Monday.
+func TestWeeklyReviewMidWeekDoesNotCountNotYetDueAsSlipped(t *testing.T) {
+	ctx := context.Background()
+	s, uid, _, sg := newEnv(t)
+	saturday := at(10, 15)
+	s.CreateTask(ctx, store.Task{UserID: uid, Title: "Friday's", Due: ptr(at(9, 9))})
+	sunday, _ := s.CreateTask(ctx, store.Task{UserID: uid, Title: "Sunday's", Due: ptr(at(11, 9))})
+
+	r, err := sg.WeeklyReview(ctx, uid, saturday, "", saturday)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(r.Carried) != 1 || r.Carried[0].Title != "Friday's" {
+		t.Fatalf("only the task already past due slipped: %+v", r.Carried)
+	}
+	if len(r.Upcoming) != 1 || r.Upcoming[0].ID != sunday.ID {
+		t.Fatalf("the task due Sunday is still planned: %+v", r.Upcoming)
+	}
+	if r.TasksTotal != 2 {
+		t.Fatalf("total = %d, want both tasks due this week", r.TasksTotal)
+	}
+	if r.Next == nil {
+		t.Fatal("the slipped task should be carried over")
+	}
+	for _, op := range r.Next.Ops {
+		if op.Args["id"] == sunday.ID {
+			t.Fatalf("a task not yet due must not be moved to next week: %+v", op)
+		}
+	}
+
+	// The same week looked back on after it ended: Sunday's task slipped too.
+	after, _ := sg.WeeklyReview(ctx, uid, saturday, "", at(13, 9))
+	if len(after.Carried) != 2 || len(after.Upcoming) != 0 {
+		t.Fatalf("after the week: carried=%v upcoming=%v", after.Carried, after.Upcoming)
+	}
+}
+
+// A proposal belongs to the space its steps land in: one space when they all
+// share it, both ("") when they span work and life, whatever mode it was asked from.
+func TestProposalSpaceIsTheSpaceItsStepsShare(t *testing.T) {
+	work := Op{Type: OpCreateTask, Args: map[string]any{"title": "a", "space": "work"}}
+	life := Op{Type: OpCreateTask, Args: map[string]any{"title": "b", "space": "life"}}
+	bare := Op{Type: OpCreateTask, Args: map[string]any{"title": "c"}}                              // lands in life
+	inWorkProject := Op{Type: OpCreateTask, Args: map[string]any{"title": "d", "project_id": "pw"}} // the project's space
+	lifeGoal := Op{Type: OpCheckIn, Args: map[string]any{"goal_id": "gl"}}
+	unknown := Op{Type: OpUpdateTask, Args: map[string]any{"id": "gone"}}
+	workProject := Op{Type: OpCreateProject, Args: map[string]any{"title": "P", "space": "work"}}
+	underIt := Op{Type: OpCreateTask, Args: map[string]any{"title": "e", "project_id": "$op0"}}
+	lookup := func(kind, id string) string {
+		return map[string]string{"project/pw": "work", "goal/gl": "life"}[kind+"/"+id]
+	}
+	for _, c := range []struct {
+		ops      []Op
+		fallback string
+		want     string
+	}{
+		{[]Op{work, work}, "", "work"},
+		{[]Op{work, life}, "", ""},
+		{[]Op{work, life}, "life", ""}, // mixed stays both even when asked from life
+		{[]Op{work}, "life", "work"},
+		{[]Op{work, bare}, "", ""},
+		{[]Op{work, inWorkProject}, "", "work"},
+		{[]Op{work, lifeGoal}, "", ""},
+		{[]Op{work, unknown}, "", "work"},
+		{[]Op{unknown}, "life", "life"},
+		{[]Op{workProject, underIt}, "", "work"},
+		{nil, "work", "work"},
+	} {
+		if got := OpsSpace(c.ops, lookup, c.fallback); got != c.want {
+			t.Errorf("%v (fallback %q): space %q, want %q", c.ops, c.fallback, got, c.want)
+		}
+	}
+	if got := BuildAsk([]Op{work, life}, "life", ZH).Space; got != "" {
+		t.Errorf("an ask spanning both spaces: %q, want both", got)
+	}
+}
+
+func TestOptionalInputLeftEmptyIsNoTime(t *testing.T) {
+	ctx := context.Background()
+	s, uid, ap, _ := newEnv(t)
+	ops := []Op{{Type: OpCreateProject, Args: map[string]any{"title": "Launch", "start": map[string]any{"input": "start", "optional": true}}}}
+	if _, err := ap.Apply(ctx, uid, ops, nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	ps, _ := s.ListProjects(ctx, uid, store.ProjectFilter{}, now, time.UTC)
+	if len(ps) != 1 || ps[0].Project.Start != nil {
+		t.Fatalf("%+v", ps)
+	}
+}
+
+func TestLogTimeAppliesAndUndoes(t *testing.T) {
+	ctx := context.Background()
+	s, uid, ap, _ := newEnv(t)
+	goal, _ := s.CreateGoal(ctx, store.Goal{UserID: uid, Title: "English", Period: "week", Target: 120, Unit: "minutes", Space: store.SpaceWork})
+	ops := []Op{{Type: OpLogTime, Args: map[string]any{"title": "英语学习", "minutes": 30.0, "goal_id": goal.ID, "start": rfc(at(8, 8))}}}
+	if got := OpsSpace(ops, StoreLookup(ctx, s, uid), ""); got != store.SpaceWork {
+		t.Fatalf("a time entry for a work goal lands in work, got %q", got)
+	}
+	entries, err := ap.Apply(ctx, uid, ops, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v, _ := s.ViewGoal(ctx, goal, now); v.Progress.Done != 30 {
+		t.Fatalf("the entry should count toward the goal: %v", v.Progress.Done)
+	}
+	if err := ap.Undo(ctx, uid, entries); err != nil {
+		t.Fatal(err)
+	}
+	if es, _ := s.ListTimeEntries(ctx, uid, store.TimeFilter{}); len(es) != 0 {
+		t.Fatalf("undo should remove the entry: %+v", es)
+	}
+	if v, _ := s.ViewGoal(ctx, goal, now); v.Progress.Done != 0 {
+		t.Fatalf("and its check-in: %v", v.Progress.Done)
 	}
 }

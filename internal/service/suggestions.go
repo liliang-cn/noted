@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -73,9 +74,17 @@ func changeToPB(c store.Change) *pb.Change {
 }
 
 // saveDraft stores a draft as a pending proposal (deduplicated by fingerprint).
+// Whoever drafted it, the proposal is filed under the space its steps land
+// in: one space when they share it, both ("") when they span work and life.
 func saveDraft(ctx context.Context, st *store.Store, userID string, d plan.Draft, source string) (store.Proposal, bool, error) {
+	return saveDraftIn(ctx, st, userID, d, source, "")
+}
+
+// saveDraftIn is saveDraft for a draft made in an assistant conversation.
+func saveDraftIn(ctx context.Context, st *store.Store, userID string, d plan.Draft, source, session string) (store.Proposal, bool, error) {
 	return st.SaveProposal(ctx, store.Proposal{
-		UserID: userID, Kind: d.Kind, Title: d.Title, Reason: d.Reason, Space: d.Space, Source: source,
+		UserID: userID, Kind: d.Kind, Title: d.Title, Reason: d.Reason, Source: source, Session: session,
+		Space:       plan.OpsSpace(d.Ops, plan.StoreLookup(ctx, st, userID), d.Space),
 		Fingerprint: d.Fingerprint, Ops: plan.EncodeOps(d.Ops), Inputs: plan.EncodeInputs(d.Inputs),
 	})
 }
@@ -170,7 +179,15 @@ func (s *Suggestions) accept(ctx context.Context, userID string, p store.Proposa
 		}
 	}
 
+	if p.Status == store.ProposalSuperseded {
+		return nil, errSuperseded
+	}
 	if err := s.Store.DecideProposal(ctx, userID, p.ID, store.ProposalAccepted); err != nil {
+		if errors.Is(err, store.ErrConflict) {
+			if now, gerr := s.Store.GetProposal(ctx, userID, p.ID); gerr == nil && now.Status == store.ProposalSuperseded {
+				return nil, errSuperseded
+			}
+		}
 		return nil, toStatus(err)
 	}
 	entries, err := s.applier(s.loc()).Apply(ctx, userID, ops, selected, inputs)
@@ -192,6 +209,9 @@ func (s *Suggestions) accept(ctx context.Context, userID string, p store.Proposa
 	}
 	return &pb.AcceptProposalResponse{Proposal: out, Change: changeToPB(ch)}, nil
 }
+
+// errSuperseded refuses a proposal a later reply in the same conversation replaced.
+var errSuperseded = status.Error(codes.FailedPrecondition, "this proposal was superseded by a newer one in the same conversation")
 
 func (s *Suggestions) DismissProposal(ctx context.Context, req *pb.DismissProposalRequest) (*pb.Proposal, error) {
 	u, err := uid(ctx)
@@ -276,7 +296,10 @@ func (s *Suggestions) GetWeeklyReview(ctx context.Context, req *pb.GetWeeklyRevi
 		return nil, toStatus(err)
 	}
 	out := &pb.WeeklyReview{From: timestamppb.New(r.From), To: timestamppb.New(r.To),
-		TasksDone: int32(r.TasksDone), TasksTotal: int32(r.TasksTotal)}
+		TasksDone: int32(r.TasksDone), TasksTotal: int32(r.TasksTotal), TimeMinutes: int32(r.TimeMinutes)}
+	for _, row := range r.TopActivities {
+		out.TopActivities = append(out.TopActivities, timeRowToPB(row))
+	}
 	for _, g := range r.Goals {
 		out.Goals = append(out.Goals, goalToPB(g))
 	}

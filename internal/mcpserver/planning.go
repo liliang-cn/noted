@@ -49,6 +49,13 @@ type createGoalIn struct {
 	Steps         []string `json:"milestones,omitempty" jsonschema:"optional ordered milestones, e.g. A1, A2, exam"`
 	CounterUnit   string   `json:"counter_unit,omitempty" jsonschema:"unit of an optional running total that is not tied to a period, e.g. lessons"`
 	CounterTarget float64  `json:"counter_target,omitempty" jsonschema:"the running total to reach, e.g. 40 lessons"`
+	Notes         string   `json:"notes,omitempty"`
+	ObjectiveID   string   `json:"objective_id,omitempty" jsonschema:"makes this goal a dimension of an objective (id from create_objective or list_objectives)"`
+	ProjectID     string   `json:"project_id,omitempty"`
+}
+type deleteProjectIn struct {
+	ID          string `json:"id"`
+	DeleteItems bool   `json:"delete_items,omitempty" jsonschema:"also delete the project's tasks, events and notes; by default they are kept and just leave the project"`
 }
 type checkInIn struct {
 	GoalID string  `json:"goal_id"`
@@ -58,8 +65,8 @@ type checkInIn struct {
 }
 
 func (t *tools) registerPlanning(s *mcp.Server) {
-	mcp.AddTool(s, &mcp.Tool{Name: "get_overview", Description: "What needs attention: events and tasks for today, the next 14 days, this week or this month, plus goals and pinned projects. The best first call for \"what's on\".", Annotations: readOnly},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in overviewIn) (*mcp.CallToolResult, any, error) {
+	mcp.AddTool(s, &mcp.Tool{Name: "get_overview", Description: "What needs attention: events and tasks for today, the next 14 days, this week or this month, plus goals and pinned projects. The best first call for \"what's on\".", Annotations: readOnly, OutputSchema: overviewSchema},
+		func(ctx context.Context, _ *mcp.CallToolRequest, in overviewIn) (*mcp.CallToolResult, *overviewOut, error) {
 			h := pb.Horizon_HORIZON_TODAY
 			switch in.Horizon {
 			case "", "today":
@@ -72,6 +79,10 @@ func (t *tools) registerPlanning(s *mcp.Server) {
 			default:
 				return nil, nil, fmt.Errorf("horizon must be today, upcoming, week or month")
 			}
+			horizon := in.Horizon
+			if horizon == "" {
+				horizon = "today"
+			}
 			sp, err := spaceOf(in.Space)
 			if err != nil {
 				return nil, nil, err
@@ -80,11 +91,11 @@ func (t *tools) registerPlanning(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, t.overview(r, horizon))
 		})
 
-	mcp.AddTool(s, &mcp.Tool{Name: "list_projects", Description: "List projects (finite efforts such as a trip) with progress, days left and the next step. Pinned first.", Annotations: readOnly},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in listProjectsIn) (*mcp.CallToolResult, any, error) {
+	mcp.AddTool(s, &mcp.Tool{Name: "list_projects", Description: "List projects (finite efforts such as a trip) with progress, days left and the next step. Pinned first. progress.daysLeft counts days until the project's start (the departure of a trip), or until its due date when it has no start.", Annotations: readOnly},
+		func(ctx context.Context, _ *mcp.CallToolRequest, in listProjectsIn) (*mcp.CallToolResult, *listOut[*projectOut], error) {
 			sp, err := spaceOf(in.Space)
 			if err != nil {
 				return nil, nil, err
@@ -93,18 +104,18 @@ func (t *tools) registerPlanning(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, &listOut[*projectOut]{Items: items(r.Projects, t.project)})
 		})
-	mcp.AddTool(s, &mcp.Tool{Name: "get_project", Description: "One project with all its tasks, events and notes.", Annotations: readOnly},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, any, error) {
+	mcp.AddTool(s, &mcp.Tool{Name: "get_project", Description: "One project with all its tasks, events, notes, goals and objectives. progress.daysLeft counts days until the project's start, or until its due date when it has no start.", Annotations: readOnly},
+		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, *projectDetailOut, error) {
 			r, err := t.projs.GetProject(ctx, &pb.GetProjectRequest{Id: in.ID})
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, t.projectDetail(r))
 		})
-	mcp.AddTool(s, &mcp.Tool{Name: "create_project", Description: "Create a project. Then add tasks, events and notes to it by passing its id as project_id to create_task, create_event and create_note.", Annotations: additive},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in createProjectIn) (*mcp.CallToolResult, any, error) {
+	mcp.AddTool(s, &mcp.Tool{Name: "create_project", Description: "Create a project. Then add tasks, events, notes, goals and objectives to it by passing its id as project_id to the create_* tools; move existing ones in with project_id on update_task, update_event, update_note, update_goal or update_objective.", Annotations: additive},
+		func(ctx context.Context, _ *mcp.CallToolRequest, in createProjectIn) (*mcp.CallToolResult, *projectOut, error) {
 			sp, err := spaceOf(in.Space)
 			if err != nil {
 				return nil, nil, err
@@ -122,10 +133,10 @@ func (t *tools) registerPlanning(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, t.project(r))
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "update_project", Description: "Rename, pin, archive or reschedule a project; omitted fields stay as they are.", Annotations: editing},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in updateProjectIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in updateProjectIn) (*mcp.CallToolResult, *projectOut, error) {
 			p, paths := &pb.Project{Id: in.ID}, []string{}
 			if in.Title != nil {
 				p.Title, paths = *in.Title, append(paths, "title")
@@ -166,11 +177,19 @@ func (t *tools) registerPlanning(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, t.project(r))
+		})
+
+	mcp.AddTool(s, &mcp.Tool{Name: "delete_project", Description: "Permanently delete a project. Its tasks, events and notes are kept (they just leave the project) unless delete_items is true.", Annotations: deleting},
+		func(ctx context.Context, _ *mcp.CallToolRequest, in deleteProjectIn) (*mcp.CallToolResult, *deletedOut, error) {
+			if _, err := t.projs.DeleteProject(ctx, &pb.DeleteProjectRequest{Id: in.ID, DeleteItems: in.DeleteItems}); err != nil {
+				return nil, nil, err
+			}
+			return deleted("project", "project", in.ID)
 		})
 
 	mcp.AddTool(s, &mcp.Tool{Name: "list_goals", Description: "Recurring goals (3 workouts a week, 140 minutes of study a week) with this period's progress, whether the user is behind pace, and the streak.", Annotations: readOnly},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in listGoalsIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in listGoalsIn) (*mcp.CallToolResult, *listOut[*goalOut], error) {
 			sp, err := spaceOf(in.Space)
 			if err != nil {
 				return nil, nil, err
@@ -179,31 +198,24 @@ func (t *tools) registerPlanning(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, &listOut[*goalOut]{Items: items(r.Goals, t.goal)})
 		})
-	mcp.AddTool(s, &mcp.Tool{Name: "create_goal", Description: "Create a recurring goal.", Annotations: additive},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in createGoalIn) (*mcp.CallToolResult, any, error) {
+	mcp.AddTool(s, &mcp.Tool{Name: "create_goal", Description: "Create a recurring goal: an amount per day, week or month (swim 2 times a week, study 140 minutes a week). Pass objective_id to make it a dimension of a larger objective.", Annotations: additive},
+		func(ctx context.Context, _ *mcp.CallToolRequest, in createGoalIn) (*mcp.CallToolResult, *goalOut, error) {
 			sp, err := spaceOf(in.Space)
 			if err != nil {
 				return nil, nil, err
 			}
-			var per pb.GoalPeriod
-			switch in.Period {
-			case "day":
-				per = pb.GoalPeriod_GOAL_PERIOD_DAY
-			case "week":
-				per = pb.GoalPeriod_GOAL_PERIOD_WEEK
-			case "month":
-				per = pb.GoalPeriod_GOAL_PERIOD_MONTH
-			default:
-				return nil, nil, fmt.Errorf("period must be day, week or month")
+			per, err := periodOf(in.Period)
+			if err != nil {
+				return nil, nil, err
 			}
 			tz := in.TimeZone
 			if tz == "" {
 				tz = t.loc.String()
 			}
-			g := &pb.Goal{Title: in.Title, Period: per, Target: in.Target, Unit: in.Unit, TimeZone: tz, Space: sp,
-				CounterUnit: in.CounterUnit, CounterTarget: in.CounterTarget}
+			g := &pb.Goal{Title: in.Title, Notes: in.Notes, Period: per, Target: in.Target, Unit: in.Unit, TimeZone: tz, Space: sp,
+				CounterUnit: in.CounterUnit, CounterTarget: in.CounterTarget, ObjectiveId: in.ObjectiveID, ProjectId: in.ProjectID}
 			for _, m := range in.Steps {
 				g.Milestones = append(g.Milestones, &pb.Milestone{Title: m})
 			}
@@ -211,14 +223,18 @@ func (t *tools) registerPlanning(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, t.goal(r))
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "check_in", Description: "Record progress on a goal: one workout, 20 minutes of study.", Annotations: additive},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in checkInIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in checkInIn) (*mcp.CallToolResult, *goalOut, error) {
 			r, err := t.goals.RecordCheckIn(ctx, &pb.RecordCheckInRequest{GoalId: in.GoalID, Amount: in.Amount, Count: in.Count, Note: in.Note})
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r.Goal)
+			g := t.goal(r.Goal)
+			if g != nil {
+				g.CheckIn = t.checkIn(r.CheckIn)
+			}
+			return reply(r.Goal, g)
 		})
 }

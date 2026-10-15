@@ -161,7 +161,7 @@ func (s *Calendar) CreateTask(ctx context.Context, req *pb.CreateTaskRequest) (*
 	t, err := s.Store.CreateTask(ctx, store.Task{
 		UserID: u, Title: in.Title, Notes: in.Notes, Due: timePtr(in.DueTime), Priority: int(in.Priority),
 		Done: in.Completed, Remind: timePtr(in.RemindTime), Tags: in.Tags,
-		ProjectID: in.ProjectId, Space: spaceIn(in.Space),
+		ProjectID: in.ProjectId, Space: spaceIn(in.Space), RRule: in.Rrule,
 	})
 	if err != nil {
 		return nil, toStatus(err)
@@ -190,7 +190,7 @@ func (s *Calendar) UpdateTask(ctx context.Context, req *pb.UpdateTaskRequest) (*
 	if in.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "task.id is required")
 	}
-	paths, err := maskPaths(req.UpdateMask, "title", "notes", "due_time", "priority", "completed", "remind_time", "tags", "project_id", "space")
+	paths, err := maskPaths(req.UpdateMask, "title", "notes", "due_time", "priority", "completed", "remind_time", "tags", "project_id", "space", "rrule")
 	if err != nil {
 		return nil, err
 	}
@@ -228,6 +228,9 @@ func (s *Calendar) UpdateTask(ctx context.Context, req *pb.UpdateTaskRequest) (*
 			return nil, status.Error(codes.InvalidArgument, "space must be WORK or LIFE")
 		}
 		p.Space = &sp
+	}
+	if paths["rrule"] {
+		p.RRule = &in.Rrule
 	}
 	t, err := s.Store.UpdateTask(ctx, u, in.Id, p)
 	if err != nil {
@@ -278,6 +281,57 @@ func (s *Calendar) ListTasks(ctx context.Context, req *pb.ListTasksRequest) (*pb
 		resp.Tasks = append(resp.Tasks, taskToPB(t))
 	}
 	return resp, nil
+}
+
+// ---- task work ----
+
+func (s *Calendar) LogTaskWork(ctx context.Context, req *pb.LogTaskWorkRequest) (*pb.Task, error) {
+	u, err := uid(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var at time.Time
+	if t := timePtr(req.Time); t != nil {
+		at = *t
+	}
+	var progress *int
+	if req.Progress != nil {
+		p := int(req.GetProgress())
+		progress = &p
+	}
+	t, err := s.Store.LogTaskWork(ctx, u, req.GetTaskId(), at, int(req.GetMinutes()), progress, req.GetNote())
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return taskToPB(t), nil
+}
+
+func (s *Calendar) ListTaskWork(ctx context.Context, req *pb.ListTaskWorkRequest) (*pb.ListTaskWorkResponse, error) {
+	u, err := uid(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ws, err := s.Store.ListTaskWork(ctx, u, req.GetTaskId())
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	out := &pb.ListTaskWorkResponse{}
+	for _, w := range ws {
+		out.Entries = append(out.Entries, taskWorkToPB(w))
+	}
+	return out, nil
+}
+
+func (s *Calendar) DeleteTaskWork(ctx context.Context, req *pb.DeleteTaskWorkRequest) (*pb.Task, error) {
+	u, err := uid(ctx)
+	if err != nil {
+		return nil, err
+	}
+	t, err := s.Store.DeleteTaskWork(ctx, u, req.GetId())
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	return taskToPB(t), nil
 }
 
 // ---- reminders ----

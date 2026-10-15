@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="theme-color" content="#F2F2F7">
+<meta name="robots" content="noindex">
+<title>{{.Title}}</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="{{.AppCSS}}">
+<link rel="stylesheet" href="{{.PairCSS}}">
+{{- if .Poll}}
+<script src="{{.PairJS}}" defer></script>
+{{- end}}
+</head>
+<body class="pair-body">
+<main class="pair" id="pair"{{if .Poll}} data-poll="{{.Poll}}" data-left="{{.Left}}"{{end}}>
+  <div class="pair-card">
+    <svg class="mark lg" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#1F5BFF"/><path d="M20 46V18h5.2l13.6 19.4V18H44v28h-5.2L25.2 26.6V46z" fill="#fff"/></svg>
+    <h1 class="pair-h">{{if .ClientName}}连接 {{.ClientName}} 到 noted{{else}}连接到 noted{{end}}</h1>
+{{- if .Error}}
+    <p class="pair-msg err-msg" role="alert">{{.Error}}</p>
+{{- else}}
+    <div id="pair-live"{{if not .Pending}} hidden{{end}}>
+{{- if .Pending}}
+      <p class="pair-code" aria-label="配对码 {{.Code}}">{{.Code}}</p>
+      <div class="pair-qr">{{.QR}}</div>
+      <ol class="pair-steps">
+        <li>打开 noted App</li>
+        <li>设置 → 接入 AI 助手</li>
+        <li>扫码配对（或输入配对码）</li>
+      </ol>
+      <p class="pair-exp"><span id="pair-left">{{.LeftText}}</span> 后过期</p>
+{{- if .UserName}}
+      <form method="post" action="/oauth/pair/approve" class="pair-act">
+        <input type="hidden" name="p" value="{{.Poll}}">
+        <button type="submit" class="btn primary block lg">以 {{.UserName}} 身份允许</button>
+      </form>
+{{- end}}
+      <form method="post" action="/oauth/pair/deny" class="pair-deny">
+        <input type="hidden" name="p" value="{{.Poll}}">
+        <button type="submit" class="link">拒绝</button>
+      </form>
+{{- end}}
+    </div>
+    <p class="pair-msg" id="pair-msg" role="status"{{if not .Message}} hidden{{end}}>{{.Message}}</p>
+{{- end}}
+  </div>
+</main>
+</body>
+</html>

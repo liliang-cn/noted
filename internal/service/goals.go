@@ -54,7 +54,7 @@ func goalToPB(v store.GoalView) *pb.Goal {
 	out := &pb.Goal{
 		Id: g.ID, Title: g.Title, Notes: g.Notes, Period: periodOut(g.Period), Target: g.Target, Unit: g.Unit,
 		TimeZone: g.TimeZone, EventId: g.EventID, Archived: g.Archived, Space: spaceOut(g.Space),
-		CounterUnit: g.CounterUnit, CounterTarget: g.CounterTarget, ObjectiveId: g.ObjectiveID,
+		CounterUnit: g.CounterUnit, CounterTarget: g.CounterTarget, ObjectiveId: g.ObjectiveID, ProjectId: g.ProjectID,
 		CreateTime: timestamppb.New(g.Created), UpdateTime: timestamppb.New(g.Updated),
 		Progress: &pb.GoalProgress{
 			PeriodStart: timestamppb.New(p.PeriodStart), PeriodEnd: timestamppb.New(p.PeriodEnd),
@@ -103,7 +103,7 @@ func (s *Goals) CreateGoal(ctx context.Context, req *pb.CreateGoalRequest) (*pb.
 	g, err := s.Store.CreateGoal(ctx, store.Goal{
 		UserID: u, Title: in.Title, Notes: in.Notes, Period: periodIn(in.Period), Target: in.Target, Unit: in.Unit,
 		TimeZone: in.TimeZone, EventID: in.EventId, Archived: in.Archived, Space: spaceIn(in.Space),
-		CounterUnit: in.CounterUnit, CounterTarget: in.CounterTarget, ObjectiveID: in.ObjectiveId, Milestones: milestonesIn(in.Milestones),
+		CounterUnit: in.CounterUnit, CounterTarget: in.CounterTarget, ObjectiveID: in.ObjectiveId, ProjectID: in.ProjectId, Milestones: milestonesIn(in.Milestones),
 	})
 	if err != nil {
 		return nil, toStatus(err)
@@ -128,7 +128,7 @@ func (s *Goals) UpdateGoal(ctx context.Context, req *pb.UpdateGoalRequest) (*pb.
 	if in.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "goal.id is required")
 	}
-	paths, err := maskPaths(req.UpdateMask, "title", "notes", "period", "target", "unit", "time_zone", "event_id", "archived", "space", "counter_unit", "counter_target", "objective_id", "milestones")
+	paths, err := maskPaths(req.UpdateMask, "title", "notes", "period", "target", "unit", "time_zone", "event_id", "archived", "space", "counter_unit", "counter_target", "objective_id", "project_id", "milestones")
 	if err != nil {
 		return nil, err
 	}
@@ -174,6 +174,9 @@ func (s *Goals) UpdateGoal(ctx context.Context, req *pb.UpdateGoalRequest) (*pb.
 	if paths["objective_id"] {
 		p.ObjectiveID = &in.ObjectiveId
 	}
+	if paths["project_id"] {
+		p.ProjectID = &in.ProjectId
+	}
 	if paths["milestones"] {
 		ms := milestonesIn(in.Milestones)
 		p.Milestones = &ms
@@ -212,7 +215,7 @@ func (s *Goals) ListGoals(ctx context.Context, req *pb.ListGoalsRequest) (*pb.Li
 }
 
 func checkInToPB(c store.CheckIn) *pb.CheckIn {
-	return &pb.CheckIn{Id: c.ID, GoalId: c.GoalID, Time: timestamppb.New(c.Time), Amount: c.Amount, Count: c.Tally, Note: c.Note}
+	return &pb.CheckIn{Id: c.ID, GoalId: c.GoalID, Time: timestamppb.New(c.Time), Amount: c.Amount, Count: c.Tally, Note: c.Note, TimeEntryId: c.TimeEntryID}
 }
 
 func (s *Goals) RecordCheckIn(ctx context.Context, req *pb.RecordCheckInRequest) (*pb.RecordCheckInResponse, error) {

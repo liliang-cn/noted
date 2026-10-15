@@ -351,8 +351,8 @@ func (s Suggester) Schedule(ctx context.Context, userID string, taskIDs []string
 			args["project_id"] = t.ProjectID
 		}
 		d.Ops = append(d.Ops, Op{Type: OpCreateEvent, Label: lc.t("sched.op", t.Title, lc.span(start, end)), Args: args})
-		d.Space = t.Space
 	}
+	d.Space = OpsSpace(d.Ops, nil, "")
 	if len(d.Ops) == 0 {
 		return Draft{}, ErrNoSlot
 	}

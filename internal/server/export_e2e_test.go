@@ -71,6 +71,16 @@ func TestExportContainsEverythingTheUserHasAndNothingElse(t *testing.T) {
 	if _, err := hc.RecordTrade(ctx, &pb.RecordTradeRequest{HoldingId: hv.Id, Trade: &pb.Trade{Side: "buy", Shares: 14, Price: 699.191, Note: "=HYPERLINK(1)"}}); err != nil {
 		t.Fatal(err)
 	}
+	al, err := pb.NewAlarmServiceClient(conn).CreateAlarm(ctx, &pb.CreateAlarmRequest{Alarm: &pb.Alarm{Label: "接三宝", OriginalText: "每隔一周的周一 15:15 接三宝",
+		HolidayPolicy: "workdayOnly", Schedule: &pb.AlarmSchedule{Kind: "recurring", Anchor: "2026-10-12", Time: "15:15", TimeZone: "Asia/Shanghai",
+			Recurrence: &pb.AlarmRecurrence{Freq: "weekly", Interval: 2, ByDay: []string{"MON"}}}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pb.NewAlarmServiceClient(conn).CreateAlarm(as(e.bob), &pb.CreateAlarmRequest{Alarm: &pb.Alarm{Label: "bob secret alarm",
+		Schedule: &pb.AlarmSchedule{Kind: "oneShot", At: timestamppb.New(start0)}}}); err != nil {
+		t.Fatal(err)
+	}
 	// Bob's data must not leak into Alice's export.
 	if _, err := notes.CreateNote(as(e.bob), &pb.CreateNoteRequest{Note: &pb.Note{Title: "bob secret", Content: "x"}}); err != nil {
 		t.Fatal(err)
@@ -132,6 +142,18 @@ func TestExportContainsEverythingTheUserHasAndNothingElse(t *testing.T) {
 	}
 	if len(d.Holdings) != 1 || d.Holdings[0].Symbol != "VOO" || len(d.Holdings[0].Trades) != 1 || d.Holdings[0].DCADay != 15 {
 		t.Fatalf("holdings: %+v", d.Holdings)
+	}
+	if len(d.Alarms) != 1 || d.Alarms[0].ID != al.Id || d.Alarms[0].Label != "接三宝" || !d.Alarms[0].Enabled || d.Alarms[0].Region != "CN" ||
+		d.Alarms[0].HolidayPolicy != "workdayOnly" || d.Alarms[0].Schedule.Recurrence == nil || d.Alarms[0].Schedule.Recurrence.Interval != 2 ||
+		d.Alarms[0].OriginalText == "" {
+		t.Fatalf("alarms: %+v", d.Alarms)
+	}
+	if !strings.Contains(files["noted.json"], `"schedule": {
+        "kind": "recurring",
+        "anchor": "2026-10-12",
+        "time": "15:15",
+        "timeZone": "Asia/Shanghai",`) {
+		t.Fatalf("an alarm's schedule should keep the shape of docs/alarms.md:\n%s", files["noted.json"])
 	}
 	if csv := files["trades.csv"]; !strings.Contains(csv, "VOO,USD,") || !strings.Contains(csv, ",buy,14,699.191,0,'=HYPERLINK(1)") {
 		t.Fatalf("trades.csv: %q", csv)

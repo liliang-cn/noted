@@ -1,129 +1,116 @@
 import XCTest
 
+/// 笔记: search, tag chips, swipes, the editor's autosave, ticking a checklist, "@" references.
 final class NotesUITests: NotedUITestCase {
-    func testNoteLifecycle() throws {
-        try launch()
-        let title = unique("UIT note")
-        openCapture()
-        app.segmentedControls.buttons["笔记"].tap()
-        type(title, into: app.textFields["标题"])
-        let body = app.textViews.firstMatch
-        body.tap(); body.typeText("first body")
-        button("保存").tap()
-
-        tab("笔记")
-        exists(text(title), 10)
-
-        // search finds it, and a miss shows the empty state
-        let search = app.textFields["搜索"]
-        type("UIT note", into: search)
-        exists(text(title), 10)
-        search.clearText()
-        type("zzzqqq", into: search)
-        exists(text("没有匹配的笔记"))
-        search.clearText()
-        exists(text(title), 10)
-
-        // edit
-        text(title).tap()
-        let editor = app.textViews.firstMatch
-        exists(editor)
-        editor.tap(); editor.typeText(" and more")
-        button("保存").tap()
-        exists(text("and more"), 10)
-
-        // delete
-        text(title).tap()
-        let del = button("删除")
-        exists(del)
-        del.tap()
-        gone(text(title), 10)
+    private func note(_ title: String) -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "identifier == 'note-row' AND label BEGINSWITH %@", title)).firstMatch
     }
 
-    func testModeFiltersNotes() throws {
-        try launch()
-        tab("笔记")
-        exists(text("旅行清单"))
-        exists(text("周会纪要"))
-        button("工作").tap()
-        exists(text("周会纪要"))
-        gone(text("旅行清单"))
-        button("生活").tap()
-        exists(text("旅行清单"))
-        gone(text("周会纪要"))
+    private func open(_ title: String) {
+        reveal(note(title)).tap()
+        exists(byID("note-preview"))
     }
 
-    func testNewNoteTakesTheCurrentMode() throws {
-        try launch(mode: "work")
-        let title = unique("UIT work note")
-        openCapture()
-        app.segmentedControls.buttons["笔记"].tap()
-        type(title, into: app.textFields["标题"])
-        button("保存").tap()
-        tab("笔记")
-        button("工作").tap()
-        exists(text(title), 10)
-        button("生活").tap()
-        gone(text(title))
-    }
-}
-
-extension XCUIElement {
-    func clearText() {
-        guard let s = value as? String, !s.isEmpty else { return }
-        tap()
-        typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: s.count))
-    }
-}
-
-final class NoteShareUITests: NotedUITestCase {
-    private func openNote() {
-        tab("笔记")
-        text("旅行清单").tap()
-        exists(button("分享"))
+    func testLargeTitleAndSearch() throws {
+        try launch(tab: "notes")
+        let bar = app.navigationBars["笔记"]
+        exists(bar)
+        let title = bar.staticTexts["笔记"]
+        exists(title)
+        XCTAssertLessThan(title.frame.minX, 40, "笔记 shows a large (leading) title like the other tabs, not an inline one")
+        XCTAssertGreaterThan(title.frame.height, 30)
+        exists(note("周会纪要"))
+        let search = app.searchFields.firstMatch
+        exists(search)
+        search.tap()
+        search.typeText("德语")
+        exists(note("德语单词"))
+        gone(note("旅行清单"))
+        gone(note("周会纪要"))
+        search.typeText("zzz")
+        exists(any("没有找到"))
     }
 
-    func testShareMenuOffersTextAndPictureOptions() throws {
-        try launch()
-        openNote()
-        button("分享").tap()
-        exists(app.buttons["复制文字"])
-        exists(app.buttons["分享文字"])
-        exists(app.buttons["分享为图片"])
-        exists(app.buttons["保存到相册"])
+    func testTagChipFilters() throws {
+        try launch(tab: "notes")
+        let chip = app.buttons["#德语"].firstMatch
+        exists(chip)
+        chip.tap()
+        reveal(note("德语单词"))
+        gone(note("旅行清单"))
+        app.buttons["#travel"].firstMatch.tap()
+        reveal(note("旅行清单"))
+        gone(note("德语单词"))
+        app.buttons["notes-tag-all"].tap()
+        reveal(note("德语单词"))
+        reveal(note("旅行清单"))
     }
 
-    func testCopyingTheTextSaysSo() throws {
-        try launch()
-        openNote()
-        button("分享").tap()
-        app.buttons["复制文字"].tap()
-        exists(text("已复制"))
+    func testSwipeToPinAndToDelete() throws {
+        try launch(tab: "notes")
+        let pin = note("UIT 置顶我")
+        swipeRight(reveal(pin), action: "置顶")
+        sawToast("已置顶")
+        // Pinned notes come first, with 周会纪要, above 今天.
+        drag(up: false); drag(up: false)
+        let today = app.collectionViews.staticTexts["今天"].firstMatch
+        exists(today)
+        eventually(5, "the note moves into 置顶") { note("UIT 置顶我").exists && note("UIT 置顶我").frame.maxY < today.frame.minY }
+
+        let del = note("UIT 删除我")
+        reveal(del).swipeLeft()
+        let b = app.buttons["删除"].firstMatch
+        exists(b)
+        b.tap()
+        let confirm = app.buttons["删除"].firstMatch
+        exists(confirm)
+        confirm.tap()
+        gone(note("UIT 删除我"))
     }
 
-    func testSharingAsAPictureOpensTheSystemShareSheet() throws {
-        try launch()
-        openNote()
-        button("分享").tap()
-        app.buttons["分享为图片"].tap()
-        // the system share sheet shows what can be done with a picture
-        let sheet = app.otherElements["ActivityListView"]
-        let save = app.buttons["Save Image"].exists ? app.buttons["Save Image"] : app.cells["Save Image"]
-        XCTAssertTrue(sheet.waitForExistence(timeout: 10) || save.waitForExistence(timeout: 10) || app.buttons["Copy"].waitForExistence(timeout: 10), "the share sheet did not appear")
+    func testEditAutosavesAndReopens() throws {
+        try launch(tab: "notes")
+        open("UIT 编辑笔记")
+        byID("note-preview").tap()
+        let body = app.textViews["note-body"]
+        exists(body)
+        body.typeText("\n自动保存的第二行")
+        eventually(10, "it saves while typing") { (byID("note-status").label).contains("已保存") }
+        relaunch()
+        tab("notes")
+        open("UIT 编辑笔记")
+        exists(any("自动保存的第二行"))
     }
 
-    func testSavingAsAPictureReportsTheOutcome() throws {
-        addUIInterruptionMonitor(withDescription: "photos") { alert in
-            for label in ["允许", "Allow", "好", "OK"] where alert.buttons[label].exists { alert.buttons[label].tap(); return true }
-            return false
-        }
-        try launch()
-        openNote()
-        button("分享").tap()
-        app.buttons["保存到相册"].tap()
-        app.tap()   // gives the interruption monitor a chance to answer the permission alert
-        XCTAssertTrue(text("已保存到相册").waitForExistence(timeout: 15) || text("没有保存").waitForExistence(timeout: 1),
-                      "the outcome of saving should be shown")
-        XCTAssertFalse(text("没有保存").exists, "saving to the photo library failed")
+    func testTickAChecklistInPreview() throws {
+        try launch(tab: "notes")
+        open("UIT 清单")
+        let item = app.buttons["完成 买水"]
+        exists(item)
+        item.tap()
+        exists(app.buttons["标为未完成 买水"])
+        back()
+        open("UIT 清单")
+        exists(app.buttons["标为未完成 买水"])
+        exists(app.buttons["完成 买面包"])
+    }
+
+    func testMentionInsertsAProjectReferenceThatOpensIt() throws {
+        try launch(tab: "notes")
+        open("UIT 引用")
+        byID("note-preview").tap()
+        let body = app.textViews["note-body"]
+        exists(body)
+        app.buttons["kb-mention"].tap()
+        exists(byID("mention-panel"))
+        let project = app.buttons.matching(NSPredicate(format: "identifier == 'mention-project' AND label CONTAINS '菲律宾旅行'")).firstMatch
+        exists(project)
+        project.tap()
+        XCTAssertTrue(((body.value as? String) ?? "").contains("[@菲律宾旅行](noted://project/"), (body.value as? String) ?? "")
+        app.buttons["note-done"].tap()
+        let link = app.links.matching(NSPredicate(format: "identifier BEGINSWITH 'noted://project/'")).firstMatch
+        exists(link)
+        link.tap()
+        exists(app.navigationBars["菲律宾旅行"])
     }
 }

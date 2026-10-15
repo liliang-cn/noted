@@ -233,7 +233,12 @@ func TestWeeklyReviewOverGRPC(t *testing.T) {
 	monday := today.AddDate(0, 0, -((int(today.Weekday()) + 6) % 7))
 	done, _ := cal.CreateTask(ctx, &pb.CreateTaskRequest{Task: &pb.Task{Title: "Finished", DueTime: timestamppb.New(monday.Add(9 * time.Hour))}})
 	cal.UpdateTask(ctx, &pb.UpdateTaskRequest{Task: &pb.Task{Id: done.Id, Completed: true}, UpdateMask: mask("completed")})
-	slipped, _ := cal.CreateTask(ctx, &pb.CreateTaskRequest{Task: &pb.Task{Title: "Slipped", DueTime: timestamppb.New(monday.Add(10 * time.Hour))}})
+	// Slipped means due before now, so it is due a minute ago (still inside this week).
+	due := time.Now().UTC().Add(-time.Minute).Truncate(time.Second)
+	if due.Before(monday) {
+		t.Skip("the week has only just started")
+	}
+	slipped, _ := cal.CreateTask(ctx, &pb.CreateTaskRequest{Task: &pb.Task{Title: "Slipped", DueTime: timestamppb.New(due)}})
 
 	r, err := sug.GetWeeklyReview(ctx, &pb.GetWeeklyReviewRequest{})
 	if err != nil {

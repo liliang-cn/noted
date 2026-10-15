@@ -15,6 +15,9 @@ const (
 	ProposalPending   = "pending"
 	ProposalAccepted  = "accepted"
 	ProposalDismissed = "dismissed"
+	// ProposalSuperseded is a pending proposal a later reply in the same
+	// conversation replaced; it can no longer be accepted.
+	ProposalSuperseded = "superseded"
 )
 
 // Proposal is a set of changes somebody (a rule, the assistant) suggests but
@@ -30,6 +33,7 @@ type Proposal struct {
 	Space       string
 	Source      string // "rules" or "ai"
 	Fingerprint string // identifies what the proposal is about, so it is not made twice
+	Session     string // the assistant conversation it came from; "" for none
 	Ops         json.RawMessage
 	Inputs      json.RawMessage
 	Created     time.Time
@@ -47,7 +51,7 @@ type Change struct {
 	Undone     *time.Time
 }
 
-const proposalCols = `id, user_id, kind, status, title, reason, space, source, fingerprint, ops, inputs, created_ms, decided_ms`
+const proposalCols = `id, user_id, kind, status, title, reason, space, source, fingerprint, ops, inputs, created_ms, decided_ms, session`
 
 func scanProposal(r scanner) (Proposal, error) {
 	var p Proposal
@@ -55,7 +59,7 @@ func scanProposal(r scanner) (Proposal, error) {
 	var created int64
 	var decided sql.NullInt64
 	if err := r.Scan(&p.ID, &p.UserID, &p.Kind, &p.Status, &p.Title, &p.Reason, &p.Space, &p.Source, &p.Fingerprint,
-		&ops, &inputs, &created, &decided); err != nil {
+		&ops, &inputs, &created, &decided, &p.Session); err != nil {
 		return Proposal{}, err
 	}
 	p.Ops, p.Inputs = json.RawMessage(ops), json.RawMessage(inputs)
@@ -76,8 +80,9 @@ func (s *Store) SaveProposal(ctx context.Context, p Proposal) (saved Proposal, c
 			return Proposal{}, false, err
 		}
 	}
-	if p.Space == "" {
-		p.Space = SpaceLife
+	// "" is a proposal whose steps span both spaces; it is listed in either mode.
+	if err := checkSpaceFilter(p.Space); err != nil {
+		return Proposal{}, false, err
 	}
 	if len(p.Ops) == 0 {
 		p.Ops = json.RawMessage("[]")
@@ -86,8 +91,8 @@ func (s *Store) SaveProposal(ctx context.Context, p Proposal) (saved Proposal, c
 		p.Inputs = json.RawMessage("[]")
 	}
 	p.ID, p.Status, p.Created = uuid.NewString(), ProposalPending, time.Now().UTC().Truncate(time.Millisecond)
-	_, err = s.db.ExecContext(ctx, `INSERT INTO proposals(`+proposalCols+`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
-		p.ID, p.UserID, p.Kind, p.Status, p.Title, p.Reason, p.Space, p.Source, p.Fingerprint, string(p.Ops), string(p.Inputs), ms(p.Created))
+	_, err = s.db.ExecContext(ctx, `INSERT INTO proposals(`+proposalCols+`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
+		p.ID, p.UserID, p.Kind, p.Status, p.Title, p.Reason, p.Space, p.Source, p.Fingerprint, string(p.Ops), string(p.Inputs), ms(p.Created), p.Session)
 	return p, err == nil, err
 }
 
@@ -99,7 +104,9 @@ func (s *Store) GetProposal(ctx context.Context, userID, id string) (Proposal, e
 	return p, err
 }
 
-// ListProposals returns the user's proposals with the given status (empty: pending), newest first.
+// ListProposals returns the user's proposals with the given status (empty:
+// pending), newest first. Filtered by a space, it includes the proposals that
+// span both.
 func (s *Store) ListProposals(ctx context.Context, userID, status, space string) ([]Proposal, error) {
 	if status == "" {
 		status = ProposalPending
@@ -109,7 +116,11 @@ func (s *Store) ListProposals(ctx context.Context, userID, status, space string)
 	}
 	q := `SELECT ` + proposalCols + ` FROM proposals WHERE user_id = ? AND status = ?`
 	args := []any{userID, status}
-	q, args = spaceClause(q, args, "space", space)
+	if space != "" {
+		// One that spans both spaces belongs to either mode.
+		q += ` AND (space = ? OR space = '')`
+		args = append(args, space)
+	}
 	rows, err := s.db.QueryContext(ctx, q+` ORDER BY created_ms DESC, id LIMIT 200`, args...)
 	if err != nil {
 		return nil, err
@@ -142,6 +153,20 @@ func (s *Store) DecideProposal(ctx context.Context, userID, id, status string) e
 		return ErrConflict
 	}
 	return nil
+}
+
+// SupersedeSession marks the user's other pending proposals of the given kind
+// from the same conversation as superseded: a follow-up reply that proposes
+// again replaces what the earlier one proposed, so accepting both cannot do
+// the same thing twice. Proposals from no conversation are never touched.
+func (s *Store) SupersedeSession(ctx context.Context, userID, session, kind, keepID string) error {
+	if session == "" {
+		return nil
+	}
+	_, err := s.db.ExecContext(ctx, `UPDATE proposals SET status = ?, decided_ms = ?
+		WHERE user_id = ? AND session = ? AND kind = ? AND status = ? AND id <> ?`,
+		ProposalSuperseded, ms(time.Now()), userID, session, kind, ProposalPending, keepID)
+	return err
 }
 
 // ReopenProposal puts an accepted proposal back to pending (used when applying it failed).
@@ -242,6 +267,21 @@ func (s *Store) MarkChangeUndone(ctx context.Context, userID, id string) error {
 		return ErrConflict
 	}
 	return nil
+}
+
+// SpaceOf is the space of the user's project, task, event or goal (kind
+// "project", "task", "event", "goal"); "" when there is no such thing.
+func (s *Store) SpaceOf(ctx context.Context, userID, kind, id string) (string, error) {
+	table, ok := map[string]string{"project": "projects", "task": "tasks", "event": "events", "goal": "goals"}[kind]
+	if !ok {
+		return "", invalid("unknown kind %q", kind)
+	}
+	var sp string
+	err := s.db.QueryRowContext(ctx, `SELECT space FROM `+table+` WHERE id = ? AND user_id = ?`, id, userID).Scan(&sp)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	return sp, err
 }
 
 // Validate checks a task without storing it (the same rules as CreateTask).

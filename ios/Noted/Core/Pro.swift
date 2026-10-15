@@ -10,6 +10,8 @@ final class Pro {
     static let monthlyID = "cn.superleo.noted.pro.monthly"
 
     var isPro = false
+    /// Granted by the server for this account (`noted user pro`), on top of any App Store subscription.
+    private(set) var grantedByServer = false
     var products: [Product] = []
     var busy = false
     var message: String?
@@ -60,7 +62,12 @@ final class Pro {
         #if DEBUG
         if ProcessInfo.processInfo.environment["NOTED_PRO"] == "1" { active = true }
         #endif
-        isPro = active
+        isPro = active || grantedByServer
+    }
+
+    func setServerGrant(_ on: Bool) {
+        grantedByServer = on
+        if on { isPro = true } else { Task { await refresh() } }
     }
 
     var yearly: Product? { products.first { $0.id == Self.yearlyID } }

@@ -1,0 +1,204 @@
+
+<div id="stage">
+  <div id="device">
+    <div class="sbar"><span class="num">11:00</span><span class="r">
+      <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 2.6c2.3 0 4.4.9 6 2.4l1.2-1.3A10.3 10.3 0 0 0 8 .8C5.3.8 2.7 1.8.8 3.7L2 5c1.6-1.5 3.7-2.4 6-2.4Zm0 3.6c1.3 0 2.5.5 3.5 1.3l1.2-1.3A7 7 0 0 0 8 4.4a7 7 0 0 0-4.7 1.8l1.2 1.3c1-.8 2.2-1.3 3.5-1.3Zm0 3.5c.5 0 1 .2 1.3.5L8 11.6 6.7 10.2c.3-.3.8-.5 1.3-.5Z"/></svg>
+      <svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="17" height="9" rx="2"/><path d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2Z" opacity=".45"/></svg>
+    </span></div>
+    <div class="island"></div>
+    <div id="views"></div>
+    <div id="ov"></div>
+    <div class="homeind"></div>
+  </div>
+  <p class="caption"><b>Noted 新设计</b>可点击原型。今天、日历、计划、笔记都能点；用 iPhone 打开即全屏。</p>
+</div>
+<script>
+'use strict';
+/* ================= utils ================= */
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const TODAY='2026-10-10',NOWM=11*60,T0=Date.now();
+const nowMin=()=>Math.min(NOWM+Math.floor((Date.now()-T0)/60000),1439);
+const nowHM=()=>pad(Math.floor(nowMin()/60))+':'+pad(nowMin()%60);
+const s2d=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const d2s=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const addD=(s,n)=>{const d=s2d(s);d.setDate(d.getDate()+n);return d2s(d)};
+const addM=(s,n)=>{const d=s2d(s);return d2s(new Date(d.getFullYear(),d.getMonth()+n,1))};
+const diffD=(a,b)=>Math.round((s2d(b)-s2d(a))/864e5);
+const WD='日一二三四五六';
+const md=s=>{const d=s2d(s);return (d.getMonth()+1)+'月'+d.getDate()+'日'};
+const wd=s=>'周'+WD[s2d(s).getDay()];
+const mdw=s=>md(s)+' '+wd(s);
+const monday=s=>addD(s,-((s2d(s).getDay()+6)%7));
+function rel(s){if(!s)return'';const n=diffD(TODAY,s);if(n===0)return'今天';if(n===1)return'明天';if(n===-1)return'昨天';if(n===2)return'后天';if(n>2&&s<=addD(monday(TODAY),6))return wd(s);return md(s)}
+const hm=s=>{const[h,m]=s.split(':').map(Number);return h*60+m};
+const mhm=m=>pad(Math.floor(m/60)%24)+':'+pad(m%60);
+const dur=m=>{const h=Math.floor(m/60),r=m%60;return h?(h+' 小时'+(r?' '+r+' 分':'')):r+' 分钟'};
+const money=(v,sign)=>{const a=Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});return (v<0?'−':(sign&&v>0?'+':''))+'$'+a};
+const pctf=(v,sign)=>(v<0?'−':(sign&&v>0?'+':''))+Math.abs(v).toFixed(2)+'%';
+function relTime(ts){const[d,t]=ts.split(' ');const n=diffD(d,TODAY);if(n===0)return t;if(n===1)return'昨天';if(n<7)return wd(d);return md(d)}
+let _id=1000;const nid=p=>p+(++_id);
+const SPN={personal:'个人',work:'工作'};
+const dot=sp=>`<i class="dot" style="background:var(--${sp})"></i>`;
+
+/* ================= icons ================= */
+const I={
+ back:'<path d="M15.5 4L7.5 12l8 8" stroke-width="2.7"/>',
+ chev:'<path d="M9.5 5.5l6.5 6.5-6.5 6.5" stroke-width="2.2"/>',
+ chevl:'<path d="M14.5 5.5L8 12l6.5 6.5" stroke-width="2.2"/>',
+ updown:'<path d="M8.5 9.5L12 6l3.5 3.5M8.5 14.5L12 18l3.5-3.5" stroke-width="2"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ minus:'<path d="M5 12h14"/>',
+ more:'<circle cx="12" cy="12" r="9.5"/><circle cx="7.8" cy="12" r="1.15" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.15" fill="currentColor" stroke="none"/><circle cx="16.2" cy="12" r="1.15" fill="currentColor" stroke="none"/>',
+ dots:'<circle cx="6" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.4" fill="currentColor" stroke="none"/>',
+ filter:'<circle cx="12" cy="12" r="9.5"/><path d="M7.5 9h9M9.5 12.5h5M11 16h2"/>',
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.5 1.5M17.2 17.2l1.5 1.5M5.3 18.7l1.5-1.5M17.2 6.8l1.5-1.5"/>',
+ cal:'<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+ target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.2"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/>',
+ note:'<rect x="4.5" y="3.5" width="15" height="17" rx="3"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4"/>',
+ check:'<path d="M5 12.5l4.5 4.5L19 7.5" stroke-width="2.4"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+ bell:'<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+ bellx:'<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0M4 4l16 16"/>',
+ repeat:'<path d="M4 11V9.5A3.5 3.5 0 0 1 7.5 6H19l-3-3M20 13v1.5a3.5 3.5 0 0 1-3.5 3.5H5l3 3"/>',
+ folder:'<path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>',
+ flag:'<path d="M5.5 21V4.5M5.5 4.5h11l-2 4 2 4h-11"/>',
+ text:'<path d="M5 6h14M5 10h14M5 14h9"/>',
+ pin:'<path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+ trash:'<path d="M4.5 6.5h15M9.5 6.5V4.5h5v2M6.5 6.5l1 13h9l1-13M10.5 10.5v6M13.5 10.5v6"/>',
+ later:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+ search:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+ x:'<path d="M6 6l12 12M18 6L6 18"/>',
+ xc:'<circle cx="12" cy="12" r="10" fill="currentColor" stroke="none"/><path d="M8.8 8.8l6.4 6.4M15.2 8.8l-6.4 6.4" stroke="#fff" stroke-width="1.8"/>',
+ link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+ at:'<circle cx="12" cy="12" r="3.6"/><path d="M15.6 12v1.4a2.5 2.5 0 0 0 5 0V12a8.6 8.6 0 1 0-3.4 6.9"/>',
+ list:'<path d="M9.5 6.5h10M9.5 12h10M9.5 17.5h10"/><circle cx="5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="5" cy="17.5" r="1.2" fill="currentColor" stroke="none"/>',
+ checklist:'<rect x="3.5" y="4.5" width="6" height="6" rx="1.5"/><path d="M5 7.6l1.2 1.2L8.4 6.4M13 7.5h7.5M13 16.5h7.5"/><rect x="3.5" y="13.5" width="6" height="6" rx="1.5"/>',
+ quote:'<path d="M5 18c2.5-1 4-3 4-6V7H5v5h4M15 18c2.5-1 4-3 4-6V7h-4v5h4"/>',
+ code:'<path d="M8.5 7L3.5 12l5 5M15.5 7l5 5-5 5"/>',
+ flame:'<path d="M12 21c-3.6 0-6-2.4-6-5.6 0-3.4 3-5.4 3.6-8.9 2.4 1.4 3.4 3.4 3.4 5.1 1-.6 1.6-1.6 1.9-2.8 1.8 1.5 3.1 3.9 3.1 6.4C18 18.6 15.6 21 12 21z" fill="currentColor" stroke="none"/>',
+ key:'<circle cx="8" cy="15" r="4"/><path d="M11 12l8.5-8.5M16 6.5l2.5 2.5M14 8.5l2 2"/>',
+ export:'<path d="M12 15V3.5M7.5 8L12 3.5 16.5 8M5 12.5v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',
+ star:'<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.8z" fill="currentColor" stroke="none"/>',
+ copy:'<rect x="8.5" y="8.5" width="11" height="11" rx="2.5"/><path d="M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>',
+ pinned:'<path d="M9 3.5h6l-1 5.5 3 3H7l3-3zM12 12v8.5"/>',
+ archive:'<rect x="3.5" y="4.5" width="17" height="4.5" rx="1.5"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4"/>',
+ pencil:'<path d="M4 20l1-4.5L15.5 5a2.1 2.1 0 0 1 3 3L8 18.5z"/><path d="M13.5 7l3 3"/>',
+ eye:'<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+ tag:'<path d="M3.5 12.5V5a1.5 1.5 0 0 1 1.5-1.5h7.5l8 8-9 9z"/><circle cx="8" cy="8" r="1.3"/>',
+ chart:'<path d="M4 19.5h16M6.5 15l4-4.5 3 3L19 7"/>',
+ money:'<path d="M12 3v18M16.5 7.5c-.6-1.6-2.3-2.5-4.5-2.5-2.6 0-4.5 1.3-4.5 3.3 0 4.7 9.5 2.3 9.5 7.2 0 2-2 3.5-4.8 3.5-2.4 0-4.2-1-4.9-2.8"/>',
+ person:'<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/>',
+ sparkle:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" fill="currentColor" stroke="none"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" fill="currentColor" stroke="none"/>',
+ compose:'<path d="M11 4.5H6.5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V13"/><path d="M18 3.5a2 2 0 0 1 3 3L13 14.5l-4 1 1-4z"/>',
+ palette:'<path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.2 0 1.8-.8 1.8-1.7 0-1.3-1.2-1.6-1.2-2.8 0-1 .8-1.5 1.8-1.5h2.3c2.3 0 3.8-1.8 3.8-4C20.5 6.3 16.7 3.5 12 3.5z"/><circle cx="7.8" cy="11" r="1.2" fill="currentColor"/><circle cx="10.5" cy="7.3" r="1.2" fill="currentColor"/><circle cx="15" cy="7.5" r="1.2" fill="currentColor"/>',
+ square:'<rect x="4" y="4" width="16" height="16" rx="4"/>',
+ kbd:'<rect x="2.5" y="6" width="19" height="12" rx="2.5"/><path d="M6 10h.01M9 10h.01M12 10h.01M15 10h.01M18 10h.01M7.5 14h9"/>',
+ cloud:'<path d="M7 18.5a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.5 1.6A3.7 3.7 0 0 1 17.5 18.5z"/>',
+ swim:'<path d="M3 17c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0 3-1 4.5 0"/><circle cx="16" cy="7" r="2"/><path d="M6 13l4-4 3 2.5"/>',
+};
+function ic(n,s=22,cls=''){return `<svg class="ic ${cls}" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n]||''}</svg>`}
+const tile=(n,c)=>`<span class="tile" style="background:var(--t-${c})">${ic(n,18)}</span>`;
+
+/* ================= data ================= */
+const T=(id,title,o)=>Object.assign({id,title,date:null,time:null,remind:'none',repeat:'none',days:[],project:null,space:'personal',prio:0,note:'',done:false,progress:0,sittings:[]},o);
+const E=(id,title,o)=>Object.assign({id,title,date:TODAY,start:'10:00',end:'11:00',allDay:false,location:'',remind:'none',repeat:'none',days:[],project:null,space:'personal',note:''},o);
+const S={
+ space:'all',accent:'#1F5BFF',mute:{on:false,range:'22:00 – 07:30'},pro:false,
+ cal:{mode:'day',sel:TODAY,mon:'2026-10-01'},
+ noteQ:'',noteTag:'全部',projTab:'active',
+ draft:null,_anim:null,
+ projects:[
+  {id:'p1',title:'菲律宾旅行',space:'personal',start:'2026-10-01',due:'2026-11-20',pinned:true,archived:false,note:'宿务 + 薄荷岛，11 月 20 日出发'},
+  {id:'p2',title:'Q4 产品发布',space:'work',start:'2026-09-15',due:'2026-10-31',pinned:true,archived:false,note:''},
+  {id:'p3',title:'搬家',space:'personal',start:'2026-08-01',due:'2026-09-20',pinned:false,archived:true,note:''},
+ ],
+ todos:[
+  T('t4','交房租',{date:TODAY,time:'10:00',remind:'at',repeat:'monthly',prio:3}),
+  T('t5','写周报',{date:TODAY,time:'18:00',space:'work',remind:'30',repeat:'weekly',days:[5],progress:60,sittings:[
+    {date:'2026-10-08',min:45,pct:20,note:'列提纲'},{date:'2026-10-09',min:50,pct:45,note:'补齐数据和图表'},{date:'2026-10-10',min:35,pct:60,note:'写完第二部分'}]}),
+  T('t6','准备德语口语',{date:TODAY,progress:40,sittings:[{date:'2026-10-07',min:30,pct:20,note:'自我介绍'},{date:'2026-10-09',min:40,pct:40,note:'点餐对话'}]}),
+  T('t7','买猫粮',{date:TODAY}),
+  T('t8','回复房东邮件',{date:'2026-10-11',time:'09:30'}),
+  T('t1','办理签证',{date:'2026-10-18',project:'p1',prio:2,remind:'1440'}),
+  T('t2','订酒店',{date:'2026-10-25',project:'p1'}),
+  T('t3','订机票',{project:'p1',done:true}),
+  T('q1','需求冻结',{project:'p2',space:'work',done:true,date:'2026-09-25'}),
+  T('q2','设计评审',{project:'p2',space:'work',done:true,date:'2026-09-30'}),
+  T('q3','接口联调',{project:'p2',space:'work',done:true,date:'2026-10-08'}),
+  T('q4','隐私政策更新',{project:'p2',space:'work',done:true,date:'2026-10-09'}),
+  T('q5','回归测试',{project:'p2',space:'work',date:'2026-10-20',prio:2}),
+  T('q6','App Store 截图',{project:'p2',space:'work',date:'2026-10-24'}),
+  T('q7','发布说明',{project:'p2',space:'work',date:'2026-10-25'}),
+  T('q8','灰度发布',{project:'p2',space:'work',date:'2026-10-28',prio:3}),
+  T('q9','正式上线',{project:'p2',space:'work',date:'2026-10-31',prio:3}),
+  T('t9','整理相册',{}),
+ ],
+ events:[
+  E('e1','团队站会',{start:'09:00',end:'09:30',space:'work',location:'线上会议'}),
+  E('e2','牙医复诊',{start:'14:00',end:'15:00',location:'人民南路口腔',remind:'60'}),
+  E('e3','季度报告评审',{start:'16:00',end:'17:30',space:'work',project:'p2',location:'3F 大会议室',remind:'15'}),
+  E('e4','航班 CTU→MNL',{date:'2026-11-20',start:'09:00',end:'13:30',project:'p1',location:'天府国际机场 T1',remind:'1440'}),
+  E('e5','发布会彩排',{date:'2026-10-29',start:'15:00',end:'17:00',project:'p2',space:'work'}),
+  E('e6','妈妈生日',{date:'2026-10-11',allDay:true,repeat:'yearly'}),
+  E('e7','产品例会',{date:'2026-10-12',start:'10:00',end:'11:00',space:'work',repeat:'weekly',days:[1]}),
+  E('e8','游泳',{date:'2026-10-13',start:'19:30',end:'20:30',location:'东湖游泳馆'}),
+  E('e9','和小王午饭',{date:'2026-10-14',start:'12:00',end:'13:00',location:'太古里'}),
+  E('e10','客户演示',{date:'2026-10-16',start:'14:00',end:'15:30',space:'work'}),
+  E('e11','健身',{date:'2026-10-08',start:'19:00',end:'20:00'}),
+  E('e12','设计走查',{date:'2026-10-09',start:'10:30',end:'12:00',space:'work',project:'p2'}),
+  E('e13','青城山徒步',{date:'2026-10-17',start:'08:00',end:'15:00'}),
+  E('e14','周报同步',{date:'2026-10-15',start:'17:00',end:'17:30',space:'work'}),
+ ],
+ notes:[
+  {id:'n1',title:'周会纪要',space:'work',project:'p2',tags:['工作'],pinned:true,updated:'2026-10-10 10:42',body:'## 10月10日 周会\n- 回归测试 **10月20日** 开始\n- 截图终稿下周一前给出\n- [x] 确认发布时间\n- [ ] 更新隐私政策文案\n- [ ] 准备 @[季度报告评审] 材料\n\n## 风险\n> 灰度期间盯崩溃率，超过 0.3% 立即回滚'},
+  {id:'n3',title:'行程想法',space:'personal',project:'p1',tags:['travel'],pinned:false,updated:'2026-10-09 22:05',body:'关于 @[菲律宾旅行] 的安排。\n\n## 宿务\n- [ ] 订浮潜\n- [x] 查鲸鲨季节\n- 墨宝沙丁鱼风暴要早去\n\n## 薄荷岛\n- 巧克力山\n- 眼镜猴保护区\n\n> 签证进度看 @[办理签证]'},
+  {id:'n2',title:'旅行清单',space:'personal',project:null,tags:['travel'],pinned:false,updated:'2026-10-08 21:15',body:'## 证件\n- [x] 护照\n- [ ] 签证打印件\n- [ ] 酒店确认单\n\n## 随身\n- 转换插头\n- 防晒霜\n- 浮潜面镜'},
+  {id:'n5',title:'发布会讲稿',space:'work',project:'p2',tags:['工作'],pinned:false,updated:'2026-10-07 18:20',body:'## 开场\n三个数字：留存 **+12%**、崩溃率 0.08%、加载快 40%。\n\n## 演示顺序\n1. 新建流程\n2. 日历\n3. 计划页'},
+  {id:'n4',title:'德语单词',space:'personal',project:null,tags:['德语'],pinned:false,updated:'2026-10-03 08:10',body:'## 第 19 课\n- die Rechnung — 账单\n- bestellen — 点餐\n- das Trinkgeld — 小费\n- `Ich hätte gern …` 我想要…'},
+ ],
+ goals:[
+  {id:'g1',title:'健身',space:'personal',project:null,period:'week',unit:'times',target:3,log:{'2026-10-06':1,'2026-10-08':1,'2026-09-29':1,'2026-10-01':1,'2026-10-03':1},streak:4,dims:[],total:null,metric:null},
+  {id:'g2',title:'德语',space:'personal',project:null,period:'day',unit:'min',target:30,log:{'2026-10-04':30,'2026-10-05':30,'2026-10-06':45,'2026-10-07':30,'2026-10-08':30,'2026-10-09':35},streak:12,dims:[],total:{name:'课时',cur:19,max:40},metric:null},
+  {id:'g3',title:'减肥',space:'personal',project:null,period:'week',unit:'times',target:5,log:{},streak:3,
+   dims:[{id:'d1',title:'游泳',period:'week',unit:'times',target:2,log:{'2026-10-07':1}},{id:'d2',title:'跑步',period:'week',unit:'times',target:3,log:{'2026-10-06':1,'2026-10-09':1,'2026-10-04':1}}],
+   total:null,metric:{name:'体重',unit:'kg',start:80,target:75,readings:[{date:'2026-09-12',v:80},{date:'2026-09-20',v:79.4},{date:'2026-09-28',v:79.1},{date:'2026-10-06',v:78.6}]}},
+  {id:'g4',title:'冥想',space:'personal',project:null,period:'day',unit:'times',target:1,log:{'2026-10-04':1,'2026-10-05':1,'2026-10-06':1,'2026-10-07':1,'2026-10-08':1,'2026-10-09':1},streak:6,dims:[],total:null,metric:null},
+ ],
+ holdings:[
+  {id:'h1',sym:'QQQM',name:'Invesco 纳斯达克100 ETF',shares:12,avg:205,last:221,dca:{on:true,day:15,amount:500},trades:[
+    {date:'2026-09-15',side:'buy',q:3,p:210.67},{date:'2026-08-15',side:'buy',q:4,p:207},{date:'2026-06-15',side:'buy',q:5,p:200}]},
+  {id:'h2',sym:'VOO',name:'Vanguard 标普500 ETF',shares:10,avg:520,last:540,dca:{on:true,day:15,amount:500},trades:[
+    {date:'2026-09-15',side:'buy',q:3,p:528.67},{date:'2026-08-15',side:'buy',q:3,p:522},{date:'2026-06-15',side:'buy',q:4,p:512}]},
+  {id:'h3',sym:'OKLO',name:'Oklo Inc.',shares:30,avg:31,last:27.5,dca:{on:true,day:15,amount:500},trades:[
+    {date:'2026-09-15',side:'buy',q:10,p:27},{date:'2026-07-15',side:'buy',q:20,p:33}]},
+ ],
+ ai:{show:false,cur:null,list:[]},
+};
+function genTok(){const c='abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='nt_';const a=new Uint32Array(32);(window.crypto||{getRandomValues:x=>x.map(()=>Math.random()*1e9)}).getRandomValues(a);a.forEach(v=>s+=c[v%c.length]);return s}
+S.ai.cur={id:'k1',name:'Claude Code',tok:genTok(),created:'2026-10-10',used:'刚刚'};
+S.ai.list=[S.ai.cur,{id:'k2',name:'Codex',tok:genTok(),created:'2026-10-02',used:'昨天'},{id:'k3',name:'iPhone 快捷指令',tok:genTok(),created:'2026-09-28',used:'10月6日'}];
+
+const KIND={t:'todos',e:'events',n:'notes',p:'projects',g:'goals',h:'holdings'};
+const get=ref=>{if(!ref)return null;const[k,id]=ref.split(':');return (S[KIND[k]]||[]).find(x=>x.id===id)};
+const proj=id=>S.projects.find(p=>p.id===id);
+const spOK=o=>S.space==='all'||o.space===S.space;
+const byDate=(a,b)=>((a.date||'9999')+(a.time||'99')).localeCompare((b.date||'9999')+(b.time||'99'));
+function pStats(p){const ts=S.todos.filter(t=>t.project===p.id);const done=ts.filter(t=>t.done).length;const next=ts.filter(t=>!t.done).sort(byDate)[0];return{total:ts.length,done,left:diffD(TODAY,p.due),next}}
+function periodRange(per){if(per==='day')return[TODAY,TODAY];if(per==='week'){const m=monday(TODAY);return[m,addD(m,6)]}const d=s2d(TODAY);return[d2s(new Date(d.getFullYear(),d.getMonth(),1)),d2s(new Date(d.getFullYear(),d.getMonth()+1,0))]}
+function cnt(log,per){const[a,b]=periodRange(per);let s=0;for(const k in log)if(k>=a&&k<=b)s+=log[k];return s}
+function gProg(g){if(g.dims&&g.dims.length){let c=0,t=0;g.dims.forEach(d=>{c+=Math.min(cnt(d.log,d.period),d.target);t+=d.target});return{c,t}}return{c:cnt(g.log,g.period),t:g.target}}
+const PER={day:'今天',week:'本周',month:'本月'},PERN={day:'每天',week:'每周',month:'每月'},PERU={day:'天',week:'周',month:'个月'};
+const gU=g=>g.unit==='min'?'分钟':'次';
+function dayHas(g,d){if(g.dims&&g.dims.length)return g.dims.some(x=>x.log[d]);return !!g.log[d]}
+function holdTot(){let v=0,c=0;S.holdings.forEach(h=>{v+=h.shares*h.last;c+=h.shares*h.avg});return{v,c,pl:v-c,pp:c?(v-c)/c*100:0}}
+function nextDca(h){const d=s2d(TODAY);let n=new Date(d.getFullYear(),d.getMonth(),h.dca.day);if(d2s(n)<TODAY)n=new Date(d.getFullYear(),d.getMonth()+1,h.dca.day);return d2s(n)}
+function newDraft(){return{kind:'todo',title:'',date:TODAY,time:null,remind:'none',repeat:'none',days:[],project:null,space:S.space==='all'?'personal':S.space,prio:0,note:'',
+  allDay:false,start:'10:00',end:'11:00',location:'',pStart:TODAY,pDue:addD(TODAY,30),pinned:false,
+  period:'week',unit:'times',target:3,hasTotal:false,totalName:'课时',totalMax:40,hasMetric:false,mName:'体重',mUnit:'kg',mStart:'',mTarget:'',
+  body:'',tags:[]}}
+S.draft=newDraft();
+const stripMd=s=>s.replace(/@\[([^\]]+)\](\([a-z]:\w+\))?/g,'$1').replace(/^#+\s*/gm,'').replace(/^\s*[-*]\s+\[[ xX]\]\s*/gm,'').replace(/^\s*([-*]|\d+\.)\s+/gm,'').replace(/^>\s*/gm,'').replace(/[*`]/g,'').replace(/\n+/g,' ').trim();

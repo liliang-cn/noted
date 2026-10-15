@@ -199,6 +199,7 @@ func (a *Agent) registerWriteTools() {
 		schema(map[string]any{
 			"title":      str("What to do"),
 			"due":        str("Due time, RFC 3339. If the user gave only a date, use 09:00 on that date."),
+			"remind_at":  str("When to remind the user, RFC 3339. Set it whenever they ask to be reminded (\"remind me\", \"提醒我\"); without it there is no reminder. Usually the due time, or earlier if they said so."),
 			"priority":   num("1 low, 2 medium, 3 high"),
 			"tags":       strList("Tags"),
 			"space":      str(spaceDesc),
@@ -211,6 +212,11 @@ func (a *Agent) registerWriteTools() {
 				return fail(err), nil
 			} else if s != "" {
 				m["due"] = s
+			}
+			if s, err := timeArg(q, "remind_at"); err != nil {
+				return fail(err), nil
+			} else if s != "" {
+				m["remind_at"] = s
 			}
 			if p, has := q.integer("priority"); has {
 				t.Priority = p
@@ -226,6 +232,10 @@ func (a *Agent) registerWriteTools() {
 			label := a.say("新建待办:", "New task: ") + t.Title
 			if d, ok := m["due"].(string); ok {
 				label += " · " + d[:10]
+			}
+			if r, ok := m["remind_at"].(string); ok {
+				rt, _ := time.Parse(time.RFC3339, r)
+				label += a.say(" · 提醒 ", " · remind ") + rt.In(a.loc).Format("01-02 15:04")
 			}
 			return staged(st.add(plan.Op{Type: plan.OpCreateTask, Label: label, Args: m}), t.Title), nil
 		}), write)
@@ -321,6 +331,46 @@ func (a *Agent) registerWriteTools() {
 				label += fmt.Sprintf(" +%g%s", count, g.CounterUnit)
 			}
 			return staged(st.add(plan.Op{Type: plan.OpCheckIn, Label: label, Args: m}), g.Title), nil
+		}), write)
+
+	a.svc.AddToolWithMetadata("log_time",
+		"Record time the user spent on an activity (时间记录), such as 游泳 30 分钟 or 英语学习 30 分钟. Reuse an activity name from time_summary when it is the same thing. With goal_id it also counts toward that goal, so do not add a check_in for it."+stagedNote,
+		schema(map[string]any{
+			"title":      str("The activity, short: 游泳, 英语学习"),
+			"minutes":    num("Minutes spent, 1-1440"),
+			"start":      str("When it started, RFC 3339. Give it whenever the user says when it happened (下午游泳半小时, 昨天跑步 40 分钟), on the right day; omit it when they did not say, never guess"),
+			"goal_id":    str("Goal it counts toward (from list_goals)"),
+			"note":       str("Optional note"),
+			"space":      str(spaceDesc),
+			"project_id": str(projectDesc),
+		}, "title", "minutes"),
+		run(func(ctx context.Context, u store.User, st *stage, q args) (any, error) {
+			minutes, _ := q.integer("minutes")
+			title := strings.TrimSpace(q.str("title"))
+			if title == "" || minutes < 1 || minutes > 24*60 {
+				return fail(fmt.Errorf("%w: give the activity and 1-1440 minutes", store.ErrInvalid)), nil
+			}
+			m := map[string]any{"title": title, "minutes": float64(minutes)}
+			if s, err := timeArg(q, "start"); err != nil {
+				return fail(err), nil
+			} else if s != "" {
+				m["start"] = s
+			}
+			if gid := q.str("goal_id"); gid != "" {
+				g, err := a.store.GetGoal(ctx, u.ID, gid)
+				if err == nil && !a.visible(ctx, g.Space) {
+					err = store.ErrNotFound
+				}
+				if err != nil {
+					return fail(err), nil
+				}
+				m["goal_id"] = g.ID
+			}
+			put(m, "note", q.str("note"))
+			put(m, "space", spaceArg(ctx, q))
+			put(m, "project_id", q.str("project_id"))
+			label := a.say("时间记录:", "Log time: ") + fmt.Sprintf("%s %d%s", title, minutes, a.say(" 分钟", " min"))
+			return staged(st.add(plan.Op{Type: plan.OpLogTime, Label: label, Args: m}), title), nil
 		}), write)
 }
 

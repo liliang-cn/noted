@@ -85,4 +85,40 @@ func (a *Agent) registerPlanningTools() {
 			return ok(out), nil
 		}, read)
 
+	a.svc.AddToolWithMetadata("time_summary",
+		"How much time the user logged (时间记录), totalled by activity (title), project, goal or day, for entries that started in [from, to).",
+		schema(map[string]any{
+			"from":     str("Window start, RFC 3339; default 7 days before to"),
+			"to":       str("Window end, RFC 3339; default now"),
+			"group_by": str("title (default), project, goal or day"),
+		}),
+		func(ctx context.Context, in map[string]any) (any, error) {
+			u, err := callerOf(ctx)
+			if err != nil {
+				return nil, err
+			}
+			q := args(in)
+			to := time.Now()
+			if q.str("to") != "" {
+				if to, err = parseTime(q.str("to"), a.loc); err != nil {
+					return fail(err), nil
+				}
+			}
+			from := to.AddDate(0, 0, -7)
+			if q.str("from") != "" {
+				if from, err = parseTime(q.str("from"), a.loc); err != nil {
+					return fail(err), nil
+				}
+			}
+			sum, err := a.store.SummarizeTime(ctx, u.ID, store.TimeFilter{From: &from, To: &to, Space: ctxSpace(ctx)}, q.str("group_by"), a.loc)
+			if err != nil {
+				return fail(err), nil
+			}
+			rows := make([]map[string]any, 0, len(sum.Rows))
+			for _, r := range sum.Rows {
+				rows = append(rows, map[string]any{"key": r.Key, "label": r.Label, "minutes": r.Minutes, "count": r.Count})
+			}
+			return ok(map[string]any{"from": a.fmtTime(from), "to": a.fmtTime(to), "total_minutes": sum.Minutes, "entries": sum.Count, "rows": rows}), nil
+		}, read)
+
 }

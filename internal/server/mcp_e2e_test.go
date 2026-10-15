@@ -2,11 +2,14 @@ package server_test
 
 import (
 	"context"
+	"encoding/json"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/liliang-cn/noted/internal/mcpserver"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/grpc"
@@ -18,6 +21,12 @@ import (
 // the test noted server as the given token's user.
 func mcpSession(t *testing.T, e *env, token string) *mcp.ClientSession {
 	t.Helper()
+	return mcpSessionIn(t, e, token, time.UTC)
+}
+
+// mcpSessionIn is mcpSession with the MCP server in the zone loc.
+func mcpSessionIn(t *testing.T, e *env, token string, loc *time.Location) *mcp.ClientSession {
+	t.Helper()
 	conn, err := grpc.NewClient(e.addr, grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainUnaryInterceptor(func(ctx context.Context, m string, req, rep any, cc *grpc.ClientConn, inv grpc.UnaryInvoker, o ...grpc.CallOption) error {
 			return inv(metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token), m, req, rep, cc, o...)
@@ -26,7 +35,7 @@ func mcpSession(t *testing.T, e *env, token string) *mcp.ClientSession {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { conn.Close() })
-	srv, err := mcpserver.New(context.Background(), conn, time.UTC, "test")
+	srv, err := mcpserver.New(context.Background(), conn, loc, "test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +51,17 @@ func mcpSession(t *testing.T, e *env, token string) *mcp.ClientSession {
 	return cs
 }
 
+// call runs a tool and returns its text. A successful call must also carry
+// structured content that its tool's outputSchema accepts, next to exactly one
+// text block.
 func call(t *testing.T, cs *mcp.ClientSession, tool string, args map[string]any) (string, bool) {
+	t.Helper()
+	out, _, isErr := callS(t, cs, tool, args)
+	return out, isErr
+}
+
+// callS is call that also returns the structured content.
+func callS(t *testing.T, cs *mcp.ClientSession, tool string, args map[string]any) (string, map[string]any, bool) {
 	t.Helper()
 	res, err := cs.CallTool(context.Background(), &mcp.CallToolParams{Name: tool, Arguments: args})
 	if err != nil {
@@ -54,7 +73,59 @@ func call(t *testing.T, cs *mcp.ClientSession, tool string, args map[string]any)
 			b.WriteString(tc.Text)
 		}
 	}
-	return b.String(), res.IsError
+	if res.IsError {
+		return b.String(), nil, true
+	}
+	if len(res.Content) != 1 {
+		t.Fatalf("%s: want one text block, got %d", tool, len(res.Content))
+	}
+	sc, ok := res.StructuredContent.(map[string]any)
+	if !ok {
+		t.Fatalf("%s: structured content is %T, want an object", tool, res.StructuredContent)
+	}
+	if err := outputSchema(t, cs, tool).Validate(sc); err != nil {
+		raw, _ := json.MarshalIndent(sc, "", " ")
+		t.Fatalf("%s: structured content does not match the outputSchema: %v\n%s", tool, err, raw)
+	}
+	return b.String(), sc, false
+}
+
+var outputSchemas sync.Map // *mcp.ClientSession -> map[string]*jsonschema.Resolved
+
+// outputSchema is the tool's outputSchema as the client lists it, resolved for validation.
+func outputSchema(t *testing.T, cs *mcp.ClientSession, tool string) *jsonschema.Resolved {
+	t.Helper()
+	if m, ok := outputSchemas.Load(cs); ok {
+		if r := m.(map[string]*jsonschema.Resolved)[tool]; r != nil {
+			return r
+		}
+	}
+	l, err := cs.ListTools(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := map[string]*jsonschema.Resolved{}
+	for _, tl := range l.Tools {
+		if tl.OutputSchema == nil {
+			t.Fatalf("%s has no outputSchema", tl.Name)
+		}
+		raw, _ := json.Marshal(tl.OutputSchema)
+		var s jsonschema.Schema
+		if err := json.Unmarshal(raw, &s); err != nil {
+			t.Fatalf("%s: %v", tl.Name, err)
+		}
+		if s.Type != "object" {
+			t.Fatalf("%s: outputSchema type %q, want object", tl.Name, s.Type)
+		}
+		if m[tl.Name], err = s.Resolve(nil); err != nil {
+			t.Fatalf("%s: %v", tl.Name, err)
+		}
+	}
+	outputSchemas.Store(cs, m)
+	if m[tool] == nil {
+		t.Fatalf("no tool %s", tool)
+	}
+	return m[tool]
 }
 
 func toolNames(t *testing.T, cs *mcp.ClientSession) map[string]bool {

@@ -84,5 +84,12 @@ func (s *Focus) GetFocus(ctx context.Context, req *pb.GetFocusRequest) (*pb.GetF
 	for _, p := range f.Projects {
 		resp.PinnedProjects = append(resp.PinnedProjects, projectToPB(p))
 	}
+	run, ok, err := s.Store.RunningTimer(ctx, u)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	if sp := spaceIn(req.Space); ok && (sp == "" || sp == run.Space) {
+		resp.RunningTimer = timeEntryToPB(run, time.Now())
+	}
 	return resp, nil
 }

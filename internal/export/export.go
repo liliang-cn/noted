@@ -1,6 +1,7 @@
 // Package export writes everything a user has stored as a zip they can keep:
-// noted.json (all records), notes/*.md (one Markdown file per note) and
-// calendar.ics (events and dated tasks, readable by any calendar app).
+// noted.json (all records, alarms included), notes/*.md (one Markdown file
+// per note) and calendar.ics (events and dated tasks, readable by any
+// calendar app).
 package export
 
 import (
@@ -17,6 +18,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/liliang-cn/noted/internal/alarm"
 	"github.com/liliang-cn/noted/internal/store"
 )
 
@@ -63,6 +65,10 @@ type Task struct {
 	Project   string     `json:"project_id,omitempty"`
 	Space     string     `json:"space"`
 	CreatedAt time.Time  `json:"created"`
+	RRule     string     `json:"rrule,omitempty"` // repeats, anchored on due
+	// Occurrence is the task's 1-based place in its series; the calendar
+	// counts COUNT down by it.
+	Occurrence int `json:"-"`
 }
 
 type Project struct {
@@ -82,6 +88,7 @@ type CheckIn struct {
 	Amount float64   `json:"amount"`
 	Tally  float64   `json:"tally,omitempty"`
 	Note   string    `json:"note,omitempty"`
+	Entry  string    `json:"time_entry_id,omitempty"` // made by this time entry
 }
 
 type Goal struct {
@@ -145,6 +152,37 @@ type Holding struct {
 	Trades    []Trade    `json:"trades"`
 }
 
+type TimeEntry struct {
+	ID      string     `json:"id"`
+	Title   string     `json:"title"`
+	Minutes int        `json:"minutes"`
+	Start   time.Time  `json:"start"`
+	End     *time.Time `json:"end,omitempty"` // unset: a timer still running
+	Note    string     `json:"note,omitempty"`
+	Project string     `json:"project_id,omitempty"`
+	Goal    string     `json:"goal_id,omitempty"`
+	Space   string     `json:"space"`
+	Timed   bool       `json:"timed"` // false: only the minutes were given, the start was defaulted
+	Created time.Time  `json:"created"`
+}
+
+// Alarm is an alarm definition; schedule has the shape of docs/alarms.md.
+type Alarm struct {
+	ID            string         `json:"id"`
+	Label         string         `json:"label"`
+	Mode          string         `json:"mode"`
+	Enabled       bool           `json:"enabled"`
+	Schedule      alarm.Schedule `json:"schedule"`
+	HolidayPolicy string         `json:"holiday_policy"`
+	Region        string         `json:"region"`
+	Note          string         `json:"note,omitempty"`
+	Project       string         `json:"project_id,omitempty"`
+	Space         string         `json:"space"`
+	OriginalText  string         `json:"original_text,omitempty"`
+	Created       time.Time      `json:"created"`
+	Updated       time.Time      `json:"updated"`
+}
+
 type Data struct {
 	Format     string            `json:"format"`
 	ExportedAt time.Time         `json:"exported_at"`
@@ -156,13 +194,15 @@ type Data struct {
 	Goals      []Goal            `json:"goals"`
 	Objectives []Objective       `json:"objectives"`
 	Holdings   []Holding         `json:"holdings"`
+	Time       []TimeEntry       `json:"time_entries"`
+	Alarms     []Alarm           `json:"alarms"`
 	Settings   map[string]string `json:"settings"`
 }
 
 // Collect reads everything the user owns, archived and finished items included.
 func Collect(ctx context.Context, st *store.Store, userID, userName string, now time.Time) (*Data, error) {
 	d := &Data{Format: "noted-export/1", ExportedAt: now.UTC(), User: userName,
-		Notes: []Note{}, Events: []Event{}, Tasks: []Task{}, Projects: []Project{}, Goals: []Goal{}, Objectives: []Objective{}, Holdings: []Holding{}, Settings: map[string]string{}}
+		Notes: []Note{}, Events: []Event{}, Tasks: []Task{}, Projects: []Project{}, Goals: []Goal{}, Objectives: []Objective{}, Holdings: []Holding{}, Time: []TimeEntry{}, Alarms: []Alarm{}, Settings: map[string]string{}}
 
 	for off := 0; ; off += pageSize {
 		ns, err := st.ListNotes(ctx, userID, store.NoteFilter{IncludeArchived: true, Limit: pageSize, Offset: off})
@@ -189,7 +229,7 @@ func Collect(ctx context.Context, st *store.Store, userID, userName string, now 
 			return nil, err
 		}
 		for _, t := range ts {
-			d.Tasks = append(d.Tasks, Task{t.ID, t.Title, t.Notes, utc(t.Due), t.Priority, t.Done, utc(t.DoneAt), utc(t.Remind), nonNil(t.Tags), t.ProjectID, t.Space, t.Created.UTC()})
+			d.Tasks = append(d.Tasks, Task{t.ID, t.Title, t.Notes, utc(t.Due), t.Priority, t.Done, utc(t.DoneAt), utc(t.Remind), nonNil(t.Tags), t.ProjectID, t.Space, t.Created.UTC(), t.RRule, t.Occurrence})
 		}
 		if len(ts) < pageSize {
 			break
@@ -216,7 +256,7 @@ func Collect(ctx context.Context, st *store.Store, userID, userName string, now 
 		out := Goal{ID: g.ID, Title: g.Title, Notes: g.Notes, Period: g.Period, Target: g.Target, Unit: g.Unit,
 			CounterUnit: g.CounterUnit, CounterTarget: g.CounterTarget, Archived: g.Archived, Space: g.Space, Objective: g.ObjectiveID, CheckIns: []CheckIn{}}
 		for _, c := range cs {
-			out.CheckIns = append(out.CheckIns, CheckIn{c.Time.UTC(), c.Date, c.Amount, c.Tally, c.Note})
+			out.CheckIns = append(out.CheckIns, CheckIn{c.Time.UTC(), c.Date, c.Amount, c.Tally, c.Note, c.TimeEntryID})
 		}
 		sort.SliceStable(out.CheckIns, func(i, j int) bool { return out.CheckIns[i].Time.Before(out.CheckIns[j].Time) })
 		d.Goals = append(d.Goals, out)
@@ -256,6 +296,27 @@ func Collect(ctx context.Context, st *store.Store, userID, userName string, now 
 			out.Trades = append(out.Trades, Trade{t.Time.UTC(), t.Side, t.Shares, t.Price, t.Fee, t.Note})
 		}
 		d.Holdings = append(d.Holdings, out)
+	}
+	for off := 0; ; off += pageSize {
+		es, err := st.ListTimeEntries(ctx, userID, store.TimeFilter{Limit: pageSize, Offset: off})
+		if err != nil {
+			return nil, err
+		}
+		for _, e := range es {
+			d.Time = append(d.Time, TimeEntry{e.ID, e.Title, e.Minutes, e.Start.UTC(), utc(e.End), e.Note, e.ProjectID, e.GoalID, e.Space, e.Timed, e.Created.UTC()})
+		}
+		if len(es) < pageSize {
+			break
+		}
+	}
+	sort.SliceStable(d.Time, func(i, j int) bool { return d.Time[i].Start.Before(d.Time[j].Start) })
+	as, _, err := st.ListAlarms(ctx, userID, store.AlarmFilter{})
+	if err != nil {
+		return nil, err
+	}
+	for _, a := range as {
+		d.Alarms = append(d.Alarms, Alarm{a.ID, a.Label, a.Mode, a.Enabled, a.Schedule, a.HolidayPolicy, a.Region, a.Note, a.ProjectID, a.Space,
+			a.OriginalText, a.Created.UTC(), a.Updated.UTC()})
 	}
 	prefs, err := st.ListPreferences(ctx, userID, "")
 	if err != nil {
@@ -299,6 +360,9 @@ func WriteZip(d *Data, w io.Writer) error {
 	if err := add("trades.csv", []byte(TradesCSV(d)), d.ExportedAt); err != nil {
 		return err
 	}
+	if err := add("time_entries.csv", []byte(TimeCSV(d)), d.ExportedAt); err != nil {
+		return err
+	}
 	titles := map[string]string{}
 	for _, p := range d.Projects {
 		titles[p.ID] = p.Title
@@ -323,6 +387,30 @@ func TradesCSV(d *Data) string {
 			_ = w.Write([]string{h.Symbol, h.Currency, t.Time.Format(time.RFC3339), t.Side,
 				strconv.FormatFloat(t.Shares, 'f', -1, 64), strconv.FormatFloat(t.Price, 'f', -1, 64), strconv.FormatFloat(t.Fee, 'f', -1, 64), csvSafe(t.Note)})
 		}
+	}
+	w.Flush()
+	return b.String()
+}
+
+// TimeCSV lists every time entry, oldest first, with its project and goal by name.
+func TimeCSV(d *Data) string {
+	projects, goals := map[string]string{}, map[string]string{}
+	for _, p := range d.Projects {
+		projects[p.ID] = p.Title
+	}
+	for _, g := range d.Goals {
+		goals[g.ID] = g.Title
+	}
+	var b strings.Builder
+	w := csv.NewWriter(&b)
+	_ = w.Write([]string{"start", "end", "minutes", "activity", "project", "goal", "space", "note"})
+	for _, e := range d.Time {
+		end := ""
+		if e.End != nil {
+			end = e.End.Format(time.RFC3339)
+		}
+		_ = w.Write([]string{e.Start.Format(time.RFC3339), end, strconv.Itoa(e.Minutes), csvSafe(e.Title),
+			csvSafe(projects[e.Project]), csvSafe(goals[e.Goal]), e.Space, csvSafe(e.Note)})
 	}
 	w.Flush()
 	return b.String()
@@ -439,7 +527,14 @@ func ICS(d *Data) string {
 			add("DESCRIPTION:" + icsText(t.Notes))
 		}
 		if t.Due != nil {
-			add("DUE:" + t.Due.UTC().Format("20060102T150405Z"))
+			due := t.Due.UTC().Format("20060102T150405Z")
+			// Only the open task of a series repeats; the done ones are its
+			// history. RFC 5545 wants a DTSTART next to RRULE.
+			if rule := todoRRule(t); rule != "" {
+				add("DTSTART:" + due)
+				add("RRULE:" + rule)
+			}
+			add("DUE:" + due)
 		}
 		switch t.Priority {
 		case 3:
@@ -468,6 +563,33 @@ func ICS(d *Data) string {
 		b.WriteString(fold(l))
 	}
 	return b.String()
+}
+
+// todoRRule is the rule an open repeating task carries in the calendar, with
+// COUNT reduced to the occurrences left from this one on.
+func todoRRule(t Task) string {
+	if t.Done || t.RRule == "" {
+		return ""
+	}
+	parts := strings.Split(strings.TrimPrefix(t.RRule, "RRULE:"), ";")
+	for i, p := range parts {
+		k, v, _ := strings.Cut(p, "=")
+		if !strings.EqualFold(k, "COUNT") {
+			continue
+		}
+		n, err := strconv.Atoi(v)
+		if err != nil {
+			return ""
+		}
+		if t.Occurrence > 1 {
+			n -= t.Occurrence - 1
+		}
+		if n < 1 {
+			return ""
+		}
+		parts[i] = "COUNT=" + strconv.Itoa(n)
+	}
+	return strings.Join(parts, ";")
 }
 
 func escAll(in []string) []string {

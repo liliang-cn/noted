@@ -34,7 +34,7 @@ func projectToPB(v store.ProjectView) *pb.Project {
 		Progress: &pb.ProjectProgress{
 			TasksTotal: int32(pr.TasksTotal), TasksDone: int32(pr.TasksDone), TasksOverdue: int32(pr.TasksOverdue),
 			Percent: pr.Percent, EventsUpcoming: int32(pr.EventsUpcoming), NotesCount: int32(pr.NotesCount),
-			NextTime: tsPtr(pr.Next), NextTitle: pr.NextTitle,
+			NextTime: tsPtr(pr.Next), NextTitle: pr.NextTitle, TimeMinutes: int32(pr.TimeMinutes),
 		},
 	}
 	if pr.DaysLeft != nil {
@@ -85,6 +85,28 @@ func (s *Projects) GetProject(ctx context.Context, req *pb.GetProjectRequest) (*
 	}
 	for _, n := range d.Notes {
 		out.Notes = append(out.Notes, noteToPB(n))
+	}
+	now := time.Now()
+	for _, e := range d.Time {
+		out.TimeEntries = append(out.TimeEntries, timeEntryToPB(e, now))
+	}
+	gs, err := s.Store.ListGoals(ctx, u, false, now, "")
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	for _, g := range gs {
+		if g.Goal.ProjectID == req.GetId() && g.Goal.ObjectiveID == "" {
+			out.Goals = append(out.Goals, goalToPB(g))
+		}
+	}
+	os, err := s.Store.ListObjectives(ctx, u, false, now, "")
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	for _, o := range os {
+		if o.Objective.ProjectID == req.GetId() {
+			out.Objectives = append(out.Objectives, objectiveToPB(o))
+		}
 	}
 	return out, nil
 }

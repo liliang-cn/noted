@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -19,14 +20,33 @@ var (
 	ErrNotFound = errors.New("not found")
 	ErrInvalid  = errors.New("invalid argument")
 	ErrConflict = errors.New("version conflict")
+	// ErrPrecondition: the request is fine, but the state does not allow it
+	// now (a timer is already running).
+	ErrPrecondition = errors.New("failed precondition")
 )
 
 func invalid(format string, a ...any) error {
 	return fmt.Errorf("%w: %s", ErrInvalid, fmt.Sprintf(format, a...))
 }
 
+func precondition(format string, a ...any) error {
+	return fmt.Errorf("%w: %s", ErrPrecondition, fmt.Sprintf(format, a...))
+}
+
 type Store struct {
-	db *sql.DB
+	db  *sql.DB
+	loc atomic.Pointer[time.Location] // the server's zone; nil means UTC
+}
+
+// SetLocation sets the zone that wall-clock rules are read in, such as the
+// day a repeating task falls on next. The default is UTC.
+func (s *Store) SetLocation(loc *time.Location) { s.loc.Store(loc) }
+
+func (s *Store) location() *time.Location {
+	if l := s.loc.Load(); l != nil {
+		return l
+	}
+	return time.UTC
 }
 
 // Open opens (creating if needed) the database at path and migrates it.
@@ -64,6 +84,18 @@ CREATE TABLE IF NOT EXISTS users (
 	id         TEXT PRIMARY KEY,
 	name       TEXT NOT NULL UNIQUE,
 	created_ms INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS apple_ids (
+	sub        TEXT PRIMARY KEY,
+	user_id    TEXT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+	created_ms INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS user_emails (
+	email         TEXT PRIMARY KEY COLLATE NOCASE,
+	user_id       TEXT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+	password_hash TEXT NOT NULL,
+	created_ms    INTEGER NOT NULL,
+	updated_ms    INTEGER NOT NULL
 );
 CREATE TABLE IF NOT EXISTS tokens (
 	hash       TEXT PRIMARY KEY,
@@ -133,6 +165,16 @@ CREATE TABLE IF NOT EXISTS task_tags (
 	tag     TEXT NOT NULL,
 	PRIMARY KEY (task_id, tag)
 );
+CREATE TABLE IF NOT EXISTS task_work (
+	id       TEXT PRIMARY KEY,
+	task_id  TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+	user_id  TEXT NOT NULL,
+	time_ms  INTEGER NOT NULL,
+	minutes  INTEGER NOT NULL,
+	progress INTEGER NOT NULL DEFAULT -1,
+	note     TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS task_work_task ON task_work(task_id, time_ms);
 
 CREATE TABLE IF NOT EXISTS projects (
 	id         TEXT PRIMARY KEY,
@@ -267,6 +309,48 @@ CREATE TABLE IF NOT EXISTS changes (
 );
 CREATE INDEX IF NOT EXISTS changes_user ON changes(user_id, created_ms DESC);
 
+-- Time tracking. end_ms is NULL while the entry is a running timer, and a user
+-- has at most one of those. title_key is the activity folded for grouping.
+CREATE TABLE IF NOT EXISTS time_entries (
+	id         TEXT PRIMARY KEY,
+	user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	title      TEXT NOT NULL,
+	title_key  TEXT NOT NULL,
+	minutes    INTEGER NOT NULL DEFAULT 0,
+	start_ms   INTEGER NOT NULL,
+	end_ms     INTEGER,
+	note       TEXT NOT NULL DEFAULT '',
+	project_id TEXT NOT NULL DEFAULT '',
+	goal_id    TEXT NOT NULL DEFAULT '',
+	space      TEXT NOT NULL DEFAULT 'life',
+	created_ms INTEGER NOT NULL,
+	updated_ms INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS time_entries_user_start ON time_entries(user_id, start_ms DESC);
+CREATE INDEX IF NOT EXISTS time_entries_project ON time_entries(project_id);
+CREATE INDEX IF NOT EXISTS time_entries_goal ON time_entries(goal_id);
+CREATE UNIQUE INDEX IF NOT EXISTS time_entries_running ON time_entries(user_id) WHERE end_ms IS NULL;
+
+-- Alarms (闹钟): definitions the phone rings. schedule is the JSON of
+-- alarm.Schedule (kind, at, anchor, time, timeZone, recurrence).
+CREATE TABLE IF NOT EXISTS alarms (
+	id             TEXT PRIMARY KEY,
+	user_id        TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	label          TEXT NOT NULL,
+	mode           TEXT NOT NULL DEFAULT 'alarm',
+	enabled        INTEGER NOT NULL DEFAULT 1,
+	schedule       TEXT NOT NULL,
+	holiday_policy TEXT NOT NULL DEFAULT 'none',
+	region         TEXT NOT NULL DEFAULT '',
+	note           TEXT NOT NULL DEFAULT '',
+	project_id     TEXT NOT NULL DEFAULT '',
+	space          TEXT NOT NULL DEFAULT 'life',
+	original_text  TEXT NOT NULL DEFAULT '',
+	created_ms     INTEGER NOT NULL,
+	updated_ms     INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS alarms_user ON alarms(user_id, created_ms);
+
 CREATE TABLE IF NOT EXISTS preferences (
 	user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 	key        TEXT NOT NULL,
@@ -274,6 +358,22 @@ CREATE TABLE IF NOT EXISTS preferences (
 	version    INTEGER NOT NULL,
 	updated_ms INTEGER NOT NULL,
 	PRIMARY KEY (user_id, key)
+);
+
+-- The one-way sync into a CortexDB brain (package cortexsync): where a user's
+-- items went and a hash of each one as sent, so a run sends only what changed
+-- and finds deletes (the tables above delete rows outright).
+CREATE TABLE IF NOT EXISTS cortex_sync_state (
+	user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+	target  TEXT NOT NULL,
+	run_ms  INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS cortex_sync_items (
+	user_id   TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	item_key  TEXT NOT NULL,
+	hash      TEXT NOT NULL,
+	synced_ms INTEGER NOT NULL,
+	PRIMARY KEY (user_id, item_key)
 );
 
 CREATE TABLE IF NOT EXISTS reminders (
@@ -286,6 +386,41 @@ CREATE TABLE IF NOT EXISTS reminders (
 	fire_ms INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS reminders_user_fire ON reminders(user_id, fire_ms DESC);
+
+-- MCP authorization (OAuth 2.1): clients that registered themselves, the
+-- pairings their browser sign-ins wait on, and the codes they trade for a token.
+CREATE TABLE IF NOT EXISTS oauth_clients (
+	id            TEXT PRIMARY KEY,
+	name          TEXT NOT NULL,
+	redirect_uris TEXT NOT NULL,
+	created_ms    INTEGER NOT NULL,
+	last_used_ms  INTEGER
+);
+CREATE TABLE IF NOT EXISTS pairings (
+	code           TEXT PRIMARY KEY,
+	poll_hash      TEXT NOT NULL UNIQUE,
+	client_id      TEXT NOT NULL REFERENCES oauth_clients(id) ON DELETE CASCADE,
+	redirect_uri   TEXT NOT NULL,
+	code_challenge TEXT NOT NULL,
+	state          TEXT NOT NULL DEFAULT '',
+	resource       TEXT NOT NULL DEFAULT '',
+	created_ms     INTEGER NOT NULL,
+	expires_ms     INTEGER NOT NULL,
+	user_id        TEXT REFERENCES users(id) ON DELETE CASCADE,
+	label          TEXT NOT NULL DEFAULT '',
+	denied         INTEGER NOT NULL DEFAULT 0,
+	issued         INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS oauth_codes (
+	hash           TEXT PRIMARY KEY,
+	client_id      TEXT NOT NULL,
+	redirect_uri   TEXT NOT NULL,
+	code_challenge TEXT NOT NULL,
+	resource       TEXT NOT NULL DEFAULT '',
+	user_id        TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+	label          TEXT NOT NULL,
+	expires_ms     INTEGER NOT NULL
+);
 `
 
 func (s *Store) migrate(ctx context.Context) error {
@@ -314,12 +449,65 @@ func (s *Store) migrate(ctx context.Context) error {
 		{"goals", "counter_target", "REAL NOT NULL DEFAULT 0"},
 		{"goal_checkins", "tally", "REAL NOT NULL DEFAULT 0"},
 		{"goals", "objective_id", "TEXT NOT NULL DEFAULT ''"},
+		{"users", "pro", "INTEGER NOT NULL DEFAULT 0"},
+		{"goals", "project_id", "TEXT NOT NULL DEFAULT ''"},
+		{"objectives", "project_id", "TEXT NOT NULL DEFAULT ''"},
+		// A task worked on over several sittings (task_work), totalled here.
+		{"tasks", "progress", "INTEGER NOT NULL DEFAULT 0"},
+		{"tasks", "worked_minutes", "INTEGER NOT NULL DEFAULT 0"},
+		{"tasks", "work_sessions", "INTEGER NOT NULL DEFAULT 0"},
+		{"tasks", "last_worked_ms", "INTEGER"},
+		// The assistant conversation a proposal came from, so a follow-up can replace it.
+		{"proposals", "session", "TEXT NOT NULL DEFAULT ''"},
+		// When a token last authenticated a call (throttled), shown in ListTokens.
+		{"tokens", "last_used_ms", "INTEGER"},
+		// Repeating to-dos: the rule, this task's place in its series (for
+		// COUNT), and the task its completion created (so it is made once).
+		{"tasks", "rrule", "TEXT NOT NULL DEFAULT ''"},
+		{"tasks", "occurrence", "INTEGER NOT NULL DEFAULT 1"},
+		{"tasks", "next_task_id", "TEXT NOT NULL DEFAULT ''"},
+		// The time entry a check-in was made by; it follows that entry.
+		{"goal_checkins", "time_entry_id", "TEXT NOT NULL DEFAULT ''"},
 	} {
 		if err := s.ensureColumn(ctx, c.table, c.col, c.ddl); err != nil {
 			return err
 		}
 	}
-	return nil
+	if _, err := s.db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS goal_checkins_entry ON goal_checkins(time_entry_id) WHERE time_entry_id <> ''`); err != nil {
+		return err
+	}
+	return s.migrateTimed(ctx)
+}
+
+// timedGuess is how close a finished entry's end may be to when it was made
+// for it to count as logged with only a duration: the default start was then
+// "now minus minutes", so the end is the moment it was saved, a few
+// milliseconds before the row's create time.
+const timedGuess = 5 * time.Second
+
+// migrateTimed adds time_entries.timed (are the start and end real, or was
+// the start defaulted from the minutes?) and, the first time, guesses it for
+// the rows already there: a running or stopped timer, or an entry whose end is
+// not when it was saved, is timed.
+func (s *Store) migrateTimed(ctx context.Context) error {
+	had, err := s.hasColumn(ctx, "time_entries", "timed")
+	if err != nil || had {
+		return err
+	}
+	return s.tx(ctx, func(tx *sql.Tx) error {
+		if _, err := tx.ExecContext(ctx, `ALTER TABLE time_entries ADD COLUMN timed INTEGER NOT NULL DEFAULT 1`); err != nil {
+			return err
+		}
+		_, err := tx.ExecContext(ctx, `UPDATE time_entries SET timed = 0 WHERE end_ms IS NOT NULL AND abs(end_ms - created_ms) < ?`,
+			timedGuess.Milliseconds())
+		return err
+	})
+}
+
+func (s *Store) hasColumn(ctx context.Context, table, column string) (bool, error) {
+	var n int
+	err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM pragma_table_info(?) WHERE name = ?`, table, column).Scan(&n)
+	return n > 0, err
 }
 
 // The two spaces. In a filter, "" means both ("combined" mode).

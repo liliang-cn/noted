@@ -26,6 +26,7 @@ type env struct {
 	st    *store.Store
 	hub   *reminder.Hub
 	addr  string
+	db    string // the store's file
 	alice string // tokens
 	bob   string
 }
@@ -33,7 +34,8 @@ type env struct {
 func start(t *testing.T, engine ai.Engine, authDisabled bool) *env {
 	t.Helper()
 	ctx := context.Background()
-	st, err := store.Open(filepath.Join(t.TempDir(), "noted.db"))
+	db := filepath.Join(t.TempDir(), "noted.db")
+	st, err := store.Open(db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +44,7 @@ func start(t *testing.T, engine ai.Engine, authDisabled bool) *env {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e := &env{st: st, hub: reminder.NewHub()}
+	e := &env{st: st, hub: reminder.NewHub(), db: db}
 	for name, dst := range map[string]*string{"alice": &e.alice, "bob": &e.bob} {
 		u, _ := st.EnsureUser(ctx, name)
 		*dst, _ = st.CreateToken(ctx, u.ID, "test")

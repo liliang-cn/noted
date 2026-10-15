@@ -22,6 +22,36 @@ struct Snapshot: Codable, Equatable, Sendable {
         var work = false
         var percent: Double { target > 0 ? min(done / target, 1) : 0 }
     }
+    /// A larger goal such as losing weight: a measured result and the dimensions behind it.
+    struct Plan: Codable, Equatable, Sendable, Identifiable {
+        var id: String
+        var title: String
+        var work = false
+        var metricName = ""
+        var unit = ""            // empty: no measured result
+        var current: Double?     // the latest reading
+        var start = 0.0
+        var target = 0.0
+        var percent = 0.0        // 0...1, the metric once there is a reading, else the dimensions
+        var daysLeft: Int?
+        var offTrack = false
+        var dims: [Goal] = []
+        var achieved: Int { dims.filter { $0.percent >= 1 }.count }
+    }
+    /// Something the person invests in, with its monthly plan.
+    struct Holding: Codable, Equatable, Sendable, Identifiable {
+        var id: String
+        var symbol: String
+        var planDay = 0          // 0: no plan
+        var amount = 0.0
+        var currency = "USD"
+        var doneThisMonth = false
+        var next: Date?
+        var shares = 0.0
+        var gainPercent: Double? // unrealised gain on cost, when a price was entered
+        var streak = 0
+        var todo: Bool { planDay > 0 && !doneThisMonth }
+    }
     /// Resolved colors, so a widget looks like the app's theme without knowing about themes.
     struct Colors: Codable, Equatable, Sendable {
         var bg: UInt32 = 0xF4F6F8
@@ -39,6 +69,8 @@ struct Snapshot: Codable, Equatable, Sendable {
     var pro = false
     var items: [Item] = []
     var goals: [Goal] = []
+    var plans: [Plan] = []
+    var holdings: [Holding] = []
     var colors = Colors()
 
     /// The next thing that has not happened yet, falling back to the first open task.
@@ -55,7 +87,19 @@ struct Snapshot: Codable, Equatable, Sendable {
         pro = try c.decodeIfPresent(Bool.self, forKey: .pro) ?? false
         items = try c.decodeIfPresent([Item].self, forKey: .items) ?? []
         goals = try c.decodeIfPresent([Goal].self, forKey: .goals) ?? []
+        plans = try c.decodeIfPresent([Plan].self, forKey: .plans) ?? []
+        holdings = try c.decodeIfPresent([Holding].self, forKey: .holdings) ?? []
         colors = try c.decodeIfPresent(Colors.self, forKey: .colors) ?? Colors()
+    }
+
+    /// The plan furthest from done first, so a widget shows what needs attention.
+    var featuredPlan: Plan? { plans.sorted { ($0.offTrack ? 1 : 0, 1 - $0.percent) > ($1.offTrack ? 1 : 0, 1 - $1.percent) }.first }
+    /// Holdings with a plan: those still to buy this month first, then by next date.
+    var planned: [Holding] {
+        holdings.filter { $0.planDay > 0 }.sorted {
+            if $0.todo != $1.todo { return $0.todo }
+            return ($0.next ?? .distantFuture) < ($1.next ?? .distantFuture)
+        }
     }
 }
 

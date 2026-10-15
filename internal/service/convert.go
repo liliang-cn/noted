@@ -92,6 +92,15 @@ func taskToPB(t store.Task) *pb.Task {
 		Completed: t.Done, CompleteTime: tsPtr(t.DoneAt), RemindTime: tsPtr(t.Remind), Tags: t.Tags,
 		ProjectId: t.ProjectID, Space: spaceOut(t.Space),
 		CreateTime: timestamppb.New(t.Created), UpdateTime: timestamppb.New(t.Updated),
+		Progress: int32(t.Progress), WorkedMinutes: int32(t.WorkedMinutes), WorkSessions: int32(t.WorkSessions),
+		LastWorkedTime: tsPtr(t.LastWorked), Rrule: t.RRule,
+	}
+}
+
+func taskWorkToPB(w store.TaskWork) *pb.TaskWork {
+	return &pb.TaskWork{
+		Id: w.ID, TaskId: w.TaskID, Time: timestamppb.New(w.Time), Minutes: int32(w.Minutes),
+		Progress: int32(w.Progress), Note: w.Note,
 	}
 }
 

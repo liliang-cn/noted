@@ -28,6 +28,7 @@ type Objective struct {
 	MetricStart  float64
 	MetricTarget float64
 	Archived     bool
+	ProjectID    string // the project this objective belongs to; empty: none
 	Created      time.Time
 	Updated      time.Time
 }
@@ -40,6 +41,7 @@ type ObjectivePatch struct {
 	MetricName, MetricUnit    *string
 	MetricStart, MetricTarget *float64
 	Archived                  *bool
+	ProjectID                 *string
 }
 
 type Measurement struct {
@@ -116,7 +118,7 @@ func (s *Store) checkObjective(ctx context.Context, userID, id string) error {
 	return nil
 }
 
-const objectiveCols = `id, user_id, title, notes, space, start_ms, due_ms, metric_name, metric_unit, metric_start, metric_target, archived, created_ms, updated_ms`
+const objectiveCols = `id, user_id, title, notes, space, start_ms, due_ms, metric_name, metric_unit, metric_start, metric_target, archived, project_id, created_ms, updated_ms`
 
 func scanObjective(r scanner) (Objective, error) {
 	var o Objective
@@ -124,7 +126,7 @@ func scanObjective(r scanner) (Objective, error) {
 	var archived int
 	var created, updated int64
 	if err := r.Scan(&o.ID, &o.UserID, &o.Title, &o.Notes, &o.Space, &start, &due, &o.MetricName, &o.MetricUnit,
-		&o.MetricStart, &o.MetricTarget, &archived, &created, &updated); err != nil {
+		&o.MetricStart, &o.MetricTarget, &archived, &o.ProjectID, &created, &updated); err != nil {
 		return Objective{}, err
 	}
 	o.Start, o.Due = ptrTime(start), ptrTime(due)
@@ -137,15 +139,18 @@ func (s *Store) CreateObjective(ctx context.Context, o Objective) (Objective, er
 	if err := o.normalize(); err != nil {
 		return Objective{}, err
 	}
+	if err := s.checkProject(ctx, o.UserID, o.ProjectID); err != nil {
+		return Objective{}, err
+	}
 	var err error
 	if o.Space, err = s.resolveSpace(ctx, o.UserID, o.Space, ""); err != nil {
 		return Objective{}, err
 	}
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	o.ID, o.Created, o.Updated = uuid.NewString(), now, now
-	_, err = s.db.ExecContext(ctx, `INSERT INTO objectives(`+objectiveCols+`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+	_, err = s.db.ExecContext(ctx, `INSERT INTO objectives(`+objectiveCols+`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		o.ID, o.UserID, o.Title, o.Notes, o.Space, nullMS(o.Start), nullMS(o.Due), o.MetricName, o.MetricUnit, o.MetricStart, o.MetricTarget,
-		b2i(o.Archived), ms(o.Created), ms(o.Updated))
+		b2i(o.Archived), o.ProjectID, ms(o.Created), ms(o.Updated))
 	return o, err
 }
 
@@ -195,13 +200,19 @@ func (s *Store) UpdateObjective(ctx context.Context, userID, id string, p Object
 	if p.Archived != nil {
 		o.Archived = *p.Archived
 	}
+	if p.ProjectID != nil {
+		if err := s.checkProject(ctx, userID, *p.ProjectID); err != nil {
+			return Objective{}, err
+		}
+		o.ProjectID = *p.ProjectID
+	}
 	if err := o.normalize(); err != nil {
 		return Objective{}, err
 	}
 	o.Updated = time.Now().UTC().Truncate(time.Millisecond)
 	_, err = s.db.ExecContext(ctx, `UPDATE objectives SET title = ?, notes = ?, space = ?, start_ms = ?, due_ms = ?, metric_name = ?, metric_unit = ?,
-		metric_start = ?, metric_target = ?, archived = ?, updated_ms = ? WHERE id = ? AND user_id = ?`,
-		o.Title, o.Notes, o.Space, nullMS(o.Start), nullMS(o.Due), o.MetricName, o.MetricUnit, o.MetricStart, o.MetricTarget, b2i(o.Archived), ms(o.Updated), id, userID)
+		metric_start = ?, metric_target = ?, archived = ?, project_id = ?, updated_ms = ? WHERE id = ? AND user_id = ?`,
+		o.Title, o.Notes, o.Space, nullMS(o.Start), nullMS(o.Due), o.MetricName, o.MetricUnit, o.MetricStart, o.MetricTarget, b2i(o.Archived), o.ProjectID, ms(o.Updated), id, userID)
 	return o, err
 }
 

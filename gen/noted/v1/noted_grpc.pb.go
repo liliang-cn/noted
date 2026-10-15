@@ -322,6 +322,9 @@ const (
 	CalendarService_UpdateTask_FullMethodName     = "/noted.v1.CalendarService/UpdateTask"
 	CalendarService_DeleteTask_FullMethodName     = "/noted.v1.CalendarService/DeleteTask"
 	CalendarService_ListTasks_FullMethodName      = "/noted.v1.CalendarService/ListTasks"
+	CalendarService_LogTaskWork_FullMethodName    = "/noted.v1.CalendarService/LogTaskWork"
+	CalendarService_ListTaskWork_FullMethodName   = "/noted.v1.CalendarService/ListTaskWork"
+	CalendarService_DeleteTaskWork_FullMethodName = "/noted.v1.CalendarService/DeleteTaskWork"
 	CalendarService_WatchReminders_FullMethodName = "/noted.v1.CalendarService/WatchReminders"
 	CalendarService_ListReminders_FullMethodName  = "/noted.v1.CalendarService/ListReminders"
 )
@@ -340,6 +343,12 @@ type CalendarServiceClient interface {
 	UpdateTask(ctx context.Context, in *UpdateTaskRequest, opts ...grpc.CallOption) (*Task, error)
 	DeleteTask(ctx context.Context, in *DeleteTaskRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListTasks(ctx context.Context, in *ListTasksRequest, opts ...grpc.CallOption) (*ListTasksResponse, error)
+	// Logs a sitting on a task and returns the task with its new totals.
+	LogTaskWork(ctx context.Context, in *LogTaskWorkRequest, opts ...grpc.CallOption) (*Task, error)
+	ListTaskWork(ctx context.Context, in *ListTaskWorkRequest, opts ...grpc.CallOption) (*ListTaskWorkResponse, error)
+	// Removes a sitting and returns the task with its totals recomputed. A
+	// completed task stays completed.
+	DeleteTaskWork(ctx context.Context, in *DeleteTaskWorkRequest, opts ...grpc.CallOption) (*Task, error)
 	// Live stream of reminders as they fire. Reminders that fired while no
 	// client was connected are available from ListReminders.
 	WatchReminders(ctx context.Context, in *WatchRemindersRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Reminder], error)
@@ -454,6 +463,36 @@ func (c *calendarServiceClient) ListTasks(ctx context.Context, in *ListTasksRequ
 	return out, nil
 }
 
+func (c *calendarServiceClient) LogTaskWork(ctx context.Context, in *LogTaskWorkRequest, opts ...grpc.CallOption) (*Task, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Task)
+	err := c.cc.Invoke(ctx, CalendarService_LogTaskWork_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *calendarServiceClient) ListTaskWork(ctx context.Context, in *ListTaskWorkRequest, opts ...grpc.CallOption) (*ListTaskWorkResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTaskWorkResponse)
+	err := c.cc.Invoke(ctx, CalendarService_ListTaskWork_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *calendarServiceClient) DeleteTaskWork(ctx context.Context, in *DeleteTaskWorkRequest, opts ...grpc.CallOption) (*Task, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Task)
+	err := c.cc.Invoke(ctx, CalendarService_DeleteTaskWork_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *calendarServiceClient) WatchReminders(ctx context.Context, in *WatchRemindersRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Reminder], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &CalendarService_ServiceDesc.Streams[0], CalendarService_WatchReminders_FullMethodName, cOpts...)
@@ -497,6 +536,12 @@ type CalendarServiceServer interface {
 	UpdateTask(context.Context, *UpdateTaskRequest) (*Task, error)
 	DeleteTask(context.Context, *DeleteTaskRequest) (*emptypb.Empty, error)
 	ListTasks(context.Context, *ListTasksRequest) (*ListTasksResponse, error)
+	// Logs a sitting on a task and returns the task with its new totals.
+	LogTaskWork(context.Context, *LogTaskWorkRequest) (*Task, error)
+	ListTaskWork(context.Context, *ListTaskWorkRequest) (*ListTaskWorkResponse, error)
+	// Removes a sitting and returns the task with its totals recomputed. A
+	// completed task stays completed.
+	DeleteTaskWork(context.Context, *DeleteTaskWorkRequest) (*Task, error)
 	// Live stream of reminders as they fire. Reminders that fired while no
 	// client was connected are available from ListReminders.
 	WatchReminders(*WatchRemindersRequest, grpc.ServerStreamingServer[Reminder]) error
@@ -540,6 +585,15 @@ func (UnimplementedCalendarServiceServer) DeleteTask(context.Context, *DeleteTas
 }
 func (UnimplementedCalendarServiceServer) ListTasks(context.Context, *ListTasksRequest) (*ListTasksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListTasks not implemented")
+}
+func (UnimplementedCalendarServiceServer) LogTaskWork(context.Context, *LogTaskWorkRequest) (*Task, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LogTaskWork not implemented")
+}
+func (UnimplementedCalendarServiceServer) ListTaskWork(context.Context, *ListTaskWorkRequest) (*ListTaskWorkResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTaskWork not implemented")
+}
+func (UnimplementedCalendarServiceServer) DeleteTaskWork(context.Context, *DeleteTaskWorkRequest) (*Task, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteTaskWork not implemented")
 }
 func (UnimplementedCalendarServiceServer) WatchReminders(*WatchRemindersRequest, grpc.ServerStreamingServer[Reminder]) error {
 	return status.Errorf(codes.Unimplemented, "method WatchReminders not implemented")
@@ -748,6 +802,60 @@ func _CalendarService_ListTasks_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CalendarService_LogTaskWork_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LogTaskWorkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CalendarServiceServer).LogTaskWork(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CalendarService_LogTaskWork_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CalendarServiceServer).LogTaskWork(ctx, req.(*LogTaskWorkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CalendarService_ListTaskWork_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTaskWorkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CalendarServiceServer).ListTaskWork(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CalendarService_ListTaskWork_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CalendarServiceServer).ListTaskWork(ctx, req.(*ListTaskWorkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CalendarService_DeleteTaskWork_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteTaskWorkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CalendarServiceServer).DeleteTaskWork(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CalendarService_DeleteTaskWork_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CalendarServiceServer).DeleteTaskWork(ctx, req.(*DeleteTaskWorkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CalendarService_WatchReminders_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(WatchRemindersRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -823,6 +931,18 @@ var CalendarService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTasks",
 			Handler:    _CalendarService_ListTasks_Handler,
+		},
+		{
+			MethodName: "LogTaskWork",
+			Handler:    _CalendarService_LogTaskWork_Handler,
+		},
+		{
+			MethodName: "ListTaskWork",
+			Handler:    _CalendarService_ListTaskWork_Handler,
+		},
+		{
+			MethodName: "DeleteTaskWork",
+			Handler:    _CalendarService_DeleteTaskWork_Handler,
 		},
 		{
 			MethodName: "ListReminders",
@@ -1369,7 +1489,8 @@ type GoalServiceClient interface {
 	DeleteGoal(ctx context.Context, in *DeleteGoalRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListGoals(ctx context.Context, in *ListGoalsRequest, opts ...grpc.CallOption) (*ListGoalsResponse, error)
 	RecordCheckIn(ctx context.Context, in *RecordCheckInRequest, opts ...grpc.CallOption) (*RecordCheckInResponse, error)
-	// Undo a check-in; returns the goal with fresh progress.
+	// Undo a check-in; returns the goal with fresh progress. FAILED_PRECONDITION
+	// for one a time entry made: edit or delete the entry instead.
 	DeleteCheckIn(ctx context.Context, in *DeleteCheckInRequest, opts ...grpc.CallOption) (*Goal, error)
 	ListCheckIns(ctx context.Context, in *ListCheckInsRequest, opts ...grpc.CallOption) (*ListCheckInsResponse, error)
 	SetMilestoneDone(ctx context.Context, in *SetMilestoneDoneRequest, opts ...grpc.CallOption) (*Goal, error)
@@ -1483,7 +1604,8 @@ type GoalServiceServer interface {
 	DeleteGoal(context.Context, *DeleteGoalRequest) (*emptypb.Empty, error)
 	ListGoals(context.Context, *ListGoalsRequest) (*ListGoalsResponse, error)
 	RecordCheckIn(context.Context, *RecordCheckInRequest) (*RecordCheckInResponse, error)
-	// Undo a check-in; returns the goal with fresh progress.
+	// Undo a check-in; returns the goal with fresh progress. FAILED_PRECONDITION
+	// for one a time entry made: edit or delete the entry instead.
 	DeleteCheckIn(context.Context, *DeleteCheckInRequest) (*Goal, error)
 	ListCheckIns(context.Context, *ListCheckInsRequest) (*ListCheckInsResponse, error)
 	SetMilestoneDone(context.Context, *SetMilestoneDoneRequest) (*Goal, error)
@@ -3504,6 +3626,1410 @@ var HoldingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTrades",
 			Handler:    _HoldingService_ListTrades_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "noted/v1/noted.proto",
+}
+
+const (
+	TimeService_CreateTimeEntry_FullMethodName = "/noted.v1.TimeService/CreateTimeEntry"
+	TimeService_GetTimeEntry_FullMethodName    = "/noted.v1.TimeService/GetTimeEntry"
+	TimeService_UpdateTimeEntry_FullMethodName = "/noted.v1.TimeService/UpdateTimeEntry"
+	TimeService_DeleteTimeEntry_FullMethodName = "/noted.v1.TimeService/DeleteTimeEntry"
+	TimeService_ListTimeEntries_FullMethodName = "/noted.v1.TimeService/ListTimeEntries"
+	TimeService_StartTimer_FullMethodName      = "/noted.v1.TimeService/StartTimer"
+	TimeService_StopTimer_FullMethodName       = "/noted.v1.TimeService/StopTimer"
+	TimeService_GetRunningTimer_FullMethodName = "/noted.v1.TimeService/GetRunningTimer"
+	TimeService_SummarizeTime_FullMethodName   = "/noted.v1.TimeService/SummarizeTime"
+)
+
+// TimeServiceClient is the client API for TimeService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type TimeServiceClient interface {
+	CreateTimeEntry(ctx context.Context, in *CreateTimeEntryRequest, opts ...grpc.CallOption) (*TimeEntry, error)
+	GetTimeEntry(ctx context.Context, in *GetTimeEntryRequest, opts ...grpc.CallOption) (*TimeEntry, error)
+	UpdateTimeEntry(ctx context.Context, in *UpdateTimeEntryRequest, opts ...grpc.CallOption) (*TimeEntry, error)
+	DeleteTimeEntry(ctx context.Context, in *DeleteTimeEntryRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListTimeEntries(ctx context.Context, in *ListTimeEntriesRequest, opts ...grpc.CallOption) (*ListTimeEntriesResponse, error)
+	// Starts a timer: a running entry from now. FAILED_PRECONDITION, naming the
+	// running one, if the user already has a timer running.
+	StartTimer(ctx context.Context, in *StartTimerRequest, opts ...grpc.CallOption) (*TimeEntry, error)
+	// Stops the running timer and returns the finished entry; FAILED_PRECONDITION
+	// when none runs. A goal check-in is made only now.
+	StopTimer(ctx context.Context, in *StopTimerRequest, opts ...grpc.CallOption) (*TimeEntry, error)
+	GetRunningTimer(ctx context.Context, in *GetRunningTimerRequest, opts ...grpc.CallOption) (*GetRunningTimerResponse, error)
+	SummarizeTime(ctx context.Context, in *SummarizeTimeRequest, opts ...grpc.CallOption) (*TimeSummary, error)
+}
+
+type timeServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewTimeServiceClient(cc grpc.ClientConnInterface) TimeServiceClient {
+	return &timeServiceClient{cc}
+}
+
+func (c *timeServiceClient) CreateTimeEntry(ctx context.Context, in *CreateTimeEntryRequest, opts ...grpc.CallOption) (*TimeEntry, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TimeEntry)
+	err := c.cc.Invoke(ctx, TimeService_CreateTimeEntry_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *timeServiceClient) GetTimeEntry(ctx context.Context, in *GetTimeEntryRequest, opts ...grpc.CallOption) (*TimeEntry, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TimeEntry)
+	err := c.cc.Invoke(ctx, TimeService_GetTimeEntry_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *timeServiceClient) UpdateTimeEntry(ctx context.Context, in *UpdateTimeEntryRequest, opts ...grpc.CallOption) (*TimeEntry, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TimeEntry)
+	err := c.cc.Invoke(ctx, TimeService_UpdateTimeEntry_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *timeServiceClient) DeleteTimeEntry(ctx context.Context, in *DeleteTimeEntryRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, TimeService_DeleteTimeEntry_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *timeServiceClient) ListTimeEntries(ctx context.Context, in *ListTimeEntriesRequest, opts ...grpc.CallOption) (*ListTimeEntriesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTimeEntriesResponse)
+	err := c.cc.Invoke(ctx, TimeService_ListTimeEntries_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *timeServiceClient) StartTimer(ctx context.Context, in *StartTimerRequest, opts ...grpc.CallOption) (*TimeEntry, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TimeEntry)
+	err := c.cc.Invoke(ctx, TimeService_StartTimer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *timeServiceClient) StopTimer(ctx context.Context, in *StopTimerRequest, opts ...grpc.CallOption) (*TimeEntry, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TimeEntry)
+	err := c.cc.Invoke(ctx, TimeService_StopTimer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *timeServiceClient) GetRunningTimer(ctx context.Context, in *GetRunningTimerRequest, opts ...grpc.CallOption) (*GetRunningTimerResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetRunningTimerResponse)
+	err := c.cc.Invoke(ctx, TimeService_GetRunningTimer_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *timeServiceClient) SummarizeTime(ctx context.Context, in *SummarizeTimeRequest, opts ...grpc.CallOption) (*TimeSummary, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TimeSummary)
+	err := c.cc.Invoke(ctx, TimeService_SummarizeTime_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// TimeServiceServer is the server API for TimeService service.
+// All implementations must embed UnimplementedTimeServiceServer
+// for forward compatibility.
+type TimeServiceServer interface {
+	CreateTimeEntry(context.Context, *CreateTimeEntryRequest) (*TimeEntry, error)
+	GetTimeEntry(context.Context, *GetTimeEntryRequest) (*TimeEntry, error)
+	UpdateTimeEntry(context.Context, *UpdateTimeEntryRequest) (*TimeEntry, error)
+	DeleteTimeEntry(context.Context, *DeleteTimeEntryRequest) (*emptypb.Empty, error)
+	ListTimeEntries(context.Context, *ListTimeEntriesRequest) (*ListTimeEntriesResponse, error)
+	// Starts a timer: a running entry from now. FAILED_PRECONDITION, naming the
+	// running one, if the user already has a timer running.
+	StartTimer(context.Context, *StartTimerRequest) (*TimeEntry, error)
+	// Stops the running timer and returns the finished entry; FAILED_PRECONDITION
+	// when none runs. A goal check-in is made only now.
+	StopTimer(context.Context, *StopTimerRequest) (*TimeEntry, error)
+	GetRunningTimer(context.Context, *GetRunningTimerRequest) (*GetRunningTimerResponse, error)
+	SummarizeTime(context.Context, *SummarizeTimeRequest) (*TimeSummary, error)
+	mustEmbedUnimplementedTimeServiceServer()
+}
+
+// UnimplementedTimeServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedTimeServiceServer struct{}
+
+func (UnimplementedTimeServiceServer) CreateTimeEntry(context.Context, *CreateTimeEntryRequest) (*TimeEntry, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateTimeEntry not implemented")
+}
+func (UnimplementedTimeServiceServer) GetTimeEntry(context.Context, *GetTimeEntryRequest) (*TimeEntry, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTimeEntry not implemented")
+}
+func (UnimplementedTimeServiceServer) UpdateTimeEntry(context.Context, *UpdateTimeEntryRequest) (*TimeEntry, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateTimeEntry not implemented")
+}
+func (UnimplementedTimeServiceServer) DeleteTimeEntry(context.Context, *DeleteTimeEntryRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteTimeEntry not implemented")
+}
+func (UnimplementedTimeServiceServer) ListTimeEntries(context.Context, *ListTimeEntriesRequest) (*ListTimeEntriesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTimeEntries not implemented")
+}
+func (UnimplementedTimeServiceServer) StartTimer(context.Context, *StartTimerRequest) (*TimeEntry, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StartTimer not implemented")
+}
+func (UnimplementedTimeServiceServer) StopTimer(context.Context, *StopTimerRequest) (*TimeEntry, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StopTimer not implemented")
+}
+func (UnimplementedTimeServiceServer) GetRunningTimer(context.Context, *GetRunningTimerRequest) (*GetRunningTimerResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRunningTimer not implemented")
+}
+func (UnimplementedTimeServiceServer) SummarizeTime(context.Context, *SummarizeTimeRequest) (*TimeSummary, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SummarizeTime not implemented")
+}
+func (UnimplementedTimeServiceServer) mustEmbedUnimplementedTimeServiceServer() {}
+func (UnimplementedTimeServiceServer) testEmbeddedByValue()                     {}
+
+// UnsafeTimeServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to TimeServiceServer will
+// result in compilation errors.
+type UnsafeTimeServiceServer interface {
+	mustEmbedUnimplementedTimeServiceServer()
+}
+
+func RegisterTimeServiceServer(s grpc.ServiceRegistrar, srv TimeServiceServer) {
+	// If the following call pancis, it indicates UnimplementedTimeServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&TimeService_ServiceDesc, srv)
+}
+
+func _TimeService_CreateTimeEntry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateTimeEntryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TimeServiceServer).CreateTimeEntry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TimeService_CreateTimeEntry_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TimeServiceServer).CreateTimeEntry(ctx, req.(*CreateTimeEntryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TimeService_GetTimeEntry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTimeEntryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TimeServiceServer).GetTimeEntry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TimeService_GetTimeEntry_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TimeServiceServer).GetTimeEntry(ctx, req.(*GetTimeEntryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TimeService_UpdateTimeEntry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateTimeEntryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TimeServiceServer).UpdateTimeEntry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TimeService_UpdateTimeEntry_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TimeServiceServer).UpdateTimeEntry(ctx, req.(*UpdateTimeEntryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TimeService_DeleteTimeEntry_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteTimeEntryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TimeServiceServer).DeleteTimeEntry(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TimeService_DeleteTimeEntry_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TimeServiceServer).DeleteTimeEntry(ctx, req.(*DeleteTimeEntryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TimeService_ListTimeEntries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTimeEntriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TimeServiceServer).ListTimeEntries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TimeService_ListTimeEntries_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TimeServiceServer).ListTimeEntries(ctx, req.(*ListTimeEntriesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TimeService_StartTimer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StartTimerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TimeServiceServer).StartTimer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TimeService_StartTimer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TimeServiceServer).StartTimer(ctx, req.(*StartTimerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TimeService_StopTimer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StopTimerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TimeServiceServer).StopTimer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TimeService_StopTimer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TimeServiceServer).StopTimer(ctx, req.(*StopTimerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TimeService_GetRunningTimer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRunningTimerRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TimeServiceServer).GetRunningTimer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TimeService_GetRunningTimer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TimeServiceServer).GetRunningTimer(ctx, req.(*GetRunningTimerRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TimeService_SummarizeTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SummarizeTimeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TimeServiceServer).SummarizeTime(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TimeService_SummarizeTime_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TimeServiceServer).SummarizeTime(ctx, req.(*SummarizeTimeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// TimeService_ServiceDesc is the grpc.ServiceDesc for TimeService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var TimeService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "noted.v1.TimeService",
+	HandlerType: (*TimeServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateTimeEntry",
+			Handler:    _TimeService_CreateTimeEntry_Handler,
+		},
+		{
+			MethodName: "GetTimeEntry",
+			Handler:    _TimeService_GetTimeEntry_Handler,
+		},
+		{
+			MethodName: "UpdateTimeEntry",
+			Handler:    _TimeService_UpdateTimeEntry_Handler,
+		},
+		{
+			MethodName: "DeleteTimeEntry",
+			Handler:    _TimeService_DeleteTimeEntry_Handler,
+		},
+		{
+			MethodName: "ListTimeEntries",
+			Handler:    _TimeService_ListTimeEntries_Handler,
+		},
+		{
+			MethodName: "StartTimer",
+			Handler:    _TimeService_StartTimer_Handler,
+		},
+		{
+			MethodName: "StopTimer",
+			Handler:    _TimeService_StopTimer_Handler,
+		},
+		{
+			MethodName: "GetRunningTimer",
+			Handler:    _TimeService_GetRunningTimer_Handler,
+		},
+		{
+			MethodName: "SummarizeTime",
+			Handler:    _TimeService_SummarizeTime_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "noted/v1/noted.proto",
+}
+
+const (
+	AlarmService_CreateAlarm_FullMethodName      = "/noted.v1.AlarmService/CreateAlarm"
+	AlarmService_GetAlarm_FullMethodName         = "/noted.v1.AlarmService/GetAlarm"
+	AlarmService_UpdateAlarm_FullMethodName      = "/noted.v1.AlarmService/UpdateAlarm"
+	AlarmService_DeleteAlarm_FullMethodName      = "/noted.v1.AlarmService/DeleteAlarm"
+	AlarmService_ListAlarms_FullMethodName       = "/noted.v1.AlarmService/ListAlarms"
+	AlarmService_GetAlarmsVersion_FullMethodName = "/noted.v1.AlarmService/GetAlarmsVersion"
+)
+
+// AlarmServiceClient is the client API for AlarmService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type AlarmServiceClient interface {
+	CreateAlarm(ctx context.Context, in *CreateAlarmRequest, opts ...grpc.CallOption) (*Alarm, error)
+	GetAlarm(ctx context.Context, in *GetAlarmRequest, opts ...grpc.CallOption) (*Alarm, error)
+	UpdateAlarm(ctx context.Context, in *UpdateAlarmRequest, opts ...grpc.CallOption) (*Alarm, error)
+	DeleteAlarm(ctx context.Context, in *DeleteAlarmRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ListAlarms(ctx context.Context, in *ListAlarmsRequest, opts ...grpc.CallOption) (*ListAlarmsResponse, error)
+	// Cheap: lets a client skip ListAlarms when nothing changed.
+	GetAlarmsVersion(ctx context.Context, in *GetAlarmsVersionRequest, opts ...grpc.CallOption) (*GetAlarmsVersionResponse, error)
+}
+
+type alarmServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewAlarmServiceClient(cc grpc.ClientConnInterface) AlarmServiceClient {
+	return &alarmServiceClient{cc}
+}
+
+func (c *alarmServiceClient) CreateAlarm(ctx context.Context, in *CreateAlarmRequest, opts ...grpc.CallOption) (*Alarm, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Alarm)
+	err := c.cc.Invoke(ctx, AlarmService_CreateAlarm_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *alarmServiceClient) GetAlarm(ctx context.Context, in *GetAlarmRequest, opts ...grpc.CallOption) (*Alarm, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Alarm)
+	err := c.cc.Invoke(ctx, AlarmService_GetAlarm_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *alarmServiceClient) UpdateAlarm(ctx context.Context, in *UpdateAlarmRequest, opts ...grpc.CallOption) (*Alarm, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Alarm)
+	err := c.cc.Invoke(ctx, AlarmService_UpdateAlarm_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *alarmServiceClient) DeleteAlarm(ctx context.Context, in *DeleteAlarmRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AlarmService_DeleteAlarm_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *alarmServiceClient) ListAlarms(ctx context.Context, in *ListAlarmsRequest, opts ...grpc.CallOption) (*ListAlarmsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAlarmsResponse)
+	err := c.cc.Invoke(ctx, AlarmService_ListAlarms_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *alarmServiceClient) GetAlarmsVersion(ctx context.Context, in *GetAlarmsVersionRequest, opts ...grpc.CallOption) (*GetAlarmsVersionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAlarmsVersionResponse)
+	err := c.cc.Invoke(ctx, AlarmService_GetAlarmsVersion_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// AlarmServiceServer is the server API for AlarmService service.
+// All implementations must embed UnimplementedAlarmServiceServer
+// for forward compatibility.
+type AlarmServiceServer interface {
+	CreateAlarm(context.Context, *CreateAlarmRequest) (*Alarm, error)
+	GetAlarm(context.Context, *GetAlarmRequest) (*Alarm, error)
+	UpdateAlarm(context.Context, *UpdateAlarmRequest) (*Alarm, error)
+	DeleteAlarm(context.Context, *DeleteAlarmRequest) (*emptypb.Empty, error)
+	ListAlarms(context.Context, *ListAlarmsRequest) (*ListAlarmsResponse, error)
+	// Cheap: lets a client skip ListAlarms when nothing changed.
+	GetAlarmsVersion(context.Context, *GetAlarmsVersionRequest) (*GetAlarmsVersionResponse, error)
+	mustEmbedUnimplementedAlarmServiceServer()
+}
+
+// UnimplementedAlarmServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedAlarmServiceServer struct{}
+
+func (UnimplementedAlarmServiceServer) CreateAlarm(context.Context, *CreateAlarmRequest) (*Alarm, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateAlarm not implemented")
+}
+func (UnimplementedAlarmServiceServer) GetAlarm(context.Context, *GetAlarmRequest) (*Alarm, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAlarm not implemented")
+}
+func (UnimplementedAlarmServiceServer) UpdateAlarm(context.Context, *UpdateAlarmRequest) (*Alarm, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateAlarm not implemented")
+}
+func (UnimplementedAlarmServiceServer) DeleteAlarm(context.Context, *DeleteAlarmRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteAlarm not implemented")
+}
+func (UnimplementedAlarmServiceServer) ListAlarms(context.Context, *ListAlarmsRequest) (*ListAlarmsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAlarms not implemented")
+}
+func (UnimplementedAlarmServiceServer) GetAlarmsVersion(context.Context, *GetAlarmsVersionRequest) (*GetAlarmsVersionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAlarmsVersion not implemented")
+}
+func (UnimplementedAlarmServiceServer) mustEmbedUnimplementedAlarmServiceServer() {}
+func (UnimplementedAlarmServiceServer) testEmbeddedByValue()                      {}
+
+// UnsafeAlarmServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AlarmServiceServer will
+// result in compilation errors.
+type UnsafeAlarmServiceServer interface {
+	mustEmbedUnimplementedAlarmServiceServer()
+}
+
+func RegisterAlarmServiceServer(s grpc.ServiceRegistrar, srv AlarmServiceServer) {
+	// If the following call pancis, it indicates UnimplementedAlarmServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&AlarmService_ServiceDesc, srv)
+}
+
+func _AlarmService_CreateAlarm_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateAlarmRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AlarmServiceServer).CreateAlarm(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AlarmService_CreateAlarm_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AlarmServiceServer).CreateAlarm(ctx, req.(*CreateAlarmRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AlarmService_GetAlarm_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAlarmRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AlarmServiceServer).GetAlarm(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AlarmService_GetAlarm_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AlarmServiceServer).GetAlarm(ctx, req.(*GetAlarmRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AlarmService_UpdateAlarm_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateAlarmRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AlarmServiceServer).UpdateAlarm(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AlarmService_UpdateAlarm_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AlarmServiceServer).UpdateAlarm(ctx, req.(*UpdateAlarmRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AlarmService_DeleteAlarm_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteAlarmRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AlarmServiceServer).DeleteAlarm(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AlarmService_DeleteAlarm_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AlarmServiceServer).DeleteAlarm(ctx, req.(*DeleteAlarmRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AlarmService_ListAlarms_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAlarmsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AlarmServiceServer).ListAlarms(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AlarmService_ListAlarms_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AlarmServiceServer).ListAlarms(ctx, req.(*ListAlarmsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AlarmService_GetAlarmsVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAlarmsVersionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AlarmServiceServer).GetAlarmsVersion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AlarmService_GetAlarmsVersion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AlarmServiceServer).GetAlarmsVersion(ctx, req.(*GetAlarmsVersionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// AlarmService_ServiceDesc is the grpc.ServiceDesc for AlarmService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var AlarmService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "noted.v1.AlarmService",
+	HandlerType: (*AlarmServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateAlarm",
+			Handler:    _AlarmService_CreateAlarm_Handler,
+		},
+		{
+			MethodName: "GetAlarm",
+			Handler:    _AlarmService_GetAlarm_Handler,
+		},
+		{
+			MethodName: "UpdateAlarm",
+			Handler:    _AlarmService_UpdateAlarm_Handler,
+		},
+		{
+			MethodName: "DeleteAlarm",
+			Handler:    _AlarmService_DeleteAlarm_Handler,
+		},
+		{
+			MethodName: "ListAlarms",
+			Handler:    _AlarmService_ListAlarms_Handler,
+		},
+		{
+			MethodName: "GetAlarmsVersion",
+			Handler:    _AlarmService_GetAlarmsVersion_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "noted/v1/noted.proto",
+}
+
+const (
+	HolidayService_GetHolidays_FullMethodName = "/noted.v1.HolidayService/GetHolidays"
+)
+
+// HolidayServiceClient is the client API for HolidayService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type HolidayServiceClient interface {
+	GetHolidays(ctx context.Context, in *GetHolidaysRequest, opts ...grpc.CallOption) (*GetHolidaysResponse, error)
+}
+
+type holidayServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewHolidayServiceClient(cc grpc.ClientConnInterface) HolidayServiceClient {
+	return &holidayServiceClient{cc}
+}
+
+func (c *holidayServiceClient) GetHolidays(ctx context.Context, in *GetHolidaysRequest, opts ...grpc.CallOption) (*GetHolidaysResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetHolidaysResponse)
+	err := c.cc.Invoke(ctx, HolidayService_GetHolidays_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// HolidayServiceServer is the server API for HolidayService service.
+// All implementations must embed UnimplementedHolidayServiceServer
+// for forward compatibility.
+type HolidayServiceServer interface {
+	GetHolidays(context.Context, *GetHolidaysRequest) (*GetHolidaysResponse, error)
+	mustEmbedUnimplementedHolidayServiceServer()
+}
+
+// UnimplementedHolidayServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedHolidayServiceServer struct{}
+
+func (UnimplementedHolidayServiceServer) GetHolidays(context.Context, *GetHolidaysRequest) (*GetHolidaysResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetHolidays not implemented")
+}
+func (UnimplementedHolidayServiceServer) mustEmbedUnimplementedHolidayServiceServer() {}
+func (UnimplementedHolidayServiceServer) testEmbeddedByValue()                        {}
+
+// UnsafeHolidayServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to HolidayServiceServer will
+// result in compilation errors.
+type UnsafeHolidayServiceServer interface {
+	mustEmbedUnimplementedHolidayServiceServer()
+}
+
+func RegisterHolidayServiceServer(s grpc.ServiceRegistrar, srv HolidayServiceServer) {
+	// If the following call pancis, it indicates UnimplementedHolidayServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&HolidayService_ServiceDesc, srv)
+}
+
+func _HolidayService_GetHolidays_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetHolidaysRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HolidayServiceServer).GetHolidays(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: HolidayService_GetHolidays_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HolidayServiceServer).GetHolidays(ctx, req.(*GetHolidaysRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// HolidayService_ServiceDesc is the grpc.ServiceDesc for HolidayService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var HolidayService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "noted.v1.HolidayService",
+	HandlerType: (*HolidayServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetHolidays",
+			Handler:    _HolidayService_GetHolidays_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "noted/v1/noted.proto",
+}
+
+const (
+	AccountService_SignInWithApple_FullMethodName  = "/noted.v1.AccountService/SignInWithApple"
+	AccountService_LinkApple_FullMethodName        = "/noted.v1.AccountService/LinkApple"
+	AccountService_UnlinkApple_FullMethodName      = "/noted.v1.AccountService/UnlinkApple"
+	AccountService_GetAccount_FullMethodName       = "/noted.v1.AccountService/GetAccount"
+	AccountService_SignUp_FullMethodName           = "/noted.v1.AccountService/SignUp"
+	AccountService_SignIn_FullMethodName           = "/noted.v1.AccountService/SignIn"
+	AccountService_SetEmailPassword_FullMethodName = "/noted.v1.AccountService/SetEmailPassword"
+	AccountService_CreateToken_FullMethodName      = "/noted.v1.AccountService/CreateToken"
+	AccountService_ListTokens_FullMethodName       = "/noted.v1.AccountService/ListTokens"
+	AccountService_RevokeToken_FullMethodName      = "/noted.v1.AccountService/RevokeToken"
+	AccountService_GetPairing_FullMethodName       = "/noted.v1.AccountService/GetPairing"
+	AccountService_ApprovePairing_FullMethodName   = "/noted.v1.AccountService/ApprovePairing"
+	AccountService_DenyPairing_FullMethodName      = "/noted.v1.AccountService/DenyPairing"
+)
+
+// AccountServiceClient is the client API for AccountService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type AccountServiceClient interface {
+	// Public: needs no token. Fails with FAILED_PRECONDITION when the Apple ID is
+	// not linked to anyone and the server does not accept new sign-ups.
+	SignInWithApple(ctx context.Context, in *SignInWithAppleRequest, opts ...grpc.CallOption) (*SignInWithAppleResponse, error)
+	LinkApple(ctx context.Context, in *LinkAppleRequest, opts ...grpc.CallOption) (*Account, error)
+	UnlinkApple(ctx context.Context, in *UnlinkAppleRequest, opts ...grpc.CallOption) (*Account, error)
+	GetAccount(ctx context.Context, in *GetAccountRequest, opts ...grpc.CallOption) (*Account, error)
+	// Public. Creates a user signed in by email + password and returns its first
+	// token. FAILED_PRECONDITION when the server does not accept sign-ups,
+	// ALREADY_EXISTS when the email is taken.
+	SignUp(ctx context.Context, in *SignUpRequest, opts ...grpc.CallOption) (*SignInResponse, error)
+	// Public. UNAUTHENTICATED with one message for a wrong email or password.
+	SignIn(ctx context.Context, in *SignInRequest, opts ...grpc.CallOption) (*SignInResponse, error)
+	// Adds an email + password to the calling account (e.g. one made with Sign
+	// in with Apple) or changes them. PERMISSION_DENIED when current_password is
+	// missing or wrong, ALREADY_EXISTS when another account has the email.
+	SetEmailPassword(ctx context.Context, in *SetEmailPasswordRequest, opts ...grpc.CallOption) (*Account, error)
+	// Mints another token for the calling user.
+	CreateToken(ctx context.Context, in *CreateTokenRequest, opts ...grpc.CallOption) (*CreateTokenResponse, error)
+	ListTokens(ctx context.Context, in *ListTokensRequest, opts ...grpc.CallOption) (*ListTokensResponse, error)
+	// Deletes one of the caller's tokens; it stops working immediately. Revoking
+	// the token making the call is allowed. NOT_FOUND for an unknown id or one
+	// that belongs to someone else.
+	RevokeToken(ctx context.Context, in *RevokeTokenRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Pairing a client that signs in through the browser (MCP OAuth, e.g. Claude
+	// Code): the server's sign-in page shows a code and a QR code
+	// (noted://pair?code=...&server=...), and the signed-in App approves it,
+	// which issues that client a token of the calling user. NOT_FOUND for an
+	// unknown, expired or already used code.
+	GetPairing(ctx context.Context, in *GetPairingRequest, opts ...grpc.CallOption) (*Pairing, error)
+	ApprovePairing(ctx context.Context, in *ApprovePairingRequest, opts ...grpc.CallOption) (*Pairing, error)
+	DenyPairing(ctx context.Context, in *DenyPairingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+}
+
+type accountServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewAccountServiceClient(cc grpc.ClientConnInterface) AccountServiceClient {
+	return &accountServiceClient{cc}
+}
+
+func (c *accountServiceClient) SignInWithApple(ctx context.Context, in *SignInWithAppleRequest, opts ...grpc.CallOption) (*SignInWithAppleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SignInWithAppleResponse)
+	err := c.cc.Invoke(ctx, AccountService_SignInWithApple_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) LinkApple(ctx context.Context, in *LinkAppleRequest, opts ...grpc.CallOption) (*Account, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Account)
+	err := c.cc.Invoke(ctx, AccountService_LinkApple_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) UnlinkApple(ctx context.Context, in *UnlinkAppleRequest, opts ...grpc.CallOption) (*Account, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Account)
+	err := c.cc.Invoke(ctx, AccountService_UnlinkApple_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) GetAccount(ctx context.Context, in *GetAccountRequest, opts ...grpc.CallOption) (*Account, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Account)
+	err := c.cc.Invoke(ctx, AccountService_GetAccount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) SignUp(ctx context.Context, in *SignUpRequest, opts ...grpc.CallOption) (*SignInResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SignInResponse)
+	err := c.cc.Invoke(ctx, AccountService_SignUp_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) SignIn(ctx context.Context, in *SignInRequest, opts ...grpc.CallOption) (*SignInResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SignInResponse)
+	err := c.cc.Invoke(ctx, AccountService_SignIn_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) SetEmailPassword(ctx context.Context, in *SetEmailPasswordRequest, opts ...grpc.CallOption) (*Account, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Account)
+	err := c.cc.Invoke(ctx, AccountService_SetEmailPassword_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) CreateToken(ctx context.Context, in *CreateTokenRequest, opts ...grpc.CallOption) (*CreateTokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateTokenResponse)
+	err := c.cc.Invoke(ctx, AccountService_CreateToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) ListTokens(ctx context.Context, in *ListTokensRequest, opts ...grpc.CallOption) (*ListTokensResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTokensResponse)
+	err := c.cc.Invoke(ctx, AccountService_ListTokens_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) RevokeToken(ctx context.Context, in *RevokeTokenRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AccountService_RevokeToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) GetPairing(ctx context.Context, in *GetPairingRequest, opts ...grpc.CallOption) (*Pairing, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Pairing)
+	err := c.cc.Invoke(ctx, AccountService_GetPairing_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) ApprovePairing(ctx context.Context, in *ApprovePairingRequest, opts ...grpc.CallOption) (*Pairing, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Pairing)
+	err := c.cc.Invoke(ctx, AccountService_ApprovePairing_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accountServiceClient) DenyPairing(ctx context.Context, in *DenyPairingRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AccountService_DenyPairing_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// AccountServiceServer is the server API for AccountService service.
+// All implementations must embed UnimplementedAccountServiceServer
+// for forward compatibility.
+type AccountServiceServer interface {
+	// Public: needs no token. Fails with FAILED_PRECONDITION when the Apple ID is
+	// not linked to anyone and the server does not accept new sign-ups.
+	SignInWithApple(context.Context, *SignInWithAppleRequest) (*SignInWithAppleResponse, error)
+	LinkApple(context.Context, *LinkAppleRequest) (*Account, error)
+	UnlinkApple(context.Context, *UnlinkAppleRequest) (*Account, error)
+	GetAccount(context.Context, *GetAccountRequest) (*Account, error)
+	// Public. Creates a user signed in by email + password and returns its first
+	// token. FAILED_PRECONDITION when the server does not accept sign-ups,
+	// ALREADY_EXISTS when the email is taken.
+	SignUp(context.Context, *SignUpRequest) (*SignInResponse, error)
+	// Public. UNAUTHENTICATED with one message for a wrong email or password.
+	SignIn(context.Context, *SignInRequest) (*SignInResponse, error)
+	// Adds an email + password to the calling account (e.g. one made with Sign
+	// in with Apple) or changes them. PERMISSION_DENIED when current_password is
+	// missing or wrong, ALREADY_EXISTS when another account has the email.
+	SetEmailPassword(context.Context, *SetEmailPasswordRequest) (*Account, error)
+	// Mints another token for the calling user.
+	CreateToken(context.Context, *CreateTokenRequest) (*CreateTokenResponse, error)
+	ListTokens(context.Context, *ListTokensRequest) (*ListTokensResponse, error)
+	// Deletes one of the caller's tokens; it stops working immediately. Revoking
+	// the token making the call is allowed. NOT_FOUND for an unknown id or one
+	// that belongs to someone else.
+	RevokeToken(context.Context, *RevokeTokenRequest) (*emptypb.Empty, error)
+	// Pairing a client that signs in through the browser (MCP OAuth, e.g. Claude
+	// Code): the server's sign-in page shows a code and a QR code
+	// (noted://pair?code=...&server=...), and the signed-in App approves it,
+	// which issues that client a token of the calling user. NOT_FOUND for an
+	// unknown, expired or already used code.
+	GetPairing(context.Context, *GetPairingRequest) (*Pairing, error)
+	ApprovePairing(context.Context, *ApprovePairingRequest) (*Pairing, error)
+	DenyPairing(context.Context, *DenyPairingRequest) (*emptypb.Empty, error)
+	mustEmbedUnimplementedAccountServiceServer()
+}
+
+// UnimplementedAccountServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedAccountServiceServer struct{}
+
+func (UnimplementedAccountServiceServer) SignInWithApple(context.Context, *SignInWithAppleRequest) (*SignInWithAppleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SignInWithApple not implemented")
+}
+func (UnimplementedAccountServiceServer) LinkApple(context.Context, *LinkAppleRequest) (*Account, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LinkApple not implemented")
+}
+func (UnimplementedAccountServiceServer) UnlinkApple(context.Context, *UnlinkAppleRequest) (*Account, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnlinkApple not implemented")
+}
+func (UnimplementedAccountServiceServer) GetAccount(context.Context, *GetAccountRequest) (*Account, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAccount not implemented")
+}
+func (UnimplementedAccountServiceServer) SignUp(context.Context, *SignUpRequest) (*SignInResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SignUp not implemented")
+}
+func (UnimplementedAccountServiceServer) SignIn(context.Context, *SignInRequest) (*SignInResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SignIn not implemented")
+}
+func (UnimplementedAccountServiceServer) SetEmailPassword(context.Context, *SetEmailPasswordRequest) (*Account, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetEmailPassword not implemented")
+}
+func (UnimplementedAccountServiceServer) CreateToken(context.Context, *CreateTokenRequest) (*CreateTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateToken not implemented")
+}
+func (UnimplementedAccountServiceServer) ListTokens(context.Context, *ListTokensRequest) (*ListTokensResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListTokens not implemented")
+}
+func (UnimplementedAccountServiceServer) RevokeToken(context.Context, *RevokeTokenRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RevokeToken not implemented")
+}
+func (UnimplementedAccountServiceServer) GetPairing(context.Context, *GetPairingRequest) (*Pairing, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPairing not implemented")
+}
+func (UnimplementedAccountServiceServer) ApprovePairing(context.Context, *ApprovePairingRequest) (*Pairing, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ApprovePairing not implemented")
+}
+func (UnimplementedAccountServiceServer) DenyPairing(context.Context, *DenyPairingRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DenyPairing not implemented")
+}
+func (UnimplementedAccountServiceServer) mustEmbedUnimplementedAccountServiceServer() {}
+func (UnimplementedAccountServiceServer) testEmbeddedByValue()                        {}
+
+// UnsafeAccountServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AccountServiceServer will
+// result in compilation errors.
+type UnsafeAccountServiceServer interface {
+	mustEmbedUnimplementedAccountServiceServer()
+}
+
+func RegisterAccountServiceServer(s grpc.ServiceRegistrar, srv AccountServiceServer) {
+	// If the following call pancis, it indicates UnimplementedAccountServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&AccountService_ServiceDesc, srv)
+}
+
+func _AccountService_SignInWithApple_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SignInWithAppleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).SignInWithApple(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_SignInWithApple_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).SignInWithApple(ctx, req.(*SignInWithAppleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_LinkApple_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LinkAppleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).LinkApple(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_LinkApple_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).LinkApple(ctx, req.(*LinkAppleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_UnlinkApple_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnlinkAppleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).UnlinkApple(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_UnlinkApple_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).UnlinkApple(ctx, req.(*UnlinkAppleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_GetAccount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).GetAccount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_GetAccount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).GetAccount(ctx, req.(*GetAccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_SignUp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SignUpRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).SignUp(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_SignUp_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).SignUp(ctx, req.(*SignUpRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_SignIn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SignInRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).SignIn(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_SignIn_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).SignIn(ctx, req.(*SignInRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_SetEmailPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetEmailPasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).SetEmailPassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_SetEmailPassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).SetEmailPassword(ctx, req.(*SetEmailPasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_CreateToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).CreateToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_CreateToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).CreateToken(ctx, req.(*CreateTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_ListTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTokensRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).ListTokens(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_ListTokens_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).ListTokens(ctx, req.(*ListTokensRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_RevokeToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RevokeTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).RevokeToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_RevokeToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).RevokeToken(ctx, req.(*RevokeTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_GetPairing_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPairingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).GetPairing(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_GetPairing_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).GetPairing(ctx, req.(*GetPairingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_ApprovePairing_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ApprovePairingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).ApprovePairing(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_ApprovePairing_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).ApprovePairing(ctx, req.(*ApprovePairingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccountService_DenyPairing_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DenyPairingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccountServiceServer).DenyPairing(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AccountService_DenyPairing_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccountServiceServer).DenyPairing(ctx, req.(*DenyPairingRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// AccountService_ServiceDesc is the grpc.ServiceDesc for AccountService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var AccountService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "noted.v1.AccountService",
+	HandlerType: (*AccountServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SignInWithApple",
+			Handler:    _AccountService_SignInWithApple_Handler,
+		},
+		{
+			MethodName: "LinkApple",
+			Handler:    _AccountService_LinkApple_Handler,
+		},
+		{
+			MethodName: "UnlinkApple",
+			Handler:    _AccountService_UnlinkApple_Handler,
+		},
+		{
+			MethodName: "GetAccount",
+			Handler:    _AccountService_GetAccount_Handler,
+		},
+		{
+			MethodName: "SignUp",
+			Handler:    _AccountService_SignUp_Handler,
+		},
+		{
+			MethodName: "SignIn",
+			Handler:    _AccountService_SignIn_Handler,
+		},
+		{
+			MethodName: "SetEmailPassword",
+			Handler:    _AccountService_SetEmailPassword_Handler,
+		},
+		{
+			MethodName: "CreateToken",
+			Handler:    _AccountService_CreateToken_Handler,
+		},
+		{
+			MethodName: "ListTokens",
+			Handler:    _AccountService_ListTokens_Handler,
+		},
+		{
+			MethodName: "RevokeToken",
+			Handler:    _AccountService_RevokeToken_Handler,
+		},
+		{
+			MethodName: "GetPairing",
+			Handler:    _AccountService_GetPairing_Handler,
+		},
+		{
+			MethodName: "ApprovePairing",
+			Handler:    _AccountService_ApprovePairing_Handler,
+		},
+		{
+			MethodName: "DenyPairing",
+			Handler:    _AccountService_DenyPairing_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

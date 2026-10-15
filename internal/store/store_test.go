@@ -311,6 +311,36 @@ func TestTokens(t *testing.T) {
 	if _, err := s.UserForToken(ctx, tok+"x"); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("bad token accepted: %v", err)
 	}
+	ts, err := s.ListTokens(ctx, uid)
+	if err != nil || len(ts) != 1 || ts[0].ID != TokenID(tok) || ts[0].LastUsed.IsZero() {
+		t.Fatalf("list: %v %+v", err, ts)
+	}
+	// Last use is written at most once a minute.
+	first := ts[0].LastUsed
+	if _, _, err := s.Authenticate(ctx, tok); err != nil {
+		t.Fatal(err)
+	}
+	if ts, _ = s.ListTokens(ctx, uid); !ts[0].LastUsed.Equal(first) {
+		t.Fatalf("last use rewritten within a minute: %v -> %v", first, ts[0].LastUsed)
+	}
+	if _, err := s.db.ExecContext(ctx, `UPDATE tokens SET last_used_ms = last_used_ms - 120000`); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := s.Authenticate(ctx, tok); err != nil {
+		t.Fatal(err)
+	}
+	if ts, _ = s.ListTokens(ctx, uid); !ts[0].LastUsed.After(first.Add(-time.Minute)) {
+		t.Fatalf("stale last use not refreshed: %v", ts[0].LastUsed)
+	}
+	if err := s.RevokeToken(ctx, "someone-else", ts[0].ID); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("revoke by another user: %v", err)
+	}
+	if err := s.RevokeToken(ctx, uid, ts[0].ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.UserForToken(ctx, tok); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("revoked token accepted: %v", err)
+	}
 }
 
 // A reminder set for the moment an event starts (0 minutes before) has to fire

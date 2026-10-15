@@ -13,37 +13,47 @@ import (
 	pb "github.com/liliang-cn/noted/gen/noted/v1"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type tools struct {
-	notes pb.NoteServiceClient
-	cal   pb.CalendarServiceClient
-	goals pb.GoalServiceClient
-	projs pb.ProjectServiceClient
-	focus pb.FocusServiceClient
-	sugg  pb.SuggestionServiceClient
-	ai    pb.AIServiceClient
-	loc   *time.Location // reads zone-less times
+	notes  pb.NoteServiceClient
+	cal    pb.CalendarServiceClient
+	goals  pb.GoalServiceClient
+	projs  pb.ProjectServiceClient
+	focus  pb.FocusServiceClient
+	sugg   pb.SuggestionServiceClient
+	objs   pb.ObjectiveServiceClient
+	holds  pb.HoldingServiceClient
+	time   pb.TimeServiceClient
+	alarms pb.AlarmServiceClient
+	hols   pb.HolidayServiceClient
+	ai     pb.AIServiceClient
+	loc    *time.Location // reads zone-less times
 }
 
 // New builds the MCP server. AI tools are registered only when the noted
 // server reports AI enabled, so clients never see tools that cannot work.
 func New(ctx context.Context, conn grpc.ClientConnInterface, loc *time.Location, version string) (*mcp.Server, error) {
-	t := &tools{notes: pb.NewNoteServiceClient(conn), cal: pb.NewCalendarServiceClient(conn), goals: pb.NewGoalServiceClient(conn), projs: pb.NewProjectServiceClient(conn), focus: pb.NewFocusServiceClient(conn), sugg: pb.NewSuggestionServiceClient(conn), ai: pb.NewAIServiceClient(conn), loc: loc}
+	t := &tools{notes: pb.NewNoteServiceClient(conn), cal: pb.NewCalendarServiceClient(conn), goals: pb.NewGoalServiceClient(conn), projs: pb.NewProjectServiceClient(conn), focus: pb.NewFocusServiceClient(conn), sugg: pb.NewSuggestionServiceClient(conn),
+		objs: pb.NewObjectiveServiceClient(conn), holds: pb.NewHoldingServiceClient(conn), time: pb.NewTimeServiceClient(conn), alarms: pb.NewAlarmServiceClient(conn), hols: pb.NewHolidayServiceClient(conn), ai: pb.NewAIServiceClient(conn), loc: loc}
 	st, err := t.ai.GetStatus(ctx, &pb.GetStatusRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("cannot reach the noted server (check address and token): %w", err)
 	}
 	s := mcp.NewServer(&mcp.Implementation{Name: "noted", Version: version}, &mcp.ServerOptions{
-		Instructions: "Personal notes, calendar and to-do tools. Times are RFC 3339 (e.g. 2026-03-05T15:00:00+08:00); " +
+		SchemaCache: schemas,
+		Instructions: "Personal notes, calendar, to-dos, projects, goals and objectives, time tracking (时间记录: log_time, timers, time_summary), investment holdings, and alarms (闹钟: create_alarm; the user's phone rings them, following CN 法定节假日 and 调休 when asked; mode alarm for 叫我/闹钟/准时响, reminder when a notification is enough). Look up ids with the list_* tools rather than guessing them. Times are RFC 3339 (e.g. 2026-03-05T15:00:00+08:00); " +
 			"zone-less times are read in " + loc.String() + ". Resolve relative dates like \"next Friday\" yourself before calling.",
 	})
 	t.register(s)
+	t.registerTasks(s)
 	t.registerPlanning(s)
+	t.registerObjectives(s)
+	t.registerHoldings(s)
+	t.registerTime(s)
+	t.registerAlarms(s)
 	t.registerSuggestions(s)
 	if st.Chat {
 		t.registerAI(s)
@@ -72,19 +82,6 @@ func spaceOf(s string) (pb.Space, error) {
 		return pb.Space_SPACE_LIFE, nil
 	}
 	return 0, fmt.Errorf("space must be work or life")
-}
-
-// text returns a proto message as readable JSON.
-func text(m proto.Message) (*mcp.CallToolResult, any, error) {
-	b, err := protojson.MarshalOptions{Multiline: true, Indent: " "}.Marshal(m)
-	if err != nil {
-		return nil, nil, err
-	}
-	return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: string(b)}}}, nil, nil
-}
-
-func say(format string, a ...any) (*mcp.CallToolResult, any, error) {
-	return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: fmt.Sprintf(format, a...)}}}, nil, nil
 }
 
 func (t *tools) when(s string) (*timestamppb.Timestamp, error) {
@@ -191,10 +188,15 @@ type createTaskIn struct {
 	Tags      []string `json:"tags,omitempty"`
 	Space     string   `json:"space,omitempty" jsonschema:"work or life; omit to inherit from the project, else life"`
 	ProjectID string   `json:"project_id,omitempty"`
+	RRule     string   `json:"rrule,omitempty" jsonschema:"repeat rule (RFC 5545 RRULE subset): FREQ=DAILY|WEEKLY|MONTHLY|YEARLY with optional INTERVAL, COUNT or UNTIL (YYYYMMDD), and BYDAY (MO,TU,WE,TH,FR,SA,SU; weekly only), e.g. FREQ=DAILY, FREQ=WEEKLY;BYDAY=MO,WE,FR, FREQ=MONTHLY;COUNT=6. Needs due."`
 }
 type askIn struct {
 	Message   string `json:"message"`
 	SessionID string `json:"session_id,omitempty" jsonschema:"continue an earlier conversation"`
+}
+type suggestTagsIn struct {
+	ID    string `json:"id" jsonschema:"the note's id"`
+	Apply bool   `json:"apply,omitempty" jsonschema:"also add the tags to the note"`
 }
 type briefingIn struct {
 	Day      string `json:"day,omitempty" jsonschema:"date to brief on; default today"`
@@ -203,7 +205,7 @@ type briefingIn struct {
 
 func (t *tools) register(s *mcp.Server) {
 	mcp.AddTool(s, &mcp.Tool{Name: "search_notes", Description: "Search notes by keywords (or meaning, with semantic=true).", Annotations: readOnly},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in searchIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in searchIn) (*mcp.CallToolResult, *searchOut, error) {
 			sp, err := spaceOf(in.Space)
 			if err != nil {
 				return nil, nil, err
@@ -212,10 +214,10 @@ func (t *tools) register(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, &searchOut{Items: items(r.Hits, t.noteHit), Mode: r.Mode})
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "list_notes", Description: "List notes, pinned first then most recently edited.", Annotations: readOnly},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in listNotesIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in listNotesIn) (*mcp.CallToolResult, *listOut[*noteOut], error) {
 			sp, err := spaceOf(in.Space)
 			if err != nil {
 				return nil, nil, err
@@ -224,18 +226,18 @@ func (t *tools) register(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, &listOut[*noteOut]{Items: items(r.Notes, t.note), NextPageToken: r.NextPageToken})
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "get_note", Description: "Read one note in full.", Annotations: readOnly},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, *noteOut, error) {
 			r, err := t.notes.GetNote(ctx, &pb.GetNoteRequest{Id: in.ID})
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, t.note(r))
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "create_note", Description: "Save a new note.", Annotations: additive},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in createNoteIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in createNoteIn) (*mcp.CallToolResult, *noteOut, error) {
 			sp, err := spaceOf(in.Space)
 			if err != nil {
 				return nil, nil, err
@@ -244,10 +246,10 @@ func (t *tools) register(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, t.note(r))
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "update_note", Description: "Change fields of a note; omitted fields stay as they are.", Annotations: editing},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in updateNoteIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in updateNoteIn) (*mcp.CallToolResult, *noteOut, error) {
 			n, mask := &pb.Note{Id: in.ID}, []string{}
 			if in.Title != nil {
 				n.Title, mask = *in.Title, append(mask, "title")
@@ -281,18 +283,18 @@ func (t *tools) register(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, t.note(r))
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "delete_note", Description: "Permanently delete a note.", Annotations: deleting},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, *deletedOut, error) {
 			if _, err := t.notes.DeleteNote(ctx, &pb.DeleteNoteRequest{Id: in.ID}); err != nil {
 				return nil, nil, err
 			}
-			return say("deleted note %s", in.ID)
+			return deleted("note", "note", in.ID)
 		})
 
 	mcp.AddTool(s, &mcp.Tool{Name: "list_events", Description: "List calendar events in a time window; recurring events are expanded into their occurrences.", Annotations: readOnly},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in listEventsIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in listEventsIn) (*mcp.CallToolResult, *eventsOut, error) {
 			from, err := t.when(in.From)
 			if err != nil {
 				return nil, nil, err
@@ -309,10 +311,10 @@ func (t *tools) register(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, &eventsOut{Items: items(r.Occurrences, t.occurrence), From: t.ts(from), To: t.ts(to)})
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "create_event", Description: "Create a calendar event, optionally recurring and with a reminder.", Annotations: additive},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in createEventIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in createEventIn) (*mcp.CallToolResult, *eventOut, error) {
 			start, err := t.when(in.Start)
 			if err != nil {
 				return nil, nil, err
@@ -336,10 +338,10 @@ func (t *tools) register(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, t.event(r))
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "update_event", Description: "Reschedule or edit an event; omitted fields stay as they are.", Annotations: editing},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in updateEventIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in updateEventIn) (*mcp.CallToolResult, *eventOut, error) {
 			e, mask := &pb.Event{Id: in.ID}, []string{}
 			str := func(v *string, path string, dst *string) {
 				if v != nil {
@@ -386,18 +388,18 @@ func (t *tools) register(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, t.event(r))
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "delete_event", Description: "Permanently delete an event (all occurrences if it recurs).", Annotations: deleting},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, *deletedOut, error) {
 			if _, err := t.cal.DeleteEvent(ctx, &pb.DeleteEventRequest{Id: in.ID}); err != nil {
 				return nil, nil, err
 			}
-			return say("deleted event %s", in.ID)
+			return deleted("event", "event", in.ID)
 		})
 
-	mcp.AddTool(s, &mcp.Tool{Name: "list_tasks", Description: "List to-do items, earliest due first.", Annotations: readOnly},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in listTasksIn) (*mcp.CallToolResult, any, error) {
+	mcp.AddTool(s, &mcp.Tool{Name: "list_tasks", Description: "List to-do items, earliest due first. A repeating one shows its rrule.", Annotations: readOnly},
+		func(ctx context.Context, _ *mcp.CallToolRequest, in listTasksIn) (*mcp.CallToolResult, *listOut[*taskOut], error) {
 			f := pb.ListTasksRequest_FILTER_OPEN
 			switch in.State {
 			case "", "open":
@@ -416,10 +418,10 @@ func (t *tools) register(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, &listOut[*taskOut]{Items: items(r.Tasks, t.task), NextPageToken: r.NextPageToken})
 		})
-	mcp.AddTool(s, &mcp.Tool{Name: "create_task", Description: "Create a to-do item, optionally with a due time and a reminder.", Annotations: additive},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in createTaskIn) (*mcp.CallToolResult, any, error) {
+	mcp.AddTool(s, &mcp.Tool{Name: "create_task", Description: "Create a to-do item, optionally with a due time and a reminder. With rrule it repeats: the rule is anchored on the due time (required), and completing the task keeps it as done and adds the next one at the rule's next occurrence, its reminder moved along by the same amount, until COUNT or UNTIL ends the series. Supported rrule subset: FREQ=DAILY|WEEKLY|MONTHLY|YEARLY, INTERVAL, COUNT, UNTIL, BYDAY (weekly only).", Annotations: additive},
+		func(ctx context.Context, _ *mcp.CallToolRequest, in createTaskIn) (*mcp.CallToolResult, *taskOut, error) {
 			due, err := t.optWhen(in.Due)
 			if err != nil {
 				return nil, nil, err
@@ -434,60 +436,68 @@ func (t *tools) register(s *mcp.Server) {
 			}
 			r, err := t.cal.CreateTask(ctx, &pb.CreateTaskRequest{Task: &pb.Task{
 				Title: in.Title, Notes: in.Notes, DueTime: due, RemindTime: rem, Priority: pb.Priority(in.Priority), Tags: in.Tags,
-				Space: sp, ProjectId: in.ProjectID}})
+				Space: sp, ProjectId: in.ProjectID, Rrule: in.RRule}})
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, t.task(r))
 		})
-	mcp.AddTool(s, &mcp.Tool{Name: "complete_task", Description: "Mark a to-do item as done.", Annotations: editing},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, any, error) {
+	mcp.AddTool(s, &mcp.Tool{Name: "complete_task", Description: "Mark a to-do item as done. If it repeats (rrule), the next one is created; find it with list_tasks.", Annotations: editing},
+		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, *taskOut, error) {
 			r, err := t.cal.UpdateTask(ctx, &pb.UpdateTaskRequest{Task: &pb.Task{Id: in.ID, Completed: true},
 				UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"completed"}}})
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, t.task(r))
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "delete_task", Description: "Permanently delete a to-do item.", Annotations: deleting},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, *deletedOut, error) {
 			if _, err := t.cal.DeleteTask(ctx, &pb.DeleteTaskRequest{Id: in.ID}); err != nil {
 				return nil, nil, err
 			}
-			return say("deleted task %s", in.ID)
+			return deleted("task", "task", in.ID)
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "list_reminders", Description: "Reminders that fired recently (default: last 24 hours).", Annotations: readOnly},
-		func(ctx context.Context, _ *mcp.CallToolRequest, _ struct{}) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, _ struct{}) (*mcp.CallToolResult, *listOut[*reminderOut], error) {
 			r, err := t.cal.ListReminders(ctx, &pb.ListRemindersRequest{})
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, &listOut[*reminderOut]{Items: items(r.Reminders, t.reminder)})
 		})
 }
 
 // registerAI adds the tools that need the server's LLM.
 func (t *tools) registerAI(s *mcp.Server) {
 	mcp.AddTool(s, &mcp.Tool{Name: "ask_assistant", Description: "Ask noted's own built-in assistant, which can read and write the user's notes, events and tasks from plain language.", Annotations: additive},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in askIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in askIn) (*mcp.CallToolResult, *askOut, error) {
 			// The MCP client has its own confirmation step for tool calls, so what the
 			// assistant prepares is carried out here; the result names the change so it can be undone.
 			r, err := t.ai.Ask(ctx, &pb.AskRequest{Message: in.Message, SessionId: in.SessionID, AutoApply: true})
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, t.ask(r))
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "summarize_note", Description: "Summarize a note with the server's LLM.", Annotations: readOnly},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, *summaryOut, error) {
 			r, err := t.ai.SummarizeNote(ctx, &pb.SummarizeNoteRequest{NoteId: in.ID})
 			if err != nil {
 				return nil, nil, err
 			}
-			return say("%s", r.Summary)
+			return sayWith(&summaryOut{NoteID: in.ID, Summary: r.Summary}, "%s", r.Summary)
+		})
+	mcp.AddTool(s, &mcp.Tool{Name: "suggest_tags", Description: "Suggest up to 5 topic tags for a note with the server's LLM; with apply=true they are also added to the note.", Annotations: editing},
+		func(ctx context.Context, _ *mcp.CallToolRequest, in suggestTagsIn) (*mcp.CallToolResult, *tagsOut, error) {
+			r, err := t.ai.SuggestTags(ctx, &pb.SuggestTagsRequest{NoteId: in.ID, Apply: in.Apply})
+			if err != nil {
+				return nil, nil, err
+			}
+			return reply(r, &tagsOut{NoteID: in.ID, Tags: items(r.Tags, func(s string) string { return s }), Applied: in.Apply})
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "daily_briefing", Description: "A short briefing of the day's events, due tasks and pinned notes.", Annotations: readOnly},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in briefingIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in briefingIn) (*mcp.CallToolResult, *briefingOut, error) {
 			day, err := t.optWhen(in.Day)
 			if err != nil {
 				return nil, nil, err
@@ -496,6 +506,6 @@ func (t *tools) registerAI(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return say("%s", r.Briefing)
+			return sayWith(&briefingOut{Briefing: r.Briefing}, "%s", r.Briefing)
 		})
 }

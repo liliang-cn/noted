@@ -39,6 +39,9 @@ func toStatus(err error) error {
 	case errors.Is(err, store.ErrInvalid):
 		msg := strings.TrimPrefix(err.Error(), store.ErrInvalid.Error()+": ")
 		return status.Error(codes.InvalidArgument, msg)
+	case errors.Is(err, store.ErrPrecondition):
+		msg := strings.TrimPrefix(err.Error(), store.ErrPrecondition.Error()+": ")
+		return status.Error(codes.FailedPrecondition, msg)
 	case errors.Is(err, context.Canceled):
 		return status.Error(codes.Canceled, "canceled")
 	case errors.Is(err, context.DeadlineExceeded):

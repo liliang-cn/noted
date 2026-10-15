@@ -122,8 +122,13 @@ func (s *AI) Ask(ctx context.Context, req *pb.AskRequest) (*pb.AskResponse, erro
 		resp.References = append(resp.References, out)
 	}
 	if len(r.Ops) > 0 {
-		p, _, err := saveDraft(ctx, s.Store, u.ID, plan.BuildAsk(r.Ops, spaceIn(req.Space), s.Locale), plan.SourceAI)
+		p, _, err := saveDraftIn(ctx, s.Store, u.ID, plan.BuildAsk(r.Ops, spaceIn(req.Space), s.Locale), plan.SourceAI, r.SessionID)
 		if err != nil {
+			return nil, toStatus(err)
+		}
+		// A follow-up in the same conversation restates the whole change, so
+		// what an earlier reply proposed and is still pending is replaced.
+		if err := s.Store.SupersedeSession(ctx, u.ID, r.SessionID, p.Kind, p.ID); err != nil {
 			return nil, toStatus(err)
 		}
 		if req.AutoApply {

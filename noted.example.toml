@@ -1,6 +1,6 @@
 # noted configuration. Every key is optional; `noted serve` runs with none of
-# this. Environment variables override the file (NOTED_LISTEN, NOTED_DATA_DIR,
-# NOTED_TIME_ZONE, NOTED_AUTH_DISABLED, NOTED_AI_ENABLED, NOTED_AI_LLM_*,
+# this. Environment variables override the file (NOTED_LISTEN, NOTED_MCP_LISTEN, NOTED_PUBLIC_URL, NOTED_DATA_DIR,
+# NOTED_TIME_ZONE, NOTED_AUTH_DISABLED, NOTED_AUTH_SIGNUP, NOTED_AI_ENABLED, NOTED_AI_LLM_*,
 # NOTED_AI_EMBEDDING_*, NOTED_WEBHOOK_URL).
 
 # Default zone for daily briefings and for the assistant's date math.
@@ -14,6 +14,17 @@ listen = "127.0.0.1:43872"   # use 0.0.0.0:43872 to accept remote clients
 reflection = true            # gRPC reflection, so grpcurl/Postman can discover the API
 # tls_cert = "/etc/noted/tls.crt"
 # tls_key  = "/etc/noted/tls.key"
+# Remote MCP and web portal: serve the MCP tools over Streamable HTTP at
+# http://<addr>/mcp (and GET /healthz), so Claude Code / Codex connect with a
+# URL and a bearer token, plus a small web page at / where people sign in with
+# email + password and mint those tokens. Empty keeps it off. Plain HTTP: put a
+# TLS reverse proxy in front.
+# mcp_listen = "127.0.0.1:43638"
+# The address clients reach mcp_listen at from outside. MCP clients that sign in
+# without a token (Claude Code: /mcp, then pick noted) read the OAuth endpoints
+# from it, and the App's pairing QR code carries it. Empty: taken from each
+# request (X-Forwarded-Proto and the Host header). Env NOTED_PUBLIC_URL.
+# public_url = "https://noted.example.com"
 
 [storage]
 data_dir = "./data"          # noted.db lives here; back it up by copying the directory
@@ -23,6 +34,18 @@ data_dir = "./data"          # noted.db lives here; back it up by copying the di
 #   authorization: Bearer <token>
 # Set disabled = true for single-user use on localhost only.
 disabled = false
+# Let anyone create an account with an email + password (gRPC SignUp and the
+# web portal). Off: sign-up is closed, and existing users add an email to their
+# account with SetEmailPassword. Env NOTED_AUTH_SIGNUP.
+signup = false
+
+# Sign in with Apple for the iOS app. bundle_id is the app's bundle identifier;
+# empty keeps it off. signup = true lets any Apple ID create its own user (a
+# hosted service); leave it false on a private server, where an Apple ID has to
+# be linked first from a device that already has a token (Settings > Apple ID).
+# [auth.apple]
+# bundle_id = "cn.superleo.noted"
+# signup = false
 
 [notify]
 # Every fired reminder is also POSTed here as JSON (retried 3 times).
@@ -47,3 +70,21 @@ enabled = false
 # model    = "text-embedding-3-small"
 # Changing the embedding model later? Delete <data_dir>/ai/index.db and restart;
 # notes are re-indexed in the background.
+
+# ---------------------------------------------------------------------------
+# One-way sync into a CortexDB brain (optional, off by default). Every few
+# minutes the items of the users listed here are written to the CortexDB
+# gRPC server as knowledge records (collection "noted") and graph entities,
+# so its recall tools know what exists and how it relates. noted stays the
+# source of truth: records carry noted://<kind>/<id> and dated snapshots of
+# numbers. Users not listed are never read or sent. Spaces closed to AI
+# (SetAIAccess) are not sent either. The token comes only from the
+# environment: CORTEXDB_GRPC_TOKEN. Env: NOTED_CORTEXDB_REMOTE,
+# NOTED_CORTEXDB_SYNC_USERS (comma-separated), NOTED_CORTEXDB_INTERVAL,
+# NOTED_CORTEXDB_TLS. First run by hand: noted cortex sync <user> --dry-run
+# ---------------------------------------------------------------------------
+[cortexdb]
+# remote     = "10.0.0.5:46017"       # host:port of the CortexDB gRPC server
+# tls        = false
+# sync_users = ["apple-b0d825f8"]     # user names (noted user list)
+# interval   = "15m"                  # at least 1m

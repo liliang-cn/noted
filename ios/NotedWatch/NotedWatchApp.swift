@@ -91,10 +91,19 @@ struct WatchRoot: View {
 
     var body: some View {
         NavigationStack {
-            // One list, so the crown reaches everything: today first, then the goals.
+            // One list, so the crown reaches everything: today, goals, plans, then investing.
             List {
                 TodaySection()
                 GoalSection()
+                PlanSection()
+                InvestSection()
+            }
+            // Wherever the list is scrolled to, the reason an action did not go through stays in view.
+            .safeAreaInset(edge: .bottom) {
+                if let m = store.message {
+                    Text(m).font(.system(size: 12, weight: .semibold)).foregroundStyle(Color(rgb: store.snapshot.colors.bad))
+                        .frame(maxWidth: .infinity).padding(.vertical, 4).background(.black.opacity(0.85))
+                }
             }
         }
     }
@@ -128,7 +137,6 @@ struct TodaySection: View {
                     }
                 }
             }
-            if let m = store.message { Text(m).font(.system(size: 12)).foregroundStyle(Color(rgb: c.bad)) }
         } header: {
             Text("今天 · \(s.items.count)")
         }
@@ -158,6 +166,71 @@ struct GoalSection: View {
             }
         } header: {
             Text("目标")
+        }
+    }
+}
+
+struct PlanSection: View {
+    @Environment(WatchStore.self) private var store
+
+    var body: some View {
+        let s = store.snapshot
+        let c = s.colors
+        if !s.plans.isEmpty {
+            ForEach(s.plans) { p in
+                Section {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(p.unit.isEmpty ? snapPercent(p.percent) : (p.current.map(SnapFmt.number) ?? "—"))
+                            .font(.system(size: 26, weight: .bold))
+                        if !p.unit.isEmpty { Text("\(p.unit) → \(SnapFmt.number(p.target))").font(.system(size: 12, design: .monospaced)).foregroundStyle(Color.secondary) }
+                    }
+                    SnapProgress(value: p.percent, tint: Color(rgb: p.work ? c.work : c.life), track: Color.white.opacity(0.2))
+                    if p.offTrack { Text("落后进度").font(.system(size: 12, weight: .semibold)).foregroundStyle(Color(rgb: c.bad)) }
+                    ForEach(p.dims) { g in
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(g.title).font(.system(size: 14, weight: .semibold))
+                                Spacer()
+                                Text("\(SnapFmt.number(g.done))/\(SnapFmt.number(g.target))")
+                                    .font(.system(size: 12, design: .monospaced)).foregroundStyle(g.behind ? Color(rgb: c.bad) : Color.secondary)
+                            }
+                            SnapProgress(value: g.percent, tint: Color(rgb: p.work ? c.work : c.life), track: Color.white.opacity(0.2))
+                            Button("打卡 +1") { store.perform("checkin", id: g.id) }
+                                .font(.system(size: 13, weight: .semibold)).disabled(store.busy)
+                                .accessibilityLabel("打卡 \(g.title)")
+                        }
+                    }
+                } header: {
+                    Text(p.title)
+                }
+            }
+        }
+    }
+}
+
+struct InvestSection: View {
+    @Environment(WatchStore.self) private var store
+
+    var body: some View {
+        let s = store.snapshot
+        let c = s.colors
+        if !s.planned.isEmpty {
+            Section {
+                ForEach(s.planned) { h in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(h.symbol).font(.system(size: 15, weight: .bold, design: .monospaced))
+                            Text("每月 \(h.planDay) 号\(h.amount > 0 ? " · \(SnapFmt.number(h.amount))" : "")")
+                                .font(.system(size: 11)).foregroundStyle(Color.secondary)
+                        }
+                        Spacer()
+                        Text(h.doneThisMonth ? "已投" : "待投").font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(h.doneThisMonth ? Color.secondary : Color(rgb: c.bad))
+                    }
+                }
+            } header: {
+                Text("定投")
+            }
         }
     }
 }

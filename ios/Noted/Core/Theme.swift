@@ -16,15 +16,18 @@ struct Palette: Sendable {
     var workBg, lifeBg, badBg: Color
     var radius: CGFloat
     var rowHeight: CGFloat
+    /// The design's smaller radius: 10 where the main one is 14.
+    var radiusSm: CGFloat { (radius * 0.7).rounded() }
     /// Whether the accent follows the work / life mode.
     var modeColors = true
 
+    /// The app's own look (see Design/Tokens.swift); widgets and note images read it from here.
     static let daylight = Palette(
-        bg: Color(hex: 0xF4F6F8), surface: Color(hex: 0xFFFFFF), surface2: Color(hex: 0xEBEEF1),
-        ink: Color(hex: 0x0E1A22), ink2: Color(hex: 0x55626C), ink3: Color(hex: 0x7C8790), line: Color(hex: 0xDDE2E7),
-        accentDef: Color(hex: 0x1F5BFF), work: Color(hex: 0x1F5BFF), life: Color(hex: 0xB94A14), ok: Color(hex: 0x1B7F51),
-        bad: Color(hex: 0xC62F26), warn: Color(hex: 0x8A5A00),
-        workBg: Color(hex: 0xE6EDFF), lifeBg: Color(hex: 0xFBE9DD), badBg: Color(hex: 0xFBE4E2),
+        bg: Color(hex: 0xF2F2F7), surface: Color(hex: 0xFFFFFF), surface2: Color(hex: 0xE9E9EE),
+        ink: Color(hex: 0x000000), ink2: Color(hex: 0x6E6E73), ink3: Color(hex: 0xA3A3A8), line: Color(hex: 0xD8D8DC),
+        accentDef: Color(hex: 0x1F5BFF), work: Color(hex: 0x1F5BFF), life: Color(hex: 0xC2410C), ok: Color(hex: 0x1B8A55),
+        bad: Color(hex: 0xE5484D), warn: Color(hex: 0xE8890C),
+        workBg: Color(hex: 0xE4ECFF), lifeBg: Color(hex: 0xF8E8E0), badBg: Color(hex: 0xFCE9EA),
         radius: 14, rowHeight: 52)
 
     static let paper = Palette(
@@ -117,14 +120,14 @@ extension EnvironmentValues {
     @Entry var mode: Mode = .all
 }
 
-/// 全部 / 生活 / 工作. The accent follows it.
+/// 全部 / 个人 / 工作: the space filter in every tab's navigation bar.
 enum Mode: String, CaseIterable, Identifiable, Sendable {
     case all, life, work
     var id: String { rawValue }
     var label: String {
         switch self {
         case .all: "全部"
-        case .life: "生活"
+        case .life: "个人"
         case .work: "工作"
         }
     }
@@ -147,50 +150,5 @@ enum Mode: String, CaseIterable, Identifiable, Sendable {
 
 extension Noted_V1_Space {
     func color(_ p: Palette) -> Color { self == .work ? p.work : p.life }
-    var label: String { self == .work ? "工作" : "生活" }
-}
-
-struct Card<Content: View>: ViewModifier {
-    @Environment(\.palette) private var p
-    var padding: CGFloat = 14
-    func body(content: Self.Content) -> some View {
-        content
-            .padding(padding)
-            .background(p.surface, in: RoundedRectangle(cornerRadius: p.radius))
-            .overlay(RoundedRectangle(cornerRadius: p.radius).stroke(p.line, lineWidth: 1))
-    }
-}
-
-extension View {
-    func card(padding: CGFloat = 14) -> some View { modifier(Card<Self>(padding: padding)) }
-}
-
-struct Eyebrow: View {
-    @Environment(\.palette) private var p
-    let text: String
-    var body: some View {
-        Text(text).font(.system(size: 11, weight: .medium, design: .monospaced)).tracking(0.8).foregroundStyle(p.ink3)
-    }
-}
-
-struct ProgressBar: View {
-    @Environment(\.palette) private var p
-    let value: Double
-    let tint: Color
-    var body: some View {
-        GeometryReader { g in
-            ZStack(alignment: .leading) {
-                Capsule().fill(p.surface2)
-                Capsule().fill(tint).frame(width: g.size.width * min(max(value, 0), 1))
-            }
-        }
-        .frame(height: 6)
-    }
-}
-
-extension View {
-    /// A row with a switch: tapping anywhere on the row, not only the small switch, flips it.
-    func tapsToToggle(_ value: Binding<Bool>) -> some View {
-        contentShape(Rectangle()).onTapGesture { value.wrappedValue.toggle() }
-    }
+    var label: String { self == .work ? "工作" : "个人" }
 }

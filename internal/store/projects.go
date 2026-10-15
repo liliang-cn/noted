@@ -45,6 +45,7 @@ type ProjectProgress struct {
 	TasksTotal     int
 	TasksDone      int
 	TasksOverdue   int
+	TimeMinutes    int // finished time entries of the project
 	Percent        float64
 	EventsUpcoming int
 	NotesCount     int
@@ -63,7 +64,11 @@ type ProjectDetail struct {
 	Tasks  []Task
 	Events []Event
 	Notes  []Note
+	Time   []TimeEntry // the latest few, newest first
 }
+
+// projectTimeEntries is how many of a project's time entries GetProject returns.
+const projectTimeEntries = 20
 
 // checkProject accepts an empty id (no project) or one the user owns.
 func (s *Store) checkProject(ctx context.Context, userID, id string) error {
@@ -205,6 +210,14 @@ func (s *Store) DeleteProject(ctx context.Context, userID, id string, deleteItem
 				}
 			}
 		}
+		// Goals keep their check-in history and time entries are a record of
+		// what was done, so they leave the project instead of going with it.
+		// Alarms ring on the phone, so they stay too rather than vanish.
+		for _, table := range []string{"goals", "objectives", "time_entries", "alarms"} {
+			if _, err := tx.ExecContext(ctx, `UPDATE `+table+` SET project_id = '' WHERE project_id = ? AND user_id = ?`, id, userID); err != nil {
+				return err
+			}
+		}
 		_, err := tx.ExecContext(ctx, `DELETE FROM projects WHERE id = ? AND user_id = ?`, id, userID)
 		return err
 	})
@@ -295,7 +308,11 @@ func (s *Store) GetProject(ctx context.Context, userID, id string, now time.Time
 	if err != nil {
 		return ProjectDetail{}, err
 	}
-	return ProjectDetail{View: v, Tasks: tasks, Events: events, Notes: notes}, nil
+	entries, err := s.ListTimeEntries(ctx, userID, TimeFilter{ProjectID: id, Limit: projectTimeEntries})
+	if err != nil {
+		return ProjectDetail{}, err
+	}
+	return ProjectDetail{View: v, Tasks: tasks, Events: events, Notes: notes, Time: entries}, nil
 }
 
 func (s *Store) projectEvents(ctx context.Context, userID, projectID string) ([]Event, error) {
@@ -335,6 +352,10 @@ func (s *Store) projectProgress(ctx context.Context, p Project, now time.Time, l
 		pr.Percent = float64(pr.TasksDone) / float64(pr.TasksTotal)
 	}
 	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM notes WHERE project_id = ? AND user_id = ? AND archived = 0`, p.ID, p.UserID).Scan(&pr.NotesCount); err != nil {
+		return pr, err
+	}
+	if err := s.db.QueryRowContext(ctx, `SELECT COALESCE(SUM(minutes), 0) FROM time_entries WHERE project_id = ? AND user_id = ? AND end_ms IS NOT NULL`,
+		p.ID, p.UserID).Scan(&pr.TimeMinutes); err != nil {
 		return pr, err
 	}
 

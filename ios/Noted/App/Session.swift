@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import SwiftUI
+import GRPCCore
 
 @MainActor @Observable
 final class Session {
@@ -17,6 +18,9 @@ final class Session {
     var aiChat = false
     var aiNoteTools = false
 
+    /// The hosted service: the app opens pointing here, so signing in with Apple is one tap.
+    static let hostedHost = "noted.superleo.cn"
+
     var host: String
     var port: String
     var tls: Bool
@@ -26,6 +30,9 @@ final class Session {
         host = d.string(forKey: "host") ?? ""
         port = d.string(forKey: "port") ?? "43872"
         tls = d.bool(forKey: "tls")
+        if host.isEmpty, d.object(forKey: "port") == nil {
+            host = Session.hostedHost; port = "443"; tls = true
+        }
         if let raw = d.string(forKey: "mode"), let m = Mode(rawValue: raw) { mode = m }
         #if DEBUG
         let env = ProcessInfo.processInfo.environment
@@ -34,11 +41,18 @@ final class Session {
             for k in ["host", "port", "tls", "mode"] { d.removeObject(forKey: k) }
             host = ""; port = "43872"; tls = false; mode = .all
         }
+        // UI tests start without the 新建 and note drafts an earlier test left behind.
+        if env["NOTED_FRESH_DRAFTS"] == "1" {
+            for k in d.dictionaryRepresentation().keys where k.hasPrefix("create.draft.") || k.hasPrefix("draft.note.") {
+                d.removeObject(forKey: k)
+            }
+        }
         if let h = env["NOTED_HOST"], let t = env["NOTED_TOKEN"] {
             host = h
             if let m = env["NOTED_MODE"], let mm = Mode(rawValue: m) { mode = mm }
             port = env["NOTED_PORT"] ?? port
-            api = try? API(host: h, port: Int(port) ?? 43872, tls: false, token: t)
+            tls = env["NOTED_TLS"] == "1"
+            api = try? API(host: h, port: Int(port) ?? 43872, tls: tls, token: t)
             return
         }
         #endif
@@ -57,6 +71,12 @@ final class Session {
         aiChat = true
         let f = try? await api.ai.getAIFeatures(Noted_V1_GetAIFeaturesRequest())
         aiNoteTools = f?.noteTools ?? true
+    }
+
+    /// The server can grant Pro outside the App Store; this is where the app learns of it.
+    func refreshAccount() async {
+        guard let api, let a = try? await api.account.getAccount(Noted_V1_GetAccountRequest()) else { return }
+        pro.setServerGrant(a.pro)
     }
 
     /// Theme and layout live on the server so every device shows the same app.
@@ -144,10 +164,90 @@ final class Session {
         }
     }
 
+    /// Trades an Apple identity token for this server's own token, then connects as usual.
+    func signInWithApple(_ proof: AppleProof) async {
+        connecting = true
+        connectError = nil
+        let h = host.trimmingCharacters(in: .whitespaces)
+        guard !h.isEmpty, let p = Int(port) else {
+            connecting = false
+            connectError = "地址或端口不对"
+            return
+        }
+        do {
+            let anon = try API(host: h, port: p, tls: tls, token: "")
+            var req = Noted_V1_SignInWithAppleRequest()
+            req.identityToken = proof.identityToken
+            req.nonce = proof.nonce
+            req.deviceLabel = UIDevice.current.name
+            let resp = try await anon.account.signInWithApple(req)
+            anon.close()
+            connecting = false
+            await connect(token: resp.token)
+        } catch {
+            connecting = false
+            connectError = describe(error)
+        }
+    }
+
+    /// Signs in (or, with `create`, signs up) with email and password on the chosen server, then connects.
+    func signIn(email: String, password: String, create: Bool) async {
+        connecting = true
+        connectError = nil
+        let h = host.trimmingCharacters(in: .whitespaces)
+        guard !h.isEmpty, let p = Int(port) else {
+            connecting = false
+            connectError = "地址或端口不对"
+            return
+        }
+        do {
+            let anon = try API(host: h, port: p, tls: tls, token: "")
+            defer { anon.close() }
+            let token: String
+            if create {
+                var r = Noted_V1_SignUpRequest()
+                r.email = email; r.password = password; r.deviceLabel = UIDevice.current.name
+                token = try await anon.account.signUp(r).token
+            } else {
+                var r = Noted_V1_SignInRequest()
+                r.email = email; r.password = password; r.deviceLabel = UIDevice.current.name
+                token = try await anon.account.signIn(r).token
+            }
+            connecting = false
+            await connect(token: token)
+        } catch {
+            connecting = false
+            connectError = describeSignIn(error, signUp: create)
+        }
+    }
+
+    /// Points the app back at the hosted service.
+    func useHostedServer() {
+        host = Session.hostedHost; port = "443"; tls = true
+    }
+
+    var isHostedServer: Bool { host == Session.hostedHost && port == "443" && tls }
+
+    /// The accent: the 主题 page's choice, else the default blue.
+    var accent: Color { theme.accent.map { Color(hex: $0) } ?? Color(hex: 0x1F5BFF) }
+
     func disconnect() {
         reminders.stopWatching()
         api?.close()
         api = nil
         Keychain.remove("token")
+    }
+}
+
+/// Sign-in errors in the words the sign-in page needs.
+private func describeSignIn(_ error: Error, signUp: Bool) -> String {
+    guard let e = error as? RPCError else { return error.localizedDescription }
+    switch e.code {
+    case .unauthenticated: return "邮箱或密码不对"
+    case .alreadyExists: return "这个邮箱已经注册过了"
+    case .resourceExhausted: return "尝试次数太多,请 10 分钟后再试"
+    case .failedPrecondition: return signUp ? "这台服务器不开放注册" : describe(error)
+    case .invalidArgument: return signUp ? "密码至少 8 位" : describe(error)
+    default: return describe(error)
     }
 }

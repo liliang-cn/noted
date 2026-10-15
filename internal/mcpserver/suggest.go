@@ -19,6 +19,11 @@ type acceptIn struct {
 type weeklyIn struct {
 	Space string `json:"space,omitempty" jsonschema:"work or life; omit for both"`
 }
+type scheduleIn struct {
+	TaskIDs         []string `json:"task_ids"`
+	DurationMinutes int32    `json:"duration_minutes,omitempty" jsonschema:"time to set aside per task, default 60"`
+	Days            int32    `json:"days,omitempty" jsonschema:"how many days ahead to look, default 5, at most 14"`
+}
 type textIn struct {
 	Text  string `json:"text"`
 	Space string `json:"space,omitempty" jsonschema:"work or life"`
@@ -28,7 +33,7 @@ type textIn struct {
 // but has not done. Reading them changes nothing; accepting one applies it.
 func (t *tools) registerSuggestions(s *mcp.Server) {
 	mcp.AddTool(s, &mcp.Tool{Name: "list_suggestions", Description: "Pending suggestions, recomputed from the user's data: goals behind pace, projects with undated tasks, overlapping events, overdue tasks. Each lists the operations it would perform. Nothing is changed by listing.", Annotations: readOnly},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in listSuggestionsIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in listSuggestionsIn) (*mcp.CallToolResult, *listOut[*suggestionOut], error) {
 			sp, err := spaceOf(in.Space)
 			if err != nil {
 				return nil, nil, err
@@ -37,10 +42,10 @@ func (t *tools) registerSuggestions(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, &listOut[*suggestionOut]{Items: items(r.Proposals, t.suggestion)})
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "accept_suggestion", Description: "Apply a suggestion (or part of it). This changes the user's data; the result names a change that undo_change can reverse. Proposals that list inputs need them in `inputs`.", Annotations: additive},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in acceptIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in acceptIn) (*mcp.CallToolResult, *acceptOut, error) {
 			req := &pb.AcceptProposalRequest{Id: in.ID, Inputs: in.Inputs}
 			if len(in.Only) > 0 {
 				req.Selection = &pb.OperationSelection{Indexes: in.Only}
@@ -49,34 +54,42 @@ func (t *tools) registerSuggestions(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, &acceptOut{Suggestion: t.suggestion(r.Proposal), Change: t.change(r.Change)})
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "dismiss_suggestion", Description: "Turn a suggestion down; it will not be suggested again.", Annotations: editing},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, *suggestionOut, error) {
 			r, err := t.sugg.DismissProposal(ctx, &pb.DismissProposalRequest{Id: in.ID})
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, t.suggestion(r))
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "list_changes", Description: "Recent changes made by accepting suggestions or by the assistant, newest first.", Annotations: readOnly},
-		func(ctx context.Context, _ *mcp.CallToolRequest, _ struct{}) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, _ struct{}) (*mcp.CallToolResult, *listOut[*changeOut], error) {
 			r, err := t.sugg.ListChanges(ctx, &pb.ListChangesRequest{})
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, &listOut[*changeOut]{Items: items(r.Changes, t.change)})
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "undo_change", Description: "Reverse a change from list_changes.", Annotations: editing},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, *changeOut, error) {
 			r, err := t.sugg.UndoChange(ctx, &pb.UndoChangeRequest{Id: in.ID})
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, t.change(r))
+		})
+	mcp.AddTool(s, &mcp.Tool{Name: "propose_schedule", Description: "Find free stretches in the calendar for some to-do items and propose blocking them as events. Returns a pending suggestion; apply it with accept_suggestion.", Annotations: readOnly},
+		func(ctx context.Context, _ *mcp.CallToolRequest, in scheduleIn) (*mcp.CallToolResult, *suggestionOut, error) {
+			r, err := t.sugg.ProposeSchedule(ctx, &pb.ProposeScheduleRequest{TaskIds: in.TaskIDs, DurationMinutes: in.DurationMinutes, Days: in.Days, TimeZone: t.loc.String()})
+			if err != nil {
+				return nil, nil, err
+			}
+			return reply(r, t.suggestion(r))
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "weekly_review", Description: "Look back at this week: tasks done, goals, what slipped, and a suggested plan for next week (stored as a pending suggestion).", Annotations: readOnly},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in weeklyIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in weeklyIn) (*mcp.CallToolResult, *weeklyReviewOut, error) {
 			sp, err := spaceOf(in.Space)
 			if err != nil {
 				return nil, nil, err
@@ -85,14 +98,14 @@ func (t *tools) registerSuggestions(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, t.weeklyReview(r))
 		})
 }
 
 // registerAIPlanning adds the suggestion tools that need the server's language model.
 func (t *tools) registerAIPlanning(s *mcp.Server) {
 	mcp.AddTool(s, &mcp.Tool{Name: "plan_from_text", Description: "Break a request like \"next month I'm going to X, I need A, B and C\" into a project with tasks. Returns a pending suggestion; dates the user did not give are left as inputs. Apply it with accept_suggestion.", Annotations: readOnly},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in textIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in textIn) (*mcp.CallToolResult, *suggestionOut, error) {
 			sp, err := spaceOf(in.Space)
 			if err != nil {
 				return nil, nil, err
@@ -101,10 +114,10 @@ func (t *tools) registerAIPlanning(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, t.suggestion(r))
 		})
 	mcp.AddTool(s, &mcp.Tool{Name: "extract_tasks", Description: "Find the to-dos written inside a note and propose them as tasks. Returns a pending suggestion; apply it with accept_suggestion.", Annotations: readOnly},
-		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, any, error) {
+		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, *suggestionOut, error) {
 			if in.ID == "" {
 				return nil, nil, fmt.Errorf("id is the note's id")
 			}
@@ -112,6 +125,6 @@ func (t *tools) registerAIPlanning(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			return text(r)
+			return reply(r, t.suggestion(r))
 		})
 }

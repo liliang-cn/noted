@@ -173,6 +173,29 @@ message Task {
   google.protobuf.Timestamp update_time = 11;
   string project_id = 12; // optional: the project this task belongs to
   Space space = 13;
+  // Work done over several sittings, kept up to date by LogTaskWork and
+  // DeleteTaskWork. Read-only.
+  int32 progress = 14;       // 0-100: the latest progress a sitting gave; 0 when none did
+  int32 worked_minutes = 15; // sum of the sittings' minutes
+  int32 work_sessions = 16;  // number of sittings logged
+  google.protobuf.Timestamp last_worked_time = 17;
+  // Repetition, the same RFC 5545 RRULE subset as Event.rrule: FREQ
+  // (DAILY|WEEKLY|MONTHLY|YEARLY), INTERVAL, COUNT, UNTIL, BYDAY (weekly only).
+  // Empty means one-off. Anchored on due_time, which a repeating task needs.
+  // Completing it keeps it as done and adds the next one, due at the rule's
+  // next occurrence (wall clock in the server's zone), with the reminder moved
+  // by the same amount; none once COUNT or UNTIL ends the series.
+  string rrule = 18;
+}
+
+// One sitting on a task: some time spent, maybe a progress estimate, maybe a note.
+message TaskWork {
+  string id = 1;
+  string task_id = 2;
+  google.protobuf.Timestamp time = 3;
+  int32 minutes = 4;
+  int32 progress = 5; // 0-100, -1 = not given
+  string note = 6;
 }
 
 message CreateTaskRequest {
@@ -185,7 +208,8 @@ message GetTaskRequest {
 
 message UpdateTaskRequest {
   Task task = 1;
-  // title, notes, due_time, priority, completed, remind_time, tags, project_id, space
+  // title, notes, due_time, priority, completed, remind_time, tags, project_id,
+  // space, rrule
   google.protobuf.FieldMask update_mask = 2;
 }
 
@@ -213,6 +237,18 @@ message ListTasksResponse {
   repeated Task tasks = 1;
   string next_page_token = 2;
 }
+
+// Needs at least one of minutes > 0, progress or a note.
+message LogTaskWorkRequest {
+  string task_id = 1;
+  google.protobuf.Timestamp time = 2; // default now
+  int32 minutes = 3;                  // 0 to 1440
+  optional int32 progress = 4;        // 0-100; 100 completes the task
+  string note = 5;
+}
+message ListTaskWorkRequest { string task_id = 1; }
+message ListTaskWorkResponse { repeated TaskWork entries = 1; } // newest first
+message DeleteTaskWorkRequest { string id = 1; }
 
 message Reminder {
   string id = 1;
@@ -255,6 +291,12 @@ service CalendarService {
   rpc UpdateTask(UpdateTaskRequest) returns (Task);
   rpc DeleteTask(DeleteTaskRequest) returns (google.protobuf.Empty);
   rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
+  // Logs a sitting on a task and returns the task with its new totals.
+  rpc LogTaskWork(LogTaskWorkRequest) returns (Task);
+  rpc ListTaskWork(ListTaskWorkRequest) returns (ListTaskWorkResponse);
+  // Removes a sitting and returns the task with its totals recomputed. A
+  // completed task stays completed.
+  rpc DeleteTaskWork(DeleteTaskWorkRequest) returns (Task);
 
   // Live stream of reminders as they fire. Reminders that fired while no
   // client was connected are available from ListReminders.
@@ -473,6 +515,7 @@ message Goal {
   double counter_target = 16;
   // The objective (a larger goal such as losing weight) this goal is a dimension of.
   string objective_id = 17;
+  string project_id = 18; // optional: the project this goal belongs to
 }
 
 message CheckIn {
@@ -482,6 +525,9 @@ message CheckIn {
   double amount = 4;
   string note = 5;
   double count = 6; // added to the running total
+  // Set when a time entry made this check-in; it follows that entry and
+  // DeleteCheckIn refuses it.
+  string time_entry_id = 7;
 }
 
 message CreateGoalRequest {
@@ -558,7 +604,8 @@ service GoalService {
   rpc ListGoals(ListGoalsRequest) returns (ListGoalsResponse);
 
   rpc RecordCheckIn(RecordCheckInRequest) returns (RecordCheckInResponse);
-  // Undo a check-in; returns the goal with fresh progress.
+  // Undo a check-in; returns the goal with fresh progress. FAILED_PRECONDITION
+  // for one a time entry made: edit or delete the entry instead.
   rpc DeleteCheckIn(DeleteCheckInRequest) returns (Goal);
   rpc ListCheckIns(ListCheckInsRequest) returns (ListCheckInsResponse);
   rpc SetMilestoneDone(SetMilestoneDoneRequest) returns (Goal);
@@ -585,6 +632,7 @@ message Objective {
   google.protobuf.Timestamp update_time = 13;
   ObjectiveProgress progress = 14;
   repeated Goal goals = 15; // the dimensions, with their progress
+  string project_id = 16; // optional: the project this objective belongs to
 }
 
 message ObjectiveProgress {
@@ -673,6 +721,7 @@ message ProjectProgress {
   // past. Unset when the project has neither.
   optional int32 days_left = 8;
   int32 tasks_overdue = 9;
+  int32 time_minutes = 10; // finished time entries of the project, in total
 }
 
 message Project {
@@ -702,6 +751,9 @@ message ProjectDetail {
   repeated Task tasks = 2;     // open first (by due date), then completed
   repeated Event events = 3;   // by start time
   repeated Note notes = 4;     // newest first
+  repeated Goal goals = 5;     // stand-alone goals of the project, with progress
+  repeated Objective objectives = 6; // larger goals of the project, with their dimensions
+  repeated TimeEntry time_entries = 7; // the latest 20, newest first; the total is in project.progress
 }
 
 message UpdateProjectRequest {
@@ -713,7 +765,8 @@ message UpdateProjectRequest {
 message DeleteProjectRequest {
   string id = 1;
   // Also delete the project's tasks, events and notes. By default they are
-  // kept and simply leave the project.
+  // kept and simply leave the project. Goals, objectives, time entries and
+  // alarms always stay and leave the project.
   bool delete_items = 2;
 }
 
@@ -773,6 +826,7 @@ message GetFocusResponse {
   repeated Goal goals = 5;           // active goals, behind pace first
   repeated Project pinned_projects = 6;
   Space space = 7;
+  TimeEntry running_timer = 8; // unset when no timer runs (or it is in the other space)
 }
 
 service FocusService {
@@ -942,6 +996,8 @@ message WeeklyReview {
   repeated Goal goals = 5;         // progress as it stood at the end of the week
   repeated Task carried_tasks = 6; // open and due this week: they slipped
   Proposal next_week = 7;          // stored as pending; unset when there is nothing to suggest
+  int32 time_minutes = 8;          // time entries that started this week
+  repeated TimeSummaryRow top_activities = 9; // the week's five biggest activities by minutes
 }
 
 message ListChangesRequest {
@@ -1056,4 +1112,379 @@ service HoldingService {
   rpc RecordTrade(RecordTradeRequest) returns (Holding);
   rpc DeleteTrade(DeleteTradeRequest) returns (google.protobuf.Empty);
   rpc ListTrades(ListTradesRequest) returns (ListTradesResponse);
+}
+
+// ----------------------------------------------------------------- time ----
+//
+// Time tracking (时间记录): what the user spent time on, such as 游泳 30 分钟
+// or 英语学习 30 分钟. An entry stands alone, belongs to a project, or counts
+// toward a goal. With a goal_id, a finished entry makes one check-in on that
+// goal: its minutes for a goal counted in minutes (unit 分钟/minutes/min), its
+// hours for one counted in hours (小时/hours/h), else one session. That check-in
+// follows the entry: editing the entry's minutes, time or goal updates it,
+// deleting the entry removes it, and it cannot be undone on its own.
+
+message TimeEntry {
+  string id = 1;
+  string title = 2; // the activity, e.g. "游泳"; required, trimmed
+  // 1-1440. On a running timer, read-only: the whole minutes elapsed so far.
+  int32 minutes = 3;
+  // When it started. Default on create: end_time minus minutes, else now minus
+  // minutes (then timed is false).
+  google.protobuf.Timestamp start_time = 4;
+  // start_time + minutes; unset while the timer runs. On create, start_time and
+  // end_time without minutes give the minutes between them.
+  google.protobuf.Timestamp end_time = 5;
+  string note = 6;
+  string project_id = 7; // optional
+  string goal_id = 8;    // optional: the entry counts toward this goal
+  // UNSPECIFIED on create: the project's, else the goal's, else LIFE.
+  Space space = 9;
+  bool running = 10;      // a timer that has not been stopped; read-only
+  string check_in_id = 11; // the goal check-in this entry made; read-only
+  google.protobuf.Timestamp create_time = 12;
+  google.protobuf.Timestamp update_time = 13;
+  // Read-only. True when start_time and end_time are what the person gave or a
+  // timer measured; false when only a duration was given and the start was
+  // defaulted (to the time it was logged minus the minutes), so the range is
+  // not when it happened and only the day and the minutes should be shown.
+  // Setting start_time or end_time makes an entry timed.
+  bool timed = 14;
+}
+
+message CreateTimeEntryRequest {
+  TimeEntry entry = 1; // id, running, timed, check_in_id and the times of record are ignored
+}
+message GetTimeEntryRequest { string id = 1; }
+message UpdateTimeEntryRequest {
+  TimeEntry entry = 1;
+  // title, minutes, start_time, end_time, note, project_id, goal_id, space.
+  // Moving start_time keeps the minutes; end_time (without minutes) sets the
+  // minutes to the time from the start, except on an entry that is not timed,
+  // where it keeps the minutes and moves the start. Either makes the entry
+  // timed. A running timer's minutes and end are set by StopTimer.
+  google.protobuf.FieldMask update_mask = 2;
+}
+message DeleteTimeEntryRequest { string id = 1; } // its goal check-in goes too
+
+message ListTimeEntriesRequest {
+  int32 page_size = 1; // default 50, max 200
+  string page_token = 2;
+  google.protobuf.Timestamp from = 3; // start_time at or after; unset: no bound
+  google.protobuf.Timestamp to = 4;   // start_time before; unset: no bound
+  string project_id = 5;
+  string goal_id = 6;
+  string title = 7; // activity names containing this, ignoring case
+  Space space = 8;  // UNSPECIFIED: both
+}
+message ListTimeEntriesResponse {
+  repeated TimeEntry entries = 1; // newest start first; a running timer included
+  string next_page_token = 2;
+}
+
+message StartTimerRequest {
+  string title = 1;
+  string project_id = 2;
+  string goal_id = 3;
+  string note = 4;
+  Space space = 5;
+  google.protobuf.Timestamp start_time = 6; // default now
+}
+message StopTimerRequest {
+  // Default now. Under a minute counts as one; more than 24 hours is refused.
+  google.protobuf.Timestamp end_time = 1;
+}
+message GetRunningTimerRequest {}
+message GetRunningTimerResponse {
+  TimeEntry entry = 1; // unset when no timer runs
+}
+
+enum TimeGroupBy {
+  TIME_GROUP_BY_UNSPECIFIED = 0; // same as TITLE
+  TIME_GROUP_BY_TITLE = 1;   // by activity, ignoring case and surrounding space
+  TIME_GROUP_BY_PROJECT = 2;
+  TIME_GROUP_BY_GOAL = 3;
+  TIME_GROUP_BY_DAY = 4;     // by the day of start_time in time_zone
+}
+
+message SummarizeTimeRequest {
+  google.protobuf.Timestamp from = 1; // default: 7 days before to
+  google.protobuf.Timestamp to = 2;   // default now
+  TimeGroupBy group_by = 3;
+  Space space = 4; // UNSPECIFIED: both
+  string time_zone = 5; // IANA, for DAY; default the server's zone
+  string project_id = 6; // only this project's entries
+  string goal_id = 7;    // only this goal's entries
+}
+
+message TimeSummaryRow {
+  // TITLE: the activity in lower case; PROJECT and GOAL: the id, empty for
+  // entries without one; DAY: YYYY-MM-DD.
+  string key = 1;
+  string label = 2; // the activity as last written, the project or goal title, or the day
+  int32 minutes = 3;
+  int32 count = 4;  // entries
+}
+
+// Finished entries that started in [from, to); a running timer is left out.
+message TimeSummary {
+  google.protobuf.Timestamp from = 1;
+  google.protobuf.Timestamp to = 2;
+  TimeGroupBy group_by = 3;
+  repeated TimeSummaryRow rows = 4; // most minutes first; DAY: by date
+  int32 total_minutes = 5;
+  int32 total_count = 6;
+}
+
+service TimeService {
+  rpc CreateTimeEntry(CreateTimeEntryRequest) returns (TimeEntry);
+  rpc GetTimeEntry(GetTimeEntryRequest) returns (TimeEntry);
+  rpc UpdateTimeEntry(UpdateTimeEntryRequest) returns (TimeEntry);
+  rpc DeleteTimeEntry(DeleteTimeEntryRequest) returns (google.protobuf.Empty);
+  rpc ListTimeEntries(ListTimeEntriesRequest) returns (ListTimeEntriesResponse);
+  // Starts a timer: a running entry from now. FAILED_PRECONDITION, naming the
+  // running one, if the user already has a timer running.
+  rpc StartTimer(StartTimerRequest) returns (TimeEntry);
+  // Stops the running timer and returns the finished entry; FAILED_PRECONDITION
+  // when none runs. A goal check-in is made only now.
+  rpc StopTimer(StopTimerRequest) returns (TimeEntry);
+  rpc GetRunningTimer(GetRunningTimerRequest) returns (GetRunningTimerResponse);
+  rpc SummarizeTime(SummarizeTimeRequest) returns (TimeSummary);
+}
+
+// --------------------------------------------------------------- alarms ----
+//
+// Alarms (闹钟): noted keeps the definitions and the phone rings them (iOS
+// AlarmKit), expanding each schedule with the same engine rules, written down
+// in docs/alarms.md and pinned by docs/alarm-fixtures.json. Enum-like fields
+// are the strings listed, exactly as the MCP tools and the fixtures write them.
+
+message AlarmRecurrence {
+  string freq = 1;            // minutely, hourly, daily, weekly or monthly
+  int32 interval = 2;         // every N units; 0 on write means 1
+  repeated string by_day = 3; // weekly: MON..SUN; default the anchor's weekday
+  int32 by_month_day = 4;     // monthly: 1-31; default the anchor's day; months without it are skipped
+  repeated string by_time = 5; // daily: several "HH:MM" a day, instead of the schedule's time
+  string until = 6;           // "YYYY-MM-DD", the last day it may ring; empty: no end
+  int32 count = 7;            // rings in all, counted from the anchor; 0: no limit
+  // minutely/hourly: "HH:MM", the day's last possible ring; empty means 22:00.
+  // Without until or count, a minutely/hourly alarm rings on its anchor day only.
+  string end_time = 8;
+}
+
+message AlarmSchedule {
+  string kind = 1;                     // oneShot or recurring
+  google.protobuf.Timestamp at = 2;    // oneShot: when it rings
+  string anchor = 3;                   // recurring: "YYYY-MM-DD", the first day it may ring
+  string time = 4;                     // recurring: "HH:MM"; minutely/hourly: the day's first ring
+  string time_zone = 5;                // IANA; empty on write: the server's zone
+  AlarmRecurrence recurrence = 6;      // recurring only
+}
+
+message Alarm {
+  string id = 1;     // a UUID
+  string label = 2;  // what it is for, e.g. 起床; required
+  string mode = 3;   // alarm (default; rings through silent mode) or reminder (a notification)
+  optional bool enabled = 4; // unset on create: true; always set when read
+  AlarmSchedule schedule = 5;
+  string holiday_policy = 6; // none (default), skipHoliday, workdayOnly or followStatutory
+  // CN (mainland China's 法定节假日 and 调休) or "" (none: workdays are Monday
+  // to Friday and skipHoliday skips nothing). Unset on create: CN when the
+  // schedule's zone is a mainland China zone, else "".
+  optional string region = 7;
+  string note = 8;
+  string project_id = 9;
+  Space space = 10; // UNSPECIFIED on create: the project's, else LIFE
+  string original_text = 11; // the words the user said, kept for reference
+  google.protobuf.Timestamp create_time = 12;
+  google.protobuf.Timestamp update_time = 13;
+  // Read-only: the next rings after now (at most 5), holidays applied; empty
+  // when disabled or finished.
+  repeated google.protobuf.Timestamp next_fires = 14;
+}
+
+message CreateAlarmRequest { Alarm alarm = 1; } // id, next_fires and the times of record are ignored
+message GetAlarmRequest { string id = 1; }
+message UpdateAlarmRequest {
+  Alarm alarm = 1;
+  // label, mode, enabled, schedule (replaced whole), holiday_policy, region,
+  // note, project_id, space, original_text
+  google.protobuf.FieldMask update_mask = 2;
+}
+message DeleteAlarmRequest { string id = 1; }
+message ListAlarmsRequest {
+  optional bool enabled = 1; // unset: both
+  Space space = 2;           // UNSPECIFIED: both
+  string project_id = 3;
+}
+message ListAlarmsResponse {
+  repeated Alarm alarms = 1; // oldest first
+  string version = 2;        // as GetAlarmsVersion, read with the list
+}
+message GetAlarmsVersionRequest {}
+message GetAlarmsVersionResponse {
+  // Opaque; changes whenever any of the user's alarms is created, changed or
+  // deleted. A client compares it with the one it last synced at.
+  string version = 1;
+}
+
+service AlarmService {
+  rpc CreateAlarm(CreateAlarmRequest) returns (Alarm);
+  rpc GetAlarm(GetAlarmRequest) returns (Alarm);
+  rpc UpdateAlarm(UpdateAlarmRequest) returns (Alarm);
+  rpc DeleteAlarm(DeleteAlarmRequest) returns (google.protobuf.Empty);
+  rpc ListAlarms(ListAlarmsRequest) returns (ListAlarmsResponse);
+  // Cheap: lets a client skip ListAlarms when nothing changed.
+  rpc GetAlarmsVersion(GetAlarmsVersionRequest) returns (GetAlarmsVersionResponse);
+}
+
+// The statutory holiday calendar alarms follow. Only CN has one.
+message GetHolidaysRequest {
+  int32 year = 1;    // 0: this year in the server's zone
+  string region = 2; // empty: CN
+}
+message HolidayDay {
+  string date = 1; // "YYYY-MM-DD"
+  string kind = 2; // holiday (a day off) or workday (a weekend day worked, 调休补班)
+  string name = 3; // e.g. 国庆节
+}
+message GetHolidaysResponse {
+  int32 year = 1;
+  string region = 2;
+  repeated HolidayDay days = 3;     // by date; empty when the year has no data (then every day is ordinary)
+  repeated int32 available_years = 4;
+  string version = 5;               // changes when the data does
+}
+
+service HolidayService {
+  rpc GetHolidays(GetHolidaysRequest) returns (GetHolidaysResponse);
+}
+
+// Sign in with Apple. The app gets an identity token from the system and the
+// server checks it against Apple's public keys; no Apple password ever reaches
+// noted. An Apple ID is linked to a user once (LinkApple, from a device that
+// already has a token), and later devices sign in with it instead of a token.
+message SignInWithAppleRequest {
+  string identity_token = 1; // the JWT from ASAuthorizationAppleIDCredential
+  // The random string whose SHA-256 hex was given to Apple as the request nonce.
+  string nonce = 2;
+  string device_label = 3; // names the token this mints, e.g. "iPhone"
+}
+message SignInWithAppleResponse {
+  string token = 1; // a new bearer token for the linked user
+  string user_name = 2;
+}
+message LinkAppleRequest {
+  string identity_token = 1;
+  string nonce = 2;
+}
+message UnlinkAppleRequest {}
+message GetAccountRequest {}
+message Account {
+  string user_name = 1;
+  bool apple_enabled = 2; // the server accepts Sign in with Apple
+  bool apple_linked = 3;  // an Apple ID is linked to this user
+  bool pro = 4;           // Noted Pro was granted by the server, outside the App Store
+  string email = 6;       // the sign-in email, empty when none is set (SetEmailPassword)
+}
+
+// Email + password accounts. The email is case-insensitive and stored
+// lowercased; the password is 8 to 128 characters and kept only as a bcrypt
+// hash. After 5 failed sign-ins in 10 minutes for one email or from one
+// address, sign-in is refused for 10 minutes with RESOURCE_EXHAUSTED.
+message SignUpRequest {
+  string email = 1;
+  string password = 2;
+  string device_label = 3; // names the token this mints, e.g. "iPhone"
+}
+message SignInRequest {
+  string email = 1;
+  string password = 2;
+  string device_label = 3;
+}
+message SignInResponse {
+  string token = 1; // a new bearer token for the user
+  string user_name = 2;
+}
+message SetEmailPasswordRequest {
+  string email = 1;            // empty keeps the current email (required when there is none)
+  string password = 2;         // the new password
+  string current_password = 3; // required when the account already has a password
+}
+
+// Bearer tokens of the calling user, e.g. one per AI assistant connected over
+// MCP. The server keeps only a hash, so a token's secret is shown once, by
+// CreateToken.
+message TokenInfo {
+  string id = 1;    // stable public id, used by RevokeToken
+  string label = 2; // where the token is used, e.g. "Claude Code"
+  google.protobuf.Timestamp create_time = 3;
+  google.protobuf.Timestamp last_used_time = 4; // unset: never used (updated at most once a minute)
+  bool current = 5;                             // the token making this call
+}
+message CreateTokenRequest {
+  string label = 1; // trimmed, at most 60 characters; empty means "AI 助手"
+}
+message CreateTokenResponse {
+  string token = 1; // the secret, shown only here
+  TokenInfo info = 2;
+}
+message ListTokensRequest {}
+message ListTokensResponse {
+  repeated TokenInfo tokens = 1; // newest first
+}
+message RevokeTokenRequest {
+  string id = 1;
+}
+
+service AccountService {
+  // Public: needs no token. Fails with FAILED_PRECONDITION when the Apple ID is
+  // not linked to anyone and the server does not accept new sign-ups.
+  rpc SignInWithApple(SignInWithAppleRequest) returns (SignInWithAppleResponse);
+  rpc LinkApple(LinkAppleRequest) returns (Account);
+  rpc UnlinkApple(UnlinkAppleRequest) returns (Account);
+  rpc GetAccount(GetAccountRequest) returns (Account);
+  // Public. Creates a user signed in by email + password and returns its first
+  // token. FAILED_PRECONDITION when the server does not accept sign-ups,
+  // ALREADY_EXISTS when the email is taken.
+  rpc SignUp(SignUpRequest) returns (SignInResponse);
+  // Public. UNAUTHENTICATED with one message for a wrong email or password.
+  rpc SignIn(SignInRequest) returns (SignInResponse);
+  // Adds an email + password to the calling account (e.g. one made with Sign
+  // in with Apple) or changes them. PERMISSION_DENIED when current_password is
+  // missing or wrong, ALREADY_EXISTS when another account has the email.
+  rpc SetEmailPassword(SetEmailPasswordRequest) returns (Account);
+  // Mints another token for the calling user.
+  rpc CreateToken(CreateTokenRequest) returns (CreateTokenResponse);
+  rpc ListTokens(ListTokensRequest) returns (ListTokensResponse);
+  // Deletes one of the caller's tokens; it stops working immediately. Revoking
+  // the token making the call is allowed. NOT_FOUND for an unknown id or one
+  // that belongs to someone else.
+  rpc RevokeToken(RevokeTokenRequest) returns (google.protobuf.Empty);
+  // Pairing a client that signs in through the browser (MCP OAuth, e.g. Claude
+  // Code): the server's sign-in page shows a code and a QR code
+  // (noted://pair?code=...&server=...), and the signed-in App approves it,
+  // which issues that client a token of the calling user. NOT_FOUND for an
+  // unknown, expired or already used code.
+  rpc GetPairing(GetPairingRequest) returns (Pairing);
+  rpc ApprovePairing(ApprovePairingRequest) returns (Pairing);
+  rpc DenyPairing(DenyPairingRequest) returns (google.protobuf.Empty);
+}
+
+message Pairing {
+  string code = 1;        // normalised, e.g. "K7QM29XD" (shown as K7QM-29XD)
+  string client_name = 2; // what the client calls itself, e.g. "Claude Code"
+  google.protobuf.Timestamp create_time = 3;
+  google.protobuf.Timestamp expire_time = 4;
+  bool approved = 5;
+}
+message GetPairingRequest {
+  string code = 1; // case-insensitive; spaces and dashes are ignored
+}
+message ApprovePairingRequest {
+  string code = 1;
+  string label = 2; // the token's label; empty: client_name
+}
+message DenyPairingRequest {
+  string code = 1;
 }

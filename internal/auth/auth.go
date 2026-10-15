@@ -1,4 +1,5 @@
-// Package auth turns a bearer token into a user on every gRPC call.
+// Package auth turns a bearer token into a user on every gRPC call (and, via
+// Verify, on every remote MCP request).
 package auth
 
 import (
@@ -14,6 +15,7 @@ import (
 )
 
 type ctxKey struct{}
+type tokenKey struct{}
 
 // WithUser returns ctx carrying u. Tests and the AI tools use it to act as a user.
 func WithUser(ctx context.Context, u store.User) context.Context {
@@ -26,11 +28,21 @@ func User(ctx context.Context) (store.User, bool) {
 	return u, ok
 }
 
+// TokenID returns the id of the token that authenticated this call; empty
+// when auth is disabled.
+func TokenID(ctx context.Context) string {
+	id, _ := ctx.Value(tokenKey{}).(string)
+	return id
+}
+
 // DefaultUser is the identity used when auth is disabled.
 const DefaultUser = "default"
 
 // Public methods need no token.
 var public = map[string]bool{
+	"/noted.v1.AccountService/SignInWithApple":                       true,
+	"/noted.v1.AccountService/SignUp":                                true,
+	"/noted.v1.AccountService/SignIn":                                true,
 	"/grpc.health.v1.Health/Check":                                   true,
 	"/grpc.health.v1.Health/Watch":                                   true,
 	"/grpc.reflection.v1.ServerReflection/ServerReflectionInfo":      true,
@@ -73,14 +85,40 @@ func (a *Authenticator) authenticate(ctx context.Context, method string) (contex
 	if !ok || strings.TrimSpace(tok) == "" {
 		return nil, status.Error(codes.Unauthenticated, "authorization must be \"Bearer <token>\"")
 	}
-	u, err := a.store.UserForToken(ctx, strings.TrimSpace(tok))
-	if errors.Is(err, store.ErrNotFound) {
+	u, id, err := a.Verify(ctx, tok)
+	if errors.Is(err, ErrInvalidToken) {
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
 	if err != nil {
 		return nil, status.Error(codes.Internal, "authentication failed")
 	}
-	return WithUser(ctx, u), nil
+	return WithToken(ctx, u, id), nil
+}
+
+// WithToken returns ctx carrying u, authenticated by the token with that id.
+// The web portal uses it to call the services in-process as its session.
+func WithToken(ctx context.Context, u store.User, id string) context.Context {
+	return context.WithValue(WithUser(ctx, u), tokenKey{}, id)
+}
+
+// ErrInvalidToken is returned by Verify for a token nobody holds.
+var ErrInvalidToken = errors.New("invalid token")
+
+// Disabled reports whether auth is off (every caller is DefaultUser).
+func (a *Authenticator) Disabled() bool { return a.disabled }
+
+// Verify resolves a bearer token (without the "Bearer " prefix) to its user
+// and the token's id, exactly as the gRPC interceptor does.
+func (a *Authenticator) Verify(ctx context.Context, tok string) (store.User, string, error) {
+	tok = strings.TrimSpace(tok)
+	if tok == "" {
+		return store.User{}, "", ErrInvalidToken
+	}
+	u, id, err := a.store.Authenticate(ctx, tok)
+	if errors.Is(err, store.ErrNotFound) {
+		return store.User{}, "", ErrInvalidToken
+	}
+	return u, id, err
 }
 
 func (a *Authenticator) Unary() grpc.UnaryServerInterceptor {

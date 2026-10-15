@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="theme-color" content="#ffffff">
+<title>Noted</title>
+<meta name="description" content="笔记、日程、待办、项目、目标和投资记录放在一个地方。有 iPhone、Apple Watch 和小组件，Claude Code、Codex 可以通过 MCP 直接读写。可以注册使用，也可以自己部署。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Noted">
+<meta property="og:title" content="Noted">
+<meta property="og:description" content="笔记、日程、待办、项目和目标放在一个地方，AI 助手通过 MCP 也能帮你记。">
+<meta property="og:url" content="{{ORIGIN}}/">
+<meta property="og:image" content="{{ORIGIN}}/img/og-today.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="600">
+<meta property="og:image:height" content="1298">
+<meta property="og:image:alt" content="Noted 的今天页：日程和待办按时间排在一起">
+<meta property="og:locale" content="zh_CN">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/img/apple-touch-icon.png">
+<link rel="stylesheet" href="/app.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+
+<header class="bar" id="top">
+  <div class="bar-in">
+    <a class="brand" href="/" id="brand" aria-label="Noted 首页">
+      <svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#1F5BFF"/><path d="M20 46V18h5.2l13.6 19.4V18H44v28h-5.2L25.2 26.6V46z" fill="#fff"/></svg>
+      <span>Noted</span>
+    </a>
+    <nav class="nav" aria-label="页面">
+      <a href="#features">功能</a>
+      <a href="#ai">接入 AI</a>
+      <a href="#selfhost">自己部署</a>
+    </nav>
+    <div class="bar-act" id="bar-out">
+      <button type="button" class="btn ghost sm" data-auth="login">登录</button>
+      <button type="button" class="btn primary sm" data-auth="signup">注册</button>
+    </div>
+    <div class="bar-act" id="bar-in" hidden>
+      <a class="btn ghost sm" href="#account" id="bar-account"><span class="avatar" id="bar-avatar" aria-hidden="true"></span>我的账号</a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+<!-- ============ product ============ -->
+<div id="intro-view">
+
+<section class="hero">
+  <div class="wrap hero-in">
+    <div class="hero-copy">
+      <p class="kicker">iPhone · Apple Watch · 小组件</p>
+      <h1 class="display">笔记、日程和待办<br>放在一个地方</h1>
+      <p class="lead">项目、目标和投资记录也在这里。<span class="nw">Claude Code</span>、Codex 通过 MCP 直接帮你记、帮你查。可以直接注册使用，也可以自己部署。</p>
+      <div class="cta">
+        <button type="button" class="btn primary lg" data-auth="signup" id="hero-signup">免费注册</button>
+        <a class="btn tint lg" href="#ai">接入 Claude Code</a>
+      </div>
+      <p class="fine">开源 · 单个 Go 程序 · 数据在一个 SQLite 文件里</p>
+    </div>
+    <div class="stage" aria-label="Noted iPhone 应用截图">
+      <figure class="phone side left" data-bar="grouped">
+        <div class="screen"><div class="sbar" aria-hidden="true"><b>9:41</b><i class="island"></i><span class="sbi"></span></div>
+        <img src="/img/plan.webp" width="780" height="1688" alt="计划页：菲律宾旅行和 Q4 产品发布两个项目的进度，健身、德语、减肥、冥想四个目标" decoding="async"></div>
+      </figure>
+      <figure class="phone main" data-bar="grouped">
+        <div class="screen"><div class="sbar" aria-hidden="true"><b>9:41</b><i class="island"></i><span class="sbi"></span></div>
+        <img src="/img/today.webp" width="780" height="1688" alt="今天页：团队站会、交房租、牙医复诊、季度报告评审、写周报按时间排列，下方是进行中的写周报 60%" decoding="async" fetchpriority="high"></div>
+      </figure>
+      <figure class="phone side right" data-bar="nav">
+        <div class="screen"><div class="sbar" aria-hidden="true"><b>9:41</b><i class="island"></i><span class="sbi"></span></div>
+        <img src="/img/cal.webp" width="780" height="1688" alt="日历日视图：10 月 10 日的日程块和全天待办" decoding="async"></div>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="sect" id="features" aria-labelledby="features-h">
+  <div class="wrap">
+    <header class="sect-head">
+      <p class="kicker">功能</p>
+      <h2 class="display-2" id="features-h">从今天的安排<br>到一整年的目标</h2>
+    </header>
+
+    <div class="bento">
+
+      <article class="card wide">
+        <div class="card-copy">
+          <h3><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span>今天</h3>
+          <p>日程和待办按时间排在一起。进行中的事、今天要打卡的目标，打开就能看到。</p>
+        </div>
+        <div class="art art-today" aria-hidden="true">
+          <div class="m-group tl">
+            <div class="tl-row past"><span class="tl-t">09:00<small>09:30</small></span><i class="bar-v b-work"></i><span class="tl-x"><b>团队站会</b><small>线上会议 · 30 分钟</small></span></div>
+            <div class="tl-row"><span class="tl-t red">10:00</span><i class="ring"></i><span class="tl-x"><b><em class="bang">!!!</em> 交房租</b><small><em class="red">已逾期</em> · 每月</small></span><i class="dot p"></i></div>
+            <div class="tl-now"><span>11:00</span></div>
+            <div class="tl-row"><span class="tl-t">14:00<small>15:00</small></span><i class="bar-v b-personal"></i><span class="tl-x"><b>牙医复诊</b><small>人民南路口腔 · 1 小时</small></span></div>
+            <div class="tl-row"><span class="tl-t">18:00</span><i class="ring"></i><span class="tl-x"><b>写周报</b><small>60% · 每周五</small></span><i class="dot w"></i></div>
+          </div>
+          <div class="today-side">
+            <div class="m-group pad">
+              <p class="m-cap">进行中</p>
+              <div class="prog-row"><span><i class="dot w"></i>写周报</span><b>60%</b></div>
+              <div class="track"><i class="fill w60"></i></div>
+              <small class="m-sub">已做 3 次 · 共 2 小时 10 分</small>
+            </div>
+            <div class="m-group pad">
+              <p class="m-cap">今天打卡</p>
+              <div class="chk"><i class="ringp r67"></i><span><b>健身</b><small>2/3 本周</small></span><em class="plus">+1</em></div>
+              <div class="chk"><i class="ringp r0"></i><span><b>德语</b><small>0/30 分钟 · 课时 19/40</small></span><em class="plus">+30</em></div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-copy">
+          <h3><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>待办可以分几次做完</h3>
+          <p>每次记下做了多久、做到多少。写周报做了 3 次，到了 60%。</p>
+        </div>
+        <div class="art peek">
+          <figure class="phone" data-bar="grouped"><div class="screen"><div class="sbar" aria-hidden="true"><b>9:41</b><i class="island"></i><span class="sbi"></span></div>
+          <img src="/img/todo.webp" width="780" height="1688" alt="待办详情：写周报 60%，记录了 3 次，共 2 小时 10 分" loading="lazy" decoding="async"></div></figure>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-copy">
+          <h3><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>日程与日历</h3>
+          <p>日、周、月三种视图。提前提醒，按周、按月重复。</p>
+        </div>
+        <div class="art art-cal" aria-hidden="true">
+          <div class="seg-m"><span>日</span><span class="on">周</span><span>月</span></div>
+          <div class="week">
+            <span><small>一</small>5</span><span><small>二</small>6</span><span><small>三</small>7</span><span><small>四</small>8</span><span><small>五</small>9</span><span class="today"><small>六</small><b>10</b></span><span><small>日</small>11</span>
+          </div>
+          <div class="ev ev-work"><b>季度报告评审</b><small>16:00 – 17:30 · 3F 大会议室</small></div>
+          <div class="m-group rows">
+            <div class="kv"><span><i class="tile t-orange"><svg viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg></i>提醒</span><em>提前 30 分钟</em></div>
+            <div class="kv"><span><i class="tile t-gray"><svg viewBox="0 0 24 24"><path d="M4 11a7 7 0 0 1 12.5-4.3L19 9"/><path d="M20 13a7 7 0 0 1-12.5 4.3L5 15"/><path d="M19 4v5h-5M5 20v-5h5"/></svg></i>重复</span><em>每周五</em></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-copy">
+          <h3><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h7M9 7h3"/></svg></span>笔记</h3>
+          <p>Markdown 书写，待办可以直接勾选，用 @ 引用项目里的事。</p>
+        </div>
+        <div class="art peek">
+          <figure class="phone" data-bar="white"><div class="screen"><div class="sbar" aria-hidden="true"><b>9:41</b><i class="island"></i><span class="sbi"></span></div>
+          <img src="/img/note.webp" width="780" height="1688" alt="笔记：行程想法，引用了菲律宾旅行项目和办理签证待办" loading="lazy" decoding="async"></div></figure>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-copy">
+          <h3><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>项目</h3>
+          <p>把待办、日程、笔记、目标归到一起，看进度和剩余天数。</p>
+        </div>
+        <div class="art peek">
+          <figure class="phone" data-bar="grouped"><div class="screen"><div class="sbar" aria-hidden="true"><b>9:41</b><i class="island"></i><span class="sbi"></span></div>
+          <img src="/img/project.webp" width="780" height="1688" alt="项目：菲律宾旅行，1/3 待办，还剩 41 天，下一步办理签证" loading="lazy" decoding="async"></div></figure>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-copy">
+          <h3><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></span>目标</h3>
+          <p>每周 3 次健身、每天 30 分钟德语。可以拆成几个维度，也能记体重这类指标。</p>
+        </div>
+        <div class="art peek">
+          <figure class="phone" data-bar="nav"><div class="screen"><div class="sbar" aria-hidden="true"><b>9:41</b><i class="island"></i><span class="sbi"></span></div>
+          <img src="/img/goal.webp" width="780" height="1688" alt="目标：减肥，拆成游泳和跑步两个维度，体重 78.6 kg，目标 75" loading="lazy" decoding="async"></div></figure>
+        </div>
+      </article>
+
+      <article class="card wide">
+        <div class="card-copy">
+          <h3><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg></span>投资</h3>
+          <p>记录持仓和成本，到了定投日提醒你买。</p>
+        </div>
+        <div class="art art-invest">
+          <figure class="phone" data-bar="grouped"><div class="screen"><div class="sbar" aria-hidden="true"><b>9:41</b><i class="island"></i><span class="sbi"></span></div>
+          <img src="/img/invest.webp" width="780" height="1688" alt="投资：总市值、配置比例、QQQM、VOO、OKLO 三个持仓和定投计划" loading="lazy" decoding="async"></div></figure>
+          <div class="m-group rows dca" aria-hidden="true">
+            <p class="m-cap">定投计划</p>
+            <div class="kv"><span><b>VOO</b><small>标普 500 ETF</small></span><em>每月 15 号 · $500</em></div>
+            <div class="kv"><span><b>QQQM</b><small>纳斯达克 100 ETF</small></span><em>每月 15 号 · $500</em></div>
+            <div class="note-line"><i class="bell"></i>10月15日 周四 提醒你定投</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-copy">
+          <h3><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="16" rx="2"/><rect x="13" y="4" width="8" height="16" rx="2"/></svg></span>个人和工作两个空间</h3>
+          <p>每样东西属于个人或工作，可以分开看，也可以一起看。</p>
+        </div>
+        <div class="art art-space" aria-hidden="true">
+          <div class="seg-m"><span>全部</span><span class="on">个人</span><span>工作</span></div>
+          <div class="m-group rows">
+            <div class="kv"><span><i class="dot p"></i>菲律宾旅行</span><em>还剩 41 天</em></div>
+            <div class="kv"><span><i class="dot p"></i>健身</span><em>2/3 本周</em></div>
+            <div class="kv muted"><span><i class="dot w"></i>写周报</span><em>工作</em></div>
+          </div>
+          <div class="tags"><span class="tag p">个人</span><span class="tag w">工作</span></div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-copy">
+          <h3><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="3"/><path d="M11 18h2"/></svg></span>手表和小组件</h3>
+          <p>在 Apple Watch 上打卡，主屏小组件看下一件事。</p>
+        </div>
+        <div class="art art-glance" aria-hidden="true">
+          <div class="widget">
+            <p class="w-cap">今天</p>
+            <div class="w-row"><i class="bar-v b-personal"></i><span><b>牙医复诊</b><small>14:00</small></span></div>
+            <div class="w-row"><i class="bar-v b-work"></i><span><b>季度报告评审</b><small>16:00</small></span></div>
+            <div class="w-row"><i class="ring sm"></i><span><b>写周报</b><small>18:00 · 60%</small></span></div>
+          </div>
+          <div class="watch">
+            <div class="watch-face">
+              <i class="ringp big r67"></i>
+              <b>健身</b>
+              <small>2/3 本周</small>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-copy">
+          <h3><span class="ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg></span>数据是你的</h3>
+          <p>随时导出：笔记 Markdown、日程 iCalendar、全部数据 JSON、交易记录 CSV。想自己保管，就自己部署。</p>
+        </div>
+        <div class="art art-export" aria-hidden="true">
+          <div class="m-group rows">
+            <div class="file"><i class="ext md">MD</i><span><b>notes/*.md</b><small>笔记，每篇一个 Markdown 文件</small></span></div>
+            <div class="file"><i class="ext ics">ICS</i><span><b>calendar.ics</b><small>日程和带日期的待办</small></span></div>
+            <div class="file"><i class="ext json">JSON</i><span><b>noted.json</b><small>全部数据</small></span></div>
+            <div class="file"><i class="ext csv">CSV</i><span><b>trades.csv</b><small>交易记录</small></span></div>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<section class="sect band" id="ai" aria-labelledby="ai-h">
+  <div class="wrap ai-in">
+    <div class="ai-copy">
+      <header class="sect-head">
+        <p class="kicker">接入 AI 助手</p>
+        <h2 class="display-2" id="ai-h">让 <span class="nw">Claude Code</span> 和 Codex<br>帮你记</h2>
+        <p class="sect-lead">Noted 自带 MCP 服务。助手连上以后，可以查日程、建待办、写笔记、记打卡和交易。</p>
+      </header>
+
+      <div class="chat" aria-label="对话示例">
+        <p class="bubble me">明天下午三点和王总开会，提前半小时提醒</p>
+        <p class="tool"><code>noted · create_event</code></p>
+        <p class="bubble ai">已添加：10月11日 周日 15:00「和王总开会」，14:30 提醒你。</p>
+      </div>
+
+      <ol class="steps">
+        <li><b>注册</b><span>用邮箱和密码注册一个账号。</span></li>
+        <li><b>生成令牌</b><span>在「我的账号」里给每个助手生成一个，不用了随时吊销。</span></li>
+        <li><b>粘贴命令</b><span>Claude Code 在终端运行一行命令，Codex 把配置写进文件。</span></li>
+      </ol>
+
+      <div class="codes">
+        <div class="code">
+          <div class="code-h"><span>Claude Code · 终端运行，再在 Claude Code 里输入 /mcp 选 noted 登录</span><button type="button" class="copy" data-copy="m-claude">复制</button></div>
+          <pre id="m-claude">claude mcp add --scope user --transport http noted {{ORIGIN}}/mcp</pre>
+        </div>
+        <div class="code">
+          <div class="code-h"><span>Codex · ~/.codex/config.toml</span><button type="button" class="copy" data-copy="m-codex">复制</button></div>
+          <pre id="m-codex">[mcp_servers.noted]
+url = "{{ORIGIN}}/mcp"
+bearer_token_env_var = "NOTED_TOKEN"</pre>
+        </div>
+        <div class="code">
+          <div class="code-h"><span>Codex · 终端环境变量</span><button type="button" class="copy" data-copy="m-env">复制</button></div>
+          <pre id="m-env">export NOTED_TOKEN=<span class="ph">&lt;令牌&gt;</span></pre>
+        </div>
+      </div>
+      <p class="hint">把 <code>&lt;令牌&gt;</code> 换成你生成的令牌。在「我的账号」生成时，命令会自动填好。</p>
+      <div class="cta">
+        <button type="button" class="btn primary" id="ai-go" data-auth="signup">注册并生成令牌</button>
+      </div>
+    </div>
+    <div class="ai-art">
+      <figure class="phone" data-bar="grouped"><div class="screen"><div class="sbar" aria-hidden="true"><b>9:41</b><i class="island"></i><span class="sbi"></span></div>
+      <img src="/img/ai.webp" width="780" height="1688" alt="iPhone 上的接入 AI 助手页面：令牌、Claude Code 命令、Codex 配置和已签发的令牌" loading="lazy" decoding="async"></div></figure>
+    </div>
+  </div>
+</section>
+
+<section class="sect" id="selfhost" aria-labelledby="sh-h">
+  <div class="wrap">
+    <header class="sect-head">
+      <p class="kicker">自己部署</p>
+      <h2 class="display-2" id="sh-h">一个程序，一个数据文件</h2>
+      <p class="sect-lead">Noted 是单个 Go 程序，数据存在一个 SQLite 文件里。用 Docker 或直接跑二进制，iPhone 应用和 AI 助手都连你自己的服务器。</p>
+    </header>
+    <div class="sh-grid">
+      <div class="code">
+        <div class="code-h"><span>Docker</span><button type="button" class="copy" data-copy="sh-docker">复制</button></div>
+        <pre id="sh-docker">git clone https://github.com/liliang-cn/noted &amp;&amp; cd noted
+docker compose up -d
+docker compose run --rm noted user add alice</pre>
+      </div>
+      <div class="code">
+        <div class="code-h"><span>二进制</span><button type="button" class="copy" data-copy="sh-bin">复制</button></div>
+        <pre id="sh-bin">make build
+./bin/noted user add alice
+./bin/noted serve</pre>
+      </div>
+    </div>
+    <ul class="facts">
+      <li><code>noted user add</code> 创建用户并打印第一个令牌</li>
+      <li><code>NOTED_AUTH_SIGNUP=true</code> 开放邮箱注册</li>
+      <li><code>NOTED_MCP_LISTEN</code> 打开这个网页和远程 MCP</li>
+    </ul>
+    <p><a class="btn ghost" href="https://github.com/liliang-cn/noted" rel="noopener">在 GitHub 查看源码和部署说明 <span aria-hidden="true">→</span></a></p>
+  </div>
+</section>
+
+<section class="sect closing" aria-labelledby="close-h">
+  <div class="wrap closing-in">
+    <h2 class="display-2" id="close-h">注册一个账号，今天就能用</h2>
+    <p class="privacy">你的数据存在一个 SQLite 文件里。随时可以导出：笔记 Markdown、日程 iCalendar、全部数据 JSON、交易记录 CSV，也可以搬到自己的服务器上。</p>
+    <div class="cta center">
+      <button type="button" class="btn primary lg" data-auth="signup">免费注册</button>
+      <button type="button" class="btn ghost lg" data-auth="login">已有账号，登录</button>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ============ account ============ -->
+<div id="account-view" class="acct" hidden>
+  <div class="wrap">
+    <header class="acct-head">
+      <div>
+        <p class="kicker"><a href="#intro" class="back">← 产品介绍</a></p>
+        <h1 class="display-2" id="acct-h" tabindex="-1">我的账号</h1>
+        <p class="acct-email" id="acct-email"></p>
+      </div>
+      <button type="button" class="btn ghost danger-t" id="logout">退出登录</button>
+    </header>
+
+    <div class="acct-grid">
+      <div class="acct-main">
+        <section class="panel" aria-labelledby="conn-h">
+          <h2 class="panel-h" id="conn-h">接入 AI 助手</h2>
+          <div class="oauth-snip">
+            <div class="code">
+              <div class="code-h"><span>Claude Code · 终端运行</span><button type="button" class="copy" data-copy="snip-claude-oauth">复制</button></div>
+              <pre id="snip-claude-oauth"></pre>
+            </div>
+            <p class="hint">在 Claude Code 里输入 <code>/mcp</code>，选 noted 登录。</p>
+          </div>
+          <p class="panel-sub">也可以用令牌：每个助手用一个单独的令牌，令牌只在生成时显示一次。</p>
+          <form id="new-form" class="new-form" novalidate>
+            <label class="sr" for="new-label">令牌名称</label>
+            <input type="text" id="new-label" maxlength="60" placeholder="名称，如 Claude Code" autocomplete="off">
+            <button type="submit" class="btn primary" id="new-submit">生成令牌</button>
+          </form>
+          <div class="chips" role="group" aria-label="常用名称">
+            <button type="button" class="chip" data-label="Claude Code">Claude Code</button>
+            <button type="button" class="chip" data-label="Codex">Codex</button>
+            <button type="button" class="chip" data-label="iPhone 快捷指令">iPhone 快捷指令</button>
+          </div>
+          <p class="err" id="new-err" role="alert"></p>
+
+          <div id="new-result" class="result" hidden>
+            <p class="callout"><b>新令牌「<span id="new-name"></span>」</b>离开或刷新页面后就看不到了，现在复制保存。</p>
+            <div class="code">
+              <div class="code-h"><span>令牌</span><button type="button" class="copy" data-copy="tok">复制</button></div>
+              <pre id="tok"></pre>
+            </div>
+            <div class="code">
+              <div class="code-h"><span>Claude Code · 用令牌，终端运行</span><button type="button" class="copy" data-copy="snip-claude">复制</button></div>
+              <pre id="snip-claude"></pre>
+            </div>
+            <div class="code">
+              <div class="code-h"><span>Codex · ~/.codex/config.toml</span><button type="button" class="copy" data-copy="snip-codex">复制</button></div>
+              <pre id="snip-codex"></pre>
+            </div>
+            <div class="code">
+              <div class="code-h"><span>Codex · 终端环境变量</span><button type="button" class="copy" data-copy="snip-env">复制</button></div>
+              <pre id="snip-env"></pre>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="tok-h">
+          <div class="panel-row">
+            <h2 class="panel-h" id="tok-h">已签发的令牌</h2>
+            <span class="count" id="tok-count"></span>
+          </div>
+          <div class="list" id="tokens"></div>
+        </section>
+      </div>
+
+      <aside class="acct-side">
+        <section class="panel" aria-labelledby="info-h">
+          <h2 class="panel-h" id="info-h">账号</h2>
+          <dl class="info">
+            <div><dt>邮箱</dt><dd id="info-email"></dd></div>
+            <div><dt>MCP 地址</dt><dd><code id="mcp-url"></code><button type="button" class="copy inline" data-copy="mcp-url">复制</button></dd></div>
+          </dl>
+        </section>
+
+        <section class="panel" aria-labelledby="pw-h">
+          <h2 class="panel-h" id="pw-h">修改密码</h2>
+          <form id="pw-form" novalidate>
+            <input type="email" id="pw-user" autocomplete="username" hidden>
+            <label class="field"><span>当前密码</span><input type="password" id="pw-current" autocomplete="current-password" required></label>
+            <label class="field"><span>新密码</span><input type="password" id="pw-new" autocomplete="new-password" required minlength="8" maxlength="128" placeholder="至少 8 位"></label>
+            <label class="field"><span>确认新密码</span><input type="password" id="pw-again" autocomplete="new-password" required></label>
+            <p class="err" id="pw-err" role="alert"></p>
+            <p class="ok" id="pw-ok" role="status"></p>
+            <button type="submit" class="btn primary block" id="pw-submit">保存新密码</button>
+          </form>
+        </section>
+      </aside>
+    </div>
+  </div>
+</div>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <div class="foot-brand">
+      <svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#1F5BFF"/><path d="M20 46V18h5.2l13.6 19.4V18H44v28h-5.2L25.2 26.6V46z" fill="#fff"/></svg>
+      <span>Noted</span>
+    </div>
+    <nav class="foot-nav" aria-label="页脚">
+      <a href="#features">功能</a>
+      <a href="#ai">接入 AI</a>
+      <a href="#selfhost">自己部署</a>
+      <a href="https://github.com/liliang-cn/noted" rel="noopener">GitHub</a>
+    </nav>
+    <p class="foot-meta">MCP 地址 <code>{{ORIGIN}}/mcp</code></p>
+  </div>
+</footer>
+
+<!-- sign in / sign up -->
+<dialog id="auth-dlg" class="dlg" aria-labelledby="auth-title">
+  <form method="dialog" class="dlg-x-form"><button class="dlg-x" aria-label="关闭" value="cancel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+  <div class="dlg-in">
+    <svg class="mark lg" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="#1F5BFF"/><path d="M20 46V18h5.2l13.6 19.4V18H44v28h-5.2L25.2 26.6V46z" fill="#fff"/></svg>
+    <h2 id="auth-title">登录 Noted</h2>
+    <p class="dlg-sub" id="auth-sub">用注册时的邮箱和密码登录。</p>
+    <div class="seg" role="tablist" aria-label="登录或注册">
+      <button type="button" role="tab" id="tab-login" aria-selected="true" aria-controls="auth-form">登录</button>
+      <button type="button" role="tab" id="tab-signup" aria-selected="false" aria-controls="auth-form">注册</button>
+    </div>
+    <form id="auth-form" novalidate>
+      <label class="field"><span>邮箱</span><input type="email" id="auth-email" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" required placeholder="you@example.com"></label>
+      <label class="field"><span>密码</span><input type="password" id="auth-password" autocomplete="current-password" required minlength="8" maxlength="128" placeholder="至少 8 位"></label>
+      <p class="err" id="auth-err" role="alert"></p>
+      <button type="submit" class="btn primary block lg" id="auth-submit">登录</button>
+    </form>
+    <p class="dlg-switch" id="auth-switch-p"><span id="auth-switch-t">还没有账号？</span> <button type="button" class="link" id="auth-switch">注册</button></p>
+  </div>
+</dialog>
+
+<!-- confirm -->
+<dialog id="confirm-dlg" class="dlg small" aria-labelledby="confirm-title">
+  <div class="dlg-in">
+    <h2 id="confirm-title"></h2>
+    <p class="dlg-sub" id="confirm-msg"></p>
+    <div class="dlg-btns">
+      <button type="button" class="btn ghost" id="confirm-no">取消</button>
+      <button type="button" class="btn danger" id="confirm-yes">吊销</button>
+    </div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

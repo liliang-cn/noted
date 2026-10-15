@@ -163,8 +163,12 @@ final class ReminderCenter: NSObject, UNUserNotificationCenterDelegate {
                 var req = Noted_V1_WatchRemindersRequest()
                 req.space = await space()
                 do {
+                    // The server sends its response headers only with the first reminder, so waiting
+                    // for them would leave the stream "down" until then and let the system banner
+                    // show on top of ours. The stream counts as up once the call is made; a refused
+                    // or broken call (unreachable server, bad token) ends it below.
+                    await setStreaming(true)
                     try await api.calendar.watchReminders(req) { response in
-                        await setStreaming(true)
                         for try await r in response.messages { await onReminder(r) }
                     }
                 } catch { /* reconnect below */ }

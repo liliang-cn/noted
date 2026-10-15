@@ -32,6 +32,7 @@ final class API: Sendable {
     let ai: Noted_V1_AIService.Client<Transport>
     let prefs: Noted_V1_PreferenceService.Client<Transport>
     let export: Noted_V1_ExportService.Client<Transport>
+    let account: Noted_V1_AccountService.Client<Transport>
     let objectives: Noted_V1_ObjectiveService.Client<Transport>
     let holdings: Noted_V1_HoldingService.Client<Transport>
     private let runner: Task<Void, Never>
@@ -53,6 +54,7 @@ final class API: Sendable {
         ai = .init(wrapping: client)
         prefs = .init(wrapping: client)
         export = .init(wrapping: client)
+        account = .init(wrapping: client)
         objectives = .init(wrapping: client)
         holdings = .init(wrapping: client)
         runner = Task { try? await client.runConnections() }
@@ -78,9 +80,12 @@ func fieldMask(_ paths: String...) -> Google_Protobuf_FieldMask {
 func describe(_ error: Error) -> String {
     guard let e = error as? RPCError else { return error.localizedDescription }
     switch e.code {
+    case .unauthenticated where e.message.hasPrefix("Apple sign-in"): return "Apple 登录没有通过验证,请重试"
     case .unauthenticated: return "令牌无效或已被撤销,请重新连接"
     case .unavailable: return "连不上服务器"
     case .deadlineExceeded: return "服务器没有及时回应"
+    case .failedPrecondition where e.message.contains("not enabled") && e.message.contains("Apple"): return "这台服务器没有开启 Apple ID 登录"
+    case .failedPrecondition where e.message.contains("Apple ID"): return "这个 Apple ID 还没绑定账号。先用令牌连接一次,再到设置里绑定"
     case .failedPrecondition: return "这台服务器没有开启智能功能"
     case .permissionDenied: return "这部分内容没有允许智能功能读取"
     case .internalError where e.message.hasPrefix("AI request failed"): return "智能功能这次没有答上来,稍后再试"

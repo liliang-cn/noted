@@ -54,6 +54,7 @@ targets:
       path: Config/Noted.entitlements
       properties:
         com.apple.security.application-groups: [group.cn.superleo.noted]
+        com.apple.developer.applesignin: [Default]
     dependencies:
       - target: NotedWidgets
       - target: NotedWatch
@@ -70,13 +71,24 @@ targets:
         CODE_SIGN_STYLE: Automatic
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_KEY_CFBundleDisplayName: Noted
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
         INFOPLIST_KEY_UIUserInterfaceStyle: Light
         INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: 把笔记保存为图片
         INFOPLIST_KEY_NSLocalNetworkUsageDescription: 连接你在局域网里运行的 noted 服务
+        INFOPLIST_KEY_NSCameraUsageDescription: 扫描电脑上的配对二维码
         SWIFT_STRICT_CONCURRENCY: complete
+    # Merged into the generated Info.plist: noted://pair links (the sign-in page's QR code).
+    info:
+      path: Config/Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleURLTypes:
+          - CFBundleURLName: cn.superleo.noted
+            CFBundleURLSchemes: [noted]
   NotedTests:
     type: bundle.unit-test
     platform: iOS
@@ -135,6 +147,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: cn.superleo.noted.watchkitapp
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_KEY_CFBundleDisplayName: Noted
         INFOPLIST_KEY_WKCompanionAppBundleIdentifier: cn.superleo.noted
         WATCHOS_DEPLOYMENT_TARGET: "11.0"

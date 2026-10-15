@@ -1,0 +1,14 @@
+Common brief for screen agents (noted iOS rewrite)
+
+App: /Users/liliang/Things/dev/apps/noted/ios (SwiftUI, iOS 18+, xcodegen; project.yml picks up new files under Noted/ automatically, but RUN `xcodegen generate` only if you add a new .swift file, and only between builds).
+Spec: the approved prototype /Users/liliang/Things/dev/apps/noted/design/prototype/index.html (source parts in design/prototype/parts/) and its screenshots design/prototype/shots/proto-*.png. Match its structure, content, interactions and look closely, but implement with NATIVE SwiftUI: List(.insetGrouped) sections, swipeActions, contextMenu, NavigationStack large titles + toolbar items, Menu, confirmationDialog, native DatePicker/Toggle/Picker/Slider, .searchable, sheets only for one-step forms and never a sheet from a sheet.
+Foundation (read before coding, do not change shared files except where noted):
+- Noted/App/Router.swift: per-tab Router (`@Environment(Router.self)`, push/pop/replaceTop/popToRoot/select(tab)), `Route` enum, `CreateSpec`, `RouteDestination`. You may only edit the lines of RouteDestination for YOUR routes (replace the RoutePlaceholder line with your view). Do not add/rename Route cases unless your brief says so.
+- Noted/App/AppShell.swift (tab bar + "+"), Session.swift, Toast.swift.
+- Noted/Data/AppData.swift + AppData+Writes.swift + Models.swift: the cached data + all write methods (create/update/delete/complete/postpone/logTaskWork/checkIn/recordMeasurement/recordTrade/setProject(link)/tokens/export/...). Use these; do not call gRPC directly unless a method is missing — then add a small method in a NEW file Noted/Data/AppData+<YourArea>.swift (never edit the existing Data files).
+- Noted/Design/*: Tokens (colors), Components, FormRows, SharedRows, NavBar (space filter), Format (Chinese date/time helpers). Reuse them; new shared-looking views go in your own folder.
+Rules: Chinese UI, concise, no explanatory filler copy. Light only. Respect the user's space filter (全部/个人/工作). Accessibility: every tappable control has a Chinese accessibility label; add accessibilityIdentifier on primary actions (useful for UI tests later).
+Build check (only one build per agent at a time, your own derivedDataPath, never the simulator — the integrator will run it):
+  cd /Users/liliang/Things/dev/apps/noted/ios && xcodebuild -project Noted.xcodeproj -scheme Noted -destination 'generic/platform=iOS Simulator' -derivedDataPath /private/tmp/claude-501/-Users-liliang-Things-dev-apps-noted/d0b123ed-e6d6-4b5e-82ad-570cd2238f5b/scratchpad/dd-<area> build 2>&1 | grep -E "^/.*error:|BUILD"
+  Must end in BUILD SUCCEEDED. If an error is in a file another agent owns (they are mid-edit), wait a minute and retry; never edit their files.
+No git commits, no AI attribution anywhere. Report: what you built (screens, interactions), anything from the prototype you could not do natively, and the build result.
