@@ -1665,6 +1665,8 @@ public nonisolated struct Noted_V1_ExtractTasksRequest: Sendable {
   public init() {}
 }
 
+/// A step on the way to a goal or an objective. A list of milestones keeps its
+/// order: the first entry is the first step.
 public nonisolated struct Noted_V1_Milestone: Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
@@ -1685,11 +1687,25 @@ public nonisolated struct Noted_V1_Milestone: Sendable {
   /// Clears the value of `doneTime`. Subsequent reads from it will return its default value.
   public mutating func clearDoneTime() {self._doneTime = nil}
 
+  /// optional: when it should be done by
+  public var dueTime: SwiftProtobuf.Google_Protobuf_Timestamp {
+    get {_dueTime ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_dueTime = newValue}
+  }
+  /// Returns true if `dueTime` has been explicitly set.
+  public var hasDueTime: Bool {self._dueTime != nil}
+  /// Clears the value of `dueTime`. Subsequent reads from it will return its default value.
+  public mutating func clearDueTime() {self._dueTime = nil}
+
+  /// optional: what counts as done
+  public var criteria: String = String()
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
   fileprivate var _doneTime: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+  fileprivate var _dueTime: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
 }
 
 public nonisolated struct Noted_V1_DayTotal: Sendable {
@@ -2340,6 +2356,12 @@ public nonisolated struct Noted_V1_Objective: @unchecked Sendable {
     set {_uniqueStorage()._projectID = newValue}
   }
 
+  /// The steps on the way, in order. Ticked with SetObjectiveMilestoneDone.
+  public var milestones: [Noted_V1_Milestone] {
+    get {_storage._milestones}
+    set {_uniqueStorage()._milestones = newValue}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -2347,66 +2369,132 @@ public nonisolated struct Noted_V1_Objective: @unchecked Sendable {
   fileprivate var _storage = _StorageClass.defaultInstance
 }
 
-public nonisolated struct Noted_V1_ObjectiveProgress: Sendable {
+public nonisolated struct Noted_V1_ObjectiveProgress: @unchecked Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var goalsTotal: Int32 = 0
+  public var goalsTotal: Int32 {
+    get {_storage._goalsTotal}
+    set {_uniqueStorage()._goalsTotal = newValue}
+  }
 
   /// dimensions that met this period's target
-  public var goalsAchieved: Int32 = 0
+  public var goalsAchieved: Int32 {
+    get {_storage._goalsAchieved}
+    set {_uniqueStorage()._goalsAchieved = newValue}
+  }
 
   /// mean progress of the dimensions this period, each capped at 1
-  public var goalsPercent: Double = 0
+  public var goalsPercent: Double {
+    get {_storage._goalsPercent}
+    set {_uniqueStorage()._goalsPercent = newValue}
+  }
 
-  /// some dimension is behind its pace
-  public var behind: Bool = false
+  /// some dimension is behind its pace, or an undone milestone is past its due_time
+  public var behind: Bool {
+    get {_storage._behind}
+    set {_uniqueStorage()._behind = newValue}
+  }
 
-  public var hasMetric_p: Bool = false
+  public var hasMetric_p: Bool {
+    get {_storage._hasMetric_p}
+    set {_uniqueStorage()._hasMetric_p = newValue}
+  }
 
-  public var hasReading_p: Bool = false
+  public var hasReading_p: Bool {
+    get {_storage._hasReading_p}
+    set {_uniqueStorage()._hasReading_p = newValue}
+  }
 
   /// the latest reading
-  public var metricCurrent: Double = 0
+  public var metricCurrent: Double {
+    get {_storage._metricCurrent}
+    set {_uniqueStorage()._metricCurrent = newValue}
+  }
 
   /// latest reading minus metric_start
-  public var metricChange: Double = 0
+  public var metricChange: Double {
+    get {_storage._metricChange}
+    set {_uniqueStorage()._metricChange = newValue}
+  }
 
   /// 0..1 of the way from metric_start to metric_target
-  public var metricPercent: Double = 0
+  public var metricPercent: Double {
+    get {_storage._metricPercent}
+    set {_uniqueStorage()._metricPercent = newValue}
+  }
 
   public var lastReadingTime: SwiftProtobuf.Google_Protobuf_Timestamp {
-    get {_lastReadingTime ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
-    set {_lastReadingTime = newValue}
+    get {_storage._lastReadingTime ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_uniqueStorage()._lastReadingTime = newValue}
   }
   /// Returns true if `lastReadingTime` has been explicitly set.
-  public var hasLastReadingTime: Bool {self._lastReadingTime != nil}
+  public var hasLastReadingTime: Bool {_storage._lastReadingTime != nil}
   /// Clears the value of `lastReadingTime`. Subsequent reads from it will return its default value.
-  public mutating func clearLastReadingTime() {self._lastReadingTime = nil}
+  public mutating func clearLastReadingTime() {_uniqueStorage()._lastReadingTime = nil}
 
-  /// headline: metric_percent once there is a reading, else goals_percent
-  public var percent: Double = 0
+  /// The headline: metric_percent when the objective has a metric and a
+  /// reading; else milestone_percent when it has milestones; else goals_percent.
+  public var percent: Double {
+    get {_storage._percent}
+    set {_uniqueStorage()._percent = newValue}
+  }
 
   /// set with due_time; negative once past
   public var daysLeft: Int32 {
-    get {_daysLeft ?? 0}
-    set {_daysLeft = newValue}
+    get {_storage._daysLeft ?? 0}
+    set {_uniqueStorage()._daysLeft = newValue}
   }
   /// Returns true if `daysLeft` has been explicitly set.
-  public var hasDaysLeft: Bool {self._daysLeft != nil}
+  public var hasDaysLeft: Bool {_storage._daysLeft != nil}
   /// Clears the value of `daysLeft`. Subsequent reads from it will return its default value.
-  public mutating func clearDaysLeft() {self._daysLeft = nil}
+  public mutating func clearDaysLeft() {_uniqueStorage()._daysLeft = nil}
 
-  /// the metric is not behind the share of time used; true when unknown
-  public var onTrack: Bool = false
+  /// The metric is not behind the share of time used and no undone milestone is
+  /// past its due_time; true when unknown.
+  public var onTrack: Bool {
+    get {_storage._onTrack}
+    set {_uniqueStorage()._onTrack = newValue}
+  }
+
+  public var milestonesDone: Int32 {
+    get {_storage._milestonesDone}
+    set {_uniqueStorage()._milestonesDone = newValue}
+  }
+
+  public var milestonesTotal: Int32 {
+    get {_storage._milestonesTotal}
+    set {_uniqueStorage()._milestonesTotal = newValue}
+  }
+
+  /// milestones_done / milestones_total, 0 if none
+  public var milestonePercent: Double {
+    get {_storage._milestonePercent}
+    set {_uniqueStorage()._milestonePercent = newValue}
+  }
+
+  /// the first undone milestone, in list order; unset when all are done
+  public var nextMilestone: Noted_V1_Milestone {
+    get {_storage._nextMilestone ?? Noted_V1_Milestone()}
+    set {_uniqueStorage()._nextMilestone = newValue}
+  }
+  /// Returns true if `nextMilestone` has been explicitly set.
+  public var hasNextMilestone: Bool {_storage._nextMilestone != nil}
+  /// Clears the value of `nextMilestone`. Subsequent reads from it will return its default value.
+  public mutating func clearNextMilestone() {_uniqueStorage()._nextMilestone = nil}
+
+  /// undone milestones past their due_time
+  public var milestonesOverdue: Int32 {
+    get {_storage._milestonesOverdue}
+    set {_uniqueStorage()._milestonesOverdue = newValue}
+  }
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
-  fileprivate var _lastReadingTime: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
-  fileprivate var _daysLeft: Int32? = nil
+  fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 public nonisolated struct Noted_V1_Measurement: Sendable {
@@ -2486,8 +2574,9 @@ public nonisolated struct Noted_V1_UpdateObjectiveRequest: Sendable {
   public mutating func clearObjective() {self._objective = nil}
 
   /// title, notes, space, start_time, due_time, metric_name, metric_unit,
-  /// metric_start, metric_target, archived. An unset start_time/due_time in the
-  /// mask clears it.
+  /// metric_start, metric_target, archived, project_id, milestones. An unset
+  /// start_time/due_time in the mask clears it. Updating milestones replaces the
+  /// list: entries that carry an existing id keep their done state, the rest are new.
   public var updateMask: SwiftProtobuf.Google_Protobuf_FieldMask {
     get {_updateMask ?? SwiftProtobuf.Google_Protobuf_FieldMask()}
     set {_updateMask = newValue}
@@ -2626,6 +2715,22 @@ public nonisolated struct Noted_V1_ListMeasurementsResponse: Sendable {
   // methods supported on all messages.
 
   public var measurements: [Noted_V1_Measurement] = []
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Noted_V1_SetObjectiveMilestoneDoneRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var objectiveID: String = String()
+
+  public var milestoneID: String = String()
+
+  public var done: Bool = false
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -4019,7 +4124,8 @@ public nonisolated struct Noted_V1_TimeEntry: @unchecked Sendable {
     set {_uniqueStorage()._minutes = newValue}
   }
 
-  /// When it started. Default on create: now minus minutes.
+  /// When it started. Default on create: end_time minus minutes, else now minus
+  /// minutes (then timed is false).
   public var startTime: SwiftProtobuf.Google_Protobuf_Timestamp {
     get {_storage._startTime ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
     set {_uniqueStorage()._startTime = newValue}
@@ -4093,6 +4199,16 @@ public nonisolated struct Noted_V1_TimeEntry: @unchecked Sendable {
   /// Clears the value of `updateTime`. Subsequent reads from it will return its default value.
   public mutating func clearUpdateTime() {_uniqueStorage()._updateTime = nil}
 
+  /// Read-only. True when start_time and end_time are what the person gave or a
+  /// timer measured; false when only a duration was given and the start was
+  /// defaulted (to the time it was logged minus the minutes), so the range is
+  /// not when it happened and only the day and the minutes should be shown.
+  /// Setting start_time or end_time makes an entry timed.
+  public var timed: Bool {
+    get {_storage._timed}
+    set {_uniqueStorage()._timed = newValue}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -4105,7 +4221,7 @@ public nonisolated struct Noted_V1_CreateTimeEntryRequest: Sendable {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  /// id, running, check_in_id and the times of record are ignored
+  /// id, running, timed, check_in_id and the times of record are ignored
   public var entry: Noted_V1_TimeEntry {
     get {_entry ?? Noted_V1_TimeEntry()}
     set {_entry = newValue}
@@ -4150,8 +4266,9 @@ public nonisolated struct Noted_V1_UpdateTimeEntryRequest: Sendable {
 
   /// title, minutes, start_time, end_time, note, project_id, goal_id, space.
   /// Moving start_time keeps the minutes; end_time (without minutes) sets the
-  /// minutes to the time from the start. A running timer's minutes and end
-  /// are set by StopTimer.
+  /// minutes to the time from the start, except on an entry that is not timed,
+  /// where it keeps the minutes and moves the start. Either makes the entry
+  /// timed. A running timer's minutes and end are set by StopTimer.
   public var updateMask: SwiftProtobuf.Google_Protobuf_FieldMask {
     get {_updateMask ?? SwiftProtobuf.Google_Protobuf_FieldMask()}
     set {_updateMask = newValue}
@@ -7598,7 +7715,7 @@ nonisolated extension Noted_V1_ExtractTasksRequest: SwiftProtobuf.Message, Swift
 
 nonisolated extension Noted_V1_Milestone: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Milestone"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}title\0\u{1}done\0\u{3}done_time\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}title\0\u{1}done\0\u{3}done_time\0\u{3}due_time\0\u{1}criteria\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -7610,6 +7727,8 @@ nonisolated extension Noted_V1_Milestone: SwiftProtobuf.Message, SwiftProtobuf._
       case 2: try { try decoder.decodeSingularStringField(value: &self.title) }()
       case 3: try { try decoder.decodeSingularBoolField(value: &self.done) }()
       case 4: try { try decoder.decodeSingularMessageField(value: &self._doneTime) }()
+      case 5: try { try decoder.decodeSingularMessageField(value: &self._dueTime) }()
+      case 6: try { try decoder.decodeSingularStringField(value: &self.criteria) }()
       default: break
       }
     }
@@ -7632,6 +7751,12 @@ nonisolated extension Noted_V1_Milestone: SwiftProtobuf.Message, SwiftProtobuf._
     try { if let v = self._doneTime {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
     } }()
+    try { if let v = self._dueTime {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 5)
+    } }()
+    if !self.criteria.isEmpty {
+      try visitor.visitSingularStringField(value: self.criteria, fieldNumber: 6)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -7640,6 +7765,8 @@ nonisolated extension Noted_V1_Milestone: SwiftProtobuf.Message, SwiftProtobuf._
     if lhs.title != rhs.title {return false}
     if lhs.done != rhs.done {return false}
     if lhs._doneTime != rhs._doneTime {return false}
+    if lhs._dueTime != rhs._dueTime {return false}
+    if lhs.criteria != rhs.criteria {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -8550,7 +8677,7 @@ nonisolated extension Noted_V1_SetMilestoneDoneRequest: SwiftProtobuf.Message, S
 
 nonisolated extension Noted_V1_Objective: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Objective"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}title\0\u{1}notes\0\u{1}space\0\u{3}start_time\0\u{3}due_time\0\u{3}metric_name\0\u{3}metric_unit\0\u{3}metric_start\0\u{3}metric_target\0\u{1}archived\0\u{3}create_time\0\u{3}update_time\0\u{1}progress\0\u{1}goals\0\u{3}project_id\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}title\0\u{1}notes\0\u{1}space\0\u{3}start_time\0\u{3}due_time\0\u{3}metric_name\0\u{3}metric_unit\0\u{3}metric_start\0\u{3}metric_target\0\u{1}archived\0\u{3}create_time\0\u{3}update_time\0\u{1}progress\0\u{1}goals\0\u{3}project_id\0\u{1}milestones\0")
 
   fileprivate class _StorageClass {
     var _id: String = String()
@@ -8569,6 +8696,7 @@ nonisolated extension Noted_V1_Objective: SwiftProtobuf.Message, SwiftProtobuf._
     var _progress: Noted_V1_ObjectiveProgress? = nil
     var _goals: [Noted_V1_Goal] = []
     var _projectID: String = String()
+    var _milestones: [Noted_V1_Milestone] = []
 
       // This property is used as the initial default value for new instances of the type.
       // The type itself is protecting the reference to its storage via CoW semantics.
@@ -8595,6 +8723,7 @@ nonisolated extension Noted_V1_Objective: SwiftProtobuf.Message, SwiftProtobuf._
       _progress = source._progress
       _goals = source._goals
       _projectID = source._projectID
+      _milestones = source._milestones
     }
   }
 
@@ -8629,6 +8758,7 @@ nonisolated extension Noted_V1_Objective: SwiftProtobuf.Message, SwiftProtobuf._
         case 14: try { try decoder.decodeSingularMessageField(value: &_storage._progress) }()
         case 15: try { try decoder.decodeRepeatedMessageField(value: &_storage._goals) }()
         case 16: try { try decoder.decodeSingularStringField(value: &_storage._projectID) }()
+        case 17: try { try decoder.decodeRepeatedMessageField(value: &_storage._milestones) }()
         default: break
         }
       }
@@ -8689,6 +8819,9 @@ nonisolated extension Noted_V1_Objective: SwiftProtobuf.Message, SwiftProtobuf._
       if !_storage._projectID.isEmpty {
         try visitor.visitSingularStringField(value: _storage._projectID, fieldNumber: 16)
       }
+      if !_storage._milestones.isEmpty {
+        try visitor.visitRepeatedMessageField(value: _storage._milestones, fieldNumber: 17)
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -8714,6 +8847,7 @@ nonisolated extension Noted_V1_Objective: SwiftProtobuf.Message, SwiftProtobuf._
         if _storage._progress != rhs_storage._progress {return false}
         if _storage._goals != rhs_storage._goals {return false}
         if _storage._projectID != rhs_storage._projectID {return false}
+        if _storage._milestones != rhs_storage._milestones {return false}
         return true
       }
       if !storagesAreEqual {return false}
@@ -8725,93 +8859,188 @@ nonisolated extension Noted_V1_Objective: SwiftProtobuf.Message, SwiftProtobuf._
 
 nonisolated extension Noted_V1_ObjectiveProgress: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ObjectiveProgress"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}goals_total\0\u{3}goals_achieved\0\u{3}goals_percent\0\u{1}behind\0\u{3}has_metric\0\u{3}has_reading\0\u{3}metric_current\0\u{3}metric_change\0\u{3}metric_percent\0\u{3}last_reading_time\0\u{1}percent\0\u{3}days_left\0\u{3}on_track\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}goals_total\0\u{3}goals_achieved\0\u{3}goals_percent\0\u{1}behind\0\u{3}has_metric\0\u{3}has_reading\0\u{3}metric_current\0\u{3}metric_change\0\u{3}metric_percent\0\u{3}last_reading_time\0\u{1}percent\0\u{3}days_left\0\u{3}on_track\0\u{3}milestones_done\0\u{3}milestones_total\0\u{3}milestone_percent\0\u{3}next_milestone\0\u{3}milestones_overdue\0")
+
+  fileprivate class _StorageClass {
+    var _goalsTotal: Int32 = 0
+    var _goalsAchieved: Int32 = 0
+    var _goalsPercent: Double = 0
+    var _behind: Bool = false
+    var _hasMetric_p: Bool = false
+    var _hasReading_p: Bool = false
+    var _metricCurrent: Double = 0
+    var _metricChange: Double = 0
+    var _metricPercent: Double = 0
+    var _lastReadingTime: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+    var _percent: Double = 0
+    var _daysLeft: Int32? = nil
+    var _onTrack: Bool = false
+    var _milestonesDone: Int32 = 0
+    var _milestonesTotal: Int32 = 0
+    var _milestonePercent: Double = 0
+    var _nextMilestone: Noted_V1_Milestone? = nil
+    var _milestonesOverdue: Int32 = 0
+
+      // This property is used as the initial default value for new instances of the type.
+      // The type itself is protecting the reference to its storage via CoW semantics.
+      // This will force a copy to be made of this reference when the first mutation occurs;
+      // hence, it is safe to mark this as `nonisolated(unsafe)`.
+      static nonisolated(unsafe) let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _goalsTotal = source._goalsTotal
+      _goalsAchieved = source._goalsAchieved
+      _goalsPercent = source._goalsPercent
+      _behind = source._behind
+      _hasMetric_p = source._hasMetric_p
+      _hasReading_p = source._hasReading_p
+      _metricCurrent = source._metricCurrent
+      _metricChange = source._metricChange
+      _metricPercent = source._metricPercent
+      _lastReadingTime = source._lastReadingTime
+      _percent = source._percent
+      _daysLeft = source._daysLeft
+      _onTrack = source._onTrack
+      _milestonesDone = source._milestonesDone
+      _milestonesTotal = source._milestonesTotal
+      _milestonePercent = source._milestonePercent
+      _nextMilestone = source._nextMilestone
+      _milestonesOverdue = source._milestonesOverdue
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try { try decoder.decodeSingularInt32Field(value: &self.goalsTotal) }()
-      case 2: try { try decoder.decodeSingularInt32Field(value: &self.goalsAchieved) }()
-      case 3: try { try decoder.decodeSingularDoubleField(value: &self.goalsPercent) }()
-      case 4: try { try decoder.decodeSingularBoolField(value: &self.behind) }()
-      case 5: try { try decoder.decodeSingularBoolField(value: &self.hasMetric_p) }()
-      case 6: try { try decoder.decodeSingularBoolField(value: &self.hasReading_p) }()
-      case 7: try { try decoder.decodeSingularDoubleField(value: &self.metricCurrent) }()
-      case 8: try { try decoder.decodeSingularDoubleField(value: &self.metricChange) }()
-      case 9: try { try decoder.decodeSingularDoubleField(value: &self.metricPercent) }()
-      case 10: try { try decoder.decodeSingularMessageField(value: &self._lastReadingTime) }()
-      case 11: try { try decoder.decodeSingularDoubleField(value: &self.percent) }()
-      case 12: try { try decoder.decodeSingularInt32Field(value: &self._daysLeft) }()
-      case 13: try { try decoder.decodeSingularBoolField(value: &self.onTrack) }()
-      default: break
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
+        switch fieldNumber {
+        case 1: try { try decoder.decodeSingularInt32Field(value: &_storage._goalsTotal) }()
+        case 2: try { try decoder.decodeSingularInt32Field(value: &_storage._goalsAchieved) }()
+        case 3: try { try decoder.decodeSingularDoubleField(value: &_storage._goalsPercent) }()
+        case 4: try { try decoder.decodeSingularBoolField(value: &_storage._behind) }()
+        case 5: try { try decoder.decodeSingularBoolField(value: &_storage._hasMetric_p) }()
+        case 6: try { try decoder.decodeSingularBoolField(value: &_storage._hasReading_p) }()
+        case 7: try { try decoder.decodeSingularDoubleField(value: &_storage._metricCurrent) }()
+        case 8: try { try decoder.decodeSingularDoubleField(value: &_storage._metricChange) }()
+        case 9: try { try decoder.decodeSingularDoubleField(value: &_storage._metricPercent) }()
+        case 10: try { try decoder.decodeSingularMessageField(value: &_storage._lastReadingTime) }()
+        case 11: try { try decoder.decodeSingularDoubleField(value: &_storage._percent) }()
+        case 12: try { try decoder.decodeSingularInt32Field(value: &_storage._daysLeft) }()
+        case 13: try { try decoder.decodeSingularBoolField(value: &_storage._onTrack) }()
+        case 14: try { try decoder.decodeSingularInt32Field(value: &_storage._milestonesDone) }()
+        case 15: try { try decoder.decodeSingularInt32Field(value: &_storage._milestonesTotal) }()
+        case 16: try { try decoder.decodeSingularDoubleField(value: &_storage._milestonePercent) }()
+        case 17: try { try decoder.decodeSingularMessageField(value: &_storage._nextMilestone) }()
+        case 18: try { try decoder.decodeSingularInt32Field(value: &_storage._milestonesOverdue) }()
+        default: break
+        }
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every if/case branch local when no optimizations
-    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-    // https://github.com/apple/swift-protobuf/issues/1182
-    if self.goalsTotal != 0 {
-      try visitor.visitSingularInt32Field(value: self.goalsTotal, fieldNumber: 1)
-    }
-    if self.goalsAchieved != 0 {
-      try visitor.visitSingularInt32Field(value: self.goalsAchieved, fieldNumber: 2)
-    }
-    if self.goalsPercent.bitPattern != 0 {
-      try visitor.visitSingularDoubleField(value: self.goalsPercent, fieldNumber: 3)
-    }
-    if self.behind != false {
-      try visitor.visitSingularBoolField(value: self.behind, fieldNumber: 4)
-    }
-    if self.hasMetric_p != false {
-      try visitor.visitSingularBoolField(value: self.hasMetric_p, fieldNumber: 5)
-    }
-    if self.hasReading_p != false {
-      try visitor.visitSingularBoolField(value: self.hasReading_p, fieldNumber: 6)
-    }
-    if self.metricCurrent.bitPattern != 0 {
-      try visitor.visitSingularDoubleField(value: self.metricCurrent, fieldNumber: 7)
-    }
-    if self.metricChange.bitPattern != 0 {
-      try visitor.visitSingularDoubleField(value: self.metricChange, fieldNumber: 8)
-    }
-    if self.metricPercent.bitPattern != 0 {
-      try visitor.visitSingularDoubleField(value: self.metricPercent, fieldNumber: 9)
-    }
-    try { if let v = self._lastReadingTime {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 10)
-    } }()
-    if self.percent.bitPattern != 0 {
-      try visitor.visitSingularDoubleField(value: self.percent, fieldNumber: 11)
-    }
-    try { if let v = self._daysLeft {
-      try visitor.visitSingularInt32Field(value: v, fieldNumber: 12)
-    } }()
-    if self.onTrack != false {
-      try visitor.visitSingularBoolField(value: self.onTrack, fieldNumber: 13)
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every if/case branch local when no optimizations
+      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+      // https://github.com/apple/swift-protobuf/issues/1182
+      if _storage._goalsTotal != 0 {
+        try visitor.visitSingularInt32Field(value: _storage._goalsTotal, fieldNumber: 1)
+      }
+      if _storage._goalsAchieved != 0 {
+        try visitor.visitSingularInt32Field(value: _storage._goalsAchieved, fieldNumber: 2)
+      }
+      if _storage._goalsPercent.bitPattern != 0 {
+        try visitor.visitSingularDoubleField(value: _storage._goalsPercent, fieldNumber: 3)
+      }
+      if _storage._behind != false {
+        try visitor.visitSingularBoolField(value: _storage._behind, fieldNumber: 4)
+      }
+      if _storage._hasMetric_p != false {
+        try visitor.visitSingularBoolField(value: _storage._hasMetric_p, fieldNumber: 5)
+      }
+      if _storage._hasReading_p != false {
+        try visitor.visitSingularBoolField(value: _storage._hasReading_p, fieldNumber: 6)
+      }
+      if _storage._metricCurrent.bitPattern != 0 {
+        try visitor.visitSingularDoubleField(value: _storage._metricCurrent, fieldNumber: 7)
+      }
+      if _storage._metricChange.bitPattern != 0 {
+        try visitor.visitSingularDoubleField(value: _storage._metricChange, fieldNumber: 8)
+      }
+      if _storage._metricPercent.bitPattern != 0 {
+        try visitor.visitSingularDoubleField(value: _storage._metricPercent, fieldNumber: 9)
+      }
+      try { if let v = _storage._lastReadingTime {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 10)
+      } }()
+      if _storage._percent.bitPattern != 0 {
+        try visitor.visitSingularDoubleField(value: _storage._percent, fieldNumber: 11)
+      }
+      try { if let v = _storage._daysLeft {
+        try visitor.visitSingularInt32Field(value: v, fieldNumber: 12)
+      } }()
+      if _storage._onTrack != false {
+        try visitor.visitSingularBoolField(value: _storage._onTrack, fieldNumber: 13)
+      }
+      if _storage._milestonesDone != 0 {
+        try visitor.visitSingularInt32Field(value: _storage._milestonesDone, fieldNumber: 14)
+      }
+      if _storage._milestonesTotal != 0 {
+        try visitor.visitSingularInt32Field(value: _storage._milestonesTotal, fieldNumber: 15)
+      }
+      if _storage._milestonePercent.bitPattern != 0 {
+        try visitor.visitSingularDoubleField(value: _storage._milestonePercent, fieldNumber: 16)
+      }
+      try { if let v = _storage._nextMilestone {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 17)
+      } }()
+      if _storage._milestonesOverdue != 0 {
+        try visitor.visitSingularInt32Field(value: _storage._milestonesOverdue, fieldNumber: 18)
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Noted_V1_ObjectiveProgress, rhs: Noted_V1_ObjectiveProgress) -> Bool {
-    if lhs.goalsTotal != rhs.goalsTotal {return false}
-    if lhs.goalsAchieved != rhs.goalsAchieved {return false}
-    if lhs.goalsPercent != rhs.goalsPercent {return false}
-    if lhs.behind != rhs.behind {return false}
-    if lhs.hasMetric_p != rhs.hasMetric_p {return false}
-    if lhs.hasReading_p != rhs.hasReading_p {return false}
-    if lhs.metricCurrent != rhs.metricCurrent {return false}
-    if lhs.metricChange != rhs.metricChange {return false}
-    if lhs.metricPercent != rhs.metricPercent {return false}
-    if lhs._lastReadingTime != rhs._lastReadingTime {return false}
-    if lhs.percent != rhs.percent {return false}
-    if lhs._daysLeft != rhs._daysLeft {return false}
-    if lhs.onTrack != rhs.onTrack {return false}
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._goalsTotal != rhs_storage._goalsTotal {return false}
+        if _storage._goalsAchieved != rhs_storage._goalsAchieved {return false}
+        if _storage._goalsPercent != rhs_storage._goalsPercent {return false}
+        if _storage._behind != rhs_storage._behind {return false}
+        if _storage._hasMetric_p != rhs_storage._hasMetric_p {return false}
+        if _storage._hasReading_p != rhs_storage._hasReading_p {return false}
+        if _storage._metricCurrent != rhs_storage._metricCurrent {return false}
+        if _storage._metricChange != rhs_storage._metricChange {return false}
+        if _storage._metricPercent != rhs_storage._metricPercent {return false}
+        if _storage._lastReadingTime != rhs_storage._lastReadingTime {return false}
+        if _storage._percent != rhs_storage._percent {return false}
+        if _storage._daysLeft != rhs_storage._daysLeft {return false}
+        if _storage._onTrack != rhs_storage._onTrack {return false}
+        if _storage._milestonesDone != rhs_storage._milestonesDone {return false}
+        if _storage._milestonesTotal != rhs_storage._milestonesTotal {return false}
+        if _storage._milestonePercent != rhs_storage._milestonePercent {return false}
+        if _storage._nextMilestone != rhs_storage._nextMilestone {return false}
+        if _storage._milestonesOverdue != rhs_storage._milestonesOverdue {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -9222,6 +9451,46 @@ nonisolated extension Noted_V1_ListMeasurementsResponse: SwiftProtobuf.Message, 
 
   public static func ==(lhs: Noted_V1_ListMeasurementsResponse, rhs: Noted_V1_ListMeasurementsResponse) -> Bool {
     if lhs.measurements != rhs.measurements {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Noted_V1_SetObjectiveMilestoneDoneRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".SetObjectiveMilestoneDoneRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}objective_id\0\u{3}milestone_id\0\u{1}done\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.objectiveID) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.milestoneID) }()
+      case 3: try { try decoder.decodeSingularBoolField(value: &self.done) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.objectiveID.isEmpty {
+      try visitor.visitSingularStringField(value: self.objectiveID, fieldNumber: 1)
+    }
+    if !self.milestoneID.isEmpty {
+      try visitor.visitSingularStringField(value: self.milestoneID, fieldNumber: 2)
+    }
+    if self.done != false {
+      try visitor.visitSingularBoolField(value: self.done, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Noted_V1_SetObjectiveMilestoneDoneRequest, rhs: Noted_V1_SetObjectiveMilestoneDoneRequest) -> Bool {
+    if lhs.objectiveID != rhs.objectiveID {return false}
+    if lhs.milestoneID != rhs.milestoneID {return false}
+    if lhs.done != rhs.done {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -11680,7 +11949,7 @@ nonisolated extension Noted_V1_ListTradesResponse: SwiftProtobuf.Message, SwiftP
 
 nonisolated extension Noted_V1_TimeEntry: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TimeEntry"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}title\0\u{1}minutes\0\u{3}start_time\0\u{3}end_time\0\u{1}note\0\u{3}project_id\0\u{3}goal_id\0\u{1}space\0\u{1}running\0\u{3}check_in_id\0\u{3}create_time\0\u{3}update_time\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}title\0\u{1}minutes\0\u{3}start_time\0\u{3}end_time\0\u{1}note\0\u{3}project_id\0\u{3}goal_id\0\u{1}space\0\u{1}running\0\u{3}check_in_id\0\u{3}create_time\0\u{3}update_time\0\u{1}timed\0")
 
   fileprivate class _StorageClass {
     var _id: String = String()
@@ -11696,6 +11965,7 @@ nonisolated extension Noted_V1_TimeEntry: SwiftProtobuf.Message, SwiftProtobuf._
     var _checkInID: String = String()
     var _createTime: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
     var _updateTime: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+    var _timed: Bool = false
 
       // This property is used as the initial default value for new instances of the type.
       // The type itself is protecting the reference to its storage via CoW semantics.
@@ -11719,6 +11989,7 @@ nonisolated extension Noted_V1_TimeEntry: SwiftProtobuf.Message, SwiftProtobuf._
       _checkInID = source._checkInID
       _createTime = source._createTime
       _updateTime = source._updateTime
+      _timed = source._timed
     }
   }
 
@@ -11750,6 +12021,7 @@ nonisolated extension Noted_V1_TimeEntry: SwiftProtobuf.Message, SwiftProtobuf._
         case 11: try { try decoder.decodeSingularStringField(value: &_storage._checkInID) }()
         case 12: try { try decoder.decodeSingularMessageField(value: &_storage._createTime) }()
         case 13: try { try decoder.decodeSingularMessageField(value: &_storage._updateTime) }()
+        case 14: try { try decoder.decodeSingularBoolField(value: &_storage._timed) }()
         default: break
         }
       }
@@ -11801,6 +12073,9 @@ nonisolated extension Noted_V1_TimeEntry: SwiftProtobuf.Message, SwiftProtobuf._
       try { if let v = _storage._updateTime {
         try visitor.visitSingularMessageField(value: v, fieldNumber: 13)
       } }()
+      if _storage._timed != false {
+        try visitor.visitSingularBoolField(value: _storage._timed, fieldNumber: 14)
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -11823,6 +12098,7 @@ nonisolated extension Noted_V1_TimeEntry: SwiftProtobuf.Message, SwiftProtobuf._
         if _storage._checkInID != rhs_storage._checkInID {return false}
         if _storage._createTime != rhs_storage._createTime {return false}
         if _storage._updateTime != rhs_storage._updateTime {return false}
+        if _storage._timed != rhs_storage._timed {return false}
         return true
       }
       if !storagesAreEqual {return false}

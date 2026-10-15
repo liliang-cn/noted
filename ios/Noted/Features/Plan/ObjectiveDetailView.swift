@@ -2,7 +2,8 @@ import Charts
 import SwiftUI
 
 /// A larger goal (减肥): the ring over its 维度 with 打卡, streak / month stats, the 维度 list with
-/// their own check-ins and "+ 添加维度", the 指标 card with a chart and "+ 记一次体重", and the readings.
+/// their own check-ins and "+ 添加维度", the 里程碑 to tick, the 指标 card with a chart and
+/// "+ 记一次体重", and the readings.
 struct ObjectiveDetailView: View {
     @Environment(AppData.self) private var data
     @Environment(Router.self) private var router
@@ -13,6 +14,7 @@ struct ObjectiveDetailView: View {
     @State private var addDim = false
     @State private var addReading = false
     @State private var addMetric = false
+    @State private var addMilestone = false
     @State private var minutesFor: MinutesTarget?
     @State private var askDelete = false
     @State private var deletingDim: Noted_V1_Goal?
@@ -98,6 +100,21 @@ struct ObjectiveDetailView: View {
                     }
                     .planCardRow(bottom: 0)
                 }
+            }
+
+            Section {
+                ForEach(o.milestones, id: \.id) { m in
+                    MilestoneRow(milestone: m) {
+                        Task { await data.setObjectiveMilestoneDone(objectiveID, milestoneID: m.id, done: !m.done) }
+                    }
+                    .swipeActions(edge: .trailing) {
+                        Button { removeMilestone(m, from: o) } label: { Label("删除", systemImage: "trash") }.tint(.danger)
+                    }
+                }
+                PlanAddRow(title: "添加里程碑", systemImage: "flag") { addMilestone = true }
+                    .accessibilityIdentifier("objective-add-milestone")
+            } header: {
+                Text(o.milestones.isEmpty ? "里程碑" : "里程碑 \(o.milestonesSummary)")
             }
 
             Section {
@@ -199,6 +216,18 @@ struct ObjectiveDetailView: View {
                 }
             }
         }
+        .sheet(isPresented: $addMilestone) {
+            AddMilestoneSheet { title, due, criteria in
+                Task {
+                    var m = Noted_V1_Milestone()
+                    m.title = title; m.criteria = criteria
+                    if let due { m.dueTime = .init(date: due) }
+                    var next = o
+                    next.milestones.append(m)
+                    if await data.updateObjective(next, fields: ["milestones"]) != nil { toaster.show("已添加里程碑") }
+                }
+            }
+        }
         .sheet(isPresented: $addMetric) {
             AddMetricSheet { name, unit, start, target in
                 Task {
@@ -220,6 +249,13 @@ struct ObjectiveDetailView: View {
                 }
             }
         }
+    }
+
+    /// Sends the list without `m`; the others keep their ids and so their done state.
+    private func removeMilestone(_ m: Noted_V1_Milestone, from o: Noted_V1_Objective) {
+        var next = o
+        next.milestones.removeAll { $0.id == m.id }
+        Task { if await data.updateObjective(next, fields: ["milestones"]) != nil { toaster.show("已删除", systemImage: "trash") } }
     }
 
     private func subtitle(_ o: Noted_V1_Objective) -> String {
@@ -273,6 +309,48 @@ private struct DimensionRow: View {
         }
         .padding(.vertical, 3)
         .accessibilityIdentifier("dimension-\(goal.id)")
+    }
+}
+
+/// A milestone: its check, title, and what counts as done · 截止 date (red once overdue).
+private struct MilestoneRow: View {
+    let milestone: Noted_V1_Milestone
+    let toggle: () -> Void
+
+    var body: some View {
+        let m = milestone
+        let overdue = m.isOverdue()
+        HStack(spacing: 12) {
+            CheckButton(isOn: m.done, action: toggle)
+                .buttonStyle(.borderless)
+                .padding(.horizontal, -10).padding(.vertical, -10)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(m.title)
+                    .foregroundStyle(m.done ? Color.secondaryText : Color.primary)
+                    .strikethrough(m.done, color: .tertiaryText)
+                    .lineLimit(2)
+                if let sub = subtitle(m, overdue: overdue) {
+                    sub.font(.footnote).foregroundStyle(.secondaryText).lineLimit(2)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 4)
+        .frame(minHeight: 44)
+        .accessibilityIdentifier("milestone-\(m.id)")
+    }
+
+    private func subtitle(_ m: Noted_V1_Milestone, overdue: Bool) -> Text? {
+        var parts: [Text] = []
+        if m.done, m.hasDoneTime {
+            parts.append(Text("\(Fmt.md(m.doneTime.date)) 完成"))
+        } else if let due = m.due {
+            parts.append(overdue ? Text("截止 \(Fmt.md(due)) · 已逾期").foregroundColor(.danger) : Text("截止 \(Fmt.md(due))"))
+        }
+        if !m.criteria.isEmpty { parts.append(Text(m.criteria)) }
+        guard var t = parts.first else { return nil }
+        for p in parts.dropFirst() { t = t + Text(" · ") + p }
+        return t
     }
 }
 
@@ -477,6 +555,60 @@ private struct AddDimensionSheet: View {
                     .fontWeight(.semibold)
                     .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
                     .accessibilityIdentifier("dimension-add-save")
+                }
+            }
+        }
+        .presentationDetents([.medium])
+        .onAppear { focused = true }
+    }
+}
+
+/// 添加里程碑: title, an optional due date, and what counts as done.
+private struct AddMilestoneSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let onAdd: (String, Date?, String) -> Void
+    @State private var title = ""
+    @State private var hasDue = false
+    @State private var due = Calendar.current.date(byAdding: .month, value: 1, to: .now) ?? .now
+    @State private var criteria = ""
+    @FocusState private var focused: Bool
+
+    private var trimmed: String { title.trimmingCharacters(in: .whitespaces) }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    TextField("如 通过 A2 考试", text: $title)
+                        .font(.title3)
+                        .focused($focused)
+                        .accessibilityLabel("里程碑名称")
+                }
+                Section {
+                    Toggle("截止日期", isOn: $hasDue.animation())
+                    if hasDue {
+                        DatePicker("截止日期", selection: $due, displayedComponents: .date)
+                            .datePickerStyle(.compact)
+                    }
+                    TextField("完成标准（可选）", text: $criteria, axis: .vertical)
+                        .lineLimit(1...3)
+                        .accessibilityLabel("完成标准")
+                }
+            }
+            .navigationTitle("添加里程碑")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("添加") {
+                        // The end of the chosen day, so it is not overdue on the day itself.
+                        let end = hasDue ? Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: due) : nil
+                        onAdd(trimmed, end, criteria.trimmingCharacters(in: .whitespacesAndNewlines))
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
+                    .disabled(trimmed.isEmpty)
+                    .accessibilityIdentifier("milestone-add-save")
                 }
             }
         }

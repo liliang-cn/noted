@@ -8831,6 +8831,19 @@ public enum Noted_V1_ObjectiveService: Sendable {
                 type: .unary
             )
         }
+        /// Namespace for "SetObjectiveMilestoneDone" metadata.
+        public enum SetObjectiveMilestoneDone: Sendable {
+            /// Request type for "SetObjectiveMilestoneDone".
+            public typealias Input = Noted_V1_SetObjectiveMilestoneDoneRequest
+            /// Response type for "SetObjectiveMilestoneDone".
+            public typealias Output = Noted_V1_Objective
+            /// Descriptor for "SetObjectiveMilestoneDone".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.ObjectiveService"),
+                method: "SetObjectiveMilestoneDone",
+                type: .unary
+            )
+        }
         /// Descriptors for all methods in the "noted.v1.ObjectiveService" service.
         public static let descriptors: [GRPCCore.MethodDescriptor] = [
             CreateObjective.descriptor,
@@ -8840,7 +8853,8 @@ public enum Noted_V1_ObjectiveService: Sendable {
             ListObjectives.descriptor,
             RecordMeasurement.descriptor,
             DeleteMeasurement.descriptor,
-            ListMeasurements.descriptor
+            ListMeasurements.descriptor,
+            SetObjectiveMilestoneDone.descriptor
         ]
     }
 }
@@ -8982,6 +8996,25 @@ extension Noted_V1_ObjectiveService {
             request: GRPCCore.StreamingServerRequest<Noted_V1_ListMeasurementsRequest>,
             context: GRPCCore.ServerContext
         ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListMeasurementsResponse>
+
+        /// Handle the "SetObjectiveMilestoneDone" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Ticks (or unticks) one of the objective's milestones and returns the
+        /// > objective with its new progress.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_SetObjectiveMilestoneDoneRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Objective` messages.
+        func setObjectiveMilestoneDone(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_SetObjectiveMilestoneDoneRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Objective>
     }
 
     /// Service protocol for the "noted.v1.ObjectiveService" service.
@@ -9107,6 +9140,25 @@ extension Noted_V1_ObjectiveService {
             request: GRPCCore.ServerRequest<Noted_V1_ListMeasurementsRequest>,
             context: GRPCCore.ServerContext
         ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListMeasurementsResponse>
+
+        /// Handle the "SetObjectiveMilestoneDone" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Ticks (or unticks) one of the objective's milestones and returns the
+        /// > objective with its new progress.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SetObjectiveMilestoneDoneRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Objective` message.
+        func setObjectiveMilestoneDone(
+            request: GRPCCore.ServerRequest<Noted_V1_SetObjectiveMilestoneDoneRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Objective>
     }
 
     /// Simple service protocol for the "noted.v1.ObjectiveService" service.
@@ -9230,6 +9282,25 @@ extension Noted_V1_ObjectiveService {
             request: Noted_V1_ListMeasurementsRequest,
             context: GRPCCore.ServerContext
         ) async throws -> Noted_V1_ListMeasurementsResponse
+
+        /// Handle the "SetObjectiveMilestoneDone" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Ticks (or unticks) one of the objective's milestones and returns the
+        /// > objective with its new progress.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_SetObjectiveMilestoneDoneRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Objective` to respond with.
+        func setObjectiveMilestoneDone(
+            request: Noted_V1_SetObjectiveMilestoneDoneRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Objective
     }
 }
 
@@ -9325,6 +9396,17 @@ extension Noted_V1_ObjectiveService.StreamingServiceProtocol {
                 )
             }
         )
+        router.registerHandler(
+            forMethod: Noted_V1_ObjectiveService.Method.SetObjectiveMilestoneDone.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_SetObjectiveMilestoneDoneRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Objective>(),
+            handler: { request, context in
+                try await self.setObjectiveMilestoneDone(
+                    request: request,
+                    context: context
+                )
+            }
+        )
     }
 }
 
@@ -9413,6 +9495,17 @@ extension Noted_V1_ObjectiveService.ServiceProtocol {
         context: GRPCCore.ServerContext
     ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListMeasurementsResponse> {
         let response = try await self.listMeasurements(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func setObjectiveMilestoneDone(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_SetObjectiveMilestoneDoneRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Objective> {
+        let response = try await self.setObjectiveMilestoneDone(
             request: GRPCCore.ServerRequest(stream: request),
             context: context
         )
@@ -9520,6 +9613,19 @@ extension Noted_V1_ObjectiveService.SimpleServiceProtocol {
     ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListMeasurementsResponse> {
         return GRPCCore.ServerResponse<Noted_V1_ListMeasurementsResponse>(
             message: try await self.listMeasurements(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func setObjectiveMilestoneDone(
+        request: GRPCCore.ServerRequest<Noted_V1_SetObjectiveMilestoneDoneRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Objective> {
+        return GRPCCore.ServerResponse<Noted_V1_Objective>(
+            message: try await self.setObjectiveMilestoneDone(
                 request: request.message,
                 context: context
             ),
@@ -9691,6 +9797,30 @@ extension Noted_V1_ObjectiveService {
             deserializer: some GRPCCore.MessageDeserializer<Noted_V1_ListMeasurementsResponse>,
             options: GRPCCore.CallOptions,
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListMeasurementsResponse>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "SetObjectiveMilestoneDone" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Ticks (or unticks) one of the objective's milestones and returns the
+        /// > objective with its new progress.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SetObjectiveMilestoneDoneRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_SetObjectiveMilestoneDoneRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Objective` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func setObjectiveMilestoneDone<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_SetObjectiveMilestoneDoneRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_SetObjectiveMilestoneDoneRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Objective>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Objective>) async throws -> Result
         ) async throws -> Result where Result: Sendable
     }
 
@@ -9953,6 +10083,41 @@ extension Noted_V1_ObjectiveService {
                 onResponse: handleResponse
             )
         }
+
+        /// Call the "SetObjectiveMilestoneDone" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Ticks (or unticks) one of the objective's milestones and returns the
+        /// > objective with its new progress.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SetObjectiveMilestoneDoneRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_SetObjectiveMilestoneDoneRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Objective` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func setObjectiveMilestoneDone<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_SetObjectiveMilestoneDoneRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_SetObjectiveMilestoneDoneRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Objective>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Objective>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_ObjectiveService.Method.SetObjectiveMilestoneDone.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
     }
 }
 
@@ -10158,6 +10323,36 @@ extension Noted_V1_ObjectiveService.ClientProtocol {
             request: request,
             serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListMeasurementsRequest>(),
             deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListMeasurementsResponse>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "SetObjectiveMilestoneDone" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Ticks (or unticks) one of the objective's milestones and returns the
+    /// > objective with its new progress.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_SetObjectiveMilestoneDoneRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func setObjectiveMilestoneDone<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_SetObjectiveMilestoneDoneRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Objective>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.setObjectiveMilestoneDone(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_SetObjectiveMilestoneDoneRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_Objective>(),
             options: options,
             onResponse: handleResponse
         )
@@ -10397,6 +10592,40 @@ extension Noted_V1_ObjectiveService.ClientProtocol {
             metadata: metadata
         )
         return try await self.listMeasurements(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "SetObjectiveMilestoneDone" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Ticks (or unticks) one of the objective's milestones and returns the
+    /// > objective with its new progress.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func setObjectiveMilestoneDone<Result>(
+        _ message: Noted_V1_SetObjectiveMilestoneDoneRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Objective>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_SetObjectiveMilestoneDoneRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.setObjectiveMilestoneDone(
             request: request,
             options: options,
             onResponse: handleResponse

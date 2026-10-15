@@ -249,6 +249,14 @@ extension Noted_V1_Objective {
     var streak: Int32 { goals.map(\.progress.streak).max() ?? 0 }
     /// Dimensions that met this period's target, out of all.
     var dimsDone: Int { goals.filter(\.isAchieved).count }
+    /// "1/3"
+    var milestonesSummary: String { "\(milestones.filter(\.done).count)/\(milestones.count)" }
+}
+
+extension Noted_V1_Milestone {
+    var due: Date? { hasDueTime ? dueTime.date : nil }
+    /// Undone and past its due time.
+    func isOverdue(now: Date = .now) -> Bool { !done && hasDueTime && dueTime.date < now }
 }
 
 // MARK: - projects

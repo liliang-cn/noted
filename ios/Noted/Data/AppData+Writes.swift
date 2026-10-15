@@ -11,7 +11,7 @@ import SwiftProtobuf
 //   goal:      title, notes, period, target, unit, time_zone, archived, space, counter_unit,
 //              counter_target, objective_id, project_id, milestones
 //   objective: title, notes, space, start_time, due_time, metric_name, metric_unit, metric_start,
-//              metric_target, archived, project_id
+//              metric_target, archived, project_id, milestones (replaces the list; ids keep done state)
 //   holding:   name, currency, notes, last_price, dca_amount, dca_day, dca_time, time_zone, archived
 // A field in the mask whose value is unset clears it (e.g. "due_time" with no due time).
 
@@ -399,6 +399,17 @@ extension AppData {
         if fields.contains("project_id") { projectChanged(o.projectID, old?.projectID ?? "") }
         didWrite()
         return o
+    }
+
+    /// Ticks (or unticks) one of an objective's milestones.
+    @discardableResult
+    func setObjectiveMilestoneDone(_ objectiveID: String, milestoneID: String, done: Bool) async -> Bool {
+        var r = Noted_V1_SetObjectiveMilestoneDoneRequest()
+        r.objectiveID = objectiveID; r.milestoneID = milestoneID; r.done = done
+        guard let o = await perform({ try await $0.objectives.setObjectiveMilestoneDone(r) }) else { return false }
+        upsert(o)
+        didWrite()
+        return true
     }
 
     /// Deletes an objective; its dimensions stay as stand-alone goals.
