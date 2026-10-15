@@ -510,14 +510,6 @@ func (b *builder) goal(g store.Goal) {
 	}
 	proj, prels := b.projectLine(g.ProjectID)
 	rels = append(rels, prels...)
-	var ms []string
-	for _, m := range g.Milestones {
-		if m.Done {
-			ms = append(ms, m.Title+" ✓")
-		} else {
-			ms = append(ms, m.Title)
-		}
-	}
 	status := b.l.active
 	if g.Archived {
 		status = b.l.archived
@@ -525,11 +517,40 @@ func (b *builder) goal(g store.Goal) {
 	b.emit(record{
 		kind: KindGoal, id: g.ID, title: b.l.kindGoal + "：" + g.Title, name: g.Title,
 		desc:    line(b.l.kindGoal, target, status),
-		content: []string{b.l.kindGoal + "：" + g.Title, line(b.l.target+target, b.l.status+status, b.l.space+b.space(g.Space)), objective, proj, labeled(b.l.milestones, strings.Join(ms, ", ")), g.Notes},
+		content: []string{b.l.kindGoal + "：" + g.Title, line(b.l.target+target, b.l.status+status, b.l.space+b.space(g.Space)), objective, proj, labeled(b.l.milestones, milestoneList(g.Milestones)), g.Notes},
 		meta: map[string]string{"status": statusKey(g.Archived, "active"), "space": g.Space, "period": g.Period, "target": num(g.Target), "unit": g.Unit,
 			"counter_target": numIf(g.CounterTarget), "counter_unit": g.CounterUnit, "objective_id": g.ObjectiveID, "project_id": g.ProjectID},
 		rels: rels,
 	})
+}
+
+// milestoneList is "A1 ✓, A2, exam": the titles in order, done ones ticked.
+func milestoneList(ms []store.Milestone) string {
+	var out []string
+	for _, m := range ms {
+		if m.Done {
+			out = append(out, m.Title+" ✓")
+		} else {
+			out = append(out, m.Title)
+		}
+	}
+	return strings.Join(out, ", ")
+}
+
+// milestoneDates is milestoneList with each undone milestone's due date.
+func (b *builder) milestoneDates(ms []store.Milestone) string {
+	var out []string
+	for _, m := range ms {
+		switch {
+		case m.Done:
+			out = append(out, m.Title+" ✓")
+		case m.Due != nil:
+			out = append(out, m.Title+" ("+b.datePtr(m.Due)+")")
+		default:
+			out = append(out, m.Title)
+		}
+	}
+	return strings.Join(out, ", ")
 }
 
 func numIf(v float64) string {
@@ -560,10 +581,11 @@ func (b *builder) objective(v store.ObjectiveView) {
 	proj, rels := b.projectLine(o.ProjectID)
 	b.emit(record{
 		kind: KindObjective, id: o.ID, title: b.l.kindObjective + "：" + o.Title, name: o.Title,
-		desc:    line(b.l.kindObjective, status, labeled(b.l.due, b.datePtr(o.Due))),
-		content: []string{b.l.kindObjective + "：" + o.Title, line(b.l.status+status, b.l.space+b.space(o.Space), labeled(b.l.start, b.datePtr(o.Start)), labeled(b.l.due, b.datePtr(o.Due))), metric, snapshot, proj, o.Notes},
-		meta:    meta,
-		rels:    rels,
+		desc: line(b.l.kindObjective, status, labeled(b.l.due, b.datePtr(o.Due))),
+		content: []string{b.l.kindObjective + "：" + o.Title, line(b.l.status+status, b.l.space+b.space(o.Space), labeled(b.l.start, b.datePtr(o.Start)), labeled(b.l.due, b.datePtr(o.Due))), metric, snapshot, proj,
+			labeled(b.l.milestones, b.milestoneDates(o.Milestones)), o.Notes},
+		meta: meta,
+		rels: rels,
 	})
 }
 

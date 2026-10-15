@@ -250,6 +250,16 @@ CREATE TABLE IF NOT EXISTS objective_measurements (
 	note         TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS objective_measurements_objective ON objective_measurements(objective_id, time_ms);
+CREATE TABLE IF NOT EXISTS objective_milestones (
+	id           TEXT PRIMARY KEY,
+	objective_id TEXT NOT NULL REFERENCES objectives(id) ON DELETE CASCADE,
+	position     INTEGER NOT NULL,
+	title        TEXT NOT NULL,
+	done_ms      INTEGER,
+	due_ms       INTEGER,
+	criteria     TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS objective_milestones_objective ON objective_milestones(objective_id, position);
 CREATE TABLE IF NOT EXISTS holdings (
 	id            TEXT PRIMARY KEY,
 	user_id       TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -468,6 +478,10 @@ func (s *Store) migrate(ctx context.Context) error {
 		{"tasks", "next_task_id", "TEXT NOT NULL DEFAULT ''"},
 		// The time entry a check-in was made by; it follows that entry.
 		{"goal_checkins", "time_entry_id", "TEXT NOT NULL DEFAULT ''"},
+		// A milestone's due time and what counts as done (objective_milestones
+		// has them from the start).
+		{"goal_milestones", "due_ms", "INTEGER"},
+		{"goal_milestones", "criteria", "TEXT NOT NULL DEFAULT ''"},
 	} {
 		if err := s.ensureColumn(ctx, c.table, c.col, c.ddl); err != nil {
 			return err

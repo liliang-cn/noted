@@ -81,7 +81,7 @@ of the occurrence.
 start date, or to the due date when there is no start; it is negative once past.
 
 **goal**: `title`, `notes?`, `period`, `target`, `unit`, `timeZone?`, `eventId?`, `milestones?`
-[{`id`, `title`, `done`, `doneTime?`}], `archived`, `space`, `counterUnit?`, `counterTarget?`,
+[milestone], `archived`, `space`, `counterUnit?`, `counterTarget?`,
 `objectiveId?`, `projectId?`, `createTime`, `updateTime`, `progress` {`periodStart`, `periodEnd`,
 `done`, `target`, `remaining`, `percent`, `achieved`, `behind`, `streak`, `days?` and `recent?`
 [{`date` (YYYY-MM-DD), `amount`}], `milestonesDone`, `milestonesTotal`, `milestonePercent`,
@@ -91,7 +91,14 @@ start date, or to the due date when there is no start; it is negative once past.
 (none: no metric), `metricStart`, `metricTarget`, `archived`, `projectId?`, `createTime`,
 `updateTime`, `progress` {`goalsTotal`, `goalsAchieved`, `goalsPercent`, `behind`, `hasMetric`,
 `hasReading`, `metricCurrent`, `metricChange`, `metricPercent`, `lastReadingTime?`, `percent`,
-`daysLeft?`, `onTrack`}, `goals?` (its dimensions, as goal items).
+`daysLeft?`, `onTrack`, `milestonesDone`, `milestonesTotal`, `milestonePercent`, `milestonesOverdue`,
+`nextMilestone?` (the first undone one)}, `goals?` (its dimensions, as goal items), `milestones?`
+[milestone] in order. `percent` is `metricPercent` once the metric has a reading, else
+`milestonePercent` when there are milestones, else `goalsPercent`. An undone milestone past its
+`dueTime` makes `behind` true and `onTrack` false.
+
+**milestone** (inside a goal or an objective): `id`, `title`, `done`, `doneTime?`, `dueTime?`,
+`criteria?` (what counts as done).
 
 **holding**: `symbol`, `name?`, `currency`, `notes?`, `lastPrice?` (money, entered by the user),
 `lastPriceTime?`, `archived`, `createTime`, `updateTime`,
@@ -155,7 +162,7 @@ ask), `status`, `title`, `reason?`, `space`, `source` (`rules` or `ai`), `operat
 | `check_in` | goal, plus `checkIn` (the check-in just recorded) |
 | `list_check_ins` | `{items: [checkIn]}` |
 | `list_objectives` | `{items: [objective]}` |
-| `get_objective`, `create_objective`, `update_objective`, `record_reading` | objective |
+| `get_objective`, `create_objective`, `update_objective`, `record_reading`, `set_objective_milestone_done` | objective |
 | `list_readings` | `{items: [reading]}` |
 | `log_time`, `start_timer`, `stop_timer`, `update_time_entry` | time |
 | `get_running_timer` | `{running: false}` or `{running: true, entry: time}` |

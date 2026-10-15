@@ -213,6 +213,8 @@ type milestoneOut struct {
 	Title    string `json:"title"`
 	Done     bool   `json:"done"`
 	DoneTime string `json:"doneTime,omitempty"`
+	DueTime  string `json:"dueTime,omitempty"`
+	Criteria string `json:"criteria,omitempty" jsonschema:"what counts as done"`
 }
 
 type dayTotalOut struct {
@@ -276,19 +278,24 @@ type checkInOut struct {
 }
 
 type objectiveProgressOut struct {
-	GoalsTotal      int32   `json:"goalsTotal"`
-	GoalsAchieved   int32   `json:"goalsAchieved"`
-	GoalsPercent    float64 `json:"goalsPercent"`
-	Behind          bool    `json:"behind"`
-	HasMetric       bool    `json:"hasMetric"`
-	HasReading      bool    `json:"hasReading"`
-	MetricCurrent   float64 `json:"metricCurrent"`
-	MetricChange    float64 `json:"metricChange"`
-	MetricPercent   float64 `json:"metricPercent"`
-	LastReadingTime string  `json:"lastReadingTime,omitempty"`
-	Percent         float64 `json:"percent"`
-	DaysLeft        *int32  `json:"daysLeft,omitempty"`
-	OnTrack         bool    `json:"onTrack"`
+	GoalsTotal        int32         `json:"goalsTotal"`
+	GoalsAchieved     int32         `json:"goalsAchieved"`
+	GoalsPercent      float64       `json:"goalsPercent"`
+	Behind            bool          `json:"behind"`
+	HasMetric         bool          `json:"hasMetric"`
+	HasReading        bool          `json:"hasReading"`
+	MetricCurrent     float64       `json:"metricCurrent"`
+	MetricChange      float64       `json:"metricChange"`
+	MetricPercent     float64       `json:"metricPercent"`
+	LastReadingTime   string        `json:"lastReadingTime,omitempty"`
+	Percent           float64       `json:"percent"`
+	DaysLeft          *int32        `json:"daysLeft,omitempty"`
+	OnTrack           bool          `json:"onTrack" jsonschema:"false when the metric lags the time used or a milestone is overdue"`
+	MilestonesDone    int32         `json:"milestonesDone"`
+	MilestonesTotal   int32         `json:"milestonesTotal"`
+	MilestonePercent  float64       `json:"milestonePercent"`
+	MilestonesOverdue int32         `json:"milestonesOverdue" jsonschema:"undone and past their due time"`
+	NextMilestone     *milestoneOut `json:"nextMilestone,omitempty" jsonschema:"the first undone milestone"`
 }
 
 type objectiveOut struct {
@@ -310,6 +317,7 @@ type objectiveOut struct {
 	UpdateTime   string                `json:"updateTime,omitempty"`
 	Progress     *objectiveProgressOut `json:"progress,omitempty"`
 	Goals        []*goalOut            `json:"goals,omitempty" jsonschema:"its dimensions"`
+	Milestones   []milestoneOut        `json:"milestones,omitempty" jsonschema:"the steps on the way, in order"`
 }
 
 type readingOut struct {
@@ -673,7 +681,7 @@ func (t *tools) goal(g *pb.Goal) *goalOut {
 		CounterUnit: g.CounterUnit, CounterTarget: g.CounterTarget, ObjectiveID: g.ObjectiveId, ProjectID: g.ProjectId,
 		CreateTime: t.ts(g.CreateTime), UpdateTime: t.ts(g.UpdateTime)}
 	for _, m := range g.Milestones {
-		out.Milestones = append(out.Milestones, milestoneOut{ID: m.Id, Title: m.Title, Done: m.Done, DoneTime: t.ts(m.DoneTime)})
+		out.Milestones = append(out.Milestones, t.milestone(m))
 	}
 	if p := g.Progress; p != nil {
 		out.Progress = &goalProgressOut{PeriodStart: t.ts(p.PeriodStart), PeriodEnd: t.ts(p.PeriodEnd), Done: p.Done, Target: p.Target,
@@ -704,12 +712,24 @@ func (t *tools) objective(o *pb.Objective) *objectiveOut {
 		out.Progress = &objectiveProgressOut{GoalsTotal: p.GoalsTotal, GoalsAchieved: p.GoalsAchieved, GoalsPercent: p.GoalsPercent,
 			Behind: p.Behind, HasMetric: p.HasMetric, HasReading: p.HasReading, MetricCurrent: p.MetricCurrent,
 			MetricChange: p.MetricChange, MetricPercent: p.MetricPercent, LastReadingTime: t.ts(p.LastReadingTime),
-			Percent: p.Percent, DaysLeft: p.DaysLeft, OnTrack: p.OnTrack}
+			Percent: p.Percent, DaysLeft: p.DaysLeft, OnTrack: p.OnTrack, MilestonesDone: p.MilestonesDone,
+			MilestonesTotal: p.MilestonesTotal, MilestonePercent: p.MilestonePercent, MilestonesOverdue: p.MilestonesOverdue}
+		if p.NextMilestone != nil {
+			m := t.milestone(p.NextMilestone)
+			out.Progress.NextMilestone = &m
+		}
 	}
 	if len(o.Goals) > 0 {
 		out.Goals = items(o.Goals, t.goal)
 	}
+	for _, m := range o.Milestones {
+		out.Milestones = append(out.Milestones, t.milestone(m))
+	}
 	return out
+}
+
+func (t *tools) milestone(m *pb.Milestone) milestoneOut {
+	return milestoneOut{ID: m.Id, Title: m.Title, Done: m.Done, DoneTime: t.ts(m.DoneTime), DueTime: t.ts(m.DueTime), Criteria: m.Criteria}
 }
 
 func (t *tools) reading(m *pb.Measurement) *readingOut {

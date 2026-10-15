@@ -304,7 +304,7 @@ claude mcp add noted -e NOTED_ADDR=127.0.0.1:43872 -e NOTED_TOKEN=<token> -- /pa
 | 概览 | `get_overview`(今天 / 接下来 / 这周 / 这个月) |
 | 项目 | `list_projects` `get_project` `create_project` `update_project` `delete_project` |
 | 目标 | `list_goals` `get_goal` `create_goal` `update_goal` `delete_goal` `check_in` `list_check_ins` `undo_check_in` `set_milestone_done` |
-| 大目标 | `list_objectives` `get_objective` `create_objective` `update_objective` `delete_objective` `record_reading` `list_readings` `delete_reading` |
+| 大目标 | `list_objectives` `get_objective` `create_objective` `update_objective` `delete_objective` `record_reading` `list_readings` `delete_reading` `set_objective_milestone_done`(大目标可带有序里程碑:标题、截止时间、完成标准) |
 | 时间记录 | `log_time` `start_timer` `stop_timer` `get_running_timer` `list_time_entries` `update_time_entry` `delete_time_entry` `time_summary`(游泳 30 分钟;可挂项目或目标,挂目标时自动打卡,按活动/项目/目标/天汇总) |
 | 投资 | `list_holdings` `get_holding` `create_holding` `update_holding` `delete_holding` `record_trade` `list_trades` `delete_trade` |
 | 闹钟 | `create_alarm` `list_alarms` `get_alarm` `update_alarm` `delete_alarm` `get_holidays`(叫我/闹钟用 `mode: alarm`,只要通知用 `reminder`;可跳过节假日或只在工作日响) |

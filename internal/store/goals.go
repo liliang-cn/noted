@@ -40,13 +40,6 @@ type Goal struct {
 	Updated       time.Time
 }
 
-type Milestone struct {
-	ID     string
-	Title  string
-	Done   bool
-	DoneAt *time.Time
-}
-
 type CheckIn struct {
 	ID     string
 	GoalID string
@@ -100,10 +93,7 @@ type GoalView struct {
 	Progress GoalProgress
 }
 
-const (
-	maxMilestones = 50
-	maxAmount     = 1e6
-)
+const maxAmount = 1e6
 
 func (g *Goal) normalize() error {
 	g.Title = strings.TrimSpace(g.Title)
@@ -143,17 +133,7 @@ func (g *Goal) normalize() error {
 	} else if g.CounterUnit == "" || utf8.RuneCountInString(g.CounterUnit) > 20 {
 		return invalid("counter_unit is required with a counter_target, and at most 20 characters")
 	}
-	if len(g.Milestones) > maxMilestones {
-		return invalid("at most %d milestones", maxMilestones)
-	}
-	for i := range g.Milestones {
-		m := &g.Milestones[i]
-		m.Title = strings.TrimSpace(m.Title)
-		if m.Title == "" || utf8.RuneCountInString(m.Title) > 200 {
-			return invalid("a milestone title must be 1-200 characters")
-		}
-	}
-	return nil
+	return normalizeMilestones(g.Milestones)
 }
 
 func (g Goal) location() *time.Location {
@@ -196,9 +176,7 @@ func (s *Store) CreateGoal(ctx context.Context, g Goal) (Goal, error) {
 	}
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	g.ID, g.Created, g.Updated = uuid.NewString(), now, now
-	for i := range g.Milestones {
-		g.Milestones[i].ID, g.Milestones[i].Done, g.Milestones[i].DoneAt = uuid.NewString(), false, nil
-	}
+	newMilestones(g.Milestones)
 	err = s.tx(ctx, func(tx *sql.Tx) error {
 		if _, err := tx.ExecContext(ctx, `
 			INSERT INTO goals(id, user_id, title, notes, period, target, unit, tz, event_id, space, counter_unit, counter_target, archived, objective_id, project_id, created_ms, updated_ms)
@@ -207,22 +185,9 @@ func (s *Store) CreateGoal(ctx context.Context, g Goal) (Goal, error) {
 			ms(g.Created), ms(g.Updated)); err != nil {
 			return err
 		}
-		return writeMilestones(ctx, tx, g)
+		return goalMilestones.write(ctx, tx, g.ID, g.Milestones)
 	})
 	return g, err
-}
-
-func writeMilestones(ctx context.Context, tx *sql.Tx, g Goal) error {
-	if _, err := tx.ExecContext(ctx, `DELETE FROM goal_milestones WHERE goal_id = ?`, g.ID); err != nil {
-		return err
-	}
-	for i, m := range g.Milestones {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO goal_milestones(id, goal_id, position, title, done_ms) VALUES (?, ?, ?, ?, ?)`,
-			m.ID, g.ID, i, m.Title, nullMS(m.DoneAt)); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 const goalCols = `id, user_id, title, notes, period, target, unit, tz, event_id, space, counter_unit, counter_target, archived, objective_id, project_id, created_ms, updated_ms`
@@ -244,30 +209,18 @@ func (s *Store) loadMilestones(ctx context.Context, goals []Goal) error {
 	if len(goals) == 0 {
 		return nil
 	}
-	idx := map[string]int{}
-	args := make([]any, len(goals))
+	ids := make([]string, len(goals))
 	for i, g := range goals {
-		idx[g.ID] = i
-		args[i] = g.ID
+		ids[i] = g.ID
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT goal_id, id, title, done_ms FROM goal_milestones
-		WHERE goal_id IN (?`+strings.Repeat(",?", len(goals)-1)+`) ORDER BY goal_id, position`, args...)
+	byGoal, err := goalMilestones.load(ctx, s.db, ids)
 	if err != nil {
 		return err
 	}
-	defer func() { _ = rows.Close() }()
-	for rows.Next() {
-		var gid string
-		var m Milestone
-		var done sql.NullInt64
-		if err := rows.Scan(&gid, &m.ID, &m.Title, &done); err != nil {
-			return err
-		}
-		m.DoneAt = ptrTime(done)
-		m.Done = done.Valid
-		goals[idx[gid]].Milestones = append(goals[idx[gid]].Milestones, m)
+	for i := range goals {
+		goals[i].Milestones = byGoal[goals[i].ID]
 	}
-	return rows.Err()
+	return nil
 }
 
 func (s *Store) GetGoal(ctx context.Context, userID, id string) (Goal, error) {
@@ -343,20 +296,7 @@ func (s *Store) UpdateGoal(ctx context.Context, userID, id string, p GoalPatch) 
 		g.CounterTarget = *p.CounterTarget
 	}
 	if p.Milestones != nil {
-		existing := map[string]Milestone{}
-		for _, m := range g.Milestones {
-			existing[m.ID] = m
-		}
-		next := make([]Milestone, 0, len(*p.Milestones))
-		for _, m := range *p.Milestones {
-			if old, ok := existing[m.ID]; ok && m.ID != "" {
-				old.Title = m.Title // keeps its id and done state
-				next = append(next, old)
-			} else {
-				next = append(next, Milestone{ID: uuid.NewString(), Title: m.Title})
-			}
-		}
-		g.Milestones = next
+		g.Milestones = mergeMilestones(g.Milestones, *p.Milestones)
 	}
 	if err := g.normalize(); err != nil {
 		return Goal{}, err
@@ -370,7 +310,7 @@ func (s *Store) UpdateGoal(ctx context.Context, userID, id string, p GoalPatch) 
 			return err
 		}
 		if p.Milestones != nil {
-			if err := writeMilestones(ctx, tx, g); err != nil {
+			if err := goalMilestones.write(ctx, tx, g.ID, g.Milestones); err != nil {
 				return err
 			}
 		}

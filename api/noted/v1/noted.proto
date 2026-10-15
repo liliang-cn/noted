@@ -459,11 +459,15 @@ enum GoalPeriod {
   GOAL_PERIOD_MONTH = 3;
 }
 
+// A step on the way to a goal or an objective. A list of milestones keeps its
+// order: the first entry is the first step.
 message Milestone {
   string id = 1;
   string title = 2;
   bool done = 3;
   google.protobuf.Timestamp done_time = 4;
+  google.protobuf.Timestamp due_time = 5; // optional: when it should be done by
+  string criteria = 6;                    // optional: what counts as done
 }
 
 message DayTotal {
@@ -633,22 +637,33 @@ message Objective {
   ObjectiveProgress progress = 14;
   repeated Goal goals = 15; // the dimensions, with their progress
   string project_id = 16; // optional: the project this objective belongs to
+  // The steps on the way, in order. Ticked with SetObjectiveMilestoneDone.
+  repeated Milestone milestones = 17;
 }
 
 message ObjectiveProgress {
   int32 goals_total = 1;
   int32 goals_achieved = 2;   // dimensions that met this period's target
   double goals_percent = 3;   // mean progress of the dimensions this period, each capped at 1
-  bool behind = 4;            // some dimension is behind its pace
+  bool behind = 4;            // some dimension is behind its pace, or an undone milestone is past its due_time
   bool has_metric = 5;
   bool has_reading = 6;
   double metric_current = 7;  // the latest reading
   double metric_change = 8;   // latest reading minus metric_start
   double metric_percent = 9;  // 0..1 of the way from metric_start to metric_target
   google.protobuf.Timestamp last_reading_time = 10;
-  double percent = 11;        // headline: metric_percent once there is a reading, else goals_percent
+  // The headline: metric_percent when the objective has a metric and a
+  // reading; else milestone_percent when it has milestones; else goals_percent.
+  double percent = 11;
   optional int32 days_left = 12; // set with due_time; negative once past
-  bool on_track = 13;         // the metric is not behind the share of time used; true when unknown
+  // The metric is not behind the share of time used and no undone milestone is
+  // past its due_time; true when unknown.
+  bool on_track = 13;
+  int32 milestones_done = 14;
+  int32 milestones_total = 15;
+  double milestone_percent = 16; // milestones_done / milestones_total, 0 if none
+  Milestone next_milestone = 17; // the first undone milestone, in list order; unset when all are done
+  int32 milestones_overdue = 18; // undone milestones past their due_time
 }
 
 message Measurement {
@@ -664,8 +679,9 @@ message GetObjectiveRequest { string id = 1; }
 message UpdateObjectiveRequest {
   Objective objective = 1;
   // title, notes, space, start_time, due_time, metric_name, metric_unit,
-  // metric_start, metric_target, archived. An unset start_time/due_time in the
-  // mask clears it.
+  // metric_start, metric_target, archived, project_id, milestones. An unset
+  // start_time/due_time in the mask clears it. Updating milestones replaces the
+  // list: entries that carry an existing id keep their done state, the rest are new.
   google.protobuf.FieldMask update_mask = 2;
 }
 message DeleteObjectiveRequest { string id = 1; } // its goals stay, standing alone
@@ -690,6 +706,12 @@ message ListMeasurementsRequest {
 }
 message ListMeasurementsResponse { repeated Measurement measurements = 1; }
 
+message SetObjectiveMilestoneDoneRequest {
+  string objective_id = 1;
+  string milestone_id = 2;
+  bool done = 3;
+}
+
 service ObjectiveService {
   rpc CreateObjective(CreateObjectiveRequest) returns (Objective);
   rpc GetObjective(GetObjectiveRequest) returns (Objective);
@@ -700,6 +722,9 @@ service ObjectiveService {
   rpc RecordMeasurement(RecordMeasurementRequest) returns (Objective);
   rpc DeleteMeasurement(DeleteMeasurementRequest) returns (google.protobuf.Empty);
   rpc ListMeasurements(ListMeasurementsRequest) returns (ListMeasurementsResponse);
+  // Ticks (or unticks) one of the objective's milestones and returns the
+  // objective with its new progress.
+  rpc SetObjectiveMilestoneDone(SetObjectiveMilestoneDoneRequest) returns (Objective);
 }
 
 // ------------------------------------------------------------- projects ----

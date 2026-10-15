@@ -15,7 +15,7 @@ func TestMCPOffersTheWholeSurface(t *testing.T) {
 	for _, want := range []string{
 		"get_task", "update_task", "log_task_work", "list_task_work", "delete_task_work",
 		"list_objectives", "get_objective", "create_objective", "update_objective", "delete_objective",
-		"record_reading", "list_readings", "delete_reading",
+		"record_reading", "list_readings", "delete_reading", "set_objective_milestone_done",
 		"get_goal", "update_goal", "delete_goal", "list_check_ins", "undo_check_in", "set_milestone_done",
 		"list_holdings", "get_holding", "create_holding", "update_holding", "delete_holding",
 		"record_trade", "list_trades", "delete_trade",

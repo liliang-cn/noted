@@ -65,16 +65,27 @@ func goalToPB(v store.GoalView) *pb.Goal {
 			MilestonePercent: p.MilestonePercent, CounterDone: p.CounterDone, CounterPercent: p.CounterPercent,
 		},
 	}
-	for _, m := range g.Milestones {
-		out.Milestones = append(out.Milestones, &pb.Milestone{Id: m.ID, Title: m.Title, Done: m.Done, DoneTime: tsPtr(m.DoneAt)})
+	out.Milestones = milestonesOut(g.Milestones)
+	return out
+}
+
+func milestoneToPB(m store.Milestone) *pb.Milestone {
+	return &pb.Milestone{Id: m.ID, Title: m.Title, Done: m.Done, DoneTime: tsPtr(m.DoneAt), DueTime: tsPtr(m.Due), Criteria: m.Criteria}
+}
+
+func milestonesOut(in []store.Milestone) []*pb.Milestone {
+	var out []*pb.Milestone
+	for _, m := range in {
+		out = append(out, milestoneToPB(m))
 	}
 	return out
 }
 
+// milestonesIn reads a client's list; done and done_time are not taken from it.
 func milestonesIn(in []*pb.Milestone) []store.Milestone {
 	out := make([]store.Milestone, len(in))
 	for i, m := range in {
-		out[i] = store.Milestone{ID: m.Id, Title: m.Title}
+		out[i] = store.Milestone{ID: m.Id, Title: m.Title, Due: timePtr(m.DueTime), Criteria: m.Criteria}
 	}
 	return out
 }

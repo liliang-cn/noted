@@ -28,7 +28,8 @@ type Objective struct {
 	MetricStart  float64
 	MetricTarget float64
 	Archived     bool
-	ProjectID    string // the project this objective belongs to; empty: none
+	ProjectID    string      // the project this objective belongs to; empty: none
+	Milestones   []Milestone // the steps on the way, in order
 	Created      time.Time
 	Updated      time.Time
 }
@@ -42,6 +43,8 @@ type ObjectivePatch struct {
 	MetricStart, MetricTarget *float64
 	Archived                  *bool
 	ProjectID                 *string
+	// Replaces the list: entries carrying an existing id keep their done state.
+	Milestones *[]Milestone
 }
 
 type Measurement struct {
@@ -62,9 +65,17 @@ type ObjectiveProgress struct {
 	MetricChange              float64 // current minus start
 	MetricPercent             float64 // how far from start to target, 0..1
 	LastReading               *time.Time
-	Percent                   float64 // the headline: the metric when there is a reading, else GoalsPercent
-	DaysLeft                  *int
-	OnTrack                   bool // metric progress is not behind the share of time already used; true when unknown
+	// The headline: the metric when there is one with a reading, else
+	// MilestonePercent when there are milestones, else GoalsPercent.
+	Percent  float64
+	DaysLeft *int
+	// Metric progress is not behind the share of time already used and no
+	// undone milestone is past its due time; true when unknown.
+	OnTrack                         bool
+	MilestonesDone, MilestonesTotal int
+	MilestonePercent                float64    // MilestonesDone / MilestonesTotal; 0 when there are none
+	MilestonesOverdue               int        // undone and past their due time
+	NextMilestone                   *Milestone // the first undone one, in list order
 }
 
 type ObjectiveView struct {
@@ -102,7 +113,7 @@ func (o *Objective) normalize() error {
 	if o.Start != nil && o.Due != nil && o.Due.Before(*o.Start) {
 		return invalid("due_time is before start_time")
 	}
-	return nil
+	return normalizeMilestones(o.Milestones)
 }
 
 func (s *Store) checkObjective(ctx context.Context, userID, id string) error {
@@ -148,9 +159,15 @@ func (s *Store) CreateObjective(ctx context.Context, o Objective) (Objective, er
 	}
 	now := time.Now().UTC().Truncate(time.Millisecond)
 	o.ID, o.Created, o.Updated = uuid.NewString(), now, now
-	_, err = s.db.ExecContext(ctx, `INSERT INTO objectives(`+objectiveCols+`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		o.ID, o.UserID, o.Title, o.Notes, o.Space, nullMS(o.Start), nullMS(o.Due), o.MetricName, o.MetricUnit, o.MetricStart, o.MetricTarget,
-		b2i(o.Archived), o.ProjectID, ms(o.Created), ms(o.Updated))
+	newMilestones(o.Milestones)
+	err = s.tx(ctx, func(tx *sql.Tx) error {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO objectives(`+objectiveCols+`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			o.ID, o.UserID, o.Title, o.Notes, o.Space, nullMS(o.Start), nullMS(o.Due), o.MetricName, o.MetricUnit, o.MetricStart, o.MetricTarget,
+			b2i(o.Archived), o.ProjectID, ms(o.Created), ms(o.Updated)); err != nil {
+			return err
+		}
+		return objectiveMilestones.write(ctx, tx, o.ID, o.Milestones)
+	})
 	return o, err
 }
 
@@ -159,7 +176,15 @@ func (s *Store) GetObjective(ctx context.Context, userID, id string) (Objective,
 	if errors.Is(err, sql.ErrNoRows) {
 		return Objective{}, ErrNotFound
 	}
-	return o, err
+	if err != nil {
+		return Objective{}, err
+	}
+	byObjective, err := objectiveMilestones.load(ctx, s.db, []string{o.ID})
+	if err != nil {
+		return Objective{}, err
+	}
+	o.Milestones = byObjective[o.ID]
+	return o, nil
 }
 
 func (s *Store) UpdateObjective(ctx context.Context, userID, id string, p ObjectivePatch) (Objective, error) {
@@ -206,14 +231,37 @@ func (s *Store) UpdateObjective(ctx context.Context, userID, id string, p Object
 		}
 		o.ProjectID = *p.ProjectID
 	}
+	if p.Milestones != nil {
+		o.Milestones = mergeMilestones(o.Milestones, *p.Milestones)
+	}
 	if err := o.normalize(); err != nil {
 		return Objective{}, err
 	}
 	o.Updated = time.Now().UTC().Truncate(time.Millisecond)
-	_, err = s.db.ExecContext(ctx, `UPDATE objectives SET title = ?, notes = ?, space = ?, start_ms = ?, due_ms = ?, metric_name = ?, metric_unit = ?,
-		metric_start = ?, metric_target = ?, archived = ?, project_id = ?, updated_ms = ? WHERE id = ? AND user_id = ?`,
-		o.Title, o.Notes, o.Space, nullMS(o.Start), nullMS(o.Due), o.MetricName, o.MetricUnit, o.MetricStart, o.MetricTarget, b2i(o.Archived), o.ProjectID, ms(o.Updated), id, userID)
+	err = s.tx(ctx, func(tx *sql.Tx) error {
+		if _, err := tx.ExecContext(ctx, `UPDATE objectives SET title = ?, notes = ?, space = ?, start_ms = ?, due_ms = ?, metric_name = ?, metric_unit = ?,
+			metric_start = ?, metric_target = ?, archived = ?, project_id = ?, updated_ms = ? WHERE id = ? AND user_id = ?`,
+			o.Title, o.Notes, o.Space, nullMS(o.Start), nullMS(o.Due), o.MetricName, o.MetricUnit, o.MetricStart, o.MetricTarget, b2i(o.Archived), o.ProjectID, ms(o.Updated), id, userID); err != nil {
+			return err
+		}
+		if p.Milestones != nil {
+			return objectiveMilestones.write(ctx, tx, o.ID, o.Milestones)
+		}
+		return nil
+	})
 	return o, err
+}
+
+// SetObjectiveMilestoneDone ticks (or unticks) one of the objective's milestones.
+func (s *Store) SetObjectiveMilestoneDone(ctx context.Context, userID, objectiveID, milestoneID string, done bool) error {
+	if _, err := s.GetObjective(ctx, userID, objectiveID); err != nil {
+		return err
+	}
+	if err := objectiveMilestones.setDone(ctx, s.db, objectiveID, milestoneID, done, time.Now()); err != nil {
+		return err
+	}
+	_, err := s.db.ExecContext(ctx, `UPDATE objectives SET updated_ms = ? WHERE id = ? AND user_id = ?`, ms(time.Now()), objectiveID, userID)
+	return err
 }
 
 // DeleteObjective removes the objective and its readings. Its dimensions are
@@ -226,6 +274,9 @@ func (s *Store) DeleteObjective(ctx context.Context, userID, id string) error {
 		}
 		if n, _ := res.RowsAffected(); n == 0 {
 			return ErrNotFound
+		}
+		if _, err := tx.ExecContext(ctx, `DELETE FROM objective_milestones WHERE objective_id = ?`, id); err != nil {
+			return err
 		}
 		_, err = tx.ExecContext(ctx, `UPDATE goals SET objective_id = '' WHERE objective_id = ? AND user_id = ?`, id, userID)
 		return err
@@ -260,6 +311,17 @@ func (s *Store) ListObjectives(ctx context.Context, userID string, includeArchiv
 	_ = rows.Close()
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+	ids := make([]string, len(os))
+	for i, o := range os {
+		ids[i] = o.ID
+	}
+	milestones, err := objectiveMilestones.load(ctx, s.db, ids)
+	if err != nil {
+		return nil, err
+	}
+	for i := range os {
+		os[i].Milestones = milestones[os[i].ID]
 	}
 	gs, err := s.ListGoals(ctx, userID, false, now, "")
 	if err != nil {
@@ -320,7 +382,26 @@ func (s *Store) viewObjective(ctx context.Context, o Objective, goals []GoalView
 	if len(goals) > 0 {
 		p.GoalsPercent = sum / float64(len(goals))
 	}
+	p.MilestonesTotal = len(o.Milestones)
+	for i, m := range o.Milestones {
+		if m.Done {
+			p.MilestonesDone++
+			continue
+		}
+		if p.NextMilestone == nil {
+			p.NextMilestone = &o.Milestones[i]
+		}
+		if m.Overdue(now) {
+			p.MilestonesOverdue++
+		}
+	}
+	if p.MilestonesTotal > 0 {
+		p.MilestonePercent = float64(p.MilestonesDone) / float64(p.MilestonesTotal)
+	}
 	p.Percent = p.GoalsPercent
+	if p.MilestonesTotal > 0 {
+		p.Percent = p.MilestonePercent
+	}
 	if o.HasMetric() {
 		last, err := s.lastMeasurement(ctx, o.UserID, o.ID)
 		if err != nil {
@@ -343,6 +424,9 @@ func (s *Store) viewObjective(ctx context.Context, o Objective, goals []GoalView
 			elapsed := math.Max(0, math.Min(1, now.Sub(*o.Start).Seconds()/o.Due.Sub(*o.Start).Seconds()))
 			p.OnTrack = p.MetricPercent >= elapsed-0.1
 		}
+	}
+	if p.MilestonesOverdue > 0 {
+		p.Behind, p.OnTrack = true, false
 	}
 	sort.SliceStable(goals, func(i, j int) bool { return goals[i].Goal.Title < goals[j].Goal.Title })
 	return ObjectiveView{Objective: o, Progress: p, Goals: goals}, nil

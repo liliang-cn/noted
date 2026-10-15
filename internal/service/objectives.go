@@ -27,7 +27,13 @@ func objectiveToPB(v store.ObjectiveView) *pb.Objective {
 			GoalsTotal: int32(p.GoalsTotal), GoalsAchieved: int32(p.GoalsAchieved), GoalsPercent: p.GoalsPercent, Behind: p.Behind,
 			HasMetric: p.HasMetric, HasReading: p.HasReading, MetricCurrent: p.MetricCurrent, MetricChange: p.MetricChange,
 			MetricPercent: p.MetricPercent, LastReadingTime: tsPtr(p.LastReading), Percent: p.Percent, OnTrack: p.OnTrack,
+			MilestonesDone: int32(p.MilestonesDone), MilestonesTotal: int32(p.MilestonesTotal), MilestonePercent: p.MilestonePercent,
+			MilestonesOverdue: int32(p.MilestonesOverdue),
 		},
+		Milestones: milestonesOut(o.Milestones),
+	}
+	if p.NextMilestone != nil {
+		out.Progress.NextMilestone = milestoneToPB(*p.NextMilestone)
 	}
 	if p.DaysLeft != nil {
 		d := int32(*p.DaysLeft)
@@ -59,6 +65,7 @@ func (s *Objectives) CreateObjective(ctx context.Context, req *pb.CreateObjectiv
 	o, err := s.Store.CreateObjective(ctx, store.Objective{
 		UserID: u, Title: in.Title, Notes: in.Notes, Space: spaceIn(in.Space), Start: timePtr(in.StartTime), Due: timePtr(in.DueTime),
 		MetricName: in.MetricName, MetricUnit: in.MetricUnit, MetricStart: in.MetricStart, MetricTarget: in.MetricTarget, Archived: in.Archived, ProjectID: in.ProjectId,
+		Milestones: milestonesIn(in.Milestones),
 	})
 	if err != nil {
 		return nil, toStatus(err)
@@ -83,7 +90,7 @@ func (s *Objectives) UpdateObjective(ctx context.Context, req *pb.UpdateObjectiv
 	if in.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "objective.id is required")
 	}
-	paths, err := maskPaths(req.UpdateMask, "title", "notes", "space", "start_time", "due_time", "metric_name", "metric_unit", "metric_start", "metric_target", "archived", "project_id")
+	paths, err := maskPaths(req.UpdateMask, "title", "notes", "space", "start_time", "due_time", "metric_name", "metric_unit", "metric_start", "metric_target", "archived", "project_id", "milestones")
 	if err != nil {
 		return nil, err
 	}
@@ -126,6 +133,10 @@ func (s *Objectives) UpdateObjective(ctx context.Context, req *pb.UpdateObjectiv
 	}
 	if paths["archived"] {
 		p.Archived = &in.Archived
+	}
+	if paths["milestones"] {
+		ms := milestonesIn(in.Milestones)
+		p.Milestones = &ms
 	}
 	if _, err := s.Store.UpdateObjective(ctx, u, in.Id, p); err != nil {
 		return nil, toStatus(err)
@@ -205,4 +216,18 @@ func (s *Objectives) ListMeasurements(ctx context.Context, req *pb.ListMeasureme
 		out.Measurements = append(out.Measurements, &pb.Measurement{Id: m.ID, ObjectiveId: m.ObjectiveID, Time: timestamppb.New(m.Time), Value: m.Value, Note: m.Note})
 	}
 	return out, nil
+}
+
+func (s *Objectives) SetObjectiveMilestoneDone(ctx context.Context, req *pb.SetObjectiveMilestoneDoneRequest) (*pb.Objective, error) {
+	u, err := uid(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if req.GetObjectiveId() == "" || req.GetMilestoneId() == "" {
+		return nil, status.Error(codes.InvalidArgument, "objective_id and milestone_id are required")
+	}
+	if err := s.Store.SetObjectiveMilestoneDone(ctx, u, req.ObjectiveId, req.MilestoneId, req.Done); err != nil {
+		return nil, toStatus(err)
+	}
+	return s.view(ctx, u, req.ObjectiveId)
 }

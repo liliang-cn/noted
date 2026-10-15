@@ -1878,14 +1878,15 @@ var GoalService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	ObjectiveService_CreateObjective_FullMethodName   = "/noted.v1.ObjectiveService/CreateObjective"
-	ObjectiveService_GetObjective_FullMethodName      = "/noted.v1.ObjectiveService/GetObjective"
-	ObjectiveService_UpdateObjective_FullMethodName   = "/noted.v1.ObjectiveService/UpdateObjective"
-	ObjectiveService_DeleteObjective_FullMethodName   = "/noted.v1.ObjectiveService/DeleteObjective"
-	ObjectiveService_ListObjectives_FullMethodName    = "/noted.v1.ObjectiveService/ListObjectives"
-	ObjectiveService_RecordMeasurement_FullMethodName = "/noted.v1.ObjectiveService/RecordMeasurement"
-	ObjectiveService_DeleteMeasurement_FullMethodName = "/noted.v1.ObjectiveService/DeleteMeasurement"
-	ObjectiveService_ListMeasurements_FullMethodName  = "/noted.v1.ObjectiveService/ListMeasurements"
+	ObjectiveService_CreateObjective_FullMethodName           = "/noted.v1.ObjectiveService/CreateObjective"
+	ObjectiveService_GetObjective_FullMethodName              = "/noted.v1.ObjectiveService/GetObjective"
+	ObjectiveService_UpdateObjective_FullMethodName           = "/noted.v1.ObjectiveService/UpdateObjective"
+	ObjectiveService_DeleteObjective_FullMethodName           = "/noted.v1.ObjectiveService/DeleteObjective"
+	ObjectiveService_ListObjectives_FullMethodName            = "/noted.v1.ObjectiveService/ListObjectives"
+	ObjectiveService_RecordMeasurement_FullMethodName         = "/noted.v1.ObjectiveService/RecordMeasurement"
+	ObjectiveService_DeleteMeasurement_FullMethodName         = "/noted.v1.ObjectiveService/DeleteMeasurement"
+	ObjectiveService_ListMeasurements_FullMethodName          = "/noted.v1.ObjectiveService/ListMeasurements"
+	ObjectiveService_SetObjectiveMilestoneDone_FullMethodName = "/noted.v1.ObjectiveService/SetObjectiveMilestoneDone"
 )
 
 // ObjectiveServiceClient is the client API for ObjectiveService service.
@@ -1901,6 +1902,9 @@ type ObjectiveServiceClient interface {
 	RecordMeasurement(ctx context.Context, in *RecordMeasurementRequest, opts ...grpc.CallOption) (*Objective, error)
 	DeleteMeasurement(ctx context.Context, in *DeleteMeasurementRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListMeasurements(ctx context.Context, in *ListMeasurementsRequest, opts ...grpc.CallOption) (*ListMeasurementsResponse, error)
+	// Ticks (or unticks) one of the objective's milestones and returns the
+	// objective with its new progress.
+	SetObjectiveMilestoneDone(ctx context.Context, in *SetObjectiveMilestoneDoneRequest, opts ...grpc.CallOption) (*Objective, error)
 }
 
 type objectiveServiceClient struct {
@@ -1991,6 +1995,16 @@ func (c *objectiveServiceClient) ListMeasurements(ctx context.Context, in *ListM
 	return out, nil
 }
 
+func (c *objectiveServiceClient) SetObjectiveMilestoneDone(ctx context.Context, in *SetObjectiveMilestoneDoneRequest, opts ...grpc.CallOption) (*Objective, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Objective)
+	err := c.cc.Invoke(ctx, ObjectiveService_SetObjectiveMilestoneDone_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ObjectiveServiceServer is the server API for ObjectiveService service.
 // All implementations must embed UnimplementedObjectiveServiceServer
 // for forward compatibility.
@@ -2004,6 +2018,9 @@ type ObjectiveServiceServer interface {
 	RecordMeasurement(context.Context, *RecordMeasurementRequest) (*Objective, error)
 	DeleteMeasurement(context.Context, *DeleteMeasurementRequest) (*emptypb.Empty, error)
 	ListMeasurements(context.Context, *ListMeasurementsRequest) (*ListMeasurementsResponse, error)
+	// Ticks (or unticks) one of the objective's milestones and returns the
+	// objective with its new progress.
+	SetObjectiveMilestoneDone(context.Context, *SetObjectiveMilestoneDoneRequest) (*Objective, error)
 	mustEmbedUnimplementedObjectiveServiceServer()
 }
 
@@ -2037,6 +2054,9 @@ func (UnimplementedObjectiveServiceServer) DeleteMeasurement(context.Context, *D
 }
 func (UnimplementedObjectiveServiceServer) ListMeasurements(context.Context, *ListMeasurementsRequest) (*ListMeasurementsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListMeasurements not implemented")
+}
+func (UnimplementedObjectiveServiceServer) SetObjectiveMilestoneDone(context.Context, *SetObjectiveMilestoneDoneRequest) (*Objective, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetObjectiveMilestoneDone not implemented")
 }
 func (UnimplementedObjectiveServiceServer) mustEmbedUnimplementedObjectiveServiceServer() {}
 func (UnimplementedObjectiveServiceServer) testEmbeddedByValue()                          {}
@@ -2203,6 +2223,24 @@ func _ObjectiveService_ListMeasurements_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ObjectiveService_SetObjectiveMilestoneDone_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetObjectiveMilestoneDoneRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ObjectiveServiceServer).SetObjectiveMilestoneDone(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ObjectiveService_SetObjectiveMilestoneDone_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ObjectiveServiceServer).SetObjectiveMilestoneDone(ctx, req.(*SetObjectiveMilestoneDoneRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ObjectiveService_ServiceDesc is the grpc.ServiceDesc for ObjectiveService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -2241,6 +2279,10 @@ var ObjectiveService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListMeasurements",
 			Handler:    _ObjectiveService_ListMeasurements_Handler,
+		},
+		{
+			MethodName: "SetObjectiveMilestoneDone",
+			Handler:    _ObjectiveService_SetObjectiveMilestoneDone_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

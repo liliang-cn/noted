@@ -113,18 +113,26 @@ type Reading struct {
 }
 
 type Objective struct {
-	ID           string     `json:"id"`
-	Title        string     `json:"title"`
-	Notes        string     `json:"notes,omitempty"`
-	Space        string     `json:"space"`
-	Start        *time.Time `json:"start,omitempty"`
-	Due          *time.Time `json:"due,omitempty"`
-	MetricName   string     `json:"metric_name,omitempty"`
-	MetricUnit   string     `json:"metric_unit,omitempty"`
-	MetricStart  float64    `json:"metric_start,omitempty"`
-	MetricTarget float64    `json:"metric_target,omitempty"`
-	Archived     bool       `json:"archived"`
-	Readings     []Reading  `json:"readings"`
+	ID           string      `json:"id"`
+	Title        string      `json:"title"`
+	Notes        string      `json:"notes,omitempty"`
+	Space        string      `json:"space"`
+	Start        *time.Time  `json:"start,omitempty"`
+	Due          *time.Time  `json:"due,omitempty"`
+	MetricName   string      `json:"metric_name,omitempty"`
+	MetricUnit   string      `json:"metric_unit,omitempty"`
+	MetricStart  float64     `json:"metric_start,omitempty"`
+	MetricTarget float64     `json:"metric_target,omitempty"`
+	Archived     bool        `json:"archived"`
+	Readings     []Reading   `json:"readings"`
+	Milestones   []Milestone `json:"milestones,omitempty"`
+}
+
+type Milestone struct {
+	Title    string     `json:"title"`
+	Done     *time.Time `json:"done,omitempty"`
+	Due      *time.Time `json:"due,omitempty"`
+	Criteria string     `json:"criteria,omitempty"`
 }
 
 type Trade struct {
@@ -269,6 +277,9 @@ func Collect(ctx context.Context, st *store.Store, userID, userName string, now 
 		o := v.Objective
 		out := Objective{ID: o.ID, Title: o.Title, Notes: o.Notes, Space: o.Space, Start: utc(o.Start), Due: utc(o.Due), MetricName: o.MetricName,
 			MetricUnit: o.MetricUnit, MetricStart: o.MetricStart, MetricTarget: o.MetricTarget, Archived: o.Archived, Readings: []Reading{}}
+		for _, m := range o.Milestones {
+			out.Milestones = append(out.Milestones, Milestone{Title: m.Title, Done: utc(m.DoneAt), Due: utc(m.Due), Criteria: m.Criteria})
+		}
 		if o.HasMetric() {
 			ms, err := st.ListMeasurements(ctx, userID, o.ID, nil, nil, 1_000_000)
 			if err != nil {
