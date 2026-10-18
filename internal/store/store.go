@@ -341,8 +341,9 @@ CREATE INDEX IF NOT EXISTS time_entries_project ON time_entries(project_id);
 CREATE INDEX IF NOT EXISTS time_entries_goal ON time_entries(goal_id);
 CREATE UNIQUE INDEX IF NOT EXISTS time_entries_running ON time_entries(user_id) WHERE end_ms IS NULL;
 
--- Alarms (闹钟): definitions the phone rings. schedule is the JSON of
--- alarm.Schedule (kind, at, anchor, time, timeZone, recurrence).
+-- Alarms (闹钟) before they were folded into events as schedule items with
+-- notify alarm (migrateAlarms). Kept as it was for a rollback: nothing reads
+-- it any more; "noted schedule rollback" writes the current alarms back.
 CREATE TABLE IF NOT EXISTS alarms (
 	id             TEXT PRIMARY KEY,
 	user_id        TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -396,6 +397,12 @@ CREATE TABLE IF NOT EXISTS reminders (
 	fire_ms INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS reminders_user_fire ON reminders(user_id, fire_ms DESC);
+
+-- One-time data migrations that have run (schema changes are idempotent above).
+CREATE TABLE IF NOT EXISTS migrations (
+	name       TEXT PRIMARY KEY,
+	applied_ms INTEGER NOT NULL
+);
 
 -- MCP authorization (OAuth 2.1): clients that registered themselves, the
 -- pairings their browser sign-ins wait on, and the codes they trade for a token.
@@ -482,6 +489,20 @@ func (s *Store) migrate(ctx context.Context) error {
 		// has them from the start).
 		{"goal_milestones", "due_ms", "INTEGER"},
 		{"goal_milestones", "criteria", "TEXT NOT NULL DEFAULT ''"},
+		// Schedule items (日程): how the person is told (notify), an
+		// alarm-style rule, holiday handling, pause, and where the item came
+		// from — an alarm, or a to-do's time mirrored here (task_id, completed).
+		{"events", "notify", "TEXT NOT NULL DEFAULT 'reminder'"},
+		{"events", "rule", "TEXT NOT NULL DEFAULT ''"},
+		{"events", "holiday_policy", "TEXT NOT NULL DEFAULT 'none'"},
+		{"events", "region", "TEXT NOT NULL DEFAULT ''"},
+		{"events", "enabled", "INTEGER NOT NULL DEFAULT 1"},
+		{"events", "original_text", "TEXT NOT NULL DEFAULT ''"},
+		{"events", "source", "TEXT NOT NULL DEFAULT 'event'"},
+		{"events", "task_id", "TEXT NOT NULL DEFAULT ''"},
+		{"events", "completed", "INTEGER NOT NULL DEFAULT 0"},
+		{"tasks", "notify", "TEXT NOT NULL DEFAULT 'reminder'"},
+		{"reminders", "notify", "TEXT NOT NULL DEFAULT ''"},
 	} {
 		if err := s.ensureColumn(ctx, c.table, c.col, c.ddl); err != nil {
 			return err
@@ -490,7 +511,13 @@ func (s *Store) migrate(ctx context.Context) error {
 	if _, err := s.db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS goal_checkins_entry ON goal_checkins(time_entry_id) WHERE time_entry_id <> ''`); err != nil {
 		return err
 	}
-	return s.migrateTimed(ctx)
+	if _, err := s.db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS events_source ON events(source, task_id)`); err != nil {
+		return err
+	}
+	if err := s.migrateTimed(ctx); err != nil {
+		return err
+	}
+	return s.migrateSchedule(ctx)
 }
 
 // timedGuess is how close a finished entry's end may be to when it was made

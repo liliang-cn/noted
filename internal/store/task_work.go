@@ -67,6 +67,9 @@ func (s *Store) LogTaskWork(ctx context.Context, userID, taskID string, at time.
 				if _, err := s.spawnNext(ctx, tx, t); err != nil {
 					return err
 				}
+				if err := syncTaskSchedule(ctx, tx, t.ID, s.location().String()); err != nil {
+					return err
+				}
 			}
 		}
 		return totalTaskWork(ctx, tx, userID, taskID)

@@ -33,7 +33,7 @@ type alarmScheduleIn struct {
 
 type createAlarmIn struct {
 	Label         string          `json:"label" jsonschema:"what it is for, short: 起床, 接三宝, 吃药"`
-	Mode          string          `json:"mode,omitempty" jsonschema:"alarm (default): a real alarm that rings through silent mode and Focus, for 闹钟/叫我/叫醒/准时响/必须提醒到; reminder: just a notification, for 提醒一下/通知我就行/只要通知"`
+	Mode          string          `json:"mode,omitempty" jsonschema:"how the phone tells the person (the item's notify). alarm (default): a real alarm that rings until stopped, through silent mode and Focus, for 闹钟/叫我/叫醒/准时响/必须提醒到; reminder: a system notification, for 提醒一下/通知我就行/只要通知; app: shown inside the app only"`
 	Schedule      alarmScheduleIn `json:"schedule"`
 	HolidayPolicy string          `json:"holiday_policy,omitempty" jsonschema:"none (default); skipHoliday: 节假日不响; workdayOnly: 工作日/上班日 only, following 法定节假日 and 调休补班 in CN; followStatutory: 按调休, the same days as workdayOnly"`
 	Region        *string         `json:"region,omitempty" jsonschema:"CN (mainland China holidays and 调休) or empty string for none (workdays are Mon-Fri); omit for the default: CN when the time zone is in mainland China, else none"`
@@ -47,7 +47,7 @@ type createAlarmIn struct {
 type updateAlarmIn struct {
 	ID            string           `json:"id"`
 	Label         *string          `json:"label,omitempty"`
-	Mode          *string          `json:"mode,omitempty" jsonschema:"alarm or reminder"`
+	Mode          *string          `json:"mode,omitempty" jsonschema:"alarm, reminder or app (the item's notify)"`
 	Enabled       *bool            `json:"enabled,omitempty" jsonschema:"false turns it off (关闭闹钟) without deleting it; true turns it back on"`
 	Schedule      *alarmScheduleIn `json:"schedule,omitempty" jsonschema:"replaces the whole schedule: send all of it, e.g. get_alarm's schedule with the time changed"`
 	HolidayPolicy *string          `json:"holiday_policy,omitempty"`
@@ -62,6 +62,7 @@ type listAlarmsIn struct {
 	Enabled   *bool  `json:"enabled,omitempty" jsonschema:"true: only those that are on; false: only those that are off; omit for all"`
 	Space     string `json:"space,omitempty" jsonschema:"work or life; omit for both"`
 	ProjectID string `json:"project_id,omitempty"`
+	Notify    string `json:"notify,omitempty" jsonschema:"omit: the alarms proper (notify alarm, plus whatever create_alarm made); alarm / reminder / app: every schedule item with that notify, events and due to-dos included; all: every item that notifies — what a phone schedules"`
 }
 
 type holidaysIn struct {
@@ -94,9 +95,12 @@ type alarmScheduleOut struct {
 type alarmOut struct {
 	Kind          string           `json:"kind" jsonschema:"always alarm"`
 	ID            string           `json:"id"`
-	Link          string           `json:"link"`
+	Link          string           `json:"link" jsonschema:"noted://alarm/<id>, or the event's / task's link for an item that came from one"`
 	Label         string           `json:"label"`
-	Mode          string           `json:"mode" jsonschema:"alarm or reminder"`
+	Mode          string           `json:"mode" jsonschema:"the same as notify: alarm, reminder or app"`
+	Notify        string           `json:"notify" jsonschema:"how the phone tells the person: alarm (rings until stopped, through silent mode), reminder (a notification) or app (inside the app only)"`
+	RemindBefore  int32            `json:"remindBeforeMinutes" jsonschema:"minutes before each schedule time it rings; 0 for alarms proper. nextFires already have it taken off"`
+	Source        string           `json:"source" jsonschema:"alarm (made through the alarm tools), event (a calendar event with a notify) or task (a to-do's time; the id is the task's)"`
 	Enabled       bool             `json:"enabled"`
 	Schedule      alarmScheduleOut `json:"schedule"`
 	HolidayPolicy string           `json:"holidayPolicy" jsonschema:"none, skipHoliday, workdayOnly or followStatutory"`
@@ -134,16 +138,27 @@ func (t *tools) alarm(a *pb.Alarm) *alarmOut {
 		return nil
 	}
 	sc := a.GetSchedule()
-	out := &alarmOut{Kind: "alarm", ID: a.Id, Link: link("alarm", a.Id), Label: a.Label, Mode: a.Mode, Enabled: a.GetEnabled(),
+	ref := a.Source
+	if ref == "" {
+		ref = "alarm"
+	}
+	out := &alarmOut{Kind: "alarm", ID: a.Id, Link: link(ref, a.Id), Label: a.Label, Mode: a.Mode, Enabled: a.GetEnabled(),
+		Notify: a.Notify, RemindBefore: a.RemindBeforeMinutes, Source: a.Source,
 		HolidayPolicy: a.HolidayPolicy, Region: a.GetRegion(), Note: a.Note, ProjectID: a.ProjectId, Space: spaceName(a.Space),
 		OriginalText: a.OriginalText, CreateTime: t.ts(a.CreateTime), UpdateTime: t.ts(a.UpdateTime), NextFires: []string{},
-		Schedule: alarmScheduleOut{Kind: sc.GetKind(), At: t.ts(sc.GetAt()), Anchor: sc.GetAnchor(), Time: sc.GetTime(), TimeZone: sc.GetTimeZone()}}
-	if r := sc.GetRecurrence(); r != nil {
-		out.Schedule.Recurrence = &alarmRecurrenceOut{Freq: r.Freq, Interval: r.Interval, ByDay: r.ByDay, ByMonthDay: r.ByMonthDay,
-			ByTime: r.ByTime, Until: r.Until, Count: r.Count, EndTime: r.EndTime}
-	}
+		Schedule: *t.scheduleOut(sc)}
 	for _, f := range a.NextFires {
 		out.NextFires = append(out.NextFires, t.ts(f))
+	}
+	return out
+}
+
+// scheduleOut writes a wire schedule in the shape of docs/alarms.md.
+func (t *tools) scheduleOut(sc *pb.AlarmSchedule) *alarmScheduleOut {
+	out := &alarmScheduleOut{Kind: sc.GetKind(), At: t.ts(sc.GetAt()), Anchor: sc.GetAnchor(), Time: sc.GetTime(), TimeZone: sc.GetTimeZone()}
+	if r := sc.GetRecurrence(); r != nil {
+		out.Recurrence = &alarmRecurrenceOut{Freq: r.Freq, Interval: r.Interval, ByDay: r.ByDay, ByMonthDay: r.ByMonthDay,
+			ByTime: r.ByTime, Until: r.Until, Count: r.Count, EndTime: r.EndTime}
 	}
 	return out
 }
@@ -170,11 +185,13 @@ const alarmHelp = " Resolve relative dates yourself (今天/明天/下周一) be
 	"每月 15 号 → {freq: monthly, byMonthDay: 15}; 早中晚 → {freq: daily, byTime: [08:00, 12:00, 18:00]} without time; " +
 	"今天 9 点到 18 点每小时 → {freq: hourly, time: 09:00, endTime: 18:00} (a minutely/hourly alarm rings on its anchor day only unless until or count is given)."
 
-// registerAlarms adds alarms (闹钟) and the holiday calendar they follow.
-// noted keeps the definitions; the user's phone rings them.
+// registerAlarms adds alarms (闹钟) and the holiday calendar they follow. An
+// alarm is a schedule item (an event) with notify alarm and an alarm-style
+// rule; noted keeps the definitions and the user's phone rings them.
 func (t *tools) registerAlarms(s *mcp.Server) {
-	mcp.AddTool(s, &mcp.Tool{Name: "create_alarm", Description: "Set an alarm (闹钟) or a reminder that the user's phone rings at the time, one-off or repeating, optionally skipping holidays or ringing on workdays only (CN 法定节假日 and 调休 included). " +
-		"Use it whenever the user asks to be woken or called (闹钟/叫我/叫醒/准时响/必须提醒到) with mode alarm; when a notification is enough (提醒一下/通知我就行/只要通知) use mode reminder. " +
+	mcp.AddTool(s, &mcp.Tool{Name: "create_alarm", Description: "Set an alarm (闹钟) that the user's phone rings at the time until stopped, one-off or repeating, optionally skipping holidays or ringing on workdays only (CN 法定节假日 and 调休 included). " +
+		"An alarm is a schedule item like an event, with notify alarm and an alarm-style schedule (minutely to monthly, several times a day); list_events shows it too, and create_event with notify alarm makes one from a calendar event. " +
+		"Use it whenever the user asks to be woken or called (闹钟/叫我/叫醒/准时响/必须提醒到) with mode alarm; when a notification is enough (提醒一下/通知我就行/只要通知) use mode reminder; mode app shows it inside the app only. " +
 		"Returns the alarm with nextFires, the next times it will ring: check them against what the user meant." + alarmHelp, Annotations: additive},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in createAlarmIn) (*mcp.CallToolResult, *alarmOut, error) {
 			sc, err := t.scheduleIn(&in.Schedule)
@@ -196,19 +213,20 @@ func (t *tools) registerAlarms(s *mcp.Server) {
 			}
 			return reply(r, t.alarm(r))
 		})
-	mcp.AddTool(s, &mcp.Tool{Name: "list_alarms", Description: "The user's alarms and reminders (闹钟), oldest first, each with its schedule and next rings, plus a version that changes whenever any alarm changes.", Annotations: readOnly},
+	mcp.AddTool(s, &mcp.Tool{Name: "list_alarms", Description: "The user's alarms (闹钟), oldest first, each with its schedule and next rings, plus a version that changes whenever any schedule item (alarm, event, a to-do's time) changes. " +
+		"With notify all it is every schedule item that notifies the person — alarms, events with a reminder, due to-dos — each as an alarm-style schedule with notify, remindBeforeMinutes and source: what a phone schedules.", Annotations: readOnly},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in listAlarmsIn) (*mcp.CallToolResult, *alarmsOut, error) {
 			sp, err := spaceOf(in.Space)
 			if err != nil {
 				return nil, nil, err
 			}
-			r, err := t.alarms.ListAlarms(ctx, &pb.ListAlarmsRequest{Enabled: in.Enabled, Space: sp, ProjectId: in.ProjectID})
+			r, err := t.alarms.ListAlarms(ctx, &pb.ListAlarmsRequest{Enabled: in.Enabled, Space: sp, ProjectId: in.ProjectID, Notify: in.Notify})
 			if err != nil {
 				return nil, nil, err
 			}
 			return reply(r, &alarmsOut{Items: items(r.Alarms, t.alarm), Version: r.Version})
 		})
-	mcp.AddTool(s, &mcp.Tool{Name: "get_alarm", Description: "One alarm with its schedule and next rings.", Annotations: readOnly},
+	mcp.AddTool(s, &mcp.Tool{Name: "get_alarm", Description: "One alarm with its schedule and next rings (any schedule item's id works: an event or a due to-do is shown as the alarm-style schedule the phone uses).", Annotations: readOnly},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, *alarmOut, error) {
 			r, err := t.alarms.GetAlarm(ctx, &pb.GetAlarmRequest{Id: in.ID})
 			if err != nil {
@@ -216,7 +234,7 @@ func (t *tools) registerAlarms(s *mcp.Server) {
 			}
 			return reply(r, t.alarm(r))
 		})
-	mcp.AddTool(s, &mcp.Tool{Name: "update_alarm", Description: "Change an alarm: turn it off or on (enabled), move its time (send the whole schedule, e.g. get_alarm's with time changed), rename it, switch alarm/reminder, change the holiday policy. Omitted fields stay as they are.", Annotations: editing},
+	mcp.AddTool(s, &mcp.Tool{Name: "update_alarm", Description: "Change an alarm: turn it off or on (enabled), move its time (send the whole schedule, e.g. get_alarm's with time changed), rename it, switch how it notifies (mode alarm/reminder/app), change the holiday policy. Omitted fields stay as they are. The same change can be made with update_event (notify, schedule, enabled).", Annotations: editing},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in updateAlarmIn) (*mcp.CallToolResult, *alarmOut, error) {
 			a, mask := &pb.Alarm{Id: in.ID}, []string{}
 			str := func(v *string, path string, dst *string) {
@@ -259,7 +277,7 @@ func (t *tools) registerAlarms(s *mcp.Server) {
 			}
 			return reply(r, t.alarm(r))
 		})
-	mcp.AddTool(s, &mcp.Tool{Name: "delete_alarm", Description: "Permanently delete an alarm (删除闹钟). To pause one instead, update_alarm with enabled false.", Annotations: deleting},
+	mcp.AddTool(s, &mcp.Tool{Name: "delete_alarm", Description: "Permanently delete an alarm (删除闹钟); the same as delete_event on it. To pause one instead, update_alarm with enabled false.", Annotations: deleting},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, *deletedOut, error) {
 			if _, err := t.alarms.DeleteAlarm(ctx, &pb.DeleteAlarmRequest{Id: in.ID}); err != nil {
 				return nil, nil, err

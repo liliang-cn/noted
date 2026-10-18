@@ -4,6 +4,7 @@ import (
 	"time"
 
 	pb "github.com/liliang-cn/noted/gen/noted/v1"
+	"github.com/liliang-cn/noted/internal/alarm"
 	"github.com/liliang-cn/noted/internal/store"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -54,24 +55,55 @@ func noteToPB(n store.Note) *pb.Note {
 }
 
 func eventToPB(e store.Event) *pb.Event {
+	enabled, region := !e.Disabled, e.Region
 	out := &pb.Event{
 		Id: e.ID, Title: e.Title, Description: e.Description, Location: e.Location,
 		StartTime: timestamppb.New(e.Start), EndTime: timestamppb.New(e.End), AllDay: e.AllDay,
 		TimeZone: e.TimeZone, Rrule: e.RRule, ProjectId: e.ProjectID, Space: spaceOut(e.Space),
 		CreateTime: timestamppb.New(e.Created), UpdateTime: timestamppb.New(e.Updated),
+		Notify: e.Notify, HolidayPolicy: e.HolidayPolicy, Region: &region, Enabled: &enabled, OriginalText: e.OriginalText,
+		Source: e.Source, TaskId: e.TaskID, Completed: e.Completed,
 	}
 	if e.RemindBefore != nil {
 		v := int32(*e.RemindBefore)
 		out.RemindBeforeMinutes = &v
 	}
+	if e.Rule != nil {
+		out.AlarmSchedule = scheduleToPB(*e.Rule)
+	}
 	return out
 }
 
+func scheduleToPB(sc alarm.Schedule) *pb.AlarmSchedule {
+	out := &pb.AlarmSchedule{Kind: sc.Kind, At: tsPtr(sc.At), Anchor: sc.Anchor, Time: sc.Time, TimeZone: sc.TimeZone}
+	if r := sc.Recurrence; r != nil {
+		out.Recurrence = &pb.AlarmRecurrence{Freq: r.Freq, Interval: int32(r.Interval), ByDay: r.ByDay, ByMonthDay: int32(r.ByMonthDay),
+			ByTime: r.ByTime, Until: r.Until, Count: int32(r.Count), EndTime: r.EndTime}
+	}
+	return out
+}
+
+func scheduleFromPB(in *pb.AlarmSchedule) *alarm.Schedule {
+	if in == nil {
+		return nil
+	}
+	out := &alarm.Schedule{Kind: in.Kind, At: timePtr(in.At), Anchor: in.Anchor, Time: in.Time, TimeZone: in.TimeZone}
+	if r := in.Recurrence; r != nil {
+		out.Recurrence = &alarm.Recurrence{Freq: r.Freq, Interval: int(r.Interval), ByDay: r.ByDay, ByMonthDay: int(r.ByMonthDay),
+			ByTime: r.ByTime, Until: r.Until, Count: int(r.Count), EndTime: r.EndTime}
+	}
+	return out
+}
+
+// eventFromPB reads an event as written. An unset enabled is on; an unset
+// region is CN for a mainland China zone (as alarms do), else none.
 func eventFromPB(e *pb.Event) store.Event {
 	out := store.Event{
 		Title: e.GetTitle(), Description: e.GetDescription(), Location: e.GetLocation(),
 		AllDay: e.GetAllDay(), TimeZone: e.GetTimeZone(), RRule: e.GetRrule(),
 		ProjectID: e.GetProjectId(), Space: spaceIn(e.GetSpace()),
+		Notify: e.GetNotify(), HolidayPolicy: e.GetHolidayPolicy(), OriginalText: e.GetOriginalText(),
+		Disabled: e.Enabled != nil && !*e.Enabled, Rule: scheduleFromPB(e.AlarmSchedule),
 	}
 	if e.StartTime != nil {
 		out.Start = e.StartTime.AsTime()
@@ -83,6 +115,15 @@ func eventFromPB(e *pb.Event) store.Event {
 		v := int(*e.RemindBeforeMinutes)
 		out.RemindBefore = &v
 	}
+	tz := out.TimeZone
+	if out.Rule != nil && out.Rule.TimeZone != "" {
+		tz = out.Rule.TimeZone
+	}
+	if e.Region != nil {
+		out.Region = *e.Region
+	} else if out.HolidayPolicy != "" && out.HolidayPolicy != alarm.PolicyNone {
+		out.Region = DefaultRegion(tz)
+	}
 	return out
 }
 
@@ -93,7 +134,7 @@ func taskToPB(t store.Task) *pb.Task {
 		ProjectId: t.ProjectID, Space: spaceOut(t.Space),
 		CreateTime: timestamppb.New(t.Created), UpdateTime: timestamppb.New(t.Updated),
 		Progress: int32(t.Progress), WorkedMinutes: int32(t.WorkedMinutes), WorkSessions: int32(t.WorkSessions),
-		LastWorkedTime: tsPtr(t.LastWorked), Rrule: t.RRule,
+		LastWorkedTime: tsPtr(t.LastWorked), Rrule: t.RRule, Notify: t.Notify,
 	}
 }
 
@@ -114,6 +155,6 @@ func reminderToPB(r store.Reminder) *pb.Reminder {
 	}
 	return &pb.Reminder{
 		Id: r.ID, Kind: kind, RefId: r.RefID, Title: r.Title,
-		DueTime: timestamppb.New(r.Due), FireTime: timestamppb.New(r.Fired), Space: spaceOut(r.Space),
+		DueTime: timestamppb.New(r.Due), FireTime: timestamppb.New(r.Fired), Space: spaceOut(r.Space), Notify: r.Notify,
 	}
 }

@@ -44,7 +44,7 @@ func New(ctx context.Context, conn grpc.ClientConnInterface, loc *time.Location,
 	}
 	s := mcp.NewServer(&mcp.Implementation{Name: "noted", Version: version}, &mcp.ServerOptions{
 		SchemaCache: schemas,
-		Instructions: "Personal notes, calendar, to-dos, projects, goals and objectives, time tracking (时间记录: log_time, timers, time_summary), investment holdings, and alarms (闹钟: create_alarm; the user's phone rings them, following CN 法定节假日 and 调休 when asked; mode alarm for 叫我/闹钟/准时响, reminder when a notification is enough). Look up ids with the list_* tools rather than guessing them. Times are RFC 3339 (e.g. 2026-03-05T15:00:00+08:00); " +
+		Instructions: "Personal notes, the schedule (日程安排: events, alarms and timed to-dos in one list — list_events; every item has notify: alarm rings the phone until stopped, reminder is a notification, app shows in the app only, none; remind_before_minutes says how far ahead), to-dos, projects, goals and objectives, time tracking (时间记录: log_time, timers, time_summary), investment holdings, and alarms (闹钟: create_alarm, a schedule item with notify alarm; the user's phone rings them, following CN 法定节假日 and 调休 when asked; mode alarm for 叫我/闹钟/准时响, reminder when a notification is enough). Look up ids with the list_* tools rather than guessing them. Times are RFC 3339 (e.g. 2026-03-05T15:00:00+08:00); " +
 			"zone-less times are read in " + loc.String() + ". Resolve relative dates like \"next Friday\" yourself before calling.",
 	})
 	t.register(s)
@@ -142,35 +142,48 @@ type updateNoteIn struct {
 	ProjectID *string   `json:"project_id,omitempty" jsonschema:"empty string removes it from its project"`
 }
 type listEventsIn struct {
-	From  string `json:"from" jsonschema:"window start, RFC 3339"`
-	To    string `json:"to" jsonschema:"window end (exclusive), RFC 3339; at most 366 days after from"`
-	Space string `json:"space,omitempty" jsonschema:"work or life; omit for both"`
+	From         string `json:"from" jsonschema:"window start, RFC 3339"`
+	To           string `json:"to" jsonschema:"window end (exclusive), RFC 3339; at most 366 days after from"`
+	Space        string `json:"space,omitempty" jsonschema:"work or life; omit for both"`
+	IncludeTasks *bool  `json:"include_tasks,omitempty" jsonschema:"default true: the to-dos due in the window are items too (kind task), and the open to-dos with no time come back as unscheduled; false: events and alarms only"`
 }
+
 type createEventIn struct {
-	Title               string `json:"title"`
-	Start               string `json:"start" jsonschema:"RFC 3339"`
-	End                 string `json:"end,omitempty" jsonschema:"RFC 3339; default one hour after start"`
-	AllDay              bool   `json:"all_day,omitempty"`
-	Location            string `json:"location,omitempty"`
-	Description         string `json:"description,omitempty"`
-	TimeZone            string `json:"time_zone,omitempty" jsonschema:"IANA name, e.g. Asia/Shanghai; recurrence is expanded in it"`
-	RRule               string `json:"rrule,omitempty" jsonschema:"repeat rule, e.g. FREQ=WEEKLY;BYDAY=MO,WE or FREQ=DAILY;COUNT=5"`
-	RemindBeforeMinutes *int32 `json:"remind_before_minutes,omitempty"`
-	Space               string `json:"space,omitempty" jsonschema:"work or life; omit to inherit from the project, else life"`
-	ProjectID           string `json:"project_id,omitempty"`
+	Title               string           `json:"title"`
+	Start               string           `json:"start,omitempty" jsonschema:"RFC 3339; required unless schedule is given"`
+	End                 string           `json:"end,omitempty" jsonschema:"RFC 3339; default one hour after start"`
+	AllDay              bool             `json:"all_day,omitempty"`
+	Location            string           `json:"location,omitempty"`
+	Description         string           `json:"description,omitempty"`
+	TimeZone            string           `json:"time_zone,omitempty" jsonschema:"IANA name, e.g. Asia/Shanghai; recurrence is expanded in it"`
+	RRule               string           `json:"rrule,omitempty" jsonschema:"repeat rule, e.g. FREQ=WEEKLY;BYDAY=MO,WE or FREQ=DAILY;COUNT=5"`
+	RemindBeforeMinutes *int32           `json:"remind_before_minutes,omitempty" jsonschema:"minutes before the start to notify; 0 = at the start; omit for no notification"`
+	Notify              string           `json:"notify,omitempty" jsonschema:"how the person is told when the time comes: alarm (the phone rings until stopped, through silent mode: 闹钟/叫我/必须提醒到), reminder (a system notification, the default: 提醒一下), app (shown inside the app only, no system notification) or none. remind_before_minutes says how far ahead; without it nothing is scheduled anywhere, and 0 means at the start"`
+	Schedule            *alarmScheduleIn `json:"schedule,omitempty" jsonschema:"an alarm-style rule instead of start+rrule (the shape create_alarm takes): every N minutes/hours in a daily window, several times a day (byTime), every other week, monthly on a day, until/count. start is then the first ring and end the same"`
+	HolidayPolicy       string           `json:"holiday_policy,omitempty" jsonschema:"for a repeating event, rrule or schedule: none (default); skipHoliday: 节假日跳过; workdayOnly: 工作日 only, following 法定节假日 and 调休补班 in CN; followStatutory: 按调休"`
+	Region              *string          `json:"region,omitempty" jsonschema:"CN (mainland China holidays and 调休) or empty for none; omit for the default: CN when the zone is in mainland China"`
+	OriginalText        string           `json:"original_text,omitempty" jsonschema:"the user's own words"`
+	Space               string           `json:"space,omitempty" jsonschema:"work or life; omit to inherit from the project, else life"`
+	ProjectID           string           `json:"project_id,omitempty"`
 }
 type updateEventIn struct {
-	ID                  string  `json:"id"`
-	Title               *string `json:"title,omitempty"`
-	Start               string  `json:"start,omitempty" jsonschema:"moving start keeps the duration unless end is given"`
-	End                 string  `json:"end,omitempty"`
-	Location            *string `json:"location,omitempty"`
-	Description         *string `json:"description,omitempty"`
-	RRule               *string `json:"rrule,omitempty" jsonschema:"empty string makes it one-off"`
-	RemindBeforeMinutes *int32  `json:"remind_before_minutes,omitempty"`
-	ClearReminder       bool    `json:"clear_reminder,omitempty"`
-	Space               *string `json:"space,omitempty" jsonschema:"work or life"`
-	ProjectID           *string `json:"project_id,omitempty"`
+	ID                  string           `json:"id"`
+	Title               *string          `json:"title,omitempty"`
+	Start               string           `json:"start,omitempty" jsonschema:"moving start keeps the duration unless end is given; on an item with a repeating alarm-style schedule change schedule instead"`
+	End                 string           `json:"end,omitempty"`
+	Location            *string          `json:"location,omitempty"`
+	Description         *string          `json:"description,omitempty"`
+	RRule               *string          `json:"rrule,omitempty" jsonschema:"empty string makes it one-off"`
+	RemindBeforeMinutes *int32           `json:"remind_before_minutes,omitempty" jsonschema:"0 is at the start"`
+	ClearReminder       bool             `json:"clear_reminder,omitempty" jsonschema:"stop notifying (remind_before_minutes unset)"`
+	Notify              *string          `json:"notify,omitempty" jsonschema:"alarm, reminder, app or none"`
+	Schedule            *alarmScheduleIn `json:"schedule,omitempty" jsonschema:"replaces the whole alarm-style schedule (send all of it); on a plain event it replaces start+rrule"`
+	HolidayPolicy       *string          `json:"holiday_policy,omitempty"`
+	Region              *string          `json:"region,omitempty" jsonschema:"CN or empty string for none"`
+	Enabled             *bool            `json:"enabled,omitempty" jsonschema:"false pauses the item (no occurrences, nothing told) without deleting it"`
+	OriginalText        *string          `json:"original_text,omitempty"`
+	Space               *string          `json:"space,omitempty" jsonschema:"work or life"`
+	ProjectID           *string          `json:"project_id,omitempty"`
 }
 type listTasksIn struct {
 	State     string `json:"state,omitempty" jsonschema:"open (default), done or all"`
@@ -189,6 +202,7 @@ type createTaskIn struct {
 	Space     string   `json:"space,omitempty" jsonschema:"work or life; omit to inherit from the project, else life"`
 	ProjectID string   `json:"project_id,omitempty"`
 	RRule     string   `json:"rrule,omitempty" jsonschema:"repeat rule (RFC 5545 RRULE subset): FREQ=DAILY|WEEKLY|MONTHLY|YEARLY with optional INTERVAL, COUNT or UNTIL (YYYYMMDD), and BYDAY (MO,TU,WE,TH,FR,SA,SU; weekly only), e.g. FREQ=DAILY, FREQ=WEEKLY;BYDAY=MO,WE,FR, FREQ=MONTHLY;COUNT=6. Needs due."`
+	Notify    string   `json:"notify,omitempty" jsonschema:"how the phone tells the person at remind_at: alarm (rings until stopped), reminder (default, a notification), app (in the app only) or none. A to-do is only told when it has a time (remind_at, or due)"`
 }
 type askIn struct {
 	Message   string `json:"message"`
@@ -293,7 +307,8 @@ func (t *tools) register(s *mcp.Server) {
 			return deleted("note", "note", in.ID)
 		})
 
-	mcp.AddTool(s, &mcp.Tool{Name: "list_events", Description: "List calendar events in a time window; recurring events are expanded into their occurrences.", Annotations: readOnly},
+	mcp.AddTool(s, &mcp.Tool{Name: "list_events", Description: "The schedule (日程安排) in a time window: calendar events, alarms and the to-dos due in it, as occurrences by start time (repeating ones expanded, holidays applied), each with notify (alarm / reminder / app / none) and remindBeforeMinutes saying how and how far ahead the person is told. " +
+		"The open to-dos with no time yet come back as unscheduled, a column of their own: give one a due to put it on the schedule.", Annotations: readOnly},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in listEventsIn) (*mcp.CallToolResult, *eventsOut, error) {
 			from, err := t.when(in.From)
 			if err != nil {
@@ -307,22 +322,20 @@ func (t *tools) register(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			r, err := t.cal.ListEvents(ctx, &pb.ListEventsRequest{From: from, To: to, Space: sp})
+			tasks := in.IncludeTasks == nil || *in.IncludeTasks
+			r, err := t.cal.ListEvents(ctx, &pb.ListEventsRequest{From: from, To: to, Space: sp, IncludeTasks: tasks})
 			if err != nil {
 				return nil, nil, err
 			}
-			return reply(r, &eventsOut{Items: items(r.Occurrences, t.occurrence), From: t.ts(from), To: t.ts(to)})
+			out := &eventsOut{Items: items(r.Occurrences, t.occurrence), From: t.ts(from), To: t.ts(to)}
+			if tasks {
+				out.Unscheduled = items(r.Unscheduled, t.task)
+			}
+			return reply(r, out)
 		})
-	mcp.AddTool(s, &mcp.Tool{Name: "create_event", Description: "Create a calendar event, optionally recurring and with a reminder.", Annotations: additive},
+	mcp.AddTool(s, &mcp.Tool{Name: "create_event", Description: "Create a schedule item (日程): a calendar event, optionally recurring (rrule, or an alarm-style schedule), with notify saying how the person is told — alarm rings the phone until stopped, reminder (default) is a notification, app shows inside the app only, none is silent — and remind_before_minutes how far ahead (omit it for no notification). " +
+		"With notify alarm this is an alarm (闹钟) like create_alarm's; a repeating one can skip holidays or run on workdays only (holiday_policy).", Annotations: additive},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in createEventIn) (*mcp.CallToolResult, *eventOut, error) {
-			start, err := t.when(in.Start)
-			if err != nil {
-				return nil, nil, err
-			}
-			end, err := t.optWhen(in.End)
-			if err != nil {
-				return nil, nil, err
-			}
 			tz := in.TimeZone
 			if tz == "" {
 				tz = t.loc.String()
@@ -331,16 +344,35 @@ func (t *tools) register(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			r, err := t.cal.CreateEvent(ctx, &pb.CreateEventRequest{Event: &pb.Event{
-				Title: in.Title, StartTime: start, EndTime: end, AllDay: in.AllDay, Location: in.Location,
-				Description: in.Description, TimeZone: tz, Rrule: in.RRule, RemindBeforeMinutes: in.RemindBeforeMinutes,
-				Space: sp, ProjectId: in.ProjectID}})
+			ev := &pb.Event{Title: in.Title, AllDay: in.AllDay, Location: in.Location, Description: in.Description, TimeZone: tz, Rrule: in.RRule,
+				RemindBeforeMinutes: in.RemindBeforeMinutes, Notify: in.Notify, HolidayPolicy: in.HolidayPolicy, Region: in.Region,
+				OriginalText: in.OriginalText, Space: sp, ProjectId: in.ProjectID}
+			if in.Schedule != nil {
+				if ev.AlarmSchedule, err = t.scheduleIn(in.Schedule); err != nil {
+					return nil, nil, err
+				}
+				if ev.AlarmSchedule.TimeZone == "" {
+					ev.AlarmSchedule.TimeZone = tz
+				}
+			} else {
+				if in.Start == "" {
+					return nil, nil, fmt.Errorf("start is required (or an alarm-style schedule)")
+				}
+				if ev.StartTime, err = t.when(in.Start); err != nil {
+					return nil, nil, err
+				}
+				if ev.EndTime, err = t.optWhen(in.End); err != nil {
+					return nil, nil, err
+				}
+			}
+			r, err := t.cal.CreateEvent(ctx, &pb.CreateEventRequest{Event: ev})
 			if err != nil {
 				return nil, nil, err
 			}
 			return reply(r, t.event(r))
 		})
-	mcp.AddTool(s, &mcp.Tool{Name: "update_event", Description: "Reschedule or edit an event; omitted fields stay as they are.", Annotations: editing},
+	mcp.AddTool(s, &mcp.Tool{Name: "update_event", Description: "Reschedule or edit a schedule item; omitted fields stay as they are. notify changes how the person is told (alarm / reminder / app / none), remind_before_minutes how far ahead (0 = at the start; clear_reminder for none at all), enabled false pauses it. " +
+		"On a to-do's item (kind task) title, start, remind_before_minutes, notify, project and space go to the to-do; use update_task for the rest.", Annotations: editing},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in updateEventIn) (*mcp.CallToolResult, *eventOut, error) {
 			e, mask := &pb.Event{Id: in.ID}, []string{}
 			str := func(v *string, path string, dst *string) {
@@ -381,6 +413,21 @@ func (t *tools) register(s *mcp.Server) {
 				}
 				mask = append(mask, "remind_before_minutes")
 			}
+			str(in.Notify, "notify", &e.Notify)
+			str(in.HolidayPolicy, "holiday_policy", &e.HolidayPolicy)
+			str(in.OriginalText, "original_text", &e.OriginalText)
+			if in.Region != nil {
+				e.Region, mask = in.Region, append(mask, "region")
+			}
+			if in.Enabled != nil {
+				e.Enabled, mask = in.Enabled, append(mask, "enabled")
+			}
+			if in.Schedule != nil {
+				if e.AlarmSchedule, err = t.scheduleIn(in.Schedule); err != nil {
+					return nil, nil, err
+				}
+				mask = append(mask, "alarm_schedule")
+			}
 			if len(mask) == 0 {
 				return nil, nil, fmt.Errorf("nothing to update: pass at least one field")
 			}
@@ -390,7 +437,7 @@ func (t *tools) register(s *mcp.Server) {
 			}
 			return reply(r, t.event(r))
 		})
-	mcp.AddTool(s, &mcp.Tool{Name: "delete_event", Description: "Permanently delete an event (all occurrences if it recurs).", Annotations: deleting},
+	mcp.AddTool(s, &mcp.Tool{Name: "delete_event", Description: "Permanently delete a schedule item (all occurrences if it recurs); on a to-do's item this deletes the to-do.", Annotations: deleting},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, *deletedOut, error) {
 			if _, err := t.cal.DeleteEvent(ctx, &pb.DeleteEventRequest{Id: in.ID}); err != nil {
 				return nil, nil, err
@@ -420,7 +467,7 @@ func (t *tools) register(s *mcp.Server) {
 			}
 			return reply(r, &listOut[*taskOut]{Items: items(r.Tasks, t.task), NextPageToken: r.NextPageToken})
 		})
-	mcp.AddTool(s, &mcp.Tool{Name: "create_task", Description: "Create a to-do item, optionally with a due time and a reminder. With rrule it repeats: the rule is anchored on the due time (required), and completing the task keeps it as done and adds the next one at the rule's next occurrence, its reminder moved along by the same amount, until COUNT or UNTIL ends the series. Supported rrule subset: FREQ=DAILY|WEEKLY|MONTHLY|YEARLY, INTERVAL, COUNT, UNTIL, BYDAY (weekly only).", Annotations: additive},
+	mcp.AddTool(s, &mcp.Tool{Name: "create_task", Description: "Create a to-do item, optionally with a due time and a reminder (remind_at; notify says how: reminder by default, alarm to ring the phone, app for in-app only). A to-do with a time is also on the schedule (list_events); one without stays unscheduled until it gets a due. With rrule it repeats: the rule is anchored on the due time (required), and completing the task keeps it as done and adds the next one at the rule's next occurrence, its reminder moved along by the same amount, until COUNT or UNTIL ends the series. Supported rrule subset: FREQ=DAILY|WEEKLY|MONTHLY|YEARLY, INTERVAL, COUNT, UNTIL, BYDAY (weekly only).", Annotations: additive},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in createTaskIn) (*mcp.CallToolResult, *taskOut, error) {
 			due, err := t.optWhen(in.Due)
 			if err != nil {
@@ -436,7 +483,7 @@ func (t *tools) register(s *mcp.Server) {
 			}
 			r, err := t.cal.CreateTask(ctx, &pb.CreateTaskRequest{Task: &pb.Task{
 				Title: in.Title, Notes: in.Notes, DueTime: due, RemindTime: rem, Priority: pb.Priority(in.Priority), Tags: in.Tags,
-				Space: sp, ProjectId: in.ProjectID, Rrule: in.RRule}})
+				Space: sp, ProjectId: in.ProjectID, Rrule: in.RRule, Notify: in.Notify}})
 			if err != nil {
 				return nil, nil, err
 			}

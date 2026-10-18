@@ -197,7 +197,7 @@ func (s *Store) DeleteProject(ctx context.Context, userID, id string, deleteItem
 				`DELETE FROM notes_fts WHERE note_id IN (SELECT id FROM notes WHERE project_id = ? AND user_id = ?)`,
 				`DELETE FROM notes WHERE project_id = ? AND user_id = ?`,
 				`DELETE FROM tasks WHERE project_id = ? AND user_id = ?`,
-				`DELETE FROM events WHERE project_id = ? AND user_id = ?`,
+				`DELETE FROM events WHERE project_id = ? AND user_id = ? AND source <> 'alarm'`,
 			} {
 				if _, err := tx.ExecContext(ctx, q, id, userID); err != nil {
 					return err
@@ -213,10 +213,13 @@ func (s *Store) DeleteProject(ctx context.Context, userID, id string, deleteItem
 		// Goals keep their check-in history and time entries are a record of
 		// what was done, so they leave the project instead of going with it.
 		// Alarms ring on the phone, so they stay too rather than vanish.
-		for _, table := range []string{"goals", "objectives", "time_entries", "alarms"} {
+		for _, table := range []string{"goals", "objectives", "time_entries"} {
 			if _, err := tx.ExecContext(ctx, `UPDATE `+table+` SET project_id = '' WHERE project_id = ? AND user_id = ?`, id, userID); err != nil {
 				return err
 			}
+		}
+		if _, err := tx.ExecContext(ctx, `UPDATE events SET project_id = '' WHERE project_id = ? AND user_id = ? AND source = 'alarm'`, id, userID); err != nil {
+			return err
 		}
 		_, err := tx.ExecContext(ctx, `DELETE FROM projects WHERE id = ? AND user_id = ?`, id, userID)
 		return err
@@ -316,7 +319,7 @@ func (s *Store) GetProject(ctx context.Context, userID, id string, now time.Time
 }
 
 func (s *Store) projectEvents(ctx context.Context, userID, projectID string) ([]Event, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT `+eventCols+` FROM events WHERE user_id = ? AND project_id = ? ORDER BY start_ms`, userID, projectID)
+	rows, err := s.db.QueryContext(ctx, `SELECT `+eventCols+` FROM events WHERE user_id = ? AND project_id = ? AND source <> 'task' ORDER BY start_ms`, userID, projectID)
 	if err != nil {
 		return nil, err
 	}

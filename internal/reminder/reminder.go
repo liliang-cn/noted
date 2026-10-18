@@ -124,6 +124,7 @@ type webhookBody struct {
 	DueTime time.Time `json:"due_time"`
 	Fired   time.Time `json:"fire_time"`
 	UserID  string    `json:"user_id"`
+	Notify  string    `json:"notify"` // alarm, reminder or app
 }
 
 func (s *Scheduler) post(r store.Reminder) {
@@ -131,7 +132,7 @@ func (s *Scheduler) post(r store.Reminder) {
 	if r.Kind == store.KindTask {
 		kind = "task"
 	}
-	body, _ := json.Marshal(webhookBody{r.ID, kind, r.RefID, r.Title, r.Due, r.Fired, r.UserID})
+	body, _ := json.Marshal(webhookBody{r.ID, kind, r.RefID, r.Title, r.Due, r.Fired, r.UserID, r.Notify})
 	for attempt := 0; attempt < 3; attempt++ {
 		resp, err := s.client.Post(s.WebhookURL, "application/json", bytes.NewReader(body))
 		if err == nil {

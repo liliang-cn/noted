@@ -124,6 +124,7 @@ type taskOut struct {
 	ProjectID      string   `json:"projectId,omitempty"`
 	ProjectTitle   string   `json:"projectTitle,omitempty" jsonschema:"get_overview only"`
 	RRule          string   `json:"rrule,omitempty"`
+	Notify         string   `json:"notify,omitempty" jsonschema:"how the phone tells the person at remindTime: alarm, reminder, app or none"`
 	Progress       int32    `json:"progress" jsonschema:"0-100"`
 	WorkedMinutes  int32    `json:"workedMinutes"`
 	WorkSessions   int32    `json:"workSessions"`
@@ -133,23 +134,32 @@ type taskOut struct {
 }
 
 type eventOut struct {
-	Kind                string `json:"kind" jsonschema:"always event"`
-	ID                  string `json:"id"`
-	Link                string `json:"link"`
-	Title               string `json:"title"`
-	Description         string `json:"description,omitempty"`
-	Location            string `json:"location,omitempty"`
-	StartTime           string `json:"startTime" jsonschema:"for list_events and get_overview: this occurrence's"`
-	EndTime             string `json:"endTime,omitempty"`
-	AllDay              bool   `json:"allDay"`
-	TimeZone            string `json:"timeZone,omitempty"`
-	RRule               string `json:"rrule,omitempty"`
-	RemindBeforeMinutes *int32 `json:"remindBeforeMinutes,omitempty"`
-	Space               string `json:"space,omitempty"`
-	ProjectID           string `json:"projectId,omitempty"`
-	ProjectTitle        string `json:"projectTitle,omitempty" jsonschema:"get_overview only"`
-	CreateTime          string `json:"createTime,omitempty"`
-	UpdateTime          string `json:"updateTime,omitempty"`
+	Kind                string            `json:"kind" jsonschema:"event; task when it is the schedule of a to-do (then id is the task's: complete_task works on it)"`
+	ID                  string            `json:"id"`
+	Link                string            `json:"link"`
+	Title               string            `json:"title"`
+	Description         string            `json:"description,omitempty"`
+	Location            string            `json:"location,omitempty"`
+	StartTime           string            `json:"startTime" jsonschema:"for list_events and get_overview: this occurrence's"`
+	EndTime             string            `json:"endTime,omitempty"`
+	AllDay              bool              `json:"allDay"`
+	TimeZone            string            `json:"timeZone,omitempty"`
+	RRule               string            `json:"rrule,omitempty"`
+	RemindBeforeMinutes *int32            `json:"remindBeforeMinutes,omitempty" jsonschema:"minutes before the start the person is told; absent: no notification is scheduled at all, whatever notify says; 0 is at the start"`
+	Notify              string            `json:"notify" jsonschema:"how the person is told when the time comes: alarm (the phone rings until stopped, through silent mode), reminder (a system notification), app (inside the app only) or none"`
+	Schedule            *alarmScheduleOut `json:"schedule,omitempty" jsonschema:"an alarm-style rule in place of startTime+rrule (items made with create_alarm or create_event's schedule): kind oneShot/recurring, minutely to monthly, byTime, until, count"`
+	HolidayPolicy       string            `json:"holidayPolicy,omitempty" jsonschema:"for a repeating item: none, skipHoliday, workdayOnly or followStatutory (CN 法定节假日 and 调休 when region is CN)"`
+	Region              string            `json:"region,omitempty" jsonschema:"CN or empty"`
+	Enabled             *bool             `json:"enabled,omitempty" jsonschema:"false: paused (no occurrences, nothing told)"`
+	OriginalText        string            `json:"originalText,omitempty"`
+	Source              string            `json:"source,omitempty" jsonschema:"event, alarm (made through the alarm tools) or task (a to-do's time)"`
+	TaskID              string            `json:"taskId,omitempty" jsonschema:"source task: the to-do"`
+	Completed           *bool             `json:"completed,omitempty" jsonschema:"source task: whether the to-do is done"`
+	Space               string            `json:"space,omitempty"`
+	ProjectID           string            `json:"projectId,omitempty"`
+	ProjectTitle        string            `json:"projectTitle,omitempty" jsonschema:"get_overview only"`
+	CreateTime          string            `json:"createTime,omitempty"`
+	UpdateTime          string            `json:"updateTime,omitempty"`
 }
 
 type noteOut struct {
@@ -427,6 +437,7 @@ type reminderOut struct {
 	DueTime  string `json:"dueTime,omitempty" jsonschema:"when the event starts or the task is due"`
 	FireTime string `json:"fireTime"`
 	Space    string `json:"space,omitempty"`
+	Notify   string `json:"notify,omitempty" jsonschema:"how the item is told: alarm, reminder or app"`
 }
 
 type timeGroupOut struct {
@@ -485,9 +496,10 @@ type listOut[T any] struct {
 }
 
 type eventsOut struct {
-	Items []*eventOut `json:"items" jsonschema:"occurrences, by start time"`
-	From  string      `json:"from"`
-	To    string      `json:"to"`
+	Items       []*eventOut `json:"items" jsonschema:"occurrences, by start time: events, alarms and (with include_tasks) the to-dos due in the window"`
+	Unscheduled []*taskOut  `json:"unscheduled,omitempty" jsonschema:"with include_tasks: the open to-dos that have no time yet, to be scheduled (give them a due) or left as they are"`
+	From        string      `json:"from"`
+	To          string      `json:"to"`
 }
 
 type searchOut struct {
@@ -604,7 +616,7 @@ func (t *tools) task(k *pb.Task) *taskOut {
 		DueTime: t.ts(k.DueTime), RemindTime: t.ts(k.RemindTime), Priority: int32(k.Priority),
 		Completed: k.Completed, CompleteTime: t.ts(k.CompleteTime),
 		Overdue: !k.Completed && k.DueTime != nil && k.DueTime.AsTime().Before(time.Now()),
-		Tags:    k.Tags, Space: spaceName(k.Space), ProjectID: k.ProjectId, RRule: k.Rrule,
+		Tags:    k.Tags, Space: spaceName(k.Space), ProjectID: k.ProjectId, RRule: k.Rrule, Notify: k.Notify,
 		Progress: k.Progress, WorkedMinutes: k.WorkedMinutes, WorkSessions: k.WorkSessions, LastWorkedTime: t.ts(k.LastWorkedTime),
 		CreateTime: t.ts(k.CreateTime), UpdateTime: t.ts(k.UpdateTime)}
 }
@@ -613,10 +625,31 @@ func (t *tools) event(e *pb.Event) *eventOut {
 	if e == nil {
 		return nil
 	}
-	return &eventOut{Kind: "event", ID: e.Id, Link: link("event", e.Id), Title: e.Title, Description: e.Description,
+	kind, ref := "event", "event"
+	if e.Source == "task" {
+		kind, ref = "task", "task"
+	} else if e.Source == "alarm" {
+		ref = "alarm"
+	}
+	out := &eventOut{Kind: kind, ID: e.Id, Link: link(ref, e.Id), Title: e.Title, Description: e.Description,
 		Location: e.Location, StartTime: t.ts(e.StartTime), EndTime: t.ts(e.EndTime), AllDay: e.AllDay, TimeZone: e.TimeZone,
 		RRule: e.Rrule, RemindBeforeMinutes: e.RemindBeforeMinutes, Space: spaceName(e.Space), ProjectID: e.ProjectId,
+		Notify: e.Notify, HolidayPolicy: e.HolidayPolicy, Region: e.GetRegion(), OriginalText: e.OriginalText, Source: e.Source, TaskID: e.TaskId,
 		CreateTime: t.ts(e.CreateTime), UpdateTime: t.ts(e.UpdateTime)}
+	if e.HolidayPolicy == "none" && e.Rrule == "" && e.AlarmSchedule == nil {
+		out.HolidayPolicy = "" // nothing to apply it to
+	}
+	if e.Enabled != nil && !*e.Enabled {
+		out.Enabled = e.Enabled
+	}
+	if e.Source == "task" {
+		c := e.Completed
+		out.Completed = &c
+	}
+	if e.AlarmSchedule != nil {
+		out.Schedule = t.scheduleOut(e.AlarmSchedule)
+	}
+	return out
 }
 
 // occurrence is an event at one of its occurrences' times.
@@ -800,7 +833,7 @@ func (t *tools) reminder(r *pb.Reminder) *reminderOut {
 		ref = "task"
 	}
 	return &reminderOut{Kind: "reminder", ID: r.Id, Link: link(ref, r.RefId), RefKind: ref, RefID: r.RefId, Title: r.Title,
-		DueTime: t.ts(r.DueTime), FireTime: t.ts(r.FireTime), Space: spaceName(r.Space)}
+		DueTime: t.ts(r.DueTime), FireTime: t.ts(r.FireTime), Space: spaceName(r.Space), Notify: r.Notify}
 }
 
 func timeGroups(rows []*pb.TimeSummaryRow, by pb.TimeGroupBy) []*timeGroupOut {

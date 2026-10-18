@@ -38,11 +38,7 @@ func alarmToPB(a store.Alarm, now time.Time) *pb.Alarm {
 		Id: a.ID, Label: a.Label, Mode: a.Mode, Enabled: &a.Enabled, HolidayPolicy: a.HolidayPolicy, Region: &a.Region, Note: a.Note,
 		ProjectId: a.ProjectID, Space: spaceOut(a.Space), OriginalText: a.OriginalText,
 		CreateTime: timestamppb.New(a.Created), UpdateTime: timestamppb.New(a.Updated),
-		Schedule: &pb.AlarmSchedule{Kind: sc.Kind, At: tsPtr(sc.At), Anchor: sc.Anchor, Time: sc.Time, TimeZone: sc.TimeZone},
-	}
-	if r := sc.Recurrence; r != nil {
-		out.Schedule.Recurrence = &pb.AlarmRecurrence{Freq: r.Freq, Interval: int32(r.Interval), ByDay: r.ByDay, ByMonthDay: int32(r.ByMonthDay),
-			ByTime: r.ByTime, Until: r.Until, Count: int32(r.Count), EndTime: r.EndTime}
+		Schedule: scheduleToPB(sc), Notify: a.Notify, RemindBeforeMinutes: int32(a.RemindBefore), Source: a.Source,
 	}
 	for _, t := range a.NextFires(now, nextFires) {
 		out.NextFires = append(out.NextFires, timestamppb.New(t))
@@ -181,7 +177,7 @@ func (s *Alarms) ListAlarms(ctx context.Context, req *pb.ListAlarmsRequest) (*pb
 	if err != nil {
 		return nil, err
 	}
-	as, version, err := s.Store.ListAlarms(ctx, u, store.AlarmFilter{Enabled: req.Enabled, Space: spaceIn(req.Space), ProjectID: req.ProjectId})
+	as, version, err := s.Store.ListAlarms(ctx, u, store.AlarmFilter{Enabled: req.Enabled, Space: spaceIn(req.Space), ProjectID: req.ProjectId, Notify: req.Notify})
 	if err != nil {
 		return nil, toStatus(err)
 	}

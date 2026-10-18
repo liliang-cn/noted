@@ -22,6 +22,7 @@ type updateTaskIn struct {
 	Space     *string   `json:"space,omitempty" jsonschema:"work or life"`
 	ProjectID *string   `json:"project_id,omitempty" jsonschema:"puts the task into this project (id from list_projects); empty string takes it out of its project"`
 	RRule     *string   `json:"rrule,omitempty" jsonschema:"repeat rule (RFC 5545 RRULE subset): FREQ=DAILY|WEEKLY|MONTHLY|YEARLY with optional INTERVAL, COUNT or UNTIL (YYYYMMDD), and BYDAY (MO,TU,WE,TH,FR,SA,SU; weekly only), e.g. FREQ=DAILY, FREQ=WEEKLY;BYDAY=MO,WE,FR, FREQ=MONTHLY;COUNT=6. Empty string makes it one-off; a repeating task needs a due time."`
+	Notify    *string   `json:"notify,omitempty" jsonschema:"how the phone tells the person at remind_at: alarm, reminder, app or none"`
 }
 type logWorkIn struct {
 	TaskID   string `json:"task_id"`
@@ -62,7 +63,7 @@ func (t *tools) registerTasks(s *mcp.Server) {
 			}
 			return reply(r, t.task(r))
 		})
-	mcp.AddTool(s, &mcp.Tool{Name: "update_task", Description: "Change a to-do item: rename, reschedule, set or clear a reminder, reprioritise, reopen, make it repeat or stop repeating (rrule), or move it into a project with project_id. Omitted fields stay as they are. Completing a repeating task creates the next one; reopening it later does not remove that.", Annotations: editing},
+	mcp.AddTool(s, &mcp.Tool{Name: "update_task", Description: "Change a to-do item: rename, reschedule (a due puts it on the schedule; clearing it makes it unscheduled again), set or clear a reminder and how it is told (notify), reprioritise, reopen, make it repeat or stop repeating (rrule), or move it into a project with project_id. Omitted fields stay as they are. Completing a repeating task creates the next one; reopening it later does not remove that.", Annotations: editing},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in updateTaskIn) (*mcp.CallToolResult, *taskOut, error) {
 			tk, mask := &pb.Task{Id: in.ID}, []string{}
 			var err error
@@ -104,6 +105,9 @@ func (t *tools) registerTasks(s *mcp.Server) {
 			}
 			if in.RRule != nil {
 				tk.Rrule, mask = *in.RRule, append(mask, "rrule")
+			}
+			if in.Notify != nil {
+				tk.Notify, mask = *in.Notify, append(mask, "notify")
 			}
 			if len(mask) == 0 {
 				return nil, nil, fmt.Errorf("nothing to update: pass at least one field")

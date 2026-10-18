@@ -109,11 +109,40 @@ message Event {
   // Recurrence, an RFC 5545 RRULE subset: FREQ (DAILY|WEEKLY|MONTHLY|YEARLY),
   // INTERVAL, COUNT, UNTIL, BYDAY (weekly only). Empty means one-off.
   string rrule = 9;
-  optional int32 remind_before_minutes = 10; // unset: no reminder
+  // How far ahead of the start the person is told, in minutes. Unset: no
+  // notification is scheduled anywhere (server or phone), whatever notify
+  // says; 0 means at the start itself and is not the same as unset.
+  optional int32 remind_before_minutes = 10;
   google.protobuf.Timestamp create_time = 11;
   google.protobuf.Timestamp update_time = 12;
   string project_id = 13; // optional: the project this event belongs to
   Space space = 14;
+  // How the phone tells the person when the time comes: alarm (rings until
+  // stopped by hand, through silent mode), reminder (a system notification
+  // that can be swiped away; the default), app (shown inside the app only,
+  // no system notification) or none.
+  string notify = 15;
+  // An alarm-style rule instead of start_time + rrule: the shapes of
+  // AlarmSchedule (oneShot at / recurring anchor+time+recurrence, with
+  // minutely/hourly/byTime/byMonthDay). Set when the item was made through
+  // the alarm API or create_event's schedule; start_time then mirrors its first
+  // ring and rrule is empty. Read-only once set except through update's
+  // alarm_schedule (replaced whole).
+  AlarmSchedule alarm_schedule = 16;
+  // Holiday handling for recurring items, alarm-style or RRULE: none
+  // (default), skipHoliday, workdayOnly or followStatutory; region CN (mainland
+  // China's 法定节假日 and 调休) or "" (weekends only). Unset region on create:
+  // CN when time_zone is a mainland China zone.
+  string holiday_policy = 17;
+  optional string region = 18;
+  optional bool enabled = 19; // unset on create: true. false pauses it: no occurrences, no notifications
+  string original_text = 20;  // the words the person said, kept for reference
+  // Read-only. source: event, alarm (made through the alarm API or migrated
+  // from the old alarms table) or task (the schedule of a to-do with a due
+  // time; its id is the task's). For a task: completed mirrors the task.
+  string source = 21;
+  string task_id = 22;
+  bool completed = 23;
 }
 
 message CreateEventRequest {
@@ -127,7 +156,10 @@ message GetEventRequest {
 message UpdateEventRequest {
   Event event = 1;
   // title, description, location, start_time, end_time, all_day, time_zone,
-  // rrule, remind_before_minutes, project_id, space
+  // rrule, remind_before_minutes, project_id, space, notify, alarm_schedule,
+  // holiday_policy, region, enabled, original_text. On a task's schedule
+  // (source task) title, start_time, remind_before_minutes, notify, project_id
+  // and space are applied to the task itself; the rest is refused.
   google.protobuf.FieldMask update_mask = 2;
 }
 
@@ -139,6 +171,10 @@ message ListEventsRequest {
   google.protobuf.Timestamp from = 1; // inclusive
   google.protobuf.Timestamp to = 2;   // exclusive; at most 366 days after from
   Space space = 3;  // UNSPECIFIED: both
+  // Also return the schedules of to-dos with a due time in the window (source
+  // task, completed ones included), and the open to-dos without a time as
+  // unscheduled. Off: events and alarms only, as before.
+  bool include_tasks = 4;
 }
 
 // One concrete instance of an event inside the requested window.
@@ -150,6 +186,7 @@ message Occurrence {
 
 message ListEventsResponse {
   repeated Occurrence occurrences = 1; // ordered by start_time
+  repeated Task unscheduled = 2;       // include_tasks only: open to-dos with no due time, oldest first
 }
 
 enum Priority {
@@ -186,6 +223,9 @@ message Task {
   // next occurrence (wall clock in the server's zone), with the reminder moved
   // by the same amount; none once COUNT or UNTIL ends the series.
   string rrule = 18;
+  // How the phone tells the person at remind_time: alarm, reminder (default),
+  // app or none, as Event.notify. A reminder needs a due time.
+  string notify = 19;
 }
 
 // One sitting on a task: some time spent, maybe a progress estimate, maybe a note.
@@ -209,7 +249,7 @@ message GetTaskRequest {
 message UpdateTaskRequest {
   Task task = 1;
   // title, notes, due_time, priority, completed, remind_time, tags, project_id,
-  // space, rrule
+  // space, rrule, notify
   google.protobuf.FieldMask update_mask = 2;
 }
 
@@ -263,6 +303,7 @@ message Reminder {
   google.protobuf.Timestamp due_time = 5;  // when the event starts / task is due
   google.protobuf.Timestamp fire_time = 6; // when the reminder fired
   Space space = 7;
+  string notify = 8; // the item's notify: alarm, reminder or app (none never fires)
 }
 
 message WatchRemindersRequest {
@@ -1326,6 +1367,13 @@ message Alarm {
   // Read-only: the next rings after now (at most 5), holidays applied; empty
   // when disabled or finished.
   repeated google.protobuf.Timestamp next_fires = 14;
+  // Read-only. An alarm is a schedule item (Event) with notify alarm: notify
+  // is the item's (mode mirrors it: alarm, reminder or app); remind_before_minutes
+  // how long before each schedule time it rings (0 for alarms); source where
+  // the item came from: alarm, event or task (then the id is the task's).
+  string notify = 15;
+  int32 remind_before_minutes = 16;
+  string source = 17;
 }
 
 message CreateAlarmRequest { Alarm alarm = 1; } // id, next_fires and the times of record are ignored
@@ -1341,6 +1389,11 @@ message ListAlarmsRequest {
   optional bool enabled = 1; // unset: both
   Space space = 2;           // UNSPECIFIED: both
   string project_id = 3;
+  // Which schedule items: "" (default) the alarms proper — notify alarm, plus
+  // items made through the alarm API whatever their notify; "alarm",
+  // "reminder" or "app" items with that notify; "all" every item that
+  // notifies (notify not none, a reminder time set): what a phone schedules.
+  string notify = 4;
 }
 message ListAlarmsResponse {
   repeated Alarm alarms = 1; // oldest first

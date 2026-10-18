@@ -5,6 +5,7 @@ import (
 	"time"
 
 	pb "github.com/liliang-cn/noted/gen/noted/v1"
+	"github.com/liliang-cn/noted/internal/alarm"
 	"github.com/liliang-cn/noted/internal/reminder"
 	"github.com/liliang-cn/noted/internal/store"
 	"google.golang.org/grpc/codes"
@@ -15,8 +16,16 @@ import (
 
 type Calendar struct {
 	pb.UnimplementedCalendarServiceServer
-	Store *store.Store
-	Hub   *reminder.Hub
+	Store    *store.Store
+	Hub      *reminder.Hub
+	Location *time.Location // the zone of an alarm-style schedule that names none
+}
+
+func (s *Calendar) zone() string {
+	if s.Location == nil {
+		return "UTC"
+	}
+	return s.Location.String()
 }
 
 // ---- events ----
@@ -31,6 +40,9 @@ func (s *Calendar) CreateEvent(ctx context.Context, req *pb.CreateEventRequest) 
 	}
 	e := eventFromPB(req.Event)
 	e.UserID = u
+	if e.Rule != nil && e.Rule.TimeZone == "" && e.TimeZone == "" {
+		e.Rule.TimeZone = s.zone()
+	}
 	out, err := s.Store.CreateEvent(ctx, e)
 	if err != nil {
 		return nil, toStatus(err)
@@ -60,7 +72,8 @@ func (s *Calendar) UpdateEvent(ctx context.Context, req *pb.UpdateEventRequest) 
 		return nil, status.Error(codes.InvalidArgument, "event.id is required")
 	}
 	paths, err := maskPaths(req.UpdateMask, "title", "description", "location", "start_time", "end_time",
-		"all_day", "time_zone", "rrule", "remind_before_minutes", "project_id", "space")
+		"all_day", "time_zone", "rrule", "remind_before_minutes", "project_id", "space",
+		"notify", "alarm_schedule", "holiday_policy", "region", "enabled", "original_text")
 	if err != nil {
 		return nil, err
 	}
@@ -108,6 +121,29 @@ func (s *Calendar) UpdateEvent(ctx context.Context, req *pb.UpdateEventRequest) 
 		}
 		p.Space = &e.Space
 	}
+	if paths["notify"] {
+		p.Notify = &e.Notify
+	}
+	if paths["alarm_schedule"] {
+		if e.Rule == nil {
+			p.Rule = &alarm.Schedule{} // drops the rule
+		} else {
+			p.Rule = e.Rule
+		}
+	}
+	if paths["holiday_policy"] {
+		p.HolidayPolicy = &e.HolidayPolicy
+	}
+	if paths["region"] {
+		region := in.GetRegion()
+		p.Region = &region
+	}
+	if paths["enabled"] {
+		p.Disabled = &e.Disabled
+	}
+	if paths["original_text"] {
+		p.OriginalText = &e.OriginalText
+	}
 	out, err := s.Store.UpdateEvent(ctx, u, in.Id, p)
 	if err != nil {
 		return nil, toStatus(err)
@@ -134,15 +170,18 @@ func (s *Calendar) ListEvents(ctx context.Context, req *pb.ListEventsRequest) (*
 	if req.From == nil || req.To == nil {
 		return nil, status.Error(codes.InvalidArgument, "from and to are required")
 	}
-	occ, err := s.Store.ListEvents(ctx, u, req.From.AsTime(), req.To.AsTime(), spaceIn(req.Space))
+	sc, err := s.Store.ListSchedule(ctx, u, req.From.AsTime(), req.To.AsTime(), spaceIn(req.Space), req.IncludeTasks)
 	if err != nil {
 		return nil, toStatus(err)
 	}
 	resp := &pb.ListEventsResponse{}
-	for _, o := range occ {
+	for _, o := range sc.Occurrences {
 		resp.Occurrences = append(resp.Occurrences, &pb.Occurrence{
 			Event: eventToPB(o.Event), StartTime: timestamppb.New(o.Start), EndTime: timestamppb.New(o.End),
 		})
+	}
+	for _, t := range sc.Unscheduled {
+		resp.Unscheduled = append(resp.Unscheduled, taskToPB(t))
 	}
 	return resp, nil
 }
@@ -161,7 +200,7 @@ func (s *Calendar) CreateTask(ctx context.Context, req *pb.CreateTaskRequest) (*
 	t, err := s.Store.CreateTask(ctx, store.Task{
 		UserID: u, Title: in.Title, Notes: in.Notes, Due: timePtr(in.DueTime), Priority: int(in.Priority),
 		Done: in.Completed, Remind: timePtr(in.RemindTime), Tags: in.Tags,
-		ProjectID: in.ProjectId, Space: spaceIn(in.Space), RRule: in.Rrule,
+		ProjectID: in.ProjectId, Space: spaceIn(in.Space), RRule: in.Rrule, Notify: in.Notify,
 	})
 	if err != nil {
 		return nil, toStatus(err)
@@ -190,7 +229,7 @@ func (s *Calendar) UpdateTask(ctx context.Context, req *pb.UpdateTaskRequest) (*
 	if in.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "task.id is required")
 	}
-	paths, err := maskPaths(req.UpdateMask, "title", "notes", "due_time", "priority", "completed", "remind_time", "tags", "project_id", "space", "rrule")
+	paths, err := maskPaths(req.UpdateMask, "title", "notes", "due_time", "priority", "completed", "remind_time", "tags", "project_id", "space", "rrule", "notify")
 	if err != nil {
 		return nil, err
 	}
@@ -231,6 +270,9 @@ func (s *Calendar) UpdateTask(ctx context.Context, req *pb.UpdateTaskRequest) (*
 	}
 	if paths["rrule"] {
 		p.RRule = &in.Rrule
+	}
+	if paths["notify"] {
+		p.Notify = &in.Notify
 	}
 	t, err := s.Store.UpdateTask(ctx, u, in.Id, p)
 	if err != nil {

@@ -1040,14 +1040,43 @@ type Event struct {
 	TimeZone    string                 `protobuf:"bytes,8,opt,name=time_zone,json=timeZone,proto3" json:"time_zone,omitempty"` // IANA name; recurrence is expanded in this zone
 	// Recurrence, an RFC 5545 RRULE subset: FREQ (DAILY|WEEKLY|MONTHLY|YEARLY),
 	// INTERVAL, COUNT, UNTIL, BYDAY (weekly only). Empty means one-off.
-	Rrule               string                 `protobuf:"bytes,9,opt,name=rrule,proto3" json:"rrule,omitempty"`
-	RemindBeforeMinutes *int32                 `protobuf:"varint,10,opt,name=remind_before_minutes,json=remindBeforeMinutes,proto3,oneof" json:"remind_before_minutes,omitempty"` // unset: no reminder
+	Rrule string `protobuf:"bytes,9,opt,name=rrule,proto3" json:"rrule,omitempty"`
+	// How far ahead of the start the person is told, in minutes. Unset: no
+	// notification is scheduled anywhere (server or phone), whatever notify
+	// says; 0 means at the start itself and is not the same as unset.
+	RemindBeforeMinutes *int32                 `protobuf:"varint,10,opt,name=remind_before_minutes,json=remindBeforeMinutes,proto3,oneof" json:"remind_before_minutes,omitempty"`
 	CreateTime          *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	UpdateTime          *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
 	ProjectId           string                 `protobuf:"bytes,13,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"` // optional: the project this event belongs to
 	Space               Space                  `protobuf:"varint,14,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// How the phone tells the person when the time comes: alarm (rings until
+	// stopped by hand, through silent mode), reminder (a system notification
+	// that can be swiped away; the default), app (shown inside the app only,
+	// no system notification) or none.
+	Notify string `protobuf:"bytes,15,opt,name=notify,proto3" json:"notify,omitempty"`
+	// An alarm-style rule instead of start_time + rrule: the shapes of
+	// AlarmSchedule (oneShot at / recurring anchor+time+recurrence, with
+	// minutely/hourly/byTime/byMonthDay). Set when the item was made through
+	// the alarm API or create_event's schedule; start_time then mirrors its first
+	// ring and rrule is empty. Read-only once set except through update's
+	// alarm_schedule (replaced whole).
+	AlarmSchedule *AlarmSchedule `protobuf:"bytes,16,opt,name=alarm_schedule,json=alarmSchedule,proto3" json:"alarm_schedule,omitempty"`
+	// Holiday handling for recurring items, alarm-style or RRULE: none
+	// (default), skipHoliday, workdayOnly or followStatutory; region CN (mainland
+	// China's 法定节假日 and 调休) or "" (weekends only). Unset region on create:
+	// CN when time_zone is a mainland China zone.
+	HolidayPolicy string  `protobuf:"bytes,17,opt,name=holiday_policy,json=holidayPolicy,proto3" json:"holiday_policy,omitempty"`
+	Region        *string `protobuf:"bytes,18,opt,name=region,proto3,oneof" json:"region,omitempty"`
+	Enabled       *bool   `protobuf:"varint,19,opt,name=enabled,proto3,oneof" json:"enabled,omitempty"`                        // unset on create: true. false pauses it: no occurrences, no notifications
+	OriginalText  string  `protobuf:"bytes,20,opt,name=original_text,json=originalText,proto3" json:"original_text,omitempty"` // the words the person said, kept for reference
+	// Read-only. source: event, alarm (made through the alarm API or migrated
+	// from the old alarms table) or task (the schedule of a to-do with a due
+	// time; its id is the task's). For a task: completed mirrors the task.
+	Source        string `protobuf:"bytes,21,opt,name=source,proto3" json:"source,omitempty"`
+	TaskId        string `protobuf:"bytes,22,opt,name=task_id,json=taskId,proto3" json:"task_id,omitempty"`
+	Completed     bool   `protobuf:"varint,23,opt,name=completed,proto3" json:"completed,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Event) Reset() {
@@ -1178,6 +1207,69 @@ func (x *Event) GetSpace() Space {
 	return Space_SPACE_UNSPECIFIED
 }
 
+func (x *Event) GetNotify() string {
+	if x != nil {
+		return x.Notify
+	}
+	return ""
+}
+
+func (x *Event) GetAlarmSchedule() *AlarmSchedule {
+	if x != nil {
+		return x.AlarmSchedule
+	}
+	return nil
+}
+
+func (x *Event) GetHolidayPolicy() string {
+	if x != nil {
+		return x.HolidayPolicy
+	}
+	return ""
+}
+
+func (x *Event) GetRegion() string {
+	if x != nil && x.Region != nil {
+		return *x.Region
+	}
+	return ""
+}
+
+func (x *Event) GetEnabled() bool {
+	if x != nil && x.Enabled != nil {
+		return *x.Enabled
+	}
+	return false
+}
+
+func (x *Event) GetOriginalText() string {
+	if x != nil {
+		return x.OriginalText
+	}
+	return ""
+}
+
+func (x *Event) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *Event) GetTaskId() string {
+	if x != nil {
+		return x.TaskId
+	}
+	return ""
+}
+
+func (x *Event) GetCompleted() bool {
+	if x != nil {
+		return x.Completed
+	}
+	return false
+}
+
 type CreateEventRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Event         *Event                 `protobuf:"bytes,1,opt,name=event,proto3" json:"event,omitempty"`
@@ -1270,7 +1362,10 @@ type UpdateEventRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Event *Event                 `protobuf:"bytes,1,opt,name=event,proto3" json:"event,omitempty"`
 	// title, description, location, start_time, end_time, all_day, time_zone,
-	// rrule, remind_before_minutes, project_id, space
+	// rrule, remind_before_minutes, project_id, space, notify, alarm_schedule,
+	// holiday_policy, region, enabled, original_text. On a task's schedule
+	// (source task) title, start_time, remind_before_minutes, notify, project_id
+	// and space are applied to the task itself; the rest is refused.
 	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1365,10 +1460,14 @@ func (x *DeleteEventRequest) GetId() string {
 }
 
 type ListEventsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	From          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`                        // inclusive
-	To            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`                            // exclusive; at most 366 days after from
-	Space         Space                  `protobuf:"varint,3,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"` // UNSPECIFIED: both
+	state protoimpl.MessageState `protogen:"open.v1"`
+	From  *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`                        // inclusive
+	To    *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`                            // exclusive; at most 366 days after from
+	Space Space                  `protobuf:"varint,3,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"` // UNSPECIFIED: both
+	// Also return the schedules of to-dos with a due time in the window (source
+	// task, completed ones included), and the open to-dos without a time as
+	// unscheduled. Off: events and alarms only, as before.
+	IncludeTasks  bool `protobuf:"varint,4,opt,name=include_tasks,json=includeTasks,proto3" json:"include_tasks,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1422,6 +1521,13 @@ func (x *ListEventsRequest) GetSpace() Space {
 		return x.Space
 	}
 	return Space_SPACE_UNSPECIFIED
+}
+
+func (x *ListEventsRequest) GetIncludeTasks() bool {
+	if x != nil {
+		return x.IncludeTasks
+	}
+	return false
 }
 
 // One concrete instance of an event inside the requested window.
@@ -1488,6 +1594,7 @@ func (x *Occurrence) GetEndTime() *timestamppb.Timestamp {
 type ListEventsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Occurrences   []*Occurrence          `protobuf:"bytes,1,rep,name=occurrences,proto3" json:"occurrences,omitempty"` // ordered by start_time
+	Unscheduled   []*Task                `protobuf:"bytes,2,rep,name=unscheduled,proto3" json:"unscheduled,omitempty"` // include_tasks only: open to-dos with no due time, oldest first
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1529,6 +1636,13 @@ func (x *ListEventsResponse) GetOccurrences() []*Occurrence {
 	return nil
 }
 
+func (x *ListEventsResponse) GetUnscheduled() []*Task {
+	if x != nil {
+		return x.Unscheduled
+	}
+	return nil
+}
+
 type Task struct {
 	state        protoimpl.MessageState `protogen:"open.v1"`
 	Id           string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -1556,7 +1670,10 @@ type Task struct {
 	// Completing it keeps it as done and adds the next one, due at the rule's
 	// next occurrence (wall clock in the server's zone), with the reminder moved
 	// by the same amount; none once COUNT or UNTIL ends the series.
-	Rrule         string `protobuf:"bytes,18,opt,name=rrule,proto3" json:"rrule,omitempty"`
+	Rrule string `protobuf:"bytes,18,opt,name=rrule,proto3" json:"rrule,omitempty"`
+	// How the phone tells the person at remind_time: alarm, reminder (default),
+	// app or none, as Event.notify. A reminder needs a due time.
+	Notify        string `protobuf:"bytes,19,opt,name=notify,proto3" json:"notify,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1713,6 +1830,13 @@ func (x *Task) GetLastWorkedTime() *timestamppb.Timestamp {
 func (x *Task) GetRrule() string {
 	if x != nil {
 		return x.Rrule
+	}
+	return ""
+}
+
+func (x *Task) GetNotify() string {
+	if x != nil {
+		return x.Notify
 	}
 	return ""
 }
@@ -1894,7 +2018,7 @@ type UpdateTaskRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Task  *Task                  `protobuf:"bytes,1,opt,name=task,proto3" json:"task,omitempty"`
 	// title, notes, due_time, priority, completed, remind_time, tags, project_id,
-	// space, rrule
+	// space, rrule, notify
 	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2350,6 +2474,7 @@ type Reminder struct {
 	DueTime       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=due_time,json=dueTime,proto3" json:"due_time,omitempty"`    // when the event starts / task is due
 	FireTime      *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=fire_time,json=fireTime,proto3" json:"fire_time,omitempty"` // when the reminder fired
 	Space         Space                  `protobuf:"varint,7,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
+	Notify        string                 `protobuf:"bytes,8,opt,name=notify,proto3" json:"notify,omitempty"` // the item's notify: alarm, reminder or app (none never fires)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2431,6 +2556,13 @@ func (x *Reminder) GetSpace() Space {
 		return x.Space
 	}
 	return Space_SPACE_UNSPECIFIED
+}
+
+func (x *Reminder) GetNotify() string {
+	if x != nil {
+		return x.Notify
+	}
+	return ""
 }
 
 type WatchRemindersRequest struct {
@@ -10244,9 +10376,16 @@ type Alarm struct {
 	UpdateTime   *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
 	// Read-only: the next rings after now (at most 5), holidays applied; empty
 	// when disabled or finished.
-	NextFires     []*timestamppb.Timestamp `protobuf:"bytes,14,rep,name=next_fires,json=nextFires,proto3" json:"next_fires,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	NextFires []*timestamppb.Timestamp `protobuf:"bytes,14,rep,name=next_fires,json=nextFires,proto3" json:"next_fires,omitempty"`
+	// Read-only. An alarm is a schedule item (Event) with notify alarm: notify
+	// is the item's (mode mirrors it: alarm, reminder or app); remind_before_minutes
+	// how long before each schedule time it rings (0 for alarms); source where
+	// the item came from: alarm, event or task (then the id is the task's).
+	Notify              string `protobuf:"bytes,15,opt,name=notify,proto3" json:"notify,omitempty"`
+	RemindBeforeMinutes int32  `protobuf:"varint,16,opt,name=remind_before_minutes,json=remindBeforeMinutes,proto3" json:"remind_before_minutes,omitempty"`
+	Source              string `protobuf:"bytes,17,opt,name=source,proto3" json:"source,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *Alarm) Reset() {
@@ -10375,6 +10514,27 @@ func (x *Alarm) GetNextFires() []*timestamppb.Timestamp {
 		return x.NextFires
 	}
 	return nil
+}
+
+func (x *Alarm) GetNotify() string {
+	if x != nil {
+		return x.Notify
+	}
+	return ""
+}
+
+func (x *Alarm) GetRemindBeforeMinutes() int32 {
+	if x != nil {
+		return x.RemindBeforeMinutes
+	}
+	return 0
+}
+
+func (x *Alarm) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
 }
 
 type CreateAlarmRequest struct {
@@ -10564,10 +10724,15 @@ func (x *DeleteAlarmRequest) GetId() string {
 }
 
 type ListAlarmsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Enabled       *bool                  `protobuf:"varint,1,opt,name=enabled,proto3,oneof" json:"enabled,omitempty"`           // unset: both
-	Space         Space                  `protobuf:"varint,2,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"` // UNSPECIFIED: both
-	ProjectId     string                 `protobuf:"bytes,3,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Enabled   *bool                  `protobuf:"varint,1,opt,name=enabled,proto3,oneof" json:"enabled,omitempty"`           // unset: both
+	Space     Space                  `protobuf:"varint,2,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"` // UNSPECIFIED: both
+	ProjectId string                 `protobuf:"bytes,3,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	// Which schedule items: "" (default) the alarms proper — notify alarm, plus
+	// items made through the alarm API whatever their notify; "alarm",
+	// "reminder" or "app" items with that notify; "all" every item that
+	// notifies (notify not none, a reminder time set): what a phone schedules.
+	Notify        string `protobuf:"bytes,4,opt,name=notify,proto3" json:"notify,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -10619,6 +10784,13 @@ func (x *ListAlarmsRequest) GetSpace() Space {
 func (x *ListAlarmsRequest) GetProjectId() string {
 	if x != nil {
 		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *ListAlarmsRequest) GetNotify() string {
+	if x != nil {
+		return x.Notify
 	}
 	return ""
 }
@@ -12070,7 +12242,7 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\x05score\x18\x03 \x01(\x01R\x05score\"P\n" +
 	"\x13SearchNotesResponse\x12%\n" +
 	"\x04hits\x18\x01 \x03(\v2\x11.noted.v1.NoteHitR\x04hits\x12\x12\n" +
-	"\x04mode\x18\x02 \x01(\tR\x04mode\"\xbc\x04\n" +
+	"\x04mode\x18\x02 \x01(\tR\x04mode\"\x82\a\n" +
 	"\x05Event\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -12090,8 +12262,20 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"updateTime\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\r \x01(\tR\tprojectId\x12%\n" +
-	"\x05space\x18\x0e \x01(\x0e2\x0f.noted.v1.SpaceR\x05spaceB\x18\n" +
-	"\x16_remind_before_minutes\";\n" +
+	"\x05space\x18\x0e \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12\x16\n" +
+	"\x06notify\x18\x0f \x01(\tR\x06notify\x12>\n" +
+	"\x0ealarm_schedule\x18\x10 \x01(\v2\x17.noted.v1.AlarmScheduleR\ralarmSchedule\x12%\n" +
+	"\x0eholiday_policy\x18\x11 \x01(\tR\rholidayPolicy\x12\x1b\n" +
+	"\x06region\x18\x12 \x01(\tH\x01R\x06region\x88\x01\x01\x12\x1d\n" +
+	"\aenabled\x18\x13 \x01(\bH\x02R\aenabled\x88\x01\x01\x12#\n" +
+	"\roriginal_text\x18\x14 \x01(\tR\foriginalText\x12\x16\n" +
+	"\x06source\x18\x15 \x01(\tR\x06source\x12\x17\n" +
+	"\atask_id\x18\x16 \x01(\tR\x06taskId\x12\x1c\n" +
+	"\tcompleted\x18\x17 \x01(\bR\tcompletedB\x18\n" +
+	"\x16_remind_before_minutesB\t\n" +
+	"\a_regionB\n" +
+	"\n" +
+	"\b_enabled\";\n" +
 	"\x12CreateEventRequest\x12%\n" +
 	"\x05event\x18\x01 \x01(\v2\x0f.noted.v1.EventR\x05event\"!\n" +
 	"\x0fGetEventRequest\x12\x0e\n" +
@@ -12101,19 +12285,21 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
 	"updateMask\"$\n" +
 	"\x12DeleteEventRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\x96\x01\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xbb\x01\n" +
 	"\x11ListEventsRequest\x12.\n" +
 	"\x04from\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
 	"\x02to\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12%\n" +
-	"\x05space\x18\x03 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\"\xa5\x01\n" +
+	"\x05space\x18\x03 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12#\n" +
+	"\rinclude_tasks\x18\x04 \x01(\bR\fincludeTasks\"\xa5\x01\n" +
 	"\n" +
 	"Occurrence\x12%\n" +
 	"\x05event\x18\x01 \x01(\v2\x0f.noted.v1.EventR\x05event\x129\n" +
 	"\n" +
 	"start_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\tstartTime\x125\n" +
-	"\bend_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\aendTime\"L\n" +
+	"\bend_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\aendTime\"~\n" +
 	"\x12ListEventsResponse\x126\n" +
-	"\voccurrences\x18\x01 \x03(\v2\x14.noted.v1.OccurrenceR\voccurrences\"\xdd\x05\n" +
+	"\voccurrences\x18\x01 \x03(\v2\x14.noted.v1.OccurrenceR\voccurrences\x120\n" +
+	"\vunscheduled\x18\x02 \x03(\v2\x0e.noted.v1.TaskR\vunscheduled\"\xf5\x05\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
@@ -12137,7 +12323,8 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\x0eworked_minutes\x18\x0f \x01(\x05R\rworkedMinutes\x12#\n" +
 	"\rwork_sessions\x18\x10 \x01(\x05R\fworkSessions\x12D\n" +
 	"\x10last_worked_time\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\x0elastWorkedTime\x12\x14\n" +
-	"\x05rrule\x18\x12 \x01(\tR\x05rrule\"\xad\x01\n" +
+	"\x05rrule\x18\x12 \x01(\tR\x05rrule\x12\x16\n" +
+	"\x06notify\x18\x13 \x01(\tR\x06notify\"\xad\x01\n" +
 	"\bTaskWork\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\atask_id\x18\x02 \x01(\tR\x06taskId\x12.\n" +
@@ -12187,7 +12374,7 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\x14ListTaskWorkResponse\x12,\n" +
 	"\aentries\x18\x01 \x03(\v2\x12.noted.v1.TaskWorkR\aentries\"'\n" +
 	"\x15DeleteTaskWorkRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\xc8\x02\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xe0\x02\n" +
 	"\bReminder\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12+\n" +
 	"\x04kind\x18\x02 \x01(\x0e2\x17.noted.v1.Reminder.KindR\x04kind\x12\x15\n" +
@@ -12195,7 +12382,8 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\x05title\x18\x04 \x01(\tR\x05title\x125\n" +
 	"\bdue_time\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\adueTime\x127\n" +
 	"\tfire_time\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\bfireTime\x12%\n" +
-	"\x05space\x18\a \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\";\n" +
+	"\x05space\x18\a \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12\x16\n" +
+	"\x06notify\x18\b \x01(\tR\x06notify\";\n" +
 	"\x04Kind\x12\x14\n" +
 	"\x10KIND_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -12846,7 +13034,7 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\ttime_zone\x18\x05 \x01(\tR\btimeZone\x129\n" +
 	"\n" +
 	"recurrence\x18\x06 \x01(\v2\x19.noted.v1.AlarmRecurrenceR\n" +
-	"recurrence\"\xa4\x04\n" +
+	"recurrence\"\x88\x05\n" +
 	"\x05Alarm\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05label\x18\x02 \x01(\tR\x05label\x12\x12\n" +
@@ -12866,7 +13054,10 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\vupdate_time\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"updateTime\x129\n" +
 	"\n" +
-	"next_fires\x18\x0e \x03(\v2\x1a.google.protobuf.TimestampR\tnextFiresB\n" +
+	"next_fires\x18\x0e \x03(\v2\x1a.google.protobuf.TimestampR\tnextFires\x12\x16\n" +
+	"\x06notify\x18\x0f \x01(\tR\x06notify\x122\n" +
+	"\x15remind_before_minutes\x18\x10 \x01(\x05R\x13remindBeforeMinutes\x12\x16\n" +
+	"\x06source\x18\x11 \x01(\tR\x06sourceB\n" +
 	"\n" +
 	"\b_enabledB\t\n" +
 	"\a_region\";\n" +
@@ -12879,12 +13070,13 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
 	"updateMask\"$\n" +
 	"\x12DeleteAlarmRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\x84\x01\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x9c\x01\n" +
 	"\x11ListAlarmsRequest\x12\x1d\n" +
 	"\aenabled\x18\x01 \x01(\bH\x00R\aenabled\x88\x01\x01\x12%\n" +
 	"\x05space\x18\x02 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12\x1d\n" +
 	"\n" +
-	"project_id\x18\x03 \x01(\tR\tprojectIdB\n" +
+	"project_id\x18\x03 \x01(\tR\tprojectId\x12\x16\n" +
+	"\x06notify\x18\x04 \x01(\tR\x06notifyB\n" +
 	"\n" +
 	"\b_enabled\"W\n" +
 	"\x12ListAlarmsResponse\x12'\n" +
@@ -13371,422 +13563,424 @@ var file_noted_v1_noted_proto_depIdxs = []int32{
 	190, // 13: noted.v1.Event.create_time:type_name -> google.protobuf.Timestamp
 	190, // 14: noted.v1.Event.update_time:type_name -> google.protobuf.Timestamp
 	0,   // 15: noted.v1.Event.space:type_name -> noted.v1.Space
-	17,  // 16: noted.v1.CreateEventRequest.event:type_name -> noted.v1.Event
-	17,  // 17: noted.v1.UpdateEventRequest.event:type_name -> noted.v1.Event
-	191, // 18: noted.v1.UpdateEventRequest.update_mask:type_name -> google.protobuf.FieldMask
-	190, // 19: noted.v1.ListEventsRequest.from:type_name -> google.protobuf.Timestamp
-	190, // 20: noted.v1.ListEventsRequest.to:type_name -> google.protobuf.Timestamp
-	0,   // 21: noted.v1.ListEventsRequest.space:type_name -> noted.v1.Space
-	17,  // 22: noted.v1.Occurrence.event:type_name -> noted.v1.Event
-	190, // 23: noted.v1.Occurrence.start_time:type_name -> google.protobuf.Timestamp
-	190, // 24: noted.v1.Occurrence.end_time:type_name -> google.protobuf.Timestamp
-	23,  // 25: noted.v1.ListEventsResponse.occurrences:type_name -> noted.v1.Occurrence
-	190, // 26: noted.v1.Task.due_time:type_name -> google.protobuf.Timestamp
-	1,   // 27: noted.v1.Task.priority:type_name -> noted.v1.Priority
-	190, // 28: noted.v1.Task.complete_time:type_name -> google.protobuf.Timestamp
-	190, // 29: noted.v1.Task.remind_time:type_name -> google.protobuf.Timestamp
-	190, // 30: noted.v1.Task.create_time:type_name -> google.protobuf.Timestamp
-	190, // 31: noted.v1.Task.update_time:type_name -> google.protobuf.Timestamp
-	0,   // 32: noted.v1.Task.space:type_name -> noted.v1.Space
-	190, // 33: noted.v1.Task.last_worked_time:type_name -> google.protobuf.Timestamp
-	190, // 34: noted.v1.TaskWork.time:type_name -> google.protobuf.Timestamp
-	25,  // 35: noted.v1.CreateTaskRequest.task:type_name -> noted.v1.Task
-	25,  // 36: noted.v1.UpdateTaskRequest.task:type_name -> noted.v1.Task
-	191, // 37: noted.v1.UpdateTaskRequest.update_mask:type_name -> google.protobuf.FieldMask
-	5,   // 38: noted.v1.ListTasksRequest.filter:type_name -> noted.v1.ListTasksRequest.Filter
-	190, // 39: noted.v1.ListTasksRequest.due_before:type_name -> google.protobuf.Timestamp
-	0,   // 40: noted.v1.ListTasksRequest.space:type_name -> noted.v1.Space
-	25,  // 41: noted.v1.ListTasksResponse.tasks:type_name -> noted.v1.Task
-	190, // 42: noted.v1.LogTaskWorkRequest.time:type_name -> google.protobuf.Timestamp
-	26,  // 43: noted.v1.ListTaskWorkResponse.entries:type_name -> noted.v1.TaskWork
-	6,   // 44: noted.v1.Reminder.kind:type_name -> noted.v1.Reminder.Kind
-	190, // 45: noted.v1.Reminder.due_time:type_name -> google.protobuf.Timestamp
-	190, // 46: noted.v1.Reminder.fire_time:type_name -> google.protobuf.Timestamp
-	0,   // 47: noted.v1.Reminder.space:type_name -> noted.v1.Space
-	0,   // 48: noted.v1.WatchRemindersRequest.space:type_name -> noted.v1.Space
-	190, // 49: noted.v1.ListRemindersRequest.since:type_name -> google.protobuf.Timestamp
-	0,   // 50: noted.v1.ListRemindersRequest.space:type_name -> noted.v1.Space
-	37,  // 51: noted.v1.ListRemindersResponse.reminders:type_name -> noted.v1.Reminder
-	0,   // 52: noted.v1.AskRequest.space:type_name -> noted.v1.Space
-	113, // 53: noted.v1.AskResponse.proposal:type_name -> noted.v1.Proposal
-	114, // 54: noted.v1.AskResponse.change:type_name -> noted.v1.Change
-	45,  // 55: noted.v1.AskResponse.references:type_name -> noted.v1.Reference
-	190, // 56: noted.v1.Reference.time:type_name -> google.protobuf.Timestamp
-	190, // 57: noted.v1.DailyBriefingRequest.day:type_name -> google.protobuf.Timestamp
-	0,   // 58: noted.v1.DailyBriefingRequest.space:type_name -> noted.v1.Space
-	0,   // 59: noted.v1.PlanFromTextRequest.space:type_name -> noted.v1.Space
-	190, // 60: noted.v1.Milestone.done_time:type_name -> google.protobuf.Timestamp
-	190, // 61: noted.v1.Milestone.due_time:type_name -> google.protobuf.Timestamp
-	190, // 62: noted.v1.GoalProgress.period_start:type_name -> google.protobuf.Timestamp
-	190, // 63: noted.v1.GoalProgress.period_end:type_name -> google.protobuf.Timestamp
-	61,  // 64: noted.v1.GoalProgress.days:type_name -> noted.v1.DayTotal
-	61,  // 65: noted.v1.GoalProgress.recent:type_name -> noted.v1.DayTotal
-	2,   // 66: noted.v1.Goal.period:type_name -> noted.v1.GoalPeriod
-	60,  // 67: noted.v1.Goal.milestones:type_name -> noted.v1.Milestone
-	190, // 68: noted.v1.Goal.create_time:type_name -> google.protobuf.Timestamp
-	190, // 69: noted.v1.Goal.update_time:type_name -> google.protobuf.Timestamp
-	62,  // 70: noted.v1.Goal.progress:type_name -> noted.v1.GoalProgress
-	0,   // 71: noted.v1.Goal.space:type_name -> noted.v1.Space
-	190, // 72: noted.v1.CheckIn.time:type_name -> google.protobuf.Timestamp
-	63,  // 73: noted.v1.CreateGoalRequest.goal:type_name -> noted.v1.Goal
-	63,  // 74: noted.v1.UpdateGoalRequest.goal:type_name -> noted.v1.Goal
-	191, // 75: noted.v1.UpdateGoalRequest.update_mask:type_name -> google.protobuf.FieldMask
-	0,   // 76: noted.v1.ListGoalsRequest.space:type_name -> noted.v1.Space
-	63,  // 77: noted.v1.ListGoalsResponse.goals:type_name -> noted.v1.Goal
-	190, // 78: noted.v1.RecordCheckInRequest.time:type_name -> google.protobuf.Timestamp
-	64,  // 79: noted.v1.RecordCheckInResponse.check_in:type_name -> noted.v1.CheckIn
-	63,  // 80: noted.v1.RecordCheckInResponse.goal:type_name -> noted.v1.Goal
-	190, // 81: noted.v1.ListCheckInsRequest.from:type_name -> google.protobuf.Timestamp
-	190, // 82: noted.v1.ListCheckInsRequest.to:type_name -> google.protobuf.Timestamp
-	64,  // 83: noted.v1.ListCheckInsResponse.check_ins:type_name -> noted.v1.CheckIn
-	0,   // 84: noted.v1.Objective.space:type_name -> noted.v1.Space
-	190, // 85: noted.v1.Objective.start_time:type_name -> google.protobuf.Timestamp
-	190, // 86: noted.v1.Objective.due_time:type_name -> google.protobuf.Timestamp
-	190, // 87: noted.v1.Objective.create_time:type_name -> google.protobuf.Timestamp
-	190, // 88: noted.v1.Objective.update_time:type_name -> google.protobuf.Timestamp
-	78,  // 89: noted.v1.Objective.progress:type_name -> noted.v1.ObjectiveProgress
-	63,  // 90: noted.v1.Objective.goals:type_name -> noted.v1.Goal
-	60,  // 91: noted.v1.Objective.milestones:type_name -> noted.v1.Milestone
-	190, // 92: noted.v1.ObjectiveProgress.last_reading_time:type_name -> google.protobuf.Timestamp
-	60,  // 93: noted.v1.ObjectiveProgress.next_milestone:type_name -> noted.v1.Milestone
-	190, // 94: noted.v1.Measurement.time:type_name -> google.protobuf.Timestamp
-	77,  // 95: noted.v1.CreateObjectiveRequest.objective:type_name -> noted.v1.Objective
-	77,  // 96: noted.v1.UpdateObjectiveRequest.objective:type_name -> noted.v1.Objective
-	191, // 97: noted.v1.UpdateObjectiveRequest.update_mask:type_name -> google.protobuf.FieldMask
-	0,   // 98: noted.v1.ListObjectivesRequest.space:type_name -> noted.v1.Space
-	77,  // 99: noted.v1.ListObjectivesResponse.objectives:type_name -> noted.v1.Objective
-	190, // 100: noted.v1.RecordMeasurementRequest.time:type_name -> google.protobuf.Timestamp
-	190, // 101: noted.v1.ListMeasurementsRequest.from:type_name -> google.protobuf.Timestamp
-	190, // 102: noted.v1.ListMeasurementsRequest.to:type_name -> google.protobuf.Timestamp
-	79,  // 103: noted.v1.ListMeasurementsResponse.measurements:type_name -> noted.v1.Measurement
-	190, // 104: noted.v1.ProjectProgress.next_time:type_name -> google.protobuf.Timestamp
-	190, // 105: noted.v1.Project.start_time:type_name -> google.protobuf.Timestamp
-	190, // 106: noted.v1.Project.due_time:type_name -> google.protobuf.Timestamp
-	190, // 107: noted.v1.Project.create_time:type_name -> google.protobuf.Timestamp
-	190, // 108: noted.v1.Project.update_time:type_name -> google.protobuf.Timestamp
-	91,  // 109: noted.v1.Project.progress:type_name -> noted.v1.ProjectProgress
-	0,   // 110: noted.v1.Project.space:type_name -> noted.v1.Space
-	92,  // 111: noted.v1.CreateProjectRequest.project:type_name -> noted.v1.Project
-	92,  // 112: noted.v1.ProjectDetail.project:type_name -> noted.v1.Project
-	25,  // 113: noted.v1.ProjectDetail.tasks:type_name -> noted.v1.Task
-	17,  // 114: noted.v1.ProjectDetail.events:type_name -> noted.v1.Event
-	7,   // 115: noted.v1.ProjectDetail.notes:type_name -> noted.v1.Note
-	63,  // 116: noted.v1.ProjectDetail.goals:type_name -> noted.v1.Goal
-	77,  // 117: noted.v1.ProjectDetail.objectives:type_name -> noted.v1.Objective
-	141, // 118: noted.v1.ProjectDetail.time_entries:type_name -> noted.v1.TimeEntry
-	92,  // 119: noted.v1.UpdateProjectRequest.project:type_name -> noted.v1.Project
-	191, // 120: noted.v1.UpdateProjectRequest.update_mask:type_name -> google.protobuf.FieldMask
-	0,   // 121: noted.v1.ListProjectsRequest.space:type_name -> noted.v1.Space
-	92,  // 122: noted.v1.ListProjectsResponse.projects:type_name -> noted.v1.Project
-	3,   // 123: noted.v1.GetFocusRequest.horizon:type_name -> noted.v1.Horizon
-	0,   // 124: noted.v1.GetFocusRequest.space:type_name -> noted.v1.Space
-	23,  // 125: noted.v1.FocusItem.event:type_name -> noted.v1.Occurrence
-	25,  // 126: noted.v1.FocusItem.task:type_name -> noted.v1.Task
-	190, // 127: noted.v1.FocusItem.sort_time:type_name -> google.protobuf.Timestamp
-	3,   // 128: noted.v1.GetFocusResponse.horizon:type_name -> noted.v1.Horizon
-	190, // 129: noted.v1.GetFocusResponse.from:type_name -> google.protobuf.Timestamp
-	190, // 130: noted.v1.GetFocusResponse.to:type_name -> google.protobuf.Timestamp
-	101, // 131: noted.v1.GetFocusResponse.items:type_name -> noted.v1.FocusItem
-	63,  // 132: noted.v1.GetFocusResponse.goals:type_name -> noted.v1.Goal
-	92,  // 133: noted.v1.GetFocusResponse.pinned_projects:type_name -> noted.v1.Project
-	0,   // 134: noted.v1.GetFocusResponse.space:type_name -> noted.v1.Space
-	141, // 135: noted.v1.GetFocusResponse.running_timer:type_name -> noted.v1.TimeEntry
-	190, // 136: noted.v1.Preference.update_time:type_name -> google.protobuf.Timestamp
-	103, // 137: noted.v1.ListPreferencesResponse.preferences:type_name -> noted.v1.Preference
-	192, // 138: noted.v1.Operation.args:type_name -> google.protobuf.Struct
-	0,   // 139: noted.v1.Proposal.space:type_name -> noted.v1.Space
-	111, // 140: noted.v1.Proposal.operations:type_name -> noted.v1.Operation
-	112, // 141: noted.v1.Proposal.inputs:type_name -> noted.v1.ProposalInput
-	190, // 142: noted.v1.Proposal.create_time:type_name -> google.protobuf.Timestamp
-	190, // 143: noted.v1.Proposal.decide_time:type_name -> google.protobuf.Timestamp
-	190, // 144: noted.v1.Change.create_time:type_name -> google.protobuf.Timestamp
-	190, // 145: noted.v1.Change.undo_time:type_name -> google.protobuf.Timestamp
-	0,   // 146: noted.v1.ListProposalsRequest.space:type_name -> noted.v1.Space
-	113, // 147: noted.v1.ListProposalsResponse.proposals:type_name -> noted.v1.Proposal
-	189, // 148: noted.v1.AcceptProposalRequest.inputs:type_name -> noted.v1.AcceptProposalRequest.InputsEntry
-	117, // 149: noted.v1.AcceptProposalRequest.selection:type_name -> noted.v1.OperationSelection
-	113, // 150: noted.v1.AcceptProposalResponse.proposal:type_name -> noted.v1.Proposal
-	114, // 151: noted.v1.AcceptProposalResponse.change:type_name -> noted.v1.Change
-	190, // 152: noted.v1.GetWeeklyReviewRequest.week_of:type_name -> google.protobuf.Timestamp
-	0,   // 153: noted.v1.GetWeeklyReviewRequest.space:type_name -> noted.v1.Space
-	190, // 154: noted.v1.WeeklyReview.from:type_name -> google.protobuf.Timestamp
-	190, // 155: noted.v1.WeeklyReview.to:type_name -> google.protobuf.Timestamp
-	63,  // 156: noted.v1.WeeklyReview.goals:type_name -> noted.v1.Goal
-	25,  // 157: noted.v1.WeeklyReview.carried_tasks:type_name -> noted.v1.Task
-	113, // 158: noted.v1.WeeklyReview.next_week:type_name -> noted.v1.Proposal
-	153, // 159: noted.v1.WeeklyReview.top_activities:type_name -> noted.v1.TimeSummaryRow
-	114, // 160: noted.v1.ListChangesResponse.changes:type_name -> noted.v1.Change
-	190, // 161: noted.v1.Holding.last_price_time:type_name -> google.protobuf.Timestamp
-	190, // 162: noted.v1.Holding.create_time:type_name -> google.protobuf.Timestamp
-	190, // 163: noted.v1.Holding.update_time:type_name -> google.protobuf.Timestamp
-	128, // 164: noted.v1.Holding.position:type_name -> noted.v1.Position
-	129, // 165: noted.v1.Position.dca:type_name -> noted.v1.DcaStatus
-	190, // 166: noted.v1.DcaStatus.next_time:type_name -> google.protobuf.Timestamp
-	190, // 167: noted.v1.Trade.time:type_name -> google.protobuf.Timestamp
-	127, // 168: noted.v1.CreateHoldingRequest.holding:type_name -> noted.v1.Holding
-	127, // 169: noted.v1.UpdateHoldingRequest.holding:type_name -> noted.v1.Holding
-	191, // 170: noted.v1.UpdateHoldingRequest.update_mask:type_name -> google.protobuf.FieldMask
-	127, // 171: noted.v1.ListHoldingsResponse.holdings:type_name -> noted.v1.Holding
-	130, // 172: noted.v1.RecordTradeRequest.trade:type_name -> noted.v1.Trade
-	130, // 173: noted.v1.ListTradesResponse.trades:type_name -> noted.v1.Trade
-	190, // 174: noted.v1.TimeEntry.start_time:type_name -> google.protobuf.Timestamp
-	190, // 175: noted.v1.TimeEntry.end_time:type_name -> google.protobuf.Timestamp
-	0,   // 176: noted.v1.TimeEntry.space:type_name -> noted.v1.Space
-	190, // 177: noted.v1.TimeEntry.create_time:type_name -> google.protobuf.Timestamp
-	190, // 178: noted.v1.TimeEntry.update_time:type_name -> google.protobuf.Timestamp
-	141, // 179: noted.v1.CreateTimeEntryRequest.entry:type_name -> noted.v1.TimeEntry
-	141, // 180: noted.v1.UpdateTimeEntryRequest.entry:type_name -> noted.v1.TimeEntry
-	191, // 181: noted.v1.UpdateTimeEntryRequest.update_mask:type_name -> google.protobuf.FieldMask
-	190, // 182: noted.v1.ListTimeEntriesRequest.from:type_name -> google.protobuf.Timestamp
-	190, // 183: noted.v1.ListTimeEntriesRequest.to:type_name -> google.protobuf.Timestamp
-	0,   // 184: noted.v1.ListTimeEntriesRequest.space:type_name -> noted.v1.Space
-	141, // 185: noted.v1.ListTimeEntriesResponse.entries:type_name -> noted.v1.TimeEntry
-	0,   // 186: noted.v1.StartTimerRequest.space:type_name -> noted.v1.Space
-	190, // 187: noted.v1.StartTimerRequest.start_time:type_name -> google.protobuf.Timestamp
-	190, // 188: noted.v1.StopTimerRequest.end_time:type_name -> google.protobuf.Timestamp
-	141, // 189: noted.v1.GetRunningTimerResponse.entry:type_name -> noted.v1.TimeEntry
-	190, // 190: noted.v1.SummarizeTimeRequest.from:type_name -> google.protobuf.Timestamp
-	190, // 191: noted.v1.SummarizeTimeRequest.to:type_name -> google.protobuf.Timestamp
-	4,   // 192: noted.v1.SummarizeTimeRequest.group_by:type_name -> noted.v1.TimeGroupBy
-	0,   // 193: noted.v1.SummarizeTimeRequest.space:type_name -> noted.v1.Space
-	190, // 194: noted.v1.TimeSummary.from:type_name -> google.protobuf.Timestamp
-	190, // 195: noted.v1.TimeSummary.to:type_name -> google.protobuf.Timestamp
-	4,   // 196: noted.v1.TimeSummary.group_by:type_name -> noted.v1.TimeGroupBy
-	153, // 197: noted.v1.TimeSummary.rows:type_name -> noted.v1.TimeSummaryRow
-	190, // 198: noted.v1.AlarmSchedule.at:type_name -> google.protobuf.Timestamp
-	155, // 199: noted.v1.AlarmSchedule.recurrence:type_name -> noted.v1.AlarmRecurrence
-	156, // 200: noted.v1.Alarm.schedule:type_name -> noted.v1.AlarmSchedule
-	0,   // 201: noted.v1.Alarm.space:type_name -> noted.v1.Space
-	190, // 202: noted.v1.Alarm.create_time:type_name -> google.protobuf.Timestamp
-	190, // 203: noted.v1.Alarm.update_time:type_name -> google.protobuf.Timestamp
-	190, // 204: noted.v1.Alarm.next_fires:type_name -> google.protobuf.Timestamp
-	157, // 205: noted.v1.CreateAlarmRequest.alarm:type_name -> noted.v1.Alarm
-	157, // 206: noted.v1.UpdateAlarmRequest.alarm:type_name -> noted.v1.Alarm
-	191, // 207: noted.v1.UpdateAlarmRequest.update_mask:type_name -> google.protobuf.FieldMask
-	0,   // 208: noted.v1.ListAlarmsRequest.space:type_name -> noted.v1.Space
-	157, // 209: noted.v1.ListAlarmsResponse.alarms:type_name -> noted.v1.Alarm
-	167, // 210: noted.v1.GetHolidaysResponse.days:type_name -> noted.v1.HolidayDay
-	190, // 211: noted.v1.TokenInfo.create_time:type_name -> google.protobuf.Timestamp
-	190, // 212: noted.v1.TokenInfo.last_used_time:type_name -> google.protobuf.Timestamp
-	179, // 213: noted.v1.CreateTokenResponse.info:type_name -> noted.v1.TokenInfo
-	179, // 214: noted.v1.ListTokensResponse.tokens:type_name -> noted.v1.TokenInfo
-	190, // 215: noted.v1.Pairing.create_time:type_name -> google.protobuf.Timestamp
-	190, // 216: noted.v1.Pairing.expire_time:type_name -> google.protobuf.Timestamp
-	8,   // 217: noted.v1.NoteService.CreateNote:input_type -> noted.v1.CreateNoteRequest
-	9,   // 218: noted.v1.NoteService.GetNote:input_type -> noted.v1.GetNoteRequest
-	10,  // 219: noted.v1.NoteService.UpdateNote:input_type -> noted.v1.UpdateNoteRequest
-	11,  // 220: noted.v1.NoteService.DeleteNote:input_type -> noted.v1.DeleteNoteRequest
-	12,  // 221: noted.v1.NoteService.ListNotes:input_type -> noted.v1.ListNotesRequest
-	14,  // 222: noted.v1.NoteService.SearchNotes:input_type -> noted.v1.SearchNotesRequest
-	18,  // 223: noted.v1.CalendarService.CreateEvent:input_type -> noted.v1.CreateEventRequest
-	19,  // 224: noted.v1.CalendarService.GetEvent:input_type -> noted.v1.GetEventRequest
-	20,  // 225: noted.v1.CalendarService.UpdateEvent:input_type -> noted.v1.UpdateEventRequest
-	21,  // 226: noted.v1.CalendarService.DeleteEvent:input_type -> noted.v1.DeleteEventRequest
-	22,  // 227: noted.v1.CalendarService.ListEvents:input_type -> noted.v1.ListEventsRequest
-	27,  // 228: noted.v1.CalendarService.CreateTask:input_type -> noted.v1.CreateTaskRequest
-	28,  // 229: noted.v1.CalendarService.GetTask:input_type -> noted.v1.GetTaskRequest
-	29,  // 230: noted.v1.CalendarService.UpdateTask:input_type -> noted.v1.UpdateTaskRequest
-	30,  // 231: noted.v1.CalendarService.DeleteTask:input_type -> noted.v1.DeleteTaskRequest
-	31,  // 232: noted.v1.CalendarService.ListTasks:input_type -> noted.v1.ListTasksRequest
-	33,  // 233: noted.v1.CalendarService.LogTaskWork:input_type -> noted.v1.LogTaskWorkRequest
-	34,  // 234: noted.v1.CalendarService.ListTaskWork:input_type -> noted.v1.ListTaskWorkRequest
-	36,  // 235: noted.v1.CalendarService.DeleteTaskWork:input_type -> noted.v1.DeleteTaskWorkRequest
-	38,  // 236: noted.v1.CalendarService.WatchReminders:input_type -> noted.v1.WatchRemindersRequest
-	39,  // 237: noted.v1.CalendarService.ListReminders:input_type -> noted.v1.ListRemindersRequest
-	41,  // 238: noted.v1.AIService.GetStatus:input_type -> noted.v1.GetStatusRequest
-	43,  // 239: noted.v1.AIService.Ask:input_type -> noted.v1.AskRequest
-	46,  // 240: noted.v1.AIService.SummarizeNote:input_type -> noted.v1.SummarizeNoteRequest
-	48,  // 241: noted.v1.AIService.SuggestTags:input_type -> noted.v1.SuggestTagsRequest
-	50,  // 242: noted.v1.AIService.DailyBriefing:input_type -> noted.v1.DailyBriefingRequest
-	58,  // 243: noted.v1.AIService.PlanFromText:input_type -> noted.v1.PlanFromTextRequest
-	59,  // 244: noted.v1.AIService.ExtractTasks:input_type -> noted.v1.ExtractTasksRequest
-	56,  // 245: noted.v1.AIService.GetAIAccess:input_type -> noted.v1.GetAIAccessRequest
-	57,  // 246: noted.v1.AIService.SetAIAccess:input_type -> noted.v1.SetAIAccessRequest
-	53,  // 247: noted.v1.AIService.GetAIFeatures:input_type -> noted.v1.GetAIFeaturesRequest
-	54,  // 248: noted.v1.AIService.SetAIFeatures:input_type -> noted.v1.SetAIFeaturesRequest
-	65,  // 249: noted.v1.GoalService.CreateGoal:input_type -> noted.v1.CreateGoalRequest
-	66,  // 250: noted.v1.GoalService.GetGoal:input_type -> noted.v1.GetGoalRequest
-	67,  // 251: noted.v1.GoalService.UpdateGoal:input_type -> noted.v1.UpdateGoalRequest
-	68,  // 252: noted.v1.GoalService.DeleteGoal:input_type -> noted.v1.DeleteGoalRequest
-	69,  // 253: noted.v1.GoalService.ListGoals:input_type -> noted.v1.ListGoalsRequest
-	71,  // 254: noted.v1.GoalService.RecordCheckIn:input_type -> noted.v1.RecordCheckInRequest
-	73,  // 255: noted.v1.GoalService.DeleteCheckIn:input_type -> noted.v1.DeleteCheckInRequest
-	74,  // 256: noted.v1.GoalService.ListCheckIns:input_type -> noted.v1.ListCheckInsRequest
-	76,  // 257: noted.v1.GoalService.SetMilestoneDone:input_type -> noted.v1.SetMilestoneDoneRequest
-	80,  // 258: noted.v1.ObjectiveService.CreateObjective:input_type -> noted.v1.CreateObjectiveRequest
-	81,  // 259: noted.v1.ObjectiveService.GetObjective:input_type -> noted.v1.GetObjectiveRequest
-	82,  // 260: noted.v1.ObjectiveService.UpdateObjective:input_type -> noted.v1.UpdateObjectiveRequest
-	83,  // 261: noted.v1.ObjectiveService.DeleteObjective:input_type -> noted.v1.DeleteObjectiveRequest
-	84,  // 262: noted.v1.ObjectiveService.ListObjectives:input_type -> noted.v1.ListObjectivesRequest
-	86,  // 263: noted.v1.ObjectiveService.RecordMeasurement:input_type -> noted.v1.RecordMeasurementRequest
-	87,  // 264: noted.v1.ObjectiveService.DeleteMeasurement:input_type -> noted.v1.DeleteMeasurementRequest
-	88,  // 265: noted.v1.ObjectiveService.ListMeasurements:input_type -> noted.v1.ListMeasurementsRequest
-	90,  // 266: noted.v1.ObjectiveService.SetObjectiveMilestoneDone:input_type -> noted.v1.SetObjectiveMilestoneDoneRequest
-	93,  // 267: noted.v1.ProjectService.CreateProject:input_type -> noted.v1.CreateProjectRequest
-	94,  // 268: noted.v1.ProjectService.GetProject:input_type -> noted.v1.GetProjectRequest
-	96,  // 269: noted.v1.ProjectService.UpdateProject:input_type -> noted.v1.UpdateProjectRequest
-	97,  // 270: noted.v1.ProjectService.DeleteProject:input_type -> noted.v1.DeleteProjectRequest
-	98,  // 271: noted.v1.ProjectService.ListProjects:input_type -> noted.v1.ListProjectsRequest
-	100, // 272: noted.v1.FocusService.GetFocus:input_type -> noted.v1.GetFocusRequest
-	104, // 273: noted.v1.PreferenceService.GetPreference:input_type -> noted.v1.GetPreferenceRequest
-	105, // 274: noted.v1.PreferenceService.SetPreference:input_type -> noted.v1.SetPreferenceRequest
-	106, // 275: noted.v1.PreferenceService.DeletePreference:input_type -> noted.v1.DeletePreferenceRequest
-	107, // 276: noted.v1.PreferenceService.ListPreferences:input_type -> noted.v1.ListPreferencesRequest
-	109, // 277: noted.v1.ExportService.Export:input_type -> noted.v1.ExportRequest
-	115, // 278: noted.v1.SuggestionService.ListProposals:input_type -> noted.v1.ListProposalsRequest
-	118, // 279: noted.v1.SuggestionService.AcceptProposal:input_type -> noted.v1.AcceptProposalRequest
-	120, // 280: noted.v1.SuggestionService.DismissProposal:input_type -> noted.v1.DismissProposalRequest
-	121, // 281: noted.v1.SuggestionService.ProposeSchedule:input_type -> noted.v1.ProposeScheduleRequest
-	122, // 282: noted.v1.SuggestionService.GetWeeklyReview:input_type -> noted.v1.GetWeeklyReviewRequest
-	124, // 283: noted.v1.SuggestionService.ListChanges:input_type -> noted.v1.ListChangesRequest
-	126, // 284: noted.v1.SuggestionService.UndoChange:input_type -> noted.v1.UndoChangeRequest
-	131, // 285: noted.v1.HoldingService.CreateHolding:input_type -> noted.v1.CreateHoldingRequest
-	132, // 286: noted.v1.HoldingService.GetHolding:input_type -> noted.v1.GetHoldingRequest
-	133, // 287: noted.v1.HoldingService.UpdateHolding:input_type -> noted.v1.UpdateHoldingRequest
-	134, // 288: noted.v1.HoldingService.DeleteHolding:input_type -> noted.v1.DeleteHoldingRequest
-	135, // 289: noted.v1.HoldingService.ListHoldings:input_type -> noted.v1.ListHoldingsRequest
-	137, // 290: noted.v1.HoldingService.RecordTrade:input_type -> noted.v1.RecordTradeRequest
-	138, // 291: noted.v1.HoldingService.DeleteTrade:input_type -> noted.v1.DeleteTradeRequest
-	139, // 292: noted.v1.HoldingService.ListTrades:input_type -> noted.v1.ListTradesRequest
-	142, // 293: noted.v1.TimeService.CreateTimeEntry:input_type -> noted.v1.CreateTimeEntryRequest
-	143, // 294: noted.v1.TimeService.GetTimeEntry:input_type -> noted.v1.GetTimeEntryRequest
-	144, // 295: noted.v1.TimeService.UpdateTimeEntry:input_type -> noted.v1.UpdateTimeEntryRequest
-	145, // 296: noted.v1.TimeService.DeleteTimeEntry:input_type -> noted.v1.DeleteTimeEntryRequest
-	146, // 297: noted.v1.TimeService.ListTimeEntries:input_type -> noted.v1.ListTimeEntriesRequest
-	148, // 298: noted.v1.TimeService.StartTimer:input_type -> noted.v1.StartTimerRequest
-	149, // 299: noted.v1.TimeService.StopTimer:input_type -> noted.v1.StopTimerRequest
-	150, // 300: noted.v1.TimeService.GetRunningTimer:input_type -> noted.v1.GetRunningTimerRequest
-	152, // 301: noted.v1.TimeService.SummarizeTime:input_type -> noted.v1.SummarizeTimeRequest
-	158, // 302: noted.v1.AlarmService.CreateAlarm:input_type -> noted.v1.CreateAlarmRequest
-	159, // 303: noted.v1.AlarmService.GetAlarm:input_type -> noted.v1.GetAlarmRequest
-	160, // 304: noted.v1.AlarmService.UpdateAlarm:input_type -> noted.v1.UpdateAlarmRequest
-	161, // 305: noted.v1.AlarmService.DeleteAlarm:input_type -> noted.v1.DeleteAlarmRequest
-	162, // 306: noted.v1.AlarmService.ListAlarms:input_type -> noted.v1.ListAlarmsRequest
-	164, // 307: noted.v1.AlarmService.GetAlarmsVersion:input_type -> noted.v1.GetAlarmsVersionRequest
-	166, // 308: noted.v1.HolidayService.GetHolidays:input_type -> noted.v1.GetHolidaysRequest
-	169, // 309: noted.v1.AccountService.SignInWithApple:input_type -> noted.v1.SignInWithAppleRequest
-	171, // 310: noted.v1.AccountService.LinkApple:input_type -> noted.v1.LinkAppleRequest
-	172, // 311: noted.v1.AccountService.UnlinkApple:input_type -> noted.v1.UnlinkAppleRequest
-	173, // 312: noted.v1.AccountService.GetAccount:input_type -> noted.v1.GetAccountRequest
-	175, // 313: noted.v1.AccountService.SignUp:input_type -> noted.v1.SignUpRequest
-	176, // 314: noted.v1.AccountService.SignIn:input_type -> noted.v1.SignInRequest
-	178, // 315: noted.v1.AccountService.SetEmailPassword:input_type -> noted.v1.SetEmailPasswordRequest
-	180, // 316: noted.v1.AccountService.CreateToken:input_type -> noted.v1.CreateTokenRequest
-	182, // 317: noted.v1.AccountService.ListTokens:input_type -> noted.v1.ListTokensRequest
-	184, // 318: noted.v1.AccountService.RevokeToken:input_type -> noted.v1.RevokeTokenRequest
-	186, // 319: noted.v1.AccountService.GetPairing:input_type -> noted.v1.GetPairingRequest
-	187, // 320: noted.v1.AccountService.ApprovePairing:input_type -> noted.v1.ApprovePairingRequest
-	188, // 321: noted.v1.AccountService.DenyPairing:input_type -> noted.v1.DenyPairingRequest
-	7,   // 322: noted.v1.NoteService.CreateNote:output_type -> noted.v1.Note
-	7,   // 323: noted.v1.NoteService.GetNote:output_type -> noted.v1.Note
-	7,   // 324: noted.v1.NoteService.UpdateNote:output_type -> noted.v1.Note
-	193, // 325: noted.v1.NoteService.DeleteNote:output_type -> google.protobuf.Empty
-	13,  // 326: noted.v1.NoteService.ListNotes:output_type -> noted.v1.ListNotesResponse
-	16,  // 327: noted.v1.NoteService.SearchNotes:output_type -> noted.v1.SearchNotesResponse
-	17,  // 328: noted.v1.CalendarService.CreateEvent:output_type -> noted.v1.Event
-	17,  // 329: noted.v1.CalendarService.GetEvent:output_type -> noted.v1.Event
-	17,  // 330: noted.v1.CalendarService.UpdateEvent:output_type -> noted.v1.Event
-	193, // 331: noted.v1.CalendarService.DeleteEvent:output_type -> google.protobuf.Empty
-	24,  // 332: noted.v1.CalendarService.ListEvents:output_type -> noted.v1.ListEventsResponse
-	25,  // 333: noted.v1.CalendarService.CreateTask:output_type -> noted.v1.Task
-	25,  // 334: noted.v1.CalendarService.GetTask:output_type -> noted.v1.Task
-	25,  // 335: noted.v1.CalendarService.UpdateTask:output_type -> noted.v1.Task
-	193, // 336: noted.v1.CalendarService.DeleteTask:output_type -> google.protobuf.Empty
-	32,  // 337: noted.v1.CalendarService.ListTasks:output_type -> noted.v1.ListTasksResponse
-	25,  // 338: noted.v1.CalendarService.LogTaskWork:output_type -> noted.v1.Task
-	35,  // 339: noted.v1.CalendarService.ListTaskWork:output_type -> noted.v1.ListTaskWorkResponse
-	25,  // 340: noted.v1.CalendarService.DeleteTaskWork:output_type -> noted.v1.Task
-	37,  // 341: noted.v1.CalendarService.WatchReminders:output_type -> noted.v1.Reminder
-	40,  // 342: noted.v1.CalendarService.ListReminders:output_type -> noted.v1.ListRemindersResponse
-	42,  // 343: noted.v1.AIService.GetStatus:output_type -> noted.v1.GetStatusResponse
-	44,  // 344: noted.v1.AIService.Ask:output_type -> noted.v1.AskResponse
-	47,  // 345: noted.v1.AIService.SummarizeNote:output_type -> noted.v1.SummarizeNoteResponse
-	49,  // 346: noted.v1.AIService.SuggestTags:output_type -> noted.v1.SuggestTagsResponse
-	51,  // 347: noted.v1.AIService.DailyBriefing:output_type -> noted.v1.DailyBriefingResponse
-	113, // 348: noted.v1.AIService.PlanFromText:output_type -> noted.v1.Proposal
-	113, // 349: noted.v1.AIService.ExtractTasks:output_type -> noted.v1.Proposal
-	55,  // 350: noted.v1.AIService.GetAIAccess:output_type -> noted.v1.AIAccess
-	55,  // 351: noted.v1.AIService.SetAIAccess:output_type -> noted.v1.AIAccess
-	52,  // 352: noted.v1.AIService.GetAIFeatures:output_type -> noted.v1.AIFeatures
-	52,  // 353: noted.v1.AIService.SetAIFeatures:output_type -> noted.v1.AIFeatures
-	63,  // 354: noted.v1.GoalService.CreateGoal:output_type -> noted.v1.Goal
-	63,  // 355: noted.v1.GoalService.GetGoal:output_type -> noted.v1.Goal
-	63,  // 356: noted.v1.GoalService.UpdateGoal:output_type -> noted.v1.Goal
-	193, // 357: noted.v1.GoalService.DeleteGoal:output_type -> google.protobuf.Empty
-	70,  // 358: noted.v1.GoalService.ListGoals:output_type -> noted.v1.ListGoalsResponse
-	72,  // 359: noted.v1.GoalService.RecordCheckIn:output_type -> noted.v1.RecordCheckInResponse
-	63,  // 360: noted.v1.GoalService.DeleteCheckIn:output_type -> noted.v1.Goal
-	75,  // 361: noted.v1.GoalService.ListCheckIns:output_type -> noted.v1.ListCheckInsResponse
-	63,  // 362: noted.v1.GoalService.SetMilestoneDone:output_type -> noted.v1.Goal
-	77,  // 363: noted.v1.ObjectiveService.CreateObjective:output_type -> noted.v1.Objective
-	77,  // 364: noted.v1.ObjectiveService.GetObjective:output_type -> noted.v1.Objective
-	77,  // 365: noted.v1.ObjectiveService.UpdateObjective:output_type -> noted.v1.Objective
-	193, // 366: noted.v1.ObjectiveService.DeleteObjective:output_type -> google.protobuf.Empty
-	85,  // 367: noted.v1.ObjectiveService.ListObjectives:output_type -> noted.v1.ListObjectivesResponse
-	77,  // 368: noted.v1.ObjectiveService.RecordMeasurement:output_type -> noted.v1.Objective
-	193, // 369: noted.v1.ObjectiveService.DeleteMeasurement:output_type -> google.protobuf.Empty
-	89,  // 370: noted.v1.ObjectiveService.ListMeasurements:output_type -> noted.v1.ListMeasurementsResponse
-	77,  // 371: noted.v1.ObjectiveService.SetObjectiveMilestoneDone:output_type -> noted.v1.Objective
-	92,  // 372: noted.v1.ProjectService.CreateProject:output_type -> noted.v1.Project
-	95,  // 373: noted.v1.ProjectService.GetProject:output_type -> noted.v1.ProjectDetail
-	92,  // 374: noted.v1.ProjectService.UpdateProject:output_type -> noted.v1.Project
-	193, // 375: noted.v1.ProjectService.DeleteProject:output_type -> google.protobuf.Empty
-	99,  // 376: noted.v1.ProjectService.ListProjects:output_type -> noted.v1.ListProjectsResponse
-	102, // 377: noted.v1.FocusService.GetFocus:output_type -> noted.v1.GetFocusResponse
-	103, // 378: noted.v1.PreferenceService.GetPreference:output_type -> noted.v1.Preference
-	103, // 379: noted.v1.PreferenceService.SetPreference:output_type -> noted.v1.Preference
-	193, // 380: noted.v1.PreferenceService.DeletePreference:output_type -> google.protobuf.Empty
-	108, // 381: noted.v1.PreferenceService.ListPreferences:output_type -> noted.v1.ListPreferencesResponse
-	110, // 382: noted.v1.ExportService.Export:output_type -> noted.v1.ExportChunk
-	116, // 383: noted.v1.SuggestionService.ListProposals:output_type -> noted.v1.ListProposalsResponse
-	119, // 384: noted.v1.SuggestionService.AcceptProposal:output_type -> noted.v1.AcceptProposalResponse
-	113, // 385: noted.v1.SuggestionService.DismissProposal:output_type -> noted.v1.Proposal
-	113, // 386: noted.v1.SuggestionService.ProposeSchedule:output_type -> noted.v1.Proposal
-	123, // 387: noted.v1.SuggestionService.GetWeeklyReview:output_type -> noted.v1.WeeklyReview
-	125, // 388: noted.v1.SuggestionService.ListChanges:output_type -> noted.v1.ListChangesResponse
-	114, // 389: noted.v1.SuggestionService.UndoChange:output_type -> noted.v1.Change
-	127, // 390: noted.v1.HoldingService.CreateHolding:output_type -> noted.v1.Holding
-	127, // 391: noted.v1.HoldingService.GetHolding:output_type -> noted.v1.Holding
-	127, // 392: noted.v1.HoldingService.UpdateHolding:output_type -> noted.v1.Holding
-	193, // 393: noted.v1.HoldingService.DeleteHolding:output_type -> google.protobuf.Empty
-	136, // 394: noted.v1.HoldingService.ListHoldings:output_type -> noted.v1.ListHoldingsResponse
-	127, // 395: noted.v1.HoldingService.RecordTrade:output_type -> noted.v1.Holding
-	193, // 396: noted.v1.HoldingService.DeleteTrade:output_type -> google.protobuf.Empty
-	140, // 397: noted.v1.HoldingService.ListTrades:output_type -> noted.v1.ListTradesResponse
-	141, // 398: noted.v1.TimeService.CreateTimeEntry:output_type -> noted.v1.TimeEntry
-	141, // 399: noted.v1.TimeService.GetTimeEntry:output_type -> noted.v1.TimeEntry
-	141, // 400: noted.v1.TimeService.UpdateTimeEntry:output_type -> noted.v1.TimeEntry
-	193, // 401: noted.v1.TimeService.DeleteTimeEntry:output_type -> google.protobuf.Empty
-	147, // 402: noted.v1.TimeService.ListTimeEntries:output_type -> noted.v1.ListTimeEntriesResponse
-	141, // 403: noted.v1.TimeService.StartTimer:output_type -> noted.v1.TimeEntry
-	141, // 404: noted.v1.TimeService.StopTimer:output_type -> noted.v1.TimeEntry
-	151, // 405: noted.v1.TimeService.GetRunningTimer:output_type -> noted.v1.GetRunningTimerResponse
-	154, // 406: noted.v1.TimeService.SummarizeTime:output_type -> noted.v1.TimeSummary
-	157, // 407: noted.v1.AlarmService.CreateAlarm:output_type -> noted.v1.Alarm
-	157, // 408: noted.v1.AlarmService.GetAlarm:output_type -> noted.v1.Alarm
-	157, // 409: noted.v1.AlarmService.UpdateAlarm:output_type -> noted.v1.Alarm
-	193, // 410: noted.v1.AlarmService.DeleteAlarm:output_type -> google.protobuf.Empty
-	163, // 411: noted.v1.AlarmService.ListAlarms:output_type -> noted.v1.ListAlarmsResponse
-	165, // 412: noted.v1.AlarmService.GetAlarmsVersion:output_type -> noted.v1.GetAlarmsVersionResponse
-	168, // 413: noted.v1.HolidayService.GetHolidays:output_type -> noted.v1.GetHolidaysResponse
-	170, // 414: noted.v1.AccountService.SignInWithApple:output_type -> noted.v1.SignInWithAppleResponse
-	174, // 415: noted.v1.AccountService.LinkApple:output_type -> noted.v1.Account
-	174, // 416: noted.v1.AccountService.UnlinkApple:output_type -> noted.v1.Account
-	174, // 417: noted.v1.AccountService.GetAccount:output_type -> noted.v1.Account
-	177, // 418: noted.v1.AccountService.SignUp:output_type -> noted.v1.SignInResponse
-	177, // 419: noted.v1.AccountService.SignIn:output_type -> noted.v1.SignInResponse
-	174, // 420: noted.v1.AccountService.SetEmailPassword:output_type -> noted.v1.Account
-	181, // 421: noted.v1.AccountService.CreateToken:output_type -> noted.v1.CreateTokenResponse
-	183, // 422: noted.v1.AccountService.ListTokens:output_type -> noted.v1.ListTokensResponse
-	193, // 423: noted.v1.AccountService.RevokeToken:output_type -> google.protobuf.Empty
-	185, // 424: noted.v1.AccountService.GetPairing:output_type -> noted.v1.Pairing
-	185, // 425: noted.v1.AccountService.ApprovePairing:output_type -> noted.v1.Pairing
-	193, // 426: noted.v1.AccountService.DenyPairing:output_type -> google.protobuf.Empty
-	322, // [322:427] is the sub-list for method output_type
-	217, // [217:322] is the sub-list for method input_type
-	217, // [217:217] is the sub-list for extension type_name
-	217, // [217:217] is the sub-list for extension extendee
-	0,   // [0:217] is the sub-list for field type_name
+	156, // 16: noted.v1.Event.alarm_schedule:type_name -> noted.v1.AlarmSchedule
+	17,  // 17: noted.v1.CreateEventRequest.event:type_name -> noted.v1.Event
+	17,  // 18: noted.v1.UpdateEventRequest.event:type_name -> noted.v1.Event
+	191, // 19: noted.v1.UpdateEventRequest.update_mask:type_name -> google.protobuf.FieldMask
+	190, // 20: noted.v1.ListEventsRequest.from:type_name -> google.protobuf.Timestamp
+	190, // 21: noted.v1.ListEventsRequest.to:type_name -> google.protobuf.Timestamp
+	0,   // 22: noted.v1.ListEventsRequest.space:type_name -> noted.v1.Space
+	17,  // 23: noted.v1.Occurrence.event:type_name -> noted.v1.Event
+	190, // 24: noted.v1.Occurrence.start_time:type_name -> google.protobuf.Timestamp
+	190, // 25: noted.v1.Occurrence.end_time:type_name -> google.protobuf.Timestamp
+	23,  // 26: noted.v1.ListEventsResponse.occurrences:type_name -> noted.v1.Occurrence
+	25,  // 27: noted.v1.ListEventsResponse.unscheduled:type_name -> noted.v1.Task
+	190, // 28: noted.v1.Task.due_time:type_name -> google.protobuf.Timestamp
+	1,   // 29: noted.v1.Task.priority:type_name -> noted.v1.Priority
+	190, // 30: noted.v1.Task.complete_time:type_name -> google.protobuf.Timestamp
+	190, // 31: noted.v1.Task.remind_time:type_name -> google.protobuf.Timestamp
+	190, // 32: noted.v1.Task.create_time:type_name -> google.protobuf.Timestamp
+	190, // 33: noted.v1.Task.update_time:type_name -> google.protobuf.Timestamp
+	0,   // 34: noted.v1.Task.space:type_name -> noted.v1.Space
+	190, // 35: noted.v1.Task.last_worked_time:type_name -> google.protobuf.Timestamp
+	190, // 36: noted.v1.TaskWork.time:type_name -> google.protobuf.Timestamp
+	25,  // 37: noted.v1.CreateTaskRequest.task:type_name -> noted.v1.Task
+	25,  // 38: noted.v1.UpdateTaskRequest.task:type_name -> noted.v1.Task
+	191, // 39: noted.v1.UpdateTaskRequest.update_mask:type_name -> google.protobuf.FieldMask
+	5,   // 40: noted.v1.ListTasksRequest.filter:type_name -> noted.v1.ListTasksRequest.Filter
+	190, // 41: noted.v1.ListTasksRequest.due_before:type_name -> google.protobuf.Timestamp
+	0,   // 42: noted.v1.ListTasksRequest.space:type_name -> noted.v1.Space
+	25,  // 43: noted.v1.ListTasksResponse.tasks:type_name -> noted.v1.Task
+	190, // 44: noted.v1.LogTaskWorkRequest.time:type_name -> google.protobuf.Timestamp
+	26,  // 45: noted.v1.ListTaskWorkResponse.entries:type_name -> noted.v1.TaskWork
+	6,   // 46: noted.v1.Reminder.kind:type_name -> noted.v1.Reminder.Kind
+	190, // 47: noted.v1.Reminder.due_time:type_name -> google.protobuf.Timestamp
+	190, // 48: noted.v1.Reminder.fire_time:type_name -> google.protobuf.Timestamp
+	0,   // 49: noted.v1.Reminder.space:type_name -> noted.v1.Space
+	0,   // 50: noted.v1.WatchRemindersRequest.space:type_name -> noted.v1.Space
+	190, // 51: noted.v1.ListRemindersRequest.since:type_name -> google.protobuf.Timestamp
+	0,   // 52: noted.v1.ListRemindersRequest.space:type_name -> noted.v1.Space
+	37,  // 53: noted.v1.ListRemindersResponse.reminders:type_name -> noted.v1.Reminder
+	0,   // 54: noted.v1.AskRequest.space:type_name -> noted.v1.Space
+	113, // 55: noted.v1.AskResponse.proposal:type_name -> noted.v1.Proposal
+	114, // 56: noted.v1.AskResponse.change:type_name -> noted.v1.Change
+	45,  // 57: noted.v1.AskResponse.references:type_name -> noted.v1.Reference
+	190, // 58: noted.v1.Reference.time:type_name -> google.protobuf.Timestamp
+	190, // 59: noted.v1.DailyBriefingRequest.day:type_name -> google.protobuf.Timestamp
+	0,   // 60: noted.v1.DailyBriefingRequest.space:type_name -> noted.v1.Space
+	0,   // 61: noted.v1.PlanFromTextRequest.space:type_name -> noted.v1.Space
+	190, // 62: noted.v1.Milestone.done_time:type_name -> google.protobuf.Timestamp
+	190, // 63: noted.v1.Milestone.due_time:type_name -> google.protobuf.Timestamp
+	190, // 64: noted.v1.GoalProgress.period_start:type_name -> google.protobuf.Timestamp
+	190, // 65: noted.v1.GoalProgress.period_end:type_name -> google.protobuf.Timestamp
+	61,  // 66: noted.v1.GoalProgress.days:type_name -> noted.v1.DayTotal
+	61,  // 67: noted.v1.GoalProgress.recent:type_name -> noted.v1.DayTotal
+	2,   // 68: noted.v1.Goal.period:type_name -> noted.v1.GoalPeriod
+	60,  // 69: noted.v1.Goal.milestones:type_name -> noted.v1.Milestone
+	190, // 70: noted.v1.Goal.create_time:type_name -> google.protobuf.Timestamp
+	190, // 71: noted.v1.Goal.update_time:type_name -> google.protobuf.Timestamp
+	62,  // 72: noted.v1.Goal.progress:type_name -> noted.v1.GoalProgress
+	0,   // 73: noted.v1.Goal.space:type_name -> noted.v1.Space
+	190, // 74: noted.v1.CheckIn.time:type_name -> google.protobuf.Timestamp
+	63,  // 75: noted.v1.CreateGoalRequest.goal:type_name -> noted.v1.Goal
+	63,  // 76: noted.v1.UpdateGoalRequest.goal:type_name -> noted.v1.Goal
+	191, // 77: noted.v1.UpdateGoalRequest.update_mask:type_name -> google.protobuf.FieldMask
+	0,   // 78: noted.v1.ListGoalsRequest.space:type_name -> noted.v1.Space
+	63,  // 79: noted.v1.ListGoalsResponse.goals:type_name -> noted.v1.Goal
+	190, // 80: noted.v1.RecordCheckInRequest.time:type_name -> google.protobuf.Timestamp
+	64,  // 81: noted.v1.RecordCheckInResponse.check_in:type_name -> noted.v1.CheckIn
+	63,  // 82: noted.v1.RecordCheckInResponse.goal:type_name -> noted.v1.Goal
+	190, // 83: noted.v1.ListCheckInsRequest.from:type_name -> google.protobuf.Timestamp
+	190, // 84: noted.v1.ListCheckInsRequest.to:type_name -> google.protobuf.Timestamp
+	64,  // 85: noted.v1.ListCheckInsResponse.check_ins:type_name -> noted.v1.CheckIn
+	0,   // 86: noted.v1.Objective.space:type_name -> noted.v1.Space
+	190, // 87: noted.v1.Objective.start_time:type_name -> google.protobuf.Timestamp
+	190, // 88: noted.v1.Objective.due_time:type_name -> google.protobuf.Timestamp
+	190, // 89: noted.v1.Objective.create_time:type_name -> google.protobuf.Timestamp
+	190, // 90: noted.v1.Objective.update_time:type_name -> google.protobuf.Timestamp
+	78,  // 91: noted.v1.Objective.progress:type_name -> noted.v1.ObjectiveProgress
+	63,  // 92: noted.v1.Objective.goals:type_name -> noted.v1.Goal
+	60,  // 93: noted.v1.Objective.milestones:type_name -> noted.v1.Milestone
+	190, // 94: noted.v1.ObjectiveProgress.last_reading_time:type_name -> google.protobuf.Timestamp
+	60,  // 95: noted.v1.ObjectiveProgress.next_milestone:type_name -> noted.v1.Milestone
+	190, // 96: noted.v1.Measurement.time:type_name -> google.protobuf.Timestamp
+	77,  // 97: noted.v1.CreateObjectiveRequest.objective:type_name -> noted.v1.Objective
+	77,  // 98: noted.v1.UpdateObjectiveRequest.objective:type_name -> noted.v1.Objective
+	191, // 99: noted.v1.UpdateObjectiveRequest.update_mask:type_name -> google.protobuf.FieldMask
+	0,   // 100: noted.v1.ListObjectivesRequest.space:type_name -> noted.v1.Space
+	77,  // 101: noted.v1.ListObjectivesResponse.objectives:type_name -> noted.v1.Objective
+	190, // 102: noted.v1.RecordMeasurementRequest.time:type_name -> google.protobuf.Timestamp
+	190, // 103: noted.v1.ListMeasurementsRequest.from:type_name -> google.protobuf.Timestamp
+	190, // 104: noted.v1.ListMeasurementsRequest.to:type_name -> google.protobuf.Timestamp
+	79,  // 105: noted.v1.ListMeasurementsResponse.measurements:type_name -> noted.v1.Measurement
+	190, // 106: noted.v1.ProjectProgress.next_time:type_name -> google.protobuf.Timestamp
+	190, // 107: noted.v1.Project.start_time:type_name -> google.protobuf.Timestamp
+	190, // 108: noted.v1.Project.due_time:type_name -> google.protobuf.Timestamp
+	190, // 109: noted.v1.Project.create_time:type_name -> google.protobuf.Timestamp
+	190, // 110: noted.v1.Project.update_time:type_name -> google.protobuf.Timestamp
+	91,  // 111: noted.v1.Project.progress:type_name -> noted.v1.ProjectProgress
+	0,   // 112: noted.v1.Project.space:type_name -> noted.v1.Space
+	92,  // 113: noted.v1.CreateProjectRequest.project:type_name -> noted.v1.Project
+	92,  // 114: noted.v1.ProjectDetail.project:type_name -> noted.v1.Project
+	25,  // 115: noted.v1.ProjectDetail.tasks:type_name -> noted.v1.Task
+	17,  // 116: noted.v1.ProjectDetail.events:type_name -> noted.v1.Event
+	7,   // 117: noted.v1.ProjectDetail.notes:type_name -> noted.v1.Note
+	63,  // 118: noted.v1.ProjectDetail.goals:type_name -> noted.v1.Goal
+	77,  // 119: noted.v1.ProjectDetail.objectives:type_name -> noted.v1.Objective
+	141, // 120: noted.v1.ProjectDetail.time_entries:type_name -> noted.v1.TimeEntry
+	92,  // 121: noted.v1.UpdateProjectRequest.project:type_name -> noted.v1.Project
+	191, // 122: noted.v1.UpdateProjectRequest.update_mask:type_name -> google.protobuf.FieldMask
+	0,   // 123: noted.v1.ListProjectsRequest.space:type_name -> noted.v1.Space
+	92,  // 124: noted.v1.ListProjectsResponse.projects:type_name -> noted.v1.Project
+	3,   // 125: noted.v1.GetFocusRequest.horizon:type_name -> noted.v1.Horizon
+	0,   // 126: noted.v1.GetFocusRequest.space:type_name -> noted.v1.Space
+	23,  // 127: noted.v1.FocusItem.event:type_name -> noted.v1.Occurrence
+	25,  // 128: noted.v1.FocusItem.task:type_name -> noted.v1.Task
+	190, // 129: noted.v1.FocusItem.sort_time:type_name -> google.protobuf.Timestamp
+	3,   // 130: noted.v1.GetFocusResponse.horizon:type_name -> noted.v1.Horizon
+	190, // 131: noted.v1.GetFocusResponse.from:type_name -> google.protobuf.Timestamp
+	190, // 132: noted.v1.GetFocusResponse.to:type_name -> google.protobuf.Timestamp
+	101, // 133: noted.v1.GetFocusResponse.items:type_name -> noted.v1.FocusItem
+	63,  // 134: noted.v1.GetFocusResponse.goals:type_name -> noted.v1.Goal
+	92,  // 135: noted.v1.GetFocusResponse.pinned_projects:type_name -> noted.v1.Project
+	0,   // 136: noted.v1.GetFocusResponse.space:type_name -> noted.v1.Space
+	141, // 137: noted.v1.GetFocusResponse.running_timer:type_name -> noted.v1.TimeEntry
+	190, // 138: noted.v1.Preference.update_time:type_name -> google.protobuf.Timestamp
+	103, // 139: noted.v1.ListPreferencesResponse.preferences:type_name -> noted.v1.Preference
+	192, // 140: noted.v1.Operation.args:type_name -> google.protobuf.Struct
+	0,   // 141: noted.v1.Proposal.space:type_name -> noted.v1.Space
+	111, // 142: noted.v1.Proposal.operations:type_name -> noted.v1.Operation
+	112, // 143: noted.v1.Proposal.inputs:type_name -> noted.v1.ProposalInput
+	190, // 144: noted.v1.Proposal.create_time:type_name -> google.protobuf.Timestamp
+	190, // 145: noted.v1.Proposal.decide_time:type_name -> google.protobuf.Timestamp
+	190, // 146: noted.v1.Change.create_time:type_name -> google.protobuf.Timestamp
+	190, // 147: noted.v1.Change.undo_time:type_name -> google.protobuf.Timestamp
+	0,   // 148: noted.v1.ListProposalsRequest.space:type_name -> noted.v1.Space
+	113, // 149: noted.v1.ListProposalsResponse.proposals:type_name -> noted.v1.Proposal
+	189, // 150: noted.v1.AcceptProposalRequest.inputs:type_name -> noted.v1.AcceptProposalRequest.InputsEntry
+	117, // 151: noted.v1.AcceptProposalRequest.selection:type_name -> noted.v1.OperationSelection
+	113, // 152: noted.v1.AcceptProposalResponse.proposal:type_name -> noted.v1.Proposal
+	114, // 153: noted.v1.AcceptProposalResponse.change:type_name -> noted.v1.Change
+	190, // 154: noted.v1.GetWeeklyReviewRequest.week_of:type_name -> google.protobuf.Timestamp
+	0,   // 155: noted.v1.GetWeeklyReviewRequest.space:type_name -> noted.v1.Space
+	190, // 156: noted.v1.WeeklyReview.from:type_name -> google.protobuf.Timestamp
+	190, // 157: noted.v1.WeeklyReview.to:type_name -> google.protobuf.Timestamp
+	63,  // 158: noted.v1.WeeklyReview.goals:type_name -> noted.v1.Goal
+	25,  // 159: noted.v1.WeeklyReview.carried_tasks:type_name -> noted.v1.Task
+	113, // 160: noted.v1.WeeklyReview.next_week:type_name -> noted.v1.Proposal
+	153, // 161: noted.v1.WeeklyReview.top_activities:type_name -> noted.v1.TimeSummaryRow
+	114, // 162: noted.v1.ListChangesResponse.changes:type_name -> noted.v1.Change
+	190, // 163: noted.v1.Holding.last_price_time:type_name -> google.protobuf.Timestamp
+	190, // 164: noted.v1.Holding.create_time:type_name -> google.protobuf.Timestamp
+	190, // 165: noted.v1.Holding.update_time:type_name -> google.protobuf.Timestamp
+	128, // 166: noted.v1.Holding.position:type_name -> noted.v1.Position
+	129, // 167: noted.v1.Position.dca:type_name -> noted.v1.DcaStatus
+	190, // 168: noted.v1.DcaStatus.next_time:type_name -> google.protobuf.Timestamp
+	190, // 169: noted.v1.Trade.time:type_name -> google.protobuf.Timestamp
+	127, // 170: noted.v1.CreateHoldingRequest.holding:type_name -> noted.v1.Holding
+	127, // 171: noted.v1.UpdateHoldingRequest.holding:type_name -> noted.v1.Holding
+	191, // 172: noted.v1.UpdateHoldingRequest.update_mask:type_name -> google.protobuf.FieldMask
+	127, // 173: noted.v1.ListHoldingsResponse.holdings:type_name -> noted.v1.Holding
+	130, // 174: noted.v1.RecordTradeRequest.trade:type_name -> noted.v1.Trade
+	130, // 175: noted.v1.ListTradesResponse.trades:type_name -> noted.v1.Trade
+	190, // 176: noted.v1.TimeEntry.start_time:type_name -> google.protobuf.Timestamp
+	190, // 177: noted.v1.TimeEntry.end_time:type_name -> google.protobuf.Timestamp
+	0,   // 178: noted.v1.TimeEntry.space:type_name -> noted.v1.Space
+	190, // 179: noted.v1.TimeEntry.create_time:type_name -> google.protobuf.Timestamp
+	190, // 180: noted.v1.TimeEntry.update_time:type_name -> google.protobuf.Timestamp
+	141, // 181: noted.v1.CreateTimeEntryRequest.entry:type_name -> noted.v1.TimeEntry
+	141, // 182: noted.v1.UpdateTimeEntryRequest.entry:type_name -> noted.v1.TimeEntry
+	191, // 183: noted.v1.UpdateTimeEntryRequest.update_mask:type_name -> google.protobuf.FieldMask
+	190, // 184: noted.v1.ListTimeEntriesRequest.from:type_name -> google.protobuf.Timestamp
+	190, // 185: noted.v1.ListTimeEntriesRequest.to:type_name -> google.protobuf.Timestamp
+	0,   // 186: noted.v1.ListTimeEntriesRequest.space:type_name -> noted.v1.Space
+	141, // 187: noted.v1.ListTimeEntriesResponse.entries:type_name -> noted.v1.TimeEntry
+	0,   // 188: noted.v1.StartTimerRequest.space:type_name -> noted.v1.Space
+	190, // 189: noted.v1.StartTimerRequest.start_time:type_name -> google.protobuf.Timestamp
+	190, // 190: noted.v1.StopTimerRequest.end_time:type_name -> google.protobuf.Timestamp
+	141, // 191: noted.v1.GetRunningTimerResponse.entry:type_name -> noted.v1.TimeEntry
+	190, // 192: noted.v1.SummarizeTimeRequest.from:type_name -> google.protobuf.Timestamp
+	190, // 193: noted.v1.SummarizeTimeRequest.to:type_name -> google.protobuf.Timestamp
+	4,   // 194: noted.v1.SummarizeTimeRequest.group_by:type_name -> noted.v1.TimeGroupBy
+	0,   // 195: noted.v1.SummarizeTimeRequest.space:type_name -> noted.v1.Space
+	190, // 196: noted.v1.TimeSummary.from:type_name -> google.protobuf.Timestamp
+	190, // 197: noted.v1.TimeSummary.to:type_name -> google.protobuf.Timestamp
+	4,   // 198: noted.v1.TimeSummary.group_by:type_name -> noted.v1.TimeGroupBy
+	153, // 199: noted.v1.TimeSummary.rows:type_name -> noted.v1.TimeSummaryRow
+	190, // 200: noted.v1.AlarmSchedule.at:type_name -> google.protobuf.Timestamp
+	155, // 201: noted.v1.AlarmSchedule.recurrence:type_name -> noted.v1.AlarmRecurrence
+	156, // 202: noted.v1.Alarm.schedule:type_name -> noted.v1.AlarmSchedule
+	0,   // 203: noted.v1.Alarm.space:type_name -> noted.v1.Space
+	190, // 204: noted.v1.Alarm.create_time:type_name -> google.protobuf.Timestamp
+	190, // 205: noted.v1.Alarm.update_time:type_name -> google.protobuf.Timestamp
+	190, // 206: noted.v1.Alarm.next_fires:type_name -> google.protobuf.Timestamp
+	157, // 207: noted.v1.CreateAlarmRequest.alarm:type_name -> noted.v1.Alarm
+	157, // 208: noted.v1.UpdateAlarmRequest.alarm:type_name -> noted.v1.Alarm
+	191, // 209: noted.v1.UpdateAlarmRequest.update_mask:type_name -> google.protobuf.FieldMask
+	0,   // 210: noted.v1.ListAlarmsRequest.space:type_name -> noted.v1.Space
+	157, // 211: noted.v1.ListAlarmsResponse.alarms:type_name -> noted.v1.Alarm
+	167, // 212: noted.v1.GetHolidaysResponse.days:type_name -> noted.v1.HolidayDay
+	190, // 213: noted.v1.TokenInfo.create_time:type_name -> google.protobuf.Timestamp
+	190, // 214: noted.v1.TokenInfo.last_used_time:type_name -> google.protobuf.Timestamp
+	179, // 215: noted.v1.CreateTokenResponse.info:type_name -> noted.v1.TokenInfo
+	179, // 216: noted.v1.ListTokensResponse.tokens:type_name -> noted.v1.TokenInfo
+	190, // 217: noted.v1.Pairing.create_time:type_name -> google.protobuf.Timestamp
+	190, // 218: noted.v1.Pairing.expire_time:type_name -> google.protobuf.Timestamp
+	8,   // 219: noted.v1.NoteService.CreateNote:input_type -> noted.v1.CreateNoteRequest
+	9,   // 220: noted.v1.NoteService.GetNote:input_type -> noted.v1.GetNoteRequest
+	10,  // 221: noted.v1.NoteService.UpdateNote:input_type -> noted.v1.UpdateNoteRequest
+	11,  // 222: noted.v1.NoteService.DeleteNote:input_type -> noted.v1.DeleteNoteRequest
+	12,  // 223: noted.v1.NoteService.ListNotes:input_type -> noted.v1.ListNotesRequest
+	14,  // 224: noted.v1.NoteService.SearchNotes:input_type -> noted.v1.SearchNotesRequest
+	18,  // 225: noted.v1.CalendarService.CreateEvent:input_type -> noted.v1.CreateEventRequest
+	19,  // 226: noted.v1.CalendarService.GetEvent:input_type -> noted.v1.GetEventRequest
+	20,  // 227: noted.v1.CalendarService.UpdateEvent:input_type -> noted.v1.UpdateEventRequest
+	21,  // 228: noted.v1.CalendarService.DeleteEvent:input_type -> noted.v1.DeleteEventRequest
+	22,  // 229: noted.v1.CalendarService.ListEvents:input_type -> noted.v1.ListEventsRequest
+	27,  // 230: noted.v1.CalendarService.CreateTask:input_type -> noted.v1.CreateTaskRequest
+	28,  // 231: noted.v1.CalendarService.GetTask:input_type -> noted.v1.GetTaskRequest
+	29,  // 232: noted.v1.CalendarService.UpdateTask:input_type -> noted.v1.UpdateTaskRequest
+	30,  // 233: noted.v1.CalendarService.DeleteTask:input_type -> noted.v1.DeleteTaskRequest
+	31,  // 234: noted.v1.CalendarService.ListTasks:input_type -> noted.v1.ListTasksRequest
+	33,  // 235: noted.v1.CalendarService.LogTaskWork:input_type -> noted.v1.LogTaskWorkRequest
+	34,  // 236: noted.v1.CalendarService.ListTaskWork:input_type -> noted.v1.ListTaskWorkRequest
+	36,  // 237: noted.v1.CalendarService.DeleteTaskWork:input_type -> noted.v1.DeleteTaskWorkRequest
+	38,  // 238: noted.v1.CalendarService.WatchReminders:input_type -> noted.v1.WatchRemindersRequest
+	39,  // 239: noted.v1.CalendarService.ListReminders:input_type -> noted.v1.ListRemindersRequest
+	41,  // 240: noted.v1.AIService.GetStatus:input_type -> noted.v1.GetStatusRequest
+	43,  // 241: noted.v1.AIService.Ask:input_type -> noted.v1.AskRequest
+	46,  // 242: noted.v1.AIService.SummarizeNote:input_type -> noted.v1.SummarizeNoteRequest
+	48,  // 243: noted.v1.AIService.SuggestTags:input_type -> noted.v1.SuggestTagsRequest
+	50,  // 244: noted.v1.AIService.DailyBriefing:input_type -> noted.v1.DailyBriefingRequest
+	58,  // 245: noted.v1.AIService.PlanFromText:input_type -> noted.v1.PlanFromTextRequest
+	59,  // 246: noted.v1.AIService.ExtractTasks:input_type -> noted.v1.ExtractTasksRequest
+	56,  // 247: noted.v1.AIService.GetAIAccess:input_type -> noted.v1.GetAIAccessRequest
+	57,  // 248: noted.v1.AIService.SetAIAccess:input_type -> noted.v1.SetAIAccessRequest
+	53,  // 249: noted.v1.AIService.GetAIFeatures:input_type -> noted.v1.GetAIFeaturesRequest
+	54,  // 250: noted.v1.AIService.SetAIFeatures:input_type -> noted.v1.SetAIFeaturesRequest
+	65,  // 251: noted.v1.GoalService.CreateGoal:input_type -> noted.v1.CreateGoalRequest
+	66,  // 252: noted.v1.GoalService.GetGoal:input_type -> noted.v1.GetGoalRequest
+	67,  // 253: noted.v1.GoalService.UpdateGoal:input_type -> noted.v1.UpdateGoalRequest
+	68,  // 254: noted.v1.GoalService.DeleteGoal:input_type -> noted.v1.DeleteGoalRequest
+	69,  // 255: noted.v1.GoalService.ListGoals:input_type -> noted.v1.ListGoalsRequest
+	71,  // 256: noted.v1.GoalService.RecordCheckIn:input_type -> noted.v1.RecordCheckInRequest
+	73,  // 257: noted.v1.GoalService.DeleteCheckIn:input_type -> noted.v1.DeleteCheckInRequest
+	74,  // 258: noted.v1.GoalService.ListCheckIns:input_type -> noted.v1.ListCheckInsRequest
+	76,  // 259: noted.v1.GoalService.SetMilestoneDone:input_type -> noted.v1.SetMilestoneDoneRequest
+	80,  // 260: noted.v1.ObjectiveService.CreateObjective:input_type -> noted.v1.CreateObjectiveRequest
+	81,  // 261: noted.v1.ObjectiveService.GetObjective:input_type -> noted.v1.GetObjectiveRequest
+	82,  // 262: noted.v1.ObjectiveService.UpdateObjective:input_type -> noted.v1.UpdateObjectiveRequest
+	83,  // 263: noted.v1.ObjectiveService.DeleteObjective:input_type -> noted.v1.DeleteObjectiveRequest
+	84,  // 264: noted.v1.ObjectiveService.ListObjectives:input_type -> noted.v1.ListObjectivesRequest
+	86,  // 265: noted.v1.ObjectiveService.RecordMeasurement:input_type -> noted.v1.RecordMeasurementRequest
+	87,  // 266: noted.v1.ObjectiveService.DeleteMeasurement:input_type -> noted.v1.DeleteMeasurementRequest
+	88,  // 267: noted.v1.ObjectiveService.ListMeasurements:input_type -> noted.v1.ListMeasurementsRequest
+	90,  // 268: noted.v1.ObjectiveService.SetObjectiveMilestoneDone:input_type -> noted.v1.SetObjectiveMilestoneDoneRequest
+	93,  // 269: noted.v1.ProjectService.CreateProject:input_type -> noted.v1.CreateProjectRequest
+	94,  // 270: noted.v1.ProjectService.GetProject:input_type -> noted.v1.GetProjectRequest
+	96,  // 271: noted.v1.ProjectService.UpdateProject:input_type -> noted.v1.UpdateProjectRequest
+	97,  // 272: noted.v1.ProjectService.DeleteProject:input_type -> noted.v1.DeleteProjectRequest
+	98,  // 273: noted.v1.ProjectService.ListProjects:input_type -> noted.v1.ListProjectsRequest
+	100, // 274: noted.v1.FocusService.GetFocus:input_type -> noted.v1.GetFocusRequest
+	104, // 275: noted.v1.PreferenceService.GetPreference:input_type -> noted.v1.GetPreferenceRequest
+	105, // 276: noted.v1.PreferenceService.SetPreference:input_type -> noted.v1.SetPreferenceRequest
+	106, // 277: noted.v1.PreferenceService.DeletePreference:input_type -> noted.v1.DeletePreferenceRequest
+	107, // 278: noted.v1.PreferenceService.ListPreferences:input_type -> noted.v1.ListPreferencesRequest
+	109, // 279: noted.v1.ExportService.Export:input_type -> noted.v1.ExportRequest
+	115, // 280: noted.v1.SuggestionService.ListProposals:input_type -> noted.v1.ListProposalsRequest
+	118, // 281: noted.v1.SuggestionService.AcceptProposal:input_type -> noted.v1.AcceptProposalRequest
+	120, // 282: noted.v1.SuggestionService.DismissProposal:input_type -> noted.v1.DismissProposalRequest
+	121, // 283: noted.v1.SuggestionService.ProposeSchedule:input_type -> noted.v1.ProposeScheduleRequest
+	122, // 284: noted.v1.SuggestionService.GetWeeklyReview:input_type -> noted.v1.GetWeeklyReviewRequest
+	124, // 285: noted.v1.SuggestionService.ListChanges:input_type -> noted.v1.ListChangesRequest
+	126, // 286: noted.v1.SuggestionService.UndoChange:input_type -> noted.v1.UndoChangeRequest
+	131, // 287: noted.v1.HoldingService.CreateHolding:input_type -> noted.v1.CreateHoldingRequest
+	132, // 288: noted.v1.HoldingService.GetHolding:input_type -> noted.v1.GetHoldingRequest
+	133, // 289: noted.v1.HoldingService.UpdateHolding:input_type -> noted.v1.UpdateHoldingRequest
+	134, // 290: noted.v1.HoldingService.DeleteHolding:input_type -> noted.v1.DeleteHoldingRequest
+	135, // 291: noted.v1.HoldingService.ListHoldings:input_type -> noted.v1.ListHoldingsRequest
+	137, // 292: noted.v1.HoldingService.RecordTrade:input_type -> noted.v1.RecordTradeRequest
+	138, // 293: noted.v1.HoldingService.DeleteTrade:input_type -> noted.v1.DeleteTradeRequest
+	139, // 294: noted.v1.HoldingService.ListTrades:input_type -> noted.v1.ListTradesRequest
+	142, // 295: noted.v1.TimeService.CreateTimeEntry:input_type -> noted.v1.CreateTimeEntryRequest
+	143, // 296: noted.v1.TimeService.GetTimeEntry:input_type -> noted.v1.GetTimeEntryRequest
+	144, // 297: noted.v1.TimeService.UpdateTimeEntry:input_type -> noted.v1.UpdateTimeEntryRequest
+	145, // 298: noted.v1.TimeService.DeleteTimeEntry:input_type -> noted.v1.DeleteTimeEntryRequest
+	146, // 299: noted.v1.TimeService.ListTimeEntries:input_type -> noted.v1.ListTimeEntriesRequest
+	148, // 300: noted.v1.TimeService.StartTimer:input_type -> noted.v1.StartTimerRequest
+	149, // 301: noted.v1.TimeService.StopTimer:input_type -> noted.v1.StopTimerRequest
+	150, // 302: noted.v1.TimeService.GetRunningTimer:input_type -> noted.v1.GetRunningTimerRequest
+	152, // 303: noted.v1.TimeService.SummarizeTime:input_type -> noted.v1.SummarizeTimeRequest
+	158, // 304: noted.v1.AlarmService.CreateAlarm:input_type -> noted.v1.CreateAlarmRequest
+	159, // 305: noted.v1.AlarmService.GetAlarm:input_type -> noted.v1.GetAlarmRequest
+	160, // 306: noted.v1.AlarmService.UpdateAlarm:input_type -> noted.v1.UpdateAlarmRequest
+	161, // 307: noted.v1.AlarmService.DeleteAlarm:input_type -> noted.v1.DeleteAlarmRequest
+	162, // 308: noted.v1.AlarmService.ListAlarms:input_type -> noted.v1.ListAlarmsRequest
+	164, // 309: noted.v1.AlarmService.GetAlarmsVersion:input_type -> noted.v1.GetAlarmsVersionRequest
+	166, // 310: noted.v1.HolidayService.GetHolidays:input_type -> noted.v1.GetHolidaysRequest
+	169, // 311: noted.v1.AccountService.SignInWithApple:input_type -> noted.v1.SignInWithAppleRequest
+	171, // 312: noted.v1.AccountService.LinkApple:input_type -> noted.v1.LinkAppleRequest
+	172, // 313: noted.v1.AccountService.UnlinkApple:input_type -> noted.v1.UnlinkAppleRequest
+	173, // 314: noted.v1.AccountService.GetAccount:input_type -> noted.v1.GetAccountRequest
+	175, // 315: noted.v1.AccountService.SignUp:input_type -> noted.v1.SignUpRequest
+	176, // 316: noted.v1.AccountService.SignIn:input_type -> noted.v1.SignInRequest
+	178, // 317: noted.v1.AccountService.SetEmailPassword:input_type -> noted.v1.SetEmailPasswordRequest
+	180, // 318: noted.v1.AccountService.CreateToken:input_type -> noted.v1.CreateTokenRequest
+	182, // 319: noted.v1.AccountService.ListTokens:input_type -> noted.v1.ListTokensRequest
+	184, // 320: noted.v1.AccountService.RevokeToken:input_type -> noted.v1.RevokeTokenRequest
+	186, // 321: noted.v1.AccountService.GetPairing:input_type -> noted.v1.GetPairingRequest
+	187, // 322: noted.v1.AccountService.ApprovePairing:input_type -> noted.v1.ApprovePairingRequest
+	188, // 323: noted.v1.AccountService.DenyPairing:input_type -> noted.v1.DenyPairingRequest
+	7,   // 324: noted.v1.NoteService.CreateNote:output_type -> noted.v1.Note
+	7,   // 325: noted.v1.NoteService.GetNote:output_type -> noted.v1.Note
+	7,   // 326: noted.v1.NoteService.UpdateNote:output_type -> noted.v1.Note
+	193, // 327: noted.v1.NoteService.DeleteNote:output_type -> google.protobuf.Empty
+	13,  // 328: noted.v1.NoteService.ListNotes:output_type -> noted.v1.ListNotesResponse
+	16,  // 329: noted.v1.NoteService.SearchNotes:output_type -> noted.v1.SearchNotesResponse
+	17,  // 330: noted.v1.CalendarService.CreateEvent:output_type -> noted.v1.Event
+	17,  // 331: noted.v1.CalendarService.GetEvent:output_type -> noted.v1.Event
+	17,  // 332: noted.v1.CalendarService.UpdateEvent:output_type -> noted.v1.Event
+	193, // 333: noted.v1.CalendarService.DeleteEvent:output_type -> google.protobuf.Empty
+	24,  // 334: noted.v1.CalendarService.ListEvents:output_type -> noted.v1.ListEventsResponse
+	25,  // 335: noted.v1.CalendarService.CreateTask:output_type -> noted.v1.Task
+	25,  // 336: noted.v1.CalendarService.GetTask:output_type -> noted.v1.Task
+	25,  // 337: noted.v1.CalendarService.UpdateTask:output_type -> noted.v1.Task
+	193, // 338: noted.v1.CalendarService.DeleteTask:output_type -> google.protobuf.Empty
+	32,  // 339: noted.v1.CalendarService.ListTasks:output_type -> noted.v1.ListTasksResponse
+	25,  // 340: noted.v1.CalendarService.LogTaskWork:output_type -> noted.v1.Task
+	35,  // 341: noted.v1.CalendarService.ListTaskWork:output_type -> noted.v1.ListTaskWorkResponse
+	25,  // 342: noted.v1.CalendarService.DeleteTaskWork:output_type -> noted.v1.Task
+	37,  // 343: noted.v1.CalendarService.WatchReminders:output_type -> noted.v1.Reminder
+	40,  // 344: noted.v1.CalendarService.ListReminders:output_type -> noted.v1.ListRemindersResponse
+	42,  // 345: noted.v1.AIService.GetStatus:output_type -> noted.v1.GetStatusResponse
+	44,  // 346: noted.v1.AIService.Ask:output_type -> noted.v1.AskResponse
+	47,  // 347: noted.v1.AIService.SummarizeNote:output_type -> noted.v1.SummarizeNoteResponse
+	49,  // 348: noted.v1.AIService.SuggestTags:output_type -> noted.v1.SuggestTagsResponse
+	51,  // 349: noted.v1.AIService.DailyBriefing:output_type -> noted.v1.DailyBriefingResponse
+	113, // 350: noted.v1.AIService.PlanFromText:output_type -> noted.v1.Proposal
+	113, // 351: noted.v1.AIService.ExtractTasks:output_type -> noted.v1.Proposal
+	55,  // 352: noted.v1.AIService.GetAIAccess:output_type -> noted.v1.AIAccess
+	55,  // 353: noted.v1.AIService.SetAIAccess:output_type -> noted.v1.AIAccess
+	52,  // 354: noted.v1.AIService.GetAIFeatures:output_type -> noted.v1.AIFeatures
+	52,  // 355: noted.v1.AIService.SetAIFeatures:output_type -> noted.v1.AIFeatures
+	63,  // 356: noted.v1.GoalService.CreateGoal:output_type -> noted.v1.Goal
+	63,  // 357: noted.v1.GoalService.GetGoal:output_type -> noted.v1.Goal
+	63,  // 358: noted.v1.GoalService.UpdateGoal:output_type -> noted.v1.Goal
+	193, // 359: noted.v1.GoalService.DeleteGoal:output_type -> google.protobuf.Empty
+	70,  // 360: noted.v1.GoalService.ListGoals:output_type -> noted.v1.ListGoalsResponse
+	72,  // 361: noted.v1.GoalService.RecordCheckIn:output_type -> noted.v1.RecordCheckInResponse
+	63,  // 362: noted.v1.GoalService.DeleteCheckIn:output_type -> noted.v1.Goal
+	75,  // 363: noted.v1.GoalService.ListCheckIns:output_type -> noted.v1.ListCheckInsResponse
+	63,  // 364: noted.v1.GoalService.SetMilestoneDone:output_type -> noted.v1.Goal
+	77,  // 365: noted.v1.ObjectiveService.CreateObjective:output_type -> noted.v1.Objective
+	77,  // 366: noted.v1.ObjectiveService.GetObjective:output_type -> noted.v1.Objective
+	77,  // 367: noted.v1.ObjectiveService.UpdateObjective:output_type -> noted.v1.Objective
+	193, // 368: noted.v1.ObjectiveService.DeleteObjective:output_type -> google.protobuf.Empty
+	85,  // 369: noted.v1.ObjectiveService.ListObjectives:output_type -> noted.v1.ListObjectivesResponse
+	77,  // 370: noted.v1.ObjectiveService.RecordMeasurement:output_type -> noted.v1.Objective
+	193, // 371: noted.v1.ObjectiveService.DeleteMeasurement:output_type -> google.protobuf.Empty
+	89,  // 372: noted.v1.ObjectiveService.ListMeasurements:output_type -> noted.v1.ListMeasurementsResponse
+	77,  // 373: noted.v1.ObjectiveService.SetObjectiveMilestoneDone:output_type -> noted.v1.Objective
+	92,  // 374: noted.v1.ProjectService.CreateProject:output_type -> noted.v1.Project
+	95,  // 375: noted.v1.ProjectService.GetProject:output_type -> noted.v1.ProjectDetail
+	92,  // 376: noted.v1.ProjectService.UpdateProject:output_type -> noted.v1.Project
+	193, // 377: noted.v1.ProjectService.DeleteProject:output_type -> google.protobuf.Empty
+	99,  // 378: noted.v1.ProjectService.ListProjects:output_type -> noted.v1.ListProjectsResponse
+	102, // 379: noted.v1.FocusService.GetFocus:output_type -> noted.v1.GetFocusResponse
+	103, // 380: noted.v1.PreferenceService.GetPreference:output_type -> noted.v1.Preference
+	103, // 381: noted.v1.PreferenceService.SetPreference:output_type -> noted.v1.Preference
+	193, // 382: noted.v1.PreferenceService.DeletePreference:output_type -> google.protobuf.Empty
+	108, // 383: noted.v1.PreferenceService.ListPreferences:output_type -> noted.v1.ListPreferencesResponse
+	110, // 384: noted.v1.ExportService.Export:output_type -> noted.v1.ExportChunk
+	116, // 385: noted.v1.SuggestionService.ListProposals:output_type -> noted.v1.ListProposalsResponse
+	119, // 386: noted.v1.SuggestionService.AcceptProposal:output_type -> noted.v1.AcceptProposalResponse
+	113, // 387: noted.v1.SuggestionService.DismissProposal:output_type -> noted.v1.Proposal
+	113, // 388: noted.v1.SuggestionService.ProposeSchedule:output_type -> noted.v1.Proposal
+	123, // 389: noted.v1.SuggestionService.GetWeeklyReview:output_type -> noted.v1.WeeklyReview
+	125, // 390: noted.v1.SuggestionService.ListChanges:output_type -> noted.v1.ListChangesResponse
+	114, // 391: noted.v1.SuggestionService.UndoChange:output_type -> noted.v1.Change
+	127, // 392: noted.v1.HoldingService.CreateHolding:output_type -> noted.v1.Holding
+	127, // 393: noted.v1.HoldingService.GetHolding:output_type -> noted.v1.Holding
+	127, // 394: noted.v1.HoldingService.UpdateHolding:output_type -> noted.v1.Holding
+	193, // 395: noted.v1.HoldingService.DeleteHolding:output_type -> google.protobuf.Empty
+	136, // 396: noted.v1.HoldingService.ListHoldings:output_type -> noted.v1.ListHoldingsResponse
+	127, // 397: noted.v1.HoldingService.RecordTrade:output_type -> noted.v1.Holding
+	193, // 398: noted.v1.HoldingService.DeleteTrade:output_type -> google.protobuf.Empty
+	140, // 399: noted.v1.HoldingService.ListTrades:output_type -> noted.v1.ListTradesResponse
+	141, // 400: noted.v1.TimeService.CreateTimeEntry:output_type -> noted.v1.TimeEntry
+	141, // 401: noted.v1.TimeService.GetTimeEntry:output_type -> noted.v1.TimeEntry
+	141, // 402: noted.v1.TimeService.UpdateTimeEntry:output_type -> noted.v1.TimeEntry
+	193, // 403: noted.v1.TimeService.DeleteTimeEntry:output_type -> google.protobuf.Empty
+	147, // 404: noted.v1.TimeService.ListTimeEntries:output_type -> noted.v1.ListTimeEntriesResponse
+	141, // 405: noted.v1.TimeService.StartTimer:output_type -> noted.v1.TimeEntry
+	141, // 406: noted.v1.TimeService.StopTimer:output_type -> noted.v1.TimeEntry
+	151, // 407: noted.v1.TimeService.GetRunningTimer:output_type -> noted.v1.GetRunningTimerResponse
+	154, // 408: noted.v1.TimeService.SummarizeTime:output_type -> noted.v1.TimeSummary
+	157, // 409: noted.v1.AlarmService.CreateAlarm:output_type -> noted.v1.Alarm
+	157, // 410: noted.v1.AlarmService.GetAlarm:output_type -> noted.v1.Alarm
+	157, // 411: noted.v1.AlarmService.UpdateAlarm:output_type -> noted.v1.Alarm
+	193, // 412: noted.v1.AlarmService.DeleteAlarm:output_type -> google.protobuf.Empty
+	163, // 413: noted.v1.AlarmService.ListAlarms:output_type -> noted.v1.ListAlarmsResponse
+	165, // 414: noted.v1.AlarmService.GetAlarmsVersion:output_type -> noted.v1.GetAlarmsVersionResponse
+	168, // 415: noted.v1.HolidayService.GetHolidays:output_type -> noted.v1.GetHolidaysResponse
+	170, // 416: noted.v1.AccountService.SignInWithApple:output_type -> noted.v1.SignInWithAppleResponse
+	174, // 417: noted.v1.AccountService.LinkApple:output_type -> noted.v1.Account
+	174, // 418: noted.v1.AccountService.UnlinkApple:output_type -> noted.v1.Account
+	174, // 419: noted.v1.AccountService.GetAccount:output_type -> noted.v1.Account
+	177, // 420: noted.v1.AccountService.SignUp:output_type -> noted.v1.SignInResponse
+	177, // 421: noted.v1.AccountService.SignIn:output_type -> noted.v1.SignInResponse
+	174, // 422: noted.v1.AccountService.SetEmailPassword:output_type -> noted.v1.Account
+	181, // 423: noted.v1.AccountService.CreateToken:output_type -> noted.v1.CreateTokenResponse
+	183, // 424: noted.v1.AccountService.ListTokens:output_type -> noted.v1.ListTokensResponse
+	193, // 425: noted.v1.AccountService.RevokeToken:output_type -> google.protobuf.Empty
+	185, // 426: noted.v1.AccountService.GetPairing:output_type -> noted.v1.Pairing
+	185, // 427: noted.v1.AccountService.ApprovePairing:output_type -> noted.v1.Pairing
+	193, // 428: noted.v1.AccountService.DenyPairing:output_type -> google.protobuf.Empty
+	324, // [324:429] is the sub-list for method output_type
+	219, // [219:324] is the sub-list for method input_type
+	219, // [219:219] is the sub-list for extension type_name
+	219, // [219:219] is the sub-list for extension extendee
+	0,   // [0:219] is the sub-list for field type_name
 }
 
 func init() { file_noted_v1_noted_proto_init() }

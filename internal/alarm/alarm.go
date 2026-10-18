@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/liliang-cn/noted/internal/holiday"
+	"github.com/liliang-cn/noted/internal/recur"
 )
 
 // Schedule kinds.
@@ -556,4 +557,107 @@ func UnmarshalSchedule(v string) (Schedule, error) {
 	var s Schedule
 	err := json.Unmarshal([]byte(v), &s)
 	return s, err
+}
+
+// ---- the pieces a schedule item (an event carrying a rule) needs ----
+
+// NormalizePolicy checks a holiday policy and region on their own, as a
+// start+RRULE event carries them without a schedule, and writes their
+// canonical form ("" policy becomes none; region upper-cased, "" for none).
+func NormalizePolicy(policy, region *string) error {
+	r := Rule{Schedule: Schedule{Kind: KindOneShot, At: &time.Time{}, TimeZone: "UTC"}, HolidayPolicy: *policy, Region: *region}
+	if err := Normalize(&r, "UTC"); err != nil {
+		return err
+	}
+	*policy, *region = r.HolidayPolicy, r.Region
+	return nil
+}
+
+// DayAllowed applies a holiday policy to the civil day of t in its zone: false
+// when the policy skips that day (a statutory holiday, a non-working day).
+func DayAllowed(t time.Time, policy, region string) bool {
+	if policy == "" || policy == PolicyNone {
+		return true
+	}
+	return passes(civil(t), policy, region, holiday.ForRegion(region))
+}
+
+// FirstRing is the nominal first time a normalized schedule may ring, the
+// holiday policy aside: at for a one-shot; the anchor day at the first of the
+// day's times for a recurring one. Zero when the schedule is malformed.
+func FirstRing(s Schedule) time.Time {
+	loc, err := time.LoadLocation(s.TimeZone)
+	if err != nil {
+		loc = time.UTC
+	}
+	if s.Kind == KindOneShot {
+		if s.At == nil {
+			return time.Time{}
+		}
+		return s.At.In(loc)
+	}
+	if s.Recurrence == nil {
+		return time.Time{}
+	}
+	d, err := time.Parse("2006-01-02", s.Anchor)
+	if err != nil {
+		return time.Time{}
+	}
+	times := dayTimes(s, *s.Recurrence)
+	if len(times) == 0 {
+		return time.Time{}
+	}
+	return time.Date(d.Year(), d.Month(), d.Day(), times[0]/60, times[0]%60, 0, 0, loc)
+}
+
+// FromRRule writes a start time and an RFC 5545 rule (noted's subset: FREQ
+// DAILY|WEEKLY|MONTHLY|YEARLY, INTERVAL, COUNT, UNTIL, BYDAY) as an alarm
+// schedule, so a phone can expand an event with the alarm engine. YEARLY
+// becomes monthly every 12 months on the start's day; an empty rrule is a
+// one-shot at start. The schedule is normalized. An rrule it cannot read gives
+// a one-shot at start too.
+func FromRRule(start time.Time, tz, rrule string) Schedule {
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		loc = time.UTC
+	}
+	at := start.In(loc)
+	one := Schedule{Kind: KindOneShot, At: &at, TimeZone: loc.String()}
+	if rrule == "" {
+		return one
+	}
+	rule, err := recur.Parse(rrule)
+	if err != nil {
+		return one
+	}
+	rc := &Recurrence{Interval: max(rule.Interval, 1), Count: rule.Count}
+	switch rule.Freq {
+	case "DAILY":
+		rc.Freq = FreqDaily
+	case "WEEKLY":
+		rc.Freq = FreqWeekly
+		for _, d := range rule.ByDay {
+			rc.ByDay = append(rc.ByDay, dayName(d))
+		}
+	case "MONTHLY":
+		rc.Freq = FreqMonthly
+		rc.ByMonthDay = at.Day()
+	case "YEARLY":
+		rc.Freq, rc.Interval, rc.ByMonthDay = FreqMonthly, rc.Interval*12, at.Day()
+	default:
+		return one
+	}
+	if u := rule.Until; !u.IsZero() {
+		if u.Hour() == 23 && u.Minute() == 59 && u.Second() == 59 { // a date-only UNTIL: the whole UTC day
+			rc.Until = u.UTC().Format("2006-01-02")
+		} else {
+			rc.Until = u.In(loc).Format("2006-01-02")
+		}
+	}
+	s := Schedule{Kind: KindRecurring, Anchor: at.Format("2006-01-02"), Time: clock(at.Hour()*60 + at.Minute()), TimeZone: loc.String(), Recurrence: rc}
+	r := Rule{Schedule: s}
+	if err := Normalize(&r, loc.String()); err != nil {
+		return one
+	}
+	return r.Schedule
 }
