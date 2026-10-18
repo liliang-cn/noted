@@ -124,7 +124,7 @@ type taskOut struct {
 	ProjectID      string   `json:"projectId,omitempty"`
 	ProjectTitle   string   `json:"projectTitle,omitempty" jsonschema:"get_overview only"`
 	RRule          string   `json:"rrule,omitempty"`
-	Notify         string   `json:"notify,omitempty" jsonschema:"how the phone tells the person at remindTime: alarm, reminder, app or none"`
+	Notify         string   `json:"notify,omitempty" jsonschema:"how it reaches the person at remindTime: alarm, reminder, notification or none"`
 	Progress       int32    `json:"progress" jsonschema:"0-100"`
 	WorkedMinutes  int32    `json:"workedMinutes"`
 	WorkSessions   int32    `json:"workSessions"`
@@ -145,8 +145,8 @@ type eventOut struct {
 	AllDay              bool              `json:"allDay"`
 	TimeZone            string            `json:"timeZone,omitempty"`
 	RRule               string            `json:"rrule,omitempty"`
-	RemindBeforeMinutes *int32            `json:"remindBeforeMinutes,omitempty" jsonschema:"minutes before the start the person is told; absent: no notification is scheduled at all, whatever notify says; 0 is at the start"`
-	Notify              string            `json:"notify" jsonschema:"how the person is told when the time comes: alarm (the phone rings until stopped, through silent mode), reminder (a system notification), app (inside the app only) or none"`
+	RemindBeforeMinutes *int32            `json:"remindBeforeMinutes,omitempty" jsonschema:"minutes before the start the person is told; absent or 0: at the start"`
+	Notify              string            `json:"notify" jsonschema:"how it reaches the person: alarm (rings like an alarm clock until stopped, through silent mode), reminder (a timed notification), notification (a plain system notification) or none (nobody)"`
 	Schedule            *alarmScheduleOut `json:"schedule,omitempty" jsonschema:"an alarm-style rule in place of startTime+rrule (items made with create_alarm or create_event's schedule): kind oneShot/recurring, minutely to monthly, byTime, until, count"`
 	HolidayPolicy       string            `json:"holidayPolicy,omitempty" jsonschema:"for a repeating item: none, skipHoliday, workdayOnly or followStatutory (CN 法定节假日 and 调休 when region is CN)"`
 	Region              string            `json:"region,omitempty" jsonschema:"CN or empty"`
@@ -437,7 +437,7 @@ type reminderOut struct {
 	DueTime  string `json:"dueTime,omitempty" jsonschema:"when the event starts or the task is due"`
 	FireTime string `json:"fireTime"`
 	Space    string `json:"space,omitempty"`
-	Notify   string `json:"notify,omitempty" jsonschema:"how the item is told: alarm, reminder or app"`
+	Notify   string `json:"notify,omitempty" jsonschema:"how the item reaches the person: alarm, reminder or notification"`
 }
 
 type timeGroupOut struct {

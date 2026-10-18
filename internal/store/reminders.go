@@ -22,7 +22,7 @@ type Reminder struct {
 	Due    time.Time
 	Fired  time.Time
 	Space  string
-	Notify string // the item's notify when it fired: alarm, reminder or app
+	Notify string // the item's notify when it fired: alarm, reminder or notification
 }
 
 // CollectDueReminders finds every schedule item that should have been told
@@ -32,8 +32,8 @@ type Reminder struct {
 // An item is told when its next occurrence is within its remind_before window;
 // occurrences that already started are not reminded, except that a reminder
 // set for the start itself (0 minutes) still fires if the scheduler reaches it
-// up to startGrace late. Items with notify none, paused ones, done to-dos and
-// items without a remind_before are never told.
+// up to startGrace late. Items with notify none, paused ones and done to-dos
+// are never told, and alarms only with notify notification (see ServerTold).
 func (s *Store) CollectDueReminders(ctx context.Context, now time.Time) ([]Reminder, error) {
 	var fired []Reminder
 	err := s.tx(ctx, func(tx *sql.Tx) error {
@@ -76,7 +76,7 @@ type dueEvent struct {
 
 func (s *Store) dueEvents(ctx context.Context, tx *sql.Tx, now time.Time) ([]dueEvent, error) {
 	rows, err := tx.QueryContext(ctx, `SELECT `+eventCols+`, reminded_for_ms FROM events
-		WHERE remind_before IS NOT NULL AND notify <> 'none' AND enabled = 1 AND completed = 0
+		WHERE notify <> 'none' AND enabled = 1 AND completed = 0 AND (source <> 'alarm' OR notify = 'notification')
 		AND (rrule <> '' OR rule <> '' OR start_ms > ?)`, ms(now.Add(-startGrace)))
 	if err != nil {
 		return nil, err
@@ -89,7 +89,10 @@ func (s *Store) dueEvents(ctx context.Context, tx *sql.Tx, now time.Time) ([]due
 		if err != nil {
 			return nil, err
 		}
-		lead := time.Duration(*e.RemindBefore) * time.Minute
+		if !e.ServerTold() {
+			continue
+		}
+		lead := e.Lead()
 		grace := time.Duration(0)
 		if lead == 0 {
 			grace = startGrace

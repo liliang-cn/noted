@@ -78,7 +78,7 @@ func (t *Task) normalize() error {
 	if t.Priority < 0 || t.Priority > 3 {
 		return invalid("priority must be 0-3")
 	}
-	if err := checkNotify(&t.Notify); err != nil {
+	if err := t.normalizeNotify(); err != nil {
 		return err
 	}
 	t.RRule = cleanRRule(t.RRule)
@@ -98,6 +98,30 @@ func (t *Task) normalize() error {
 	return err
 }
 
+// normalizeNotify fills in how the to-do is told. Unsaid: a reminder when it
+// has a remind time, else nobody. One that is told needs a moment: without a
+// remind time it is told at its due time.
+func (t *Task) normalizeNotify() error {
+	if t.Notify == "" {
+		t.Notify = NotifyNone
+		if t.Remind != nil {
+			t.Notify = NotifyReminder
+		}
+		return nil
+	}
+	if err := CheckNotify(t.Notify); err != nil {
+		return err
+	}
+	if t.Notify != NotifyNone && t.Remind == nil {
+		if t.Due == nil {
+			return invalid("notify %s needs a time: give the to-do a due or remind_time", t.Notify)
+		}
+		r := *t.Due
+		t.Remind = &r
+	}
+	return nil
+}
+
 func (s *Store) CreateTask(ctx context.Context, t Task) (Task, error) {
 	if err := t.normalize(); err != nil {
 		return Task{}, err
@@ -114,7 +138,7 @@ func (s *Store) CreateTask(ctx context.Context, t Task) (Task, error) {
 	if t.Space, err = s.resolveSpace(ctx, t.UserID, t.Space, t.ProjectID); err != nil {
 		return Task{}, err
 	}
-	err = s.tx(ctx, func(tx *sql.Tx) error { return insertTask(ctx, tx, t) })
+	err = s.tx(ctx, func(tx *sql.Tx) error { return insertTask(ctx, tx, t, s.location().String()) })
 	return t, err
 }
 
@@ -123,7 +147,8 @@ func cleanRRule(s string) string {
 	return strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(s), "RRULE:"))
 }
 
-func insertTask(ctx context.Context, tx *sql.Tx, t Task) error {
+// insertTask writes a new to-do and its schedule item, shown in zone tz.
+func insertTask(ctx context.Context, tx *sql.Tx, t Task, tz string) error {
 	_, err := tx.ExecContext(ctx, `
 		INSERT INTO tasks(id, user_id, title, notes, due_ms, priority, completed, complete_ms, remind_ms, project_id, space, created_ms, updated_ms,
 			rrule, occurrence, notify)
@@ -136,7 +161,7 @@ func insertTask(ctx context.Context, tx *sql.Tx, t Task) error {
 	if err := writeTaskTags(ctx, tx, t); err != nil {
 		return err
 	}
-	return syncTaskSchedule(ctx, tx, t.ID, "")
+	return syncTaskSchedule(ctx, tx, t.ID, tz)
 }
 
 // taskScheduleUpsert writes the schedule items (events, source task) of the
@@ -155,7 +180,7 @@ func taskScheduleUpsert(where string, carry bool) string {
 			created_ms, updated_ms, notify, rule, holiday_policy, region, enabled, original_text, source, task_id, completed, reminded_for_ms)
 		SELECT id, user_id, title, notes, '', COALESCE(due_ms, remind_ms), COALESCE(due_ms, remind_ms), 0, ?1, '',
 			CASE WHEN remind_ms IS NULL THEN NULL WHEN due_ms IS NULL THEN 0 ELSE MAX((due_ms - remind_ms) / 60000, 0) END,
-			project_id, space, created_ms, updated_ms, notify, '', 'none', '', 1, '', 'task', id, completed, ` + remindedFor + `
+			project_id, space, created_ms, updated_ms, CASE WHEN remind_ms IS NULL THEN 'none' ELSE notify END, '', 'none', '', 1, '', 'task', id, completed, ` + remindedFor + `
 		FROM tasks WHERE (due_ms IS NOT NULL OR remind_ms IS NOT NULL) ` + where + `
 		ON CONFLICT(id) DO UPDATE SET
 			title = excluded.title, description = excluded.description, start_ms = excluded.start_ms, end_ms = excluded.end_ms,
@@ -257,7 +282,7 @@ func (s *Store) spawnNext(ctx context.Context, tx *sql.Tx, t Task) (string, erro
 		r := due.Add(t.Remind.Sub(*t.Due))
 		n.Remind = &r
 	}
-	if err := insertTask(ctx, tx, n); err != nil {
+	if err := insertTask(ctx, tx, n, s.location().String()); err != nil {
 		return "", err
 	}
 	_, err := tx.ExecContext(ctx, `UPDATE tasks SET next_task_id = ? WHERE id = ? AND user_id = ?`, n.ID, t.ID, t.UserID)
@@ -337,6 +362,11 @@ func (s *Store) UpdateTask(ctx context.Context, userID, id string, p TaskPatch) 
 		t.Notes = *p.Notes
 	}
 	if p.Due != nil {
+		// Told at its due time, it stays told at its due time.
+		if p.Remind == nil && t.Remind != nil && t.Due != nil && t.Remind.Equal(*t.Due) && *p.Due != nil {
+			r := **p.Due
+			t.Remind = &r
+		}
 		t.Due = *p.Due
 	}
 	if p.Priority != nil {
@@ -344,6 +374,15 @@ func (s *Store) UpdateTask(ctx context.Context, userID, id string, p TaskPatch) 
 	}
 	if p.Remind != nil {
 		t.Remind = *p.Remind
+		// Without a notify of its own, a remind time keeps its old meaning:
+		// setting one makes it a reminder, clearing it silences the to-do.
+		if p.Notify == nil {
+			if t.Remind == nil {
+				t.Notify = NotifyNone
+			} else if t.Notify == NotifyNone {
+				t.Notify = NotifyReminder
+			}
+		}
 	}
 	if p.Tags != nil {
 		t.Tags = *p.Tags

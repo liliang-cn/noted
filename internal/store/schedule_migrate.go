@@ -8,8 +8,15 @@ import (
 	"github.com/liliang-cn/noted/internal/alarm"
 )
 
-// migrationAlarms marks the one-time copy of the alarms table into events.
-const migrationAlarms = "alarms_to_events"
+// One-time data migrations, by the name they are marked with.
+const (
+	// migrationAlarms copies the alarms table into events.
+	migrationAlarms = "alarms_to_events"
+	// migrationNotify gives the events and to-dos that predate notify the
+	// notify that matches how they behaved: told (reminder) when they had a
+	// lead or a remind time, else none.
+	migrationNotify = "notify_defaults"
+)
 
 // ScheduleStatus is what the schedule migration has done so far.
 type ScheduleStatus struct {
@@ -28,11 +35,33 @@ type ScheduleStatus struct {
 // deleted are removed. Both are idempotent.
 func (s *Store) migrateSchedule(ctx context.Context) error {
 	return s.tx(ctx, func(tx *sql.Tx) error {
+		if err := migrateNotify(ctx, tx); err != nil {
+			return err
+		}
 		if err := migrateAlarms(ctx, tx); err != nil {
 			return err
 		}
 		return syncAllTaskSchedules(ctx, tx, s.location().String())
 	})
+}
+
+func migrateNotify(ctx context.Context, tx *sql.Tx) error {
+	done, err := applied(ctx, tx, migrationNotify)
+	if err != nil || done {
+		return err
+	}
+	for _, q := range []string{
+		`UPDATE events SET notify = CASE WHEN remind_before IS NULL THEN 'none' ELSE 'reminder' END WHERE source = 'event'`,
+		`UPDATE tasks SET notify = CASE WHEN remind_ms IS NULL THEN 'none' ELSE 'reminder' END`,
+		// An earlier build of this branch called notification "app".
+		`UPDATE events SET notify = 'notification' WHERE notify = 'app'`,
+	} {
+		if _, err := tx.ExecContext(ctx, q); err != nil {
+			return err
+		}
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO migrations(name, applied_ms) VALUES (?, ?)`, migrationNotify, ms(time.Now()))
+	return err
 }
 
 func applied(ctx context.Context, tx *sql.Tx, name string) (bool, error) {
@@ -167,9 +196,9 @@ func (s *Store) RollbackSchedule(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
-			mode := e.Notify
-			if mode != alarm.ModeAlarm {
-				mode = alarm.ModeReminder // the old table knows alarm and reminder only
+			mode := compatMode(e.Notify) // the old table knows alarm and reminder only
+			if e.Notify == NotifyNone {
+				e.Disabled = true // nor an alarm that tells nobody
 			}
 			if _, err := tx.ExecContext(ctx, `INSERT INTO alarms(id, user_id, label, mode, enabled, schedule, holiday_policy, region, note, project_id, space,
 					original_text, created_ms, updated_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -184,8 +213,9 @@ func (s *Store) RollbackSchedule(ctx context.Context) error {
 		if _, err := tx.ExecContext(ctx, `DELETE FROM events WHERE source IN ('alarm', 'task')`); err != nil {
 			return err
 		}
-		_, err = tx.ExecContext(ctx, `DELETE FROM migrations WHERE name = ?`, migrationAlarms)
+		// An older binary keeps remind_before and remind_ms up to date but not
+		// notify, so the next upgrade derives notify from them again.
+		_, err = tx.ExecContext(ctx, `DELETE FROM migrations WHERE name IN (?, ?)`, migrationAlarms, migrationNotify)
 		return err
 	})
 }
-

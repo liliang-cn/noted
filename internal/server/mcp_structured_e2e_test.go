@@ -116,10 +116,15 @@ func TestMCPStructuredOutput(t *testing.T) {
 	if sc["location"] != "Main St" {
 		t.Fatalf("update_event: %v", sc)
 	}
-	_, sc, _ = callS(t, cs, "list_events", map[string]any{"from": tomorrow, "to": tomorrow + "T23:59:00"})
+	_, sc, _ = callS(t, cs, "list_events", map[string]any{"from": tomorrow, "to": tomorrow + "T23:59:00", "include_tasks": false})
 	inZone(t, sc["from"])
 	if l := arr(t, sc["items"]); len(l) != 1 || item(t, obj(t, l[0]), "event") != eid {
 		t.Fatalf("list_events: %v", sc)
+	}
+	// By default the to-do due in the window is on the schedule too.
+	_, sc, _ = callS(t, cs, "list_events", map[string]any{"from": tomorrow, "to": tomorrow + "T23:59:00"})
+	if l := arr(t, sc["items"]); len(l) != 2 || item(t, obj(t, l[0]), "task") != tid || obj(t, l[0])["notify"] != "none" {
+		t.Fatalf("list_events with tasks: %v", sc)
 	}
 
 	// The overview mixes tasks and events, told apart by kind.

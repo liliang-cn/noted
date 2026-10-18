@@ -22,7 +22,7 @@ type updateTaskIn struct {
 	Space     *string   `json:"space,omitempty" jsonschema:"work or life"`
 	ProjectID *string   `json:"project_id,omitempty" jsonschema:"puts the task into this project (id from list_projects); empty string takes it out of its project"`
 	RRule     *string   `json:"rrule,omitempty" jsonschema:"repeat rule (RFC 5545 RRULE subset): FREQ=DAILY|WEEKLY|MONTHLY|YEARLY with optional INTERVAL, COUNT or UNTIL (YYYYMMDD), and BYDAY (MO,TU,WE,TH,FR,SA,SU; weekly only), e.g. FREQ=DAILY, FREQ=WEEKLY;BYDAY=MO,WE,FR, FREQ=MONTHLY;COUNT=6. Empty string makes it one-off; a repeating task needs a due time."`
-	Notify    *string   `json:"notify,omitempty" jsonschema:"how the phone tells the person at remind_at: alarm, reminder, app or none"`
+	Notify    *string   `json:"notify,omitempty" jsonschema:"how it reaches the person at remind_at: alarm, reminder, notification or none; anything but none without a remind_at is told at due"`
 }
 type logWorkIn struct {
 	TaskID   string `json:"task_id"`

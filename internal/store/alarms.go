@@ -20,7 +20,7 @@ type Alarm struct {
 	ID            string
 	UserID        string
 	Label         string
-	Mode          string // mirrors Notify: alarm, reminder, app (or none)
+	Mode          string // alarm or reminder: Notify as a phone that predates notify reads it (alarm rings, anything else notifies)
 	Enabled       bool
 	Schedule      alarm.Schedule
 	HolidayPolicy string
@@ -32,7 +32,7 @@ type Alarm struct {
 	Created       time.Time
 	Updated       time.Time
 
-	Notify       string
+	Notify       string // alarm, reminder, notification or none; on create, "" takes Mode
 	RemindBefore int    // minutes before each schedule time it rings; 0 for alarms proper
 	Source       string // alarm, event or task
 	Completed    bool
@@ -44,7 +44,7 @@ func (a Alarm) Rule() alarm.Rule {
 }
 
 // NextFires is the alarm's next n rings after now, the lead taken off; none
-// when it is off, done, or silent.
+// when it is off, done, or notifies nobody.
 func (a Alarm) NextFires(now time.Time, n int) []time.Time {
 	if !a.Enabled || a.Completed || a.Notify == NotifyNone {
 		return []time.Time{}
@@ -58,16 +58,18 @@ func (a Alarm) NextFires(now time.Time, n int) []time.Time {
 }
 
 type AlarmPatch struct {
-	Label, Mode, HolidayPolicy, Region, Note, OriginalText *string
-	Enabled                                                *bool
-	Schedule                                               *alarm.Schedule // replaces the whole schedule
-	ProjectID                                              *string
-	Space                                                  *string
+	Label, Mode, Notify, HolidayPolicy, Region, Note, OriginalText *string
+	Enabled                                                        *bool
+	Schedule                                                       *alarm.Schedule // replaces the whole schedule
+	ProjectID                                                      *string
+	Space                                                          *string
 }
 
-// AlarmFilter picks schedule items. Notify: "" the alarms proper (notify
-// alarm, plus whatever the alarm API made); alarm, reminder or app that
-// notify; "all" every item that notifies, what a phone schedules.
+// AlarmFilter picks schedule items. Notify: "" the alarms proper, the items
+// made through the alarm API that notify at all (what phones read before
+// notify existed); alarm, reminder, notification or none every item with
+// that notify, events and to-dos included; "all" every item that notifies,
+// what a phone schedules.
 type AlarmFilter struct {
 	Enabled   *bool
 	Space     string
@@ -77,14 +79,28 @@ type AlarmFilter struct {
 
 const maxAlarmText = 2000
 
-func modeToNotify(mode string) (string, error) {
+// alarmNotify is the notify an alarm write asks for: notify when given, else
+// its mode (alarm by default; mode takes any notify value too).
+func alarmNotify(mode, notify string) (string, error) {
+	if notify != "" {
+		return notify, CheckNotify(notify)
+	}
 	switch mode {
 	case "":
 		return NotifyAlarm, nil
-	case alarm.ModeAlarm, alarm.ModeReminder, NotifyApp, NotifyNone:
+	case alarm.ModeAlarm, alarm.ModeReminder, NotifyNotification, NotifyNone:
 		return mode, nil
 	}
 	return "", invalid("mode %q is unknown: use alarm (rings through silent mode) or reminder (a notification)", mode)
+}
+
+// compatMode is the mode a phone that predates notify reads: such phones
+// ring anything but reminder as an alarm, so only alarm says alarm.
+func compatMode(notify string) string {
+	if notify == NotifyAlarm {
+		return alarm.ModeAlarm
+	}
+	return alarm.ModeReminder
 }
 
 // toEvent is the schedule item an alarm definition writes.
@@ -93,7 +109,7 @@ func (a Alarm) toEvent() (Event, error) {
 	if label == "" {
 		return Event{}, invalid("label is empty: say what the alarm is for, e.g. 起床")
 	}
-	notify, err := modeToNotify(a.Mode)
+	notify, err := alarmNotify(a.Mode, a.Notify)
 	if err != nil {
 		return Event{}, err
 	}
@@ -111,7 +127,7 @@ func utf8Len(s string) int { return len([]rune(s)) }
 
 // AlarmOf is the alarm-shaped view of a schedule item.
 func AlarmOf(e Event) Alarm {
-	a := Alarm{ID: e.ID, UserID: e.UserID, Label: e.Title, Mode: e.Notify, Enabled: !e.Disabled, Schedule: e.Schedule(),
+	a := Alarm{ID: e.ID, UserID: e.UserID, Label: e.Title, Mode: compatMode(e.Notify), Enabled: !e.Disabled, Schedule: e.Schedule(),
 		HolidayPolicy: e.HolidayPolicy, Region: e.Region, Note: e.Description, ProjectID: e.ProjectID, Space: e.Space,
 		OriginalText: e.OriginalText, Created: e.Created, Updated: e.Updated, Notify: e.Notify, Source: e.Source, Completed: e.Completed}
 	if e.RemindBefore != nil {
@@ -152,8 +168,18 @@ func (s *Store) UpdateAlarm(ctx context.Context, userID, id string, p AlarmPatch
 		}
 		ep.Title = &l
 	}
-	if p.Mode != nil {
-		n, err := modeToNotify(*p.Mode)
+	if p.Mode != nil || p.Notify != nil {
+		mode, notify := "", ""
+		if p.Mode != nil {
+			mode = *p.Mode
+			if mode == "" {
+				mode = alarm.ModeAlarm
+			}
+		}
+		if p.Notify != nil {
+			notify = *p.Notify
+		}
+		n, err := alarmNotify(mode, notify)
 		if err != nil {
 			return Alarm{}, err
 		}
@@ -195,10 +221,8 @@ func (s *Store) ListAlarms(ctx context.Context, userID string, f AlarmFilter) ([
 	if err := checkSpaceFilter(f.Space); err != nil {
 		return nil, "", err
 	}
-	switch f.Notify {
-	case "", "all", NotifyAlarm, NotifyReminder, NotifyApp:
-	default:
-		return nil, "", invalid("notify filter %q is unknown: use alarm, reminder, app or all", f.Notify)
+	if f.Notify != "" && f.Notify != "all" && CheckNotify(f.Notify) != nil {
+		return nil, "", invalid("notify filter %q is unknown: use alarm, reminder, notification, none or all", f.Notify)
 	}
 	all, err := s.allSchedule(ctx, userID)
 	if err != nil {
@@ -211,15 +235,15 @@ func (s *Store) ListAlarms(ctx context.Context, userID string, f AlarmFilter) ([
 		}
 		switch f.Notify {
 		case "":
-			if e.Notify != NotifyAlarm && e.Source != SourceAlarm {
+			if e.Source != SourceAlarm || e.Notify == NotifyNone {
 				continue
 			}
 		case "all":
-			if e.Notify == NotifyNone || e.RemindBefore == nil {
+			if e.Notify == NotifyNone {
 				continue
 			}
 		default:
-			if e.Notify != f.Notify || e.RemindBefore == nil {
+			if e.Notify != f.Notify {
 				continue
 			}
 		}

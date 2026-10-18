@@ -3,10 +3,12 @@ package mcpserver
 import (
 	"context"
 	"fmt"
+	"time"
 
 	pb "github.com/liliang-cn/noted/gen/noted/v1"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // The schedule an LLM writes is the shape get_alarm returns, so it can copy
@@ -33,7 +35,8 @@ type alarmScheduleIn struct {
 
 type createAlarmIn struct {
 	Label         string          `json:"label" jsonschema:"what it is for, short: 起床, 接三宝, 吃药"`
-	Mode          string          `json:"mode,omitempty" jsonschema:"how the phone tells the person (the item's notify). alarm (default): a real alarm that rings until stopped, through silent mode and Focus, for 闹钟/叫我/叫醒/准时响/必须提醒到; reminder: a system notification, for 提醒一下/通知我就行/只要通知; app: shown inside the app only"`
+	Mode          string          `json:"mode,omitempty" jsonschema:"alarm (default): a real alarm that rings until stopped, through silent mode and Focus, for 闹钟/叫我/叫醒/准时响/必须提醒到; reminder: a timed notification, for 提醒一下/到点提醒我. Prefer notify, which also takes notification and none"`
+	Notify        string          `json:"notify,omitempty" jsonschema:"how it reaches the person, winning over mode: alarm (rings like an alarm clock until stopped), reminder (a timed notification with snooze), notification (a plain system notification, not urgent: 通知我一下) or none (kept, nobody pinged)"`
 	Schedule      alarmScheduleIn `json:"schedule"`
 	HolidayPolicy string          `json:"holiday_policy,omitempty" jsonschema:"none (default); skipHoliday: 节假日不响; workdayOnly: 工作日/上班日 only, following 法定节假日 and 调休补班 in CN; followStatutory: 按调休, the same days as workdayOnly"`
 	Region        *string         `json:"region,omitempty" jsonschema:"CN (mainland China holidays and 调休) or empty string for none (workdays are Mon-Fri); omit for the default: CN when the time zone is in mainland China, else none"`
@@ -47,7 +50,8 @@ type createAlarmIn struct {
 type updateAlarmIn struct {
 	ID            string           `json:"id"`
 	Label         *string          `json:"label,omitempty"`
-	Mode          *string          `json:"mode,omitempty" jsonschema:"alarm, reminder or app (the item's notify)"`
+	Mode          *string          `json:"mode,omitempty" jsonschema:"alarm or reminder; prefer notify"`
+	Notify        *string          `json:"notify,omitempty" jsonschema:"alarm, reminder, notification or none"`
 	Enabled       *bool            `json:"enabled,omitempty" jsonschema:"false turns it off (关闭闹钟) without deleting it; true turns it back on"`
 	Schedule      *alarmScheduleIn `json:"schedule,omitempty" jsonschema:"replaces the whole schedule: send all of it, e.g. get_alarm's schedule with the time changed"`
 	HolidayPolicy *string          `json:"holiday_policy,omitempty"`
@@ -62,7 +66,7 @@ type listAlarmsIn struct {
 	Enabled   *bool  `json:"enabled,omitempty" jsonschema:"true: only those that are on; false: only those that are off; omit for all"`
 	Space     string `json:"space,omitempty" jsonschema:"work or life; omit for both"`
 	ProjectID string `json:"project_id,omitempty"`
-	Notify    string `json:"notify,omitempty" jsonschema:"omit: the alarms proper (notify alarm, plus whatever create_alarm made); alarm / reminder / app: every schedule item with that notify, events and due to-dos included; all: every item that notifies — what a phone schedules"`
+	Notify    string `json:"notify,omitempty" jsonschema:"omit: the alarms proper (what create_alarm made, unless set to none); alarm / reminder / notification / none: every schedule item with that notify, events and to-dos included; all: every item that notifies, what a phone schedules"`
 }
 
 type holidaysIn struct {
@@ -97,9 +101,9 @@ type alarmOut struct {
 	ID            string           `json:"id"`
 	Link          string           `json:"link" jsonschema:"noted://alarm/<id>, or the event's / task's link for an item that came from one"`
 	Label         string           `json:"label"`
-	Mode          string           `json:"mode" jsonschema:"the same as notify: alarm, reminder or app"`
-	Notify        string           `json:"notify" jsonschema:"how the phone tells the person: alarm (rings until stopped, through silent mode), reminder (a notification) or app (inside the app only)"`
-	RemindBefore  int32            `json:"remindBeforeMinutes" jsonschema:"minutes before each schedule time it rings; 0 for alarms proper. nextFires already have it taken off"`
+	Mode          string           `json:"mode" jsonschema:"alarm when notify is alarm, else reminder (for phones that predate notify)"`
+	Notify        string           `json:"notify" jsonschema:"how it reaches the person: alarm (rings like an alarm clock until stopped, through silent mode), reminder (a timed notification), notification (a plain system notification) or none"`
+	RemindBefore  int32            `json:"remindBeforeMinutes" jsonschema:"minutes before each schedule time it is told; 0 for alarms proper. nextFires already have it taken off, schedule does not"`
 	Source        string           `json:"source" jsonschema:"alarm (made through the alarm tools), event (a calendar event with a notify) or task (a to-do's time; the id is the task's)"`
 	Enabled       bool             `json:"enabled"`
 	Schedule      alarmScheduleOut `json:"schedule"`
@@ -116,7 +120,50 @@ type alarmOut struct {
 
 type alarmsOut struct {
 	Items   []*alarmOut `json:"items"`
-	Version string      `json:"version" jsonschema:"opaque; changes whenever any of the user's alarms changes, deletes included"`
+	Version string      `json:"version" jsonschema:"opaque; changes whenever any of the user's schedule items (alarms, events, to-dos with a time) changes, deletes included"`
+}
+
+type listFiresIn struct {
+	From   string `json:"from,omitempty" jsonschema:"window start, RFC 3339; default now"`
+	To     string `json:"to,omitempty" jsonschema:"window end (exclusive), RFC 3339; at most 31 days after from"`
+	Days   int    `json:"days,omitempty" jsonschema:"instead of to: this many days after from (1-31, default 7)"`
+	Space  string `json:"space,omitempty" jsonschema:"work or life; omit for both"`
+	Notify string `json:"notify,omitempty" jsonschema:"alarm, reminder or notification; omit for all three"`
+}
+
+type fireOut struct {
+	Kind         string `json:"kind" jsonschema:"always fire"`
+	ID           string `json:"id" jsonschema:"this fire: itemId@unix seconds of fireTime, stable while the item and its time stay the same"`
+	ItemID       string `json:"itemId"`
+	Link         string `json:"link"`
+	Source       string `json:"source" jsonschema:"alarm, event or task (then itemId is the task's)"`
+	Title        string `json:"title"`
+	Note         string `json:"note,omitempty"`
+	Location     string `json:"location,omitempty"`
+	Notify       string `json:"notify" jsonschema:"alarm: ring like an alarm clock until stopped; reminder: a timed notification with snooze; notification: a plain system notification"`
+	FireTime     string `json:"fireTime" jsonschema:"when to tell the person: atTime less remindBeforeMinutes"`
+	AtTime       string `json:"atTime" jsonschema:"the occurrence: the event's start, the alarm's ring, the to-do's due time"`
+	RemindBefore int32  `json:"remindBeforeMinutes"`
+	AllDay       bool   `json:"allDay,omitempty"`
+	Space        string `json:"space,omitempty"`
+	ProjectID    string `json:"projectId,omitempty"`
+}
+
+type firesOut struct {
+	Items   []*fireOut `json:"items" jsonschema:"by fireTime; at most 500"`
+	Version string     `json:"version" jsonschema:"the same as list_alarms': changes whenever anything on the schedule does"`
+	From    string     `json:"from"`
+	To      string     `json:"to"`
+}
+
+func (t *tools) fire(f *pb.Fire) *fireOut {
+	ref := f.Source
+	if ref == "" {
+		ref = "event"
+	}
+	return &fireOut{Kind: "fire", ID: fmt.Sprintf("%s@%d", f.ItemId, f.FireTime.GetSeconds()), ItemID: f.ItemId, Link: link(ref, f.ItemId),
+		Source: f.Source, Title: f.Title, Note: f.Note, Location: f.Location, Notify: f.Notify, FireTime: t.ts(f.FireTime),
+		AtTime: t.ts(f.AtTime), RemindBefore: f.RemindBeforeMinutes, AllDay: f.AllDay, Space: spaceName(f.Space), ProjectID: f.ProjectId}
 }
 
 type holidayDayOut struct {
@@ -191,7 +238,7 @@ const alarmHelp = " Resolve relative dates yourself (今天/明天/下周一) be
 func (t *tools) registerAlarms(s *mcp.Server) {
 	mcp.AddTool(s, &mcp.Tool{Name: "create_alarm", Description: "Set an alarm (闹钟) that the user's phone rings at the time until stopped, one-off or repeating, optionally skipping holidays or ringing on workdays only (CN 法定节假日 and 调休 included). " +
 		"An alarm is a schedule item like an event, with notify alarm and an alarm-style schedule (minutely to monthly, several times a day); list_events shows it too, and create_event with notify alarm makes one from a calendar event. " +
-		"Use it whenever the user asks to be woken or called (闹钟/叫我/叫醒/准时响/必须提醒到) with mode alarm; when a notification is enough (提醒一下/通知我就行/只要通知) use mode reminder; mode app shows it inside the app only. " +
+		"Use it whenever the user asks to be woken or called (闹钟/叫我/叫醒/准时响/必须提醒到) with notify alarm; when a timed notification is enough (提醒一下/到点提醒我) notify reminder; for a plain heads-up that is not urgent (通知我一下/告诉我一声) notify notification. " +
 		"Returns the alarm with nextFires, the next times it will ring: check them against what the user meant." + alarmHelp, Annotations: additive},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in createAlarmIn) (*mcp.CallToolResult, *alarmOut, error) {
 			sc, err := t.scheduleIn(&in.Schedule)
@@ -205,7 +252,7 @@ func (t *tools) registerAlarms(s *mcp.Server) {
 			if err != nil {
 				return nil, nil, err
 			}
-			r, err := t.alarms.CreateAlarm(ctx, &pb.CreateAlarmRequest{Alarm: &pb.Alarm{Label: in.Label, Mode: in.Mode, Enabled: in.Enabled,
+			r, err := t.alarms.CreateAlarm(ctx, &pb.CreateAlarmRequest{Alarm: &pb.Alarm{Label: in.Label, Mode: in.Mode, Notify: in.Notify, Enabled: in.Enabled,
 				Schedule: sc, HolidayPolicy: in.HolidayPolicy, Region: in.Region, Note: in.Note, ProjectId: in.ProjectID, Space: sp,
 				OriginalText: in.OriginalText}})
 			if err != nil {
@@ -226,6 +273,39 @@ func (t *tools) registerAlarms(s *mcp.Server) {
 			}
 			return reply(r, &alarmsOut{Items: items(r.Alarms, t.alarm), Version: r.Version})
 		})
+	mcp.AddTool(s, &mcp.Tool{Name: "list_fires", Description: "What reaches the person when, and how (日程提醒): every moment in a window (default the next 7 days) that an alarm rings, a reminder or a notification goes off, for alarms, calendar events and to-dos alike, holidays and 调休 applied and each item's remindBeforeMinutes taken off; items with notify none never appear. " +
+		"By fireTime, each with notify and the occurrence it is for, plus the schedule version. This is the feed a phone schedules from.", Annotations: readOnly},
+		func(ctx context.Context, _ *mcp.CallToolRequest, in listFiresIn) (*mcp.CallToolResult, *firesOut, error) {
+			sp, err := spaceOf(in.Space)
+			if err != nil {
+				return nil, nil, err
+			}
+			req := &pb.ListFiresRequest{Space: sp, Notify: in.Notify}
+			if req.From, err = t.optWhen(in.From); err != nil {
+				return nil, nil, err
+			}
+			if req.To, err = t.optWhen(in.To); err != nil {
+				return nil, nil, err
+			}
+			if in.Days != 0 {
+				if req.To != nil {
+					return nil, nil, fmt.Errorf("give to or days, not both")
+				}
+				if in.Days < 1 || in.Days > 31 {
+					return nil, nil, fmt.Errorf("days must be 1-31")
+				}
+				from := time.Now()
+				if req.From != nil {
+					from = req.From.AsTime()
+				}
+				req.From, req.To = timestamppb.New(from), timestamppb.New(from.AddDate(0, 0, in.Days))
+			}
+			r, err := t.alarms.ListFires(ctx, req)
+			if err != nil {
+				return nil, nil, err
+			}
+			return reply(r, &firesOut{Items: items(r.Fires, t.fire), Version: r.Version, From: t.ts(r.From), To: t.ts(r.To)})
+		})
 	mcp.AddTool(s, &mcp.Tool{Name: "get_alarm", Description: "One alarm with its schedule and next rings (any schedule item's id works: an event or a due to-do is shown as the alarm-style schedule the phone uses).", Annotations: readOnly},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in idIn) (*mcp.CallToolResult, *alarmOut, error) {
 			r, err := t.alarms.GetAlarm(ctx, &pb.GetAlarmRequest{Id: in.ID})
@@ -234,7 +314,7 @@ func (t *tools) registerAlarms(s *mcp.Server) {
 			}
 			return reply(r, t.alarm(r))
 		})
-	mcp.AddTool(s, &mcp.Tool{Name: "update_alarm", Description: "Change an alarm: turn it off or on (enabled), move its time (send the whole schedule, e.g. get_alarm's with time changed), rename it, switch how it notifies (mode alarm/reminder/app), change the holiday policy. Omitted fields stay as they are. The same change can be made with update_event (notify, schedule, enabled).", Annotations: editing},
+	mcp.AddTool(s, &mcp.Tool{Name: "update_alarm", Description: "Change an alarm: turn it off or on (enabled), move its time (send the whole schedule, e.g. get_alarm's with time changed), rename it, switch how it reaches the person (notify alarm/reminder/notification/none), change the holiday policy. Omitted fields stay as they are. The same change can be made with update_event (notify, schedule, enabled).", Annotations: editing},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in updateAlarmIn) (*mcp.CallToolResult, *alarmOut, error) {
 			a, mask := &pb.Alarm{Id: in.ID}, []string{}
 			str := func(v *string, path string, dst *string) {
@@ -244,6 +324,7 @@ func (t *tools) registerAlarms(s *mcp.Server) {
 			}
 			str(in.Label, "label", &a.Label)
 			str(in.Mode, "mode", &a.Mode)
+			str(in.Notify, "notify", &a.Notify)
 			str(in.HolidayPolicy, "holiday_policy", &a.HolidayPolicy)
 			str(in.Note, "note", &a.Note)
 			str(in.ProjectID, "project_id", &a.ProjectId)

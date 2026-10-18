@@ -170,7 +170,8 @@ func (s *Calendar) ListEvents(ctx context.Context, req *pb.ListEventsRequest) (*
 	if req.From == nil || req.To == nil {
 		return nil, status.Error(codes.InvalidArgument, "from and to are required")
 	}
-	sc, err := s.Store.ListSchedule(ctx, u, req.From.AsTime(), req.To.AsTime(), spaceIn(req.Space), req.IncludeTasks)
+	sc, err := s.Store.ListSchedule(ctx, u, req.From.AsTime(), req.To.AsTime(), spaceIn(req.Space),
+		store.ScheduleOptions{Tasks: req.IncludeTasks, Alarms: req.IncludeAlarms})
 	if err != nil {
 		return nil, toStatus(err)
 	}

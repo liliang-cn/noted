@@ -1041,18 +1041,29 @@ type Event struct {
 	// Recurrence, an RFC 5545 RRULE subset: FREQ (DAILY|WEEKLY|MONTHLY|YEARLY),
 	// INTERVAL, COUNT, UNTIL, BYDAY (weekly only). Empty means one-off.
 	Rrule string `protobuf:"bytes,9,opt,name=rrule,proto3" json:"rrule,omitempty"`
-	// How far ahead of the start the person is told, in minutes. Unset: no
-	// notification is scheduled anywhere (server or phone), whatever notify
-	// says; 0 means at the start itself and is not the same as unset.
+	// How far ahead of each start the person is told, in minutes; unset or 0:
+	// at the start itself. Unset on create with notify unset keeps its old
+	// meaning (see notify); cleared on update without notify, the item stops
+	// notifying (notify none).
 	RemindBeforeMinutes *int32                 `protobuf:"varint,10,opt,name=remind_before_minutes,json=remindBeforeMinutes,proto3,oneof" json:"remind_before_minutes,omitempty"`
 	CreateTime          *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	UpdateTime          *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
 	ProjectId           string                 `protobuf:"bytes,13,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"` // optional: the project this event belongs to
 	Space               Space                  `protobuf:"varint,14,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
-	// How the phone tells the person when the time comes: alarm (rings until
-	// stopped by hand, through silent mode), reminder (a system notification
-	// that can be swiped away; the default), app (shown inside the app only,
-	// no system notification) or none.
+	// How the item reaches the person when its time comes:
+	//
+	//	alarm        rings like an alarm clock (AlarmKit, setAlarmClock),
+	//	             through silent mode, until stopped by hand;
+	//	reminder     a time-sensitive local notification at the moment (less
+	//	             remind_before_minutes), with snooze and done;
+	//	notification a plain system notification that it is due, not critical
+	//	             to the second: the server's reminder stream and webhook
+	//	             deliver it, or a phone posts it locally;
+	//	none         on the calendar only, nobody is pinged.
+	//
+	// Unset on create: reminder when remind_before_minutes is set; none for an
+	// all-day event; else reminder 10 minutes before. Items made through the
+	// alarm API take the alarm's mode.
 	Notify string `protobuf:"bytes,15,opt,name=notify,proto3" json:"notify,omitempty"`
 	// An alarm-style rule instead of start_time + rrule: the shapes of
 	// AlarmSchedule (oneShot at / recurring anchor+time+recurrence, with
@@ -1466,8 +1477,11 @@ type ListEventsRequest struct {
 	Space Space                  `protobuf:"varint,3,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"` // UNSPECIFIED: both
 	// Also return the schedules of to-dos with a due time in the window (source
 	// task, completed ones included), and the open to-dos without a time as
-	// unscheduled. Off: events and alarms only, as before.
-	IncludeTasks  bool `protobuf:"varint,4,opt,name=include_tasks,json=includeTasks,proto3" json:"include_tasks,omitempty"`
+	// unscheduled. Off: as before.
+	IncludeTasks bool `protobuf:"varint,4,opt,name=include_tasks,json=includeTasks,proto3" json:"include_tasks,omitempty"`
+	// Also return the occurrences of the items made through the alarm API
+	// (source alarm). Off: calendar events only, as before.
+	IncludeAlarms bool `protobuf:"varint,5,opt,name=include_alarms,json=includeAlarms,proto3" json:"include_alarms,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1526,6 +1540,13 @@ func (x *ListEventsRequest) GetSpace() Space {
 func (x *ListEventsRequest) GetIncludeTasks() bool {
 	if x != nil {
 		return x.IncludeTasks
+	}
+	return false
+}
+
+func (x *ListEventsRequest) GetIncludeAlarms() bool {
+	if x != nil {
+		return x.IncludeAlarms
 	}
 	return false
 }
@@ -1671,8 +1692,11 @@ type Task struct {
 	// next occurrence (wall clock in the server's zone), with the reminder moved
 	// by the same amount; none once COUNT or UNTIL ends the series.
 	Rrule string `protobuf:"bytes,18,opt,name=rrule,proto3" json:"rrule,omitempty"`
-	// How the phone tells the person at remind_time: alarm, reminder (default),
-	// app or none, as Event.notify. A reminder needs a due time.
+	// How the to-do reaches the person at remind_time, as Event.notify. Unset
+	// on create: reminder with a remind_time, else none. Set to anything but
+	// none without a remind_time, it is told at due_time. Setting remind_time
+	// on update without notify makes a silent to-do a reminder; clearing it
+	// makes it none.
 	Notify        string `protobuf:"bytes,19,opt,name=notify,proto3" json:"notify,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2474,7 +2498,7 @@ type Reminder struct {
 	DueTime       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=due_time,json=dueTime,proto3" json:"due_time,omitempty"`    // when the event starts / task is due
 	FireTime      *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=fire_time,json=fireTime,proto3" json:"fire_time,omitempty"` // when the reminder fired
 	Space         Space                  `protobuf:"varint,7,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
-	Notify        string                 `protobuf:"bytes,8,opt,name=notify,proto3" json:"notify,omitempty"` // the item's notify: alarm, reminder or app (none never fires)
+	Notify        string                 `protobuf:"bytes,8,opt,name=notify,proto3" json:"notify,omitempty"` // the item's notify: reminder or notification (alarm for an event or to-do set to ring; none never fires)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -10357,13 +10381,17 @@ func (x *AlarmSchedule) GetRecurrence() *AlarmRecurrence {
 }
 
 type Alarm struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                  // a UUID
-	Label         string                 `protobuf:"bytes,2,opt,name=label,proto3" json:"label,omitempty"`            // what it is for, e.g. 起床; required
-	Mode          string                 `protobuf:"bytes,3,opt,name=mode,proto3" json:"mode,omitempty"`              // alarm (default; rings through silent mode) or reminder (a notification)
-	Enabled       *bool                  `protobuf:"varint,4,opt,name=enabled,proto3,oneof" json:"enabled,omitempty"` // unset on create: true; always set when read
-	Schedule      *AlarmSchedule         `protobuf:"bytes,5,opt,name=schedule,proto3" json:"schedule,omitempty"`
-	HolidayPolicy string                 `protobuf:"bytes,6,opt,name=holiday_policy,json=holidayPolicy,proto3" json:"holiday_policy,omitempty"` // none (default), skipHoliday, workdayOnly or followStatutory
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`       // a UUID
+	Label string                 `protobuf:"bytes,2,opt,name=label,proto3" json:"label,omitempty"` // what it is for, e.g. 起床; required
+	// alarm (default; rings through silent mode) or reminder (a notification).
+	// Read: alarm only when notify is alarm, else reminder, so a client that
+	// predates notify never rings what should not ring. On write it may also
+	// be notification or none; notify, when set, wins.
+	Mode          string         `protobuf:"bytes,3,opt,name=mode,proto3" json:"mode,omitempty"`
+	Enabled       *bool          `protobuf:"varint,4,opt,name=enabled,proto3,oneof" json:"enabled,omitempty"` // unset on create: true; always set when read
+	Schedule      *AlarmSchedule `protobuf:"bytes,5,opt,name=schedule,proto3" json:"schedule,omitempty"`
+	HolidayPolicy string         `protobuf:"bytes,6,opt,name=holiday_policy,json=holidayPolicy,proto3" json:"holiday_policy,omitempty"` // none (default), skipHoliday, workdayOnly or followStatutory
 	// CN (mainland China's 法定节假日 and 调休) or "" (none: workdays are Monday
 	// to Friday and skipHoliday skips nothing). Unset on create: CN when the
 	// schedule's zone is a mainland China zone, else "".
@@ -10377,11 +10405,13 @@ type Alarm struct {
 	// Read-only: the next rings after now (at most 5), holidays applied; empty
 	// when disabled or finished.
 	NextFires []*timestamppb.Timestamp `protobuf:"bytes,14,rep,name=next_fires,json=nextFires,proto3" json:"next_fires,omitempty"`
-	// Read-only. An alarm is a schedule item (Event) with notify alarm: notify
-	// is the item's (mode mirrors it: alarm, reminder or app); remind_before_minutes
-	// how long before each schedule time it rings (0 for alarms); source where
-	// the item came from: alarm, event or task (then the id is the task's).
-	Notify              string `protobuf:"bytes,15,opt,name=notify,proto3" json:"notify,omitempty"`
+	// How it reaches the person, as Event.notify: alarm, reminder,
+	// notification or none. Unset on create: from mode.
+	Notify string `protobuf:"bytes,15,opt,name=notify,proto3" json:"notify,omitempty"`
+	// Read-only. An alarm is a schedule item (Event): remind_before_minutes is
+	// how long before each schedule time it is told (0 for alarms; next_fires
+	// have it taken off, schedule does not); source where the item came from:
+	// alarm, event or task (then the id is the task's).
 	RemindBeforeMinutes int32  `protobuf:"varint,16,opt,name=remind_before_minutes,json=remindBeforeMinutes,proto3" json:"remind_before_minutes,omitempty"`
 	Source              string `protobuf:"bytes,17,opt,name=source,proto3" json:"source,omitempty"`
 	unknownFields       protoimpl.UnknownFields
@@ -10628,8 +10658,8 @@ func (x *GetAlarmRequest) GetId() string {
 type UpdateAlarmRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Alarm *Alarm                 `protobuf:"bytes,1,opt,name=alarm,proto3" json:"alarm,omitempty"`
-	// label, mode, enabled, schedule (replaced whole), holiday_policy, region,
-	// note, project_id, space, original_text
+	// label, mode, notify, enabled, schedule (replaced whole), holiday_policy,
+	// region, note, project_id, space, original_text
 	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -10728,10 +10758,12 @@ type ListAlarmsRequest struct {
 	Enabled   *bool                  `protobuf:"varint,1,opt,name=enabled,proto3,oneof" json:"enabled,omitempty"`           // unset: both
 	Space     Space                  `protobuf:"varint,2,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"` // UNSPECIFIED: both
 	ProjectId string                 `protobuf:"bytes,3,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
-	// Which schedule items: "" (default) the alarms proper — notify alarm, plus
-	// items made through the alarm API whatever their notify; "alarm",
-	// "reminder" or "app" items with that notify; "all" every item that
-	// notifies (notify not none, a reminder time set): what a phone schedules.
+	// Which schedule items: "" (default) the alarms proper, the items made
+	// through the alarm API that notify at all (what phones read before notify
+	// existed); "alarm", "reminder", "notification" or "none" every item with
+	// that notify, calendar events and to-dos included; "all" every item that
+	// notifies (notify not none): what a phone schedules, each with its notify
+	// and remind_before_minutes.
 	Notify        string `protobuf:"bytes,4,opt,name=notify,proto3" json:"notify,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -10885,8 +10917,9 @@ func (*GetAlarmsVersionRequest) Descriptor() ([]byte, []int) {
 
 type GetAlarmsVersionResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Opaque; changes whenever any of the user's alarms is created, changed or
-	// deleted. A client compares it with the one it last synced at.
+	// Opaque; changes whenever any of the user's schedule items (alarms,
+	// calendar events, to-dos with a time) is created, changed or deleted. A
+	// client compares it with the one it last synced at.
 	Version       string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -10929,6 +10962,275 @@ func (x *GetAlarmsVersionResponse) GetVersion() string {
 	return ""
 }
 
+type ListFiresRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	From          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`                        // inclusive; unset: now
+	To            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`                            // exclusive; unset: 7 days after from; at most 31 days after it
+	Space         Space                  `protobuf:"varint,3,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"` // UNSPECIFIED: both
+	Notify        string                 `protobuf:"bytes,4,opt,name=notify,proto3" json:"notify,omitempty"`                    // "" every item that notifies; alarm, reminder or notification: only those
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListFiresRequest) Reset() {
+	*x = ListFiresRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[159]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListFiresRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListFiresRequest) ProtoMessage() {}
+
+func (x *ListFiresRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[159]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListFiresRequest.ProtoReflect.Descriptor instead.
+func (*ListFiresRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{159}
+}
+
+func (x *ListFiresRequest) GetFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.From
+	}
+	return nil
+}
+
+func (x *ListFiresRequest) GetTo() *timestamppb.Timestamp {
+	if x != nil {
+		return x.To
+	}
+	return nil
+}
+
+func (x *ListFiresRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+func (x *ListFiresRequest) GetNotify() string {
+	if x != nil {
+		return x.Notify
+	}
+	return ""
+}
+
+// One moment the person is told about a schedule item.
+type Fire struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	ItemId              string                 `protobuf:"bytes,1,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"` // the item: an alarm's, event's or task's id
+	Source              string                 `protobuf:"bytes,2,opt,name=source,proto3" json:"source,omitempty"`               // alarm, event or task
+	Title               string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Note                string                 `protobuf:"bytes,4,opt,name=note,proto3" json:"note,omitempty"`                         // the item's description
+	Notify              string                 `protobuf:"bytes,5,opt,name=notify,proto3" json:"notify,omitempty"`                     // alarm, reminder or notification
+	FireTime            *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=fire_time,json=fireTime,proto3" json:"fire_time,omitempty"` // when to tell: at_time less the lead
+	AtTime              *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=at_time,json=atTime,proto3" json:"at_time,omitempty"`       // the occurrence: the event's start, the alarm's ring, the to-do's due time
+	RemindBeforeMinutes int32                  `protobuf:"varint,8,opt,name=remind_before_minutes,json=remindBeforeMinutes,proto3" json:"remind_before_minutes,omitempty"`
+	AllDay              bool                   `protobuf:"varint,9,opt,name=all_day,json=allDay,proto3" json:"all_day,omitempty"`
+	Space               Space                  `protobuf:"varint,10,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
+	ProjectId           string                 `protobuf:"bytes,11,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	Location            string                 `protobuf:"bytes,12,opt,name=location,proto3" json:"location,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *Fire) Reset() {
+	*x = Fire{}
+	mi := &file_noted_v1_noted_proto_msgTypes[160]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Fire) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Fire) ProtoMessage() {}
+
+func (x *Fire) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[160]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Fire.ProtoReflect.Descriptor instead.
+func (*Fire) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{160}
+}
+
+func (x *Fire) GetItemId() string {
+	if x != nil {
+		return x.ItemId
+	}
+	return ""
+}
+
+func (x *Fire) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *Fire) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Fire) GetNote() string {
+	if x != nil {
+		return x.Note
+	}
+	return ""
+}
+
+func (x *Fire) GetNotify() string {
+	if x != nil {
+		return x.Notify
+	}
+	return ""
+}
+
+func (x *Fire) GetFireTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.FireTime
+	}
+	return nil
+}
+
+func (x *Fire) GetAtTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.AtTime
+	}
+	return nil
+}
+
+func (x *Fire) GetRemindBeforeMinutes() int32 {
+	if x != nil {
+		return x.RemindBeforeMinutes
+	}
+	return 0
+}
+
+func (x *Fire) GetAllDay() bool {
+	if x != nil {
+		return x.AllDay
+	}
+	return false
+}
+
+func (x *Fire) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+func (x *Fire) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *Fire) GetLocation() string {
+	if x != nil {
+		return x.Location
+	}
+	return ""
+}
+
+type ListFiresResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Fires         []*Fire                `protobuf:"bytes,1,rep,name=fires,proto3" json:"fires,omitempty"`     // by fire_time; at most 500
+	Version       string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"` // as GetAlarmsVersion, read with the list
+	From          *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=from,proto3" json:"from,omitempty"`
+	To            *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=to,proto3" json:"to,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListFiresResponse) Reset() {
+	*x = ListFiresResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[161]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListFiresResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListFiresResponse) ProtoMessage() {}
+
+func (x *ListFiresResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[161]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListFiresResponse.ProtoReflect.Descriptor instead.
+func (*ListFiresResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{161}
+}
+
+func (x *ListFiresResponse) GetFires() []*Fire {
+	if x != nil {
+		return x.Fires
+	}
+	return nil
+}
+
+func (x *ListFiresResponse) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+func (x *ListFiresResponse) GetFrom() *timestamppb.Timestamp {
+	if x != nil {
+		return x.From
+	}
+	return nil
+}
+
+func (x *ListFiresResponse) GetTo() *timestamppb.Timestamp {
+	if x != nil {
+		return x.To
+	}
+	return nil
+}
+
 // The statutory holiday calendar alarms follow. Only CN has one.
 type GetHolidaysRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -10940,7 +11242,7 @@ type GetHolidaysRequest struct {
 
 func (x *GetHolidaysRequest) Reset() {
 	*x = GetHolidaysRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[159]
+	mi := &file_noted_v1_noted_proto_msgTypes[162]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10952,7 +11254,7 @@ func (x *GetHolidaysRequest) String() string {
 func (*GetHolidaysRequest) ProtoMessage() {}
 
 func (x *GetHolidaysRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[159]
+	mi := &file_noted_v1_noted_proto_msgTypes[162]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10965,7 +11267,7 @@ func (x *GetHolidaysRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHolidaysRequest.ProtoReflect.Descriptor instead.
 func (*GetHolidaysRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{159}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{162}
 }
 
 func (x *GetHolidaysRequest) GetYear() int32 {
@@ -10993,7 +11295,7 @@ type HolidayDay struct {
 
 func (x *HolidayDay) Reset() {
 	*x = HolidayDay{}
-	mi := &file_noted_v1_noted_proto_msgTypes[160]
+	mi := &file_noted_v1_noted_proto_msgTypes[163]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11005,7 +11307,7 @@ func (x *HolidayDay) String() string {
 func (*HolidayDay) ProtoMessage() {}
 
 func (x *HolidayDay) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[160]
+	mi := &file_noted_v1_noted_proto_msgTypes[163]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11018,7 +11320,7 @@ func (x *HolidayDay) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HolidayDay.ProtoReflect.Descriptor instead.
 func (*HolidayDay) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{160}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{163}
 }
 
 func (x *HolidayDay) GetDate() string {
@@ -11055,7 +11357,7 @@ type GetHolidaysResponse struct {
 
 func (x *GetHolidaysResponse) Reset() {
 	*x = GetHolidaysResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[161]
+	mi := &file_noted_v1_noted_proto_msgTypes[164]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11067,7 +11369,7 @@ func (x *GetHolidaysResponse) String() string {
 func (*GetHolidaysResponse) ProtoMessage() {}
 
 func (x *GetHolidaysResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[161]
+	mi := &file_noted_v1_noted_proto_msgTypes[164]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11080,7 +11382,7 @@ func (x *GetHolidaysResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHolidaysResponse.ProtoReflect.Descriptor instead.
 func (*GetHolidaysResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{161}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{164}
 }
 
 func (x *GetHolidaysResponse) GetYear() int32 {
@@ -11134,7 +11436,7 @@ type SignInWithAppleRequest struct {
 
 func (x *SignInWithAppleRequest) Reset() {
 	*x = SignInWithAppleRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[162]
+	mi := &file_noted_v1_noted_proto_msgTypes[165]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11146,7 +11448,7 @@ func (x *SignInWithAppleRequest) String() string {
 func (*SignInWithAppleRequest) ProtoMessage() {}
 
 func (x *SignInWithAppleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[162]
+	mi := &file_noted_v1_noted_proto_msgTypes[165]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11159,7 +11461,7 @@ func (x *SignInWithAppleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignInWithAppleRequest.ProtoReflect.Descriptor instead.
 func (*SignInWithAppleRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{162}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{165}
 }
 
 func (x *SignInWithAppleRequest) GetIdentityToken() string {
@@ -11193,7 +11495,7 @@ type SignInWithAppleResponse struct {
 
 func (x *SignInWithAppleResponse) Reset() {
 	*x = SignInWithAppleResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[163]
+	mi := &file_noted_v1_noted_proto_msgTypes[166]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11205,7 +11507,7 @@ func (x *SignInWithAppleResponse) String() string {
 func (*SignInWithAppleResponse) ProtoMessage() {}
 
 func (x *SignInWithAppleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[163]
+	mi := &file_noted_v1_noted_proto_msgTypes[166]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11218,7 +11520,7 @@ func (x *SignInWithAppleResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignInWithAppleResponse.ProtoReflect.Descriptor instead.
 func (*SignInWithAppleResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{163}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{166}
 }
 
 func (x *SignInWithAppleResponse) GetToken() string {
@@ -11245,7 +11547,7 @@ type LinkAppleRequest struct {
 
 func (x *LinkAppleRequest) Reset() {
 	*x = LinkAppleRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[164]
+	mi := &file_noted_v1_noted_proto_msgTypes[167]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11257,7 +11559,7 @@ func (x *LinkAppleRequest) String() string {
 func (*LinkAppleRequest) ProtoMessage() {}
 
 func (x *LinkAppleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[164]
+	mi := &file_noted_v1_noted_proto_msgTypes[167]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11270,7 +11572,7 @@ func (x *LinkAppleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LinkAppleRequest.ProtoReflect.Descriptor instead.
 func (*LinkAppleRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{164}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{167}
 }
 
 func (x *LinkAppleRequest) GetIdentityToken() string {
@@ -11295,7 +11597,7 @@ type UnlinkAppleRequest struct {
 
 func (x *UnlinkAppleRequest) Reset() {
 	*x = UnlinkAppleRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[165]
+	mi := &file_noted_v1_noted_proto_msgTypes[168]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11307,7 +11609,7 @@ func (x *UnlinkAppleRequest) String() string {
 func (*UnlinkAppleRequest) ProtoMessage() {}
 
 func (x *UnlinkAppleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[165]
+	mi := &file_noted_v1_noted_proto_msgTypes[168]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11320,7 +11622,7 @@ func (x *UnlinkAppleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnlinkAppleRequest.ProtoReflect.Descriptor instead.
 func (*UnlinkAppleRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{165}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{168}
 }
 
 type GetAccountRequest struct {
@@ -11331,7 +11633,7 @@ type GetAccountRequest struct {
 
 func (x *GetAccountRequest) Reset() {
 	*x = GetAccountRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[166]
+	mi := &file_noted_v1_noted_proto_msgTypes[169]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11343,7 +11645,7 @@ func (x *GetAccountRequest) String() string {
 func (*GetAccountRequest) ProtoMessage() {}
 
 func (x *GetAccountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[166]
+	mi := &file_noted_v1_noted_proto_msgTypes[169]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11356,7 +11658,7 @@ func (x *GetAccountRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAccountRequest.ProtoReflect.Descriptor instead.
 func (*GetAccountRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{166}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{169}
 }
 
 type Account struct {
@@ -11372,7 +11674,7 @@ type Account struct {
 
 func (x *Account) Reset() {
 	*x = Account{}
-	mi := &file_noted_v1_noted_proto_msgTypes[167]
+	mi := &file_noted_v1_noted_proto_msgTypes[170]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11384,7 +11686,7 @@ func (x *Account) String() string {
 func (*Account) ProtoMessage() {}
 
 func (x *Account) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[167]
+	mi := &file_noted_v1_noted_proto_msgTypes[170]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11397,7 +11699,7 @@ func (x *Account) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Account.ProtoReflect.Descriptor instead.
 func (*Account) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{167}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{170}
 }
 
 func (x *Account) GetUserName() string {
@@ -11450,7 +11752,7 @@ type SignUpRequest struct {
 
 func (x *SignUpRequest) Reset() {
 	*x = SignUpRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[168]
+	mi := &file_noted_v1_noted_proto_msgTypes[171]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11462,7 +11764,7 @@ func (x *SignUpRequest) String() string {
 func (*SignUpRequest) ProtoMessage() {}
 
 func (x *SignUpRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[168]
+	mi := &file_noted_v1_noted_proto_msgTypes[171]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11475,7 +11777,7 @@ func (x *SignUpRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignUpRequest.ProtoReflect.Descriptor instead.
 func (*SignUpRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{168}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{171}
 }
 
 func (x *SignUpRequest) GetEmail() string {
@@ -11510,7 +11812,7 @@ type SignInRequest struct {
 
 func (x *SignInRequest) Reset() {
 	*x = SignInRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[169]
+	mi := &file_noted_v1_noted_proto_msgTypes[172]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11522,7 +11824,7 @@ func (x *SignInRequest) String() string {
 func (*SignInRequest) ProtoMessage() {}
 
 func (x *SignInRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[169]
+	mi := &file_noted_v1_noted_proto_msgTypes[172]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11535,7 +11837,7 @@ func (x *SignInRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignInRequest.ProtoReflect.Descriptor instead.
 func (*SignInRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{169}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{172}
 }
 
 func (x *SignInRequest) GetEmail() string {
@@ -11569,7 +11871,7 @@ type SignInResponse struct {
 
 func (x *SignInResponse) Reset() {
 	*x = SignInResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[170]
+	mi := &file_noted_v1_noted_proto_msgTypes[173]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11581,7 +11883,7 @@ func (x *SignInResponse) String() string {
 func (*SignInResponse) ProtoMessage() {}
 
 func (x *SignInResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[170]
+	mi := &file_noted_v1_noted_proto_msgTypes[173]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11594,7 +11896,7 @@ func (x *SignInResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignInResponse.ProtoReflect.Descriptor instead.
 func (*SignInResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{170}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{173}
 }
 
 func (x *SignInResponse) GetToken() string {
@@ -11622,7 +11924,7 @@ type SetEmailPasswordRequest struct {
 
 func (x *SetEmailPasswordRequest) Reset() {
 	*x = SetEmailPasswordRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[171]
+	mi := &file_noted_v1_noted_proto_msgTypes[174]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11634,7 +11936,7 @@ func (x *SetEmailPasswordRequest) String() string {
 func (*SetEmailPasswordRequest) ProtoMessage() {}
 
 func (x *SetEmailPasswordRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[171]
+	mi := &file_noted_v1_noted_proto_msgTypes[174]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11647,7 +11949,7 @@ func (x *SetEmailPasswordRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetEmailPasswordRequest.ProtoReflect.Descriptor instead.
 func (*SetEmailPasswordRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{171}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{174}
 }
 
 func (x *SetEmailPasswordRequest) GetEmail() string {
@@ -11687,7 +11989,7 @@ type TokenInfo struct {
 
 func (x *TokenInfo) Reset() {
 	*x = TokenInfo{}
-	mi := &file_noted_v1_noted_proto_msgTypes[172]
+	mi := &file_noted_v1_noted_proto_msgTypes[175]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11699,7 +12001,7 @@ func (x *TokenInfo) String() string {
 func (*TokenInfo) ProtoMessage() {}
 
 func (x *TokenInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[172]
+	mi := &file_noted_v1_noted_proto_msgTypes[175]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11712,7 +12014,7 @@ func (x *TokenInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenInfo.ProtoReflect.Descriptor instead.
 func (*TokenInfo) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{172}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{175}
 }
 
 func (x *TokenInfo) GetId() string {
@@ -11759,7 +12061,7 @@ type CreateTokenRequest struct {
 
 func (x *CreateTokenRequest) Reset() {
 	*x = CreateTokenRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[173]
+	mi := &file_noted_v1_noted_proto_msgTypes[176]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11771,7 +12073,7 @@ func (x *CreateTokenRequest) String() string {
 func (*CreateTokenRequest) ProtoMessage() {}
 
 func (x *CreateTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[173]
+	mi := &file_noted_v1_noted_proto_msgTypes[176]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11784,7 +12086,7 @@ func (x *CreateTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTokenRequest.ProtoReflect.Descriptor instead.
 func (*CreateTokenRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{173}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{176}
 }
 
 func (x *CreateTokenRequest) GetLabel() string {
@@ -11804,7 +12106,7 @@ type CreateTokenResponse struct {
 
 func (x *CreateTokenResponse) Reset() {
 	*x = CreateTokenResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[174]
+	mi := &file_noted_v1_noted_proto_msgTypes[177]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11816,7 +12118,7 @@ func (x *CreateTokenResponse) String() string {
 func (*CreateTokenResponse) ProtoMessage() {}
 
 func (x *CreateTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[174]
+	mi := &file_noted_v1_noted_proto_msgTypes[177]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11829,7 +12131,7 @@ func (x *CreateTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTokenResponse.ProtoReflect.Descriptor instead.
 func (*CreateTokenResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{174}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{177}
 }
 
 func (x *CreateTokenResponse) GetToken() string {
@@ -11854,7 +12156,7 @@ type ListTokensRequest struct {
 
 func (x *ListTokensRequest) Reset() {
 	*x = ListTokensRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[175]
+	mi := &file_noted_v1_noted_proto_msgTypes[178]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11866,7 +12168,7 @@ func (x *ListTokensRequest) String() string {
 func (*ListTokensRequest) ProtoMessage() {}
 
 func (x *ListTokensRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[175]
+	mi := &file_noted_v1_noted_proto_msgTypes[178]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11879,7 +12181,7 @@ func (x *ListTokensRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTokensRequest.ProtoReflect.Descriptor instead.
 func (*ListTokensRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{175}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{178}
 }
 
 type ListTokensResponse struct {
@@ -11891,7 +12193,7 @@ type ListTokensResponse struct {
 
 func (x *ListTokensResponse) Reset() {
 	*x = ListTokensResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[176]
+	mi := &file_noted_v1_noted_proto_msgTypes[179]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11903,7 +12205,7 @@ func (x *ListTokensResponse) String() string {
 func (*ListTokensResponse) ProtoMessage() {}
 
 func (x *ListTokensResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[176]
+	mi := &file_noted_v1_noted_proto_msgTypes[179]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11916,7 +12218,7 @@ func (x *ListTokensResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTokensResponse.ProtoReflect.Descriptor instead.
 func (*ListTokensResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{176}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{179}
 }
 
 func (x *ListTokensResponse) GetTokens() []*TokenInfo {
@@ -11935,7 +12237,7 @@ type RevokeTokenRequest struct {
 
 func (x *RevokeTokenRequest) Reset() {
 	*x = RevokeTokenRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[177]
+	mi := &file_noted_v1_noted_proto_msgTypes[180]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11947,7 +12249,7 @@ func (x *RevokeTokenRequest) String() string {
 func (*RevokeTokenRequest) ProtoMessage() {}
 
 func (x *RevokeTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[177]
+	mi := &file_noted_v1_noted_proto_msgTypes[180]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11960,7 +12262,7 @@ func (x *RevokeTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeTokenRequest.ProtoReflect.Descriptor instead.
 func (*RevokeTokenRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{177}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{180}
 }
 
 func (x *RevokeTokenRequest) GetId() string {
@@ -11983,7 +12285,7 @@ type Pairing struct {
 
 func (x *Pairing) Reset() {
 	*x = Pairing{}
-	mi := &file_noted_v1_noted_proto_msgTypes[178]
+	mi := &file_noted_v1_noted_proto_msgTypes[181]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11995,7 +12297,7 @@ func (x *Pairing) String() string {
 func (*Pairing) ProtoMessage() {}
 
 func (x *Pairing) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[178]
+	mi := &file_noted_v1_noted_proto_msgTypes[181]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12008,7 +12310,7 @@ func (x *Pairing) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Pairing.ProtoReflect.Descriptor instead.
 func (*Pairing) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{178}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{181}
 }
 
 func (x *Pairing) GetCode() string {
@@ -12055,7 +12357,7 @@ type GetPairingRequest struct {
 
 func (x *GetPairingRequest) Reset() {
 	*x = GetPairingRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[179]
+	mi := &file_noted_v1_noted_proto_msgTypes[182]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12067,7 +12369,7 @@ func (x *GetPairingRequest) String() string {
 func (*GetPairingRequest) ProtoMessage() {}
 
 func (x *GetPairingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[179]
+	mi := &file_noted_v1_noted_proto_msgTypes[182]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12080,7 +12382,7 @@ func (x *GetPairingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPairingRequest.ProtoReflect.Descriptor instead.
 func (*GetPairingRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{179}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{182}
 }
 
 func (x *GetPairingRequest) GetCode() string {
@@ -12100,7 +12402,7 @@ type ApprovePairingRequest struct {
 
 func (x *ApprovePairingRequest) Reset() {
 	*x = ApprovePairingRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[180]
+	mi := &file_noted_v1_noted_proto_msgTypes[183]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12112,7 +12414,7 @@ func (x *ApprovePairingRequest) String() string {
 func (*ApprovePairingRequest) ProtoMessage() {}
 
 func (x *ApprovePairingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[180]
+	mi := &file_noted_v1_noted_proto_msgTypes[183]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12125,7 +12427,7 @@ func (x *ApprovePairingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApprovePairingRequest.ProtoReflect.Descriptor instead.
 func (*ApprovePairingRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{180}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{183}
 }
 
 func (x *ApprovePairingRequest) GetCode() string {
@@ -12151,7 +12453,7 @@ type DenyPairingRequest struct {
 
 func (x *DenyPairingRequest) Reset() {
 	*x = DenyPairingRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[181]
+	mi := &file_noted_v1_noted_proto_msgTypes[184]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12163,7 +12465,7 @@ func (x *DenyPairingRequest) String() string {
 func (*DenyPairingRequest) ProtoMessage() {}
 
 func (x *DenyPairingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[181]
+	mi := &file_noted_v1_noted_proto_msgTypes[184]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12176,7 +12478,7 @@ func (x *DenyPairingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DenyPairingRequest.ProtoReflect.Descriptor instead.
 func (*DenyPairingRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{181}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{184}
 }
 
 func (x *DenyPairingRequest) GetCode() string {
@@ -12285,12 +12587,13 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
 	"updateMask\"$\n" +
 	"\x12DeleteEventRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\xbb\x01\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xe2\x01\n" +
 	"\x11ListEventsRequest\x12.\n" +
 	"\x04from\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
 	"\x02to\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12%\n" +
 	"\x05space\x18\x03 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12#\n" +
-	"\rinclude_tasks\x18\x04 \x01(\bR\fincludeTasks\"\xa5\x01\n" +
+	"\rinclude_tasks\x18\x04 \x01(\bR\fincludeTasks\x12%\n" +
+	"\x0einclude_alarms\x18\x05 \x01(\bR\rincludeAlarms\"\xa5\x01\n" +
 	"\n" +
 	"Occurrence\x12%\n" +
 	"\x05event\x18\x01 \x01(\v2\x0f.noted.v1.EventR\x05event\x129\n" +
@@ -13084,7 +13387,32 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\aversion\x18\x02 \x01(\tR\aversion\"\x19\n" +
 	"\x17GetAlarmsVersionRequest\"4\n" +
 	"\x18GetAlarmsVersionResponse\x12\x18\n" +
-	"\aversion\x18\x01 \x01(\tR\aversion\"@\n" +
+	"\aversion\x18\x01 \x01(\tR\aversion\"\xad\x01\n" +
+	"\x10ListFiresRequest\x12.\n" +
+	"\x04from\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
+	"\x02to\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12%\n" +
+	"\x05space\x18\x03 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12\x16\n" +
+	"\x06notify\x18\x04 \x01(\tR\x06notify\"\x96\x03\n" +
+	"\x04Fire\x12\x17\n" +
+	"\aitem_id\x18\x01 \x01(\tR\x06itemId\x12\x16\n" +
+	"\x06source\x18\x02 \x01(\tR\x06source\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\x12\x12\n" +
+	"\x04note\x18\x04 \x01(\tR\x04note\x12\x16\n" +
+	"\x06notify\x18\x05 \x01(\tR\x06notify\x127\n" +
+	"\tfire_time\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\bfireTime\x123\n" +
+	"\aat_time\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\x06atTime\x122\n" +
+	"\x15remind_before_minutes\x18\b \x01(\x05R\x13remindBeforeMinutes\x12\x17\n" +
+	"\aall_day\x18\t \x01(\bR\x06allDay\x12%\n" +
+	"\x05space\x18\n" +
+	" \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\v \x01(\tR\tprojectId\x12\x1a\n" +
+	"\blocation\x18\f \x01(\tR\blocation\"\xaf\x01\n" +
+	"\x11ListFiresResponse\x12$\n" +
+	"\x05fires\x18\x01 \x03(\v2\x0e.noted.v1.FireR\x05fires\x12\x18\n" +
+	"\aversion\x18\x02 \x01(\tR\aversion\x12.\n" +
+	"\x04from\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
+	"\x02to\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\"@\n" +
 	"\x12GetHolidaysRequest\x12\x12\n" +
 	"\x04year\x18\x01 \x01(\x05R\x04year\x12\x16\n" +
 	"\x06region\x18\x02 \x01(\tR\x06region\"H\n" +
@@ -13305,7 +13633,7 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"StartTimer\x12\x1b.noted.v1.StartTimerRequest\x1a\x13.noted.v1.TimeEntry\x12<\n" +
 	"\tStopTimer\x12\x1a.noted.v1.StopTimerRequest\x1a\x13.noted.v1.TimeEntry\x12V\n" +
 	"\x0fGetRunningTimer\x12 .noted.v1.GetRunningTimerRequest\x1a!.noted.v1.GetRunningTimerResponse\x12F\n" +
-	"\rSummarizeTime\x12\x1e.noted.v1.SummarizeTimeRequest\x1a\x15.noted.v1.TimeSummary2\xab\x03\n" +
+	"\rSummarizeTime\x12\x1e.noted.v1.SummarizeTimeRequest\x1a\x15.noted.v1.TimeSummary2\xf1\x03\n" +
 	"\fAlarmService\x12<\n" +
 	"\vCreateAlarm\x12\x1c.noted.v1.CreateAlarmRequest\x1a\x0f.noted.v1.Alarm\x126\n" +
 	"\bGetAlarm\x12\x19.noted.v1.GetAlarmRequest\x1a\x0f.noted.v1.Alarm\x12<\n" +
@@ -13313,7 +13641,8 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\vDeleteAlarm\x12\x1c.noted.v1.DeleteAlarmRequest\x1a\x16.google.protobuf.Empty\x12G\n" +
 	"\n" +
 	"ListAlarms\x12\x1b.noted.v1.ListAlarmsRequest\x1a\x1c.noted.v1.ListAlarmsResponse\x12Y\n" +
-	"\x10GetAlarmsVersion\x12!.noted.v1.GetAlarmsVersionRequest\x1a\".noted.v1.GetAlarmsVersionResponse2\\\n" +
+	"\x10GetAlarmsVersion\x12!.noted.v1.GetAlarmsVersionRequest\x1a\".noted.v1.GetAlarmsVersionResponse\x12D\n" +
+	"\tListFires\x12\x1a.noted.v1.ListFiresRequest\x1a\x1b.noted.v1.ListFiresResponse2\\\n" +
 	"\x0eHolidayService\x12J\n" +
 	"\vGetHolidays\x12\x1c.noted.v1.GetHolidaysRequest\x1a\x1d.noted.v1.GetHolidaysResponse2\x89\a\n" +
 	"\x0eAccountService\x12V\n" +
@@ -13349,7 +13678,7 @@ func file_noted_v1_noted_proto_rawDescGZIP() []byte {
 }
 
 var file_noted_v1_noted_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
-var file_noted_v1_noted_proto_msgTypes = make([]protoimpl.MessageInfo, 183)
+var file_noted_v1_noted_proto_msgTypes = make([]protoimpl.MessageInfo, 186)
 var file_noted_v1_noted_proto_goTypes = []any{
 	(Space)(0),                               // 0: noted.v1.Space
 	(Priority)(0),                            // 1: noted.v1.Priority
@@ -13517,147 +13846,150 @@ var file_noted_v1_noted_proto_goTypes = []any{
 	(*ListAlarmsResponse)(nil),               // 163: noted.v1.ListAlarmsResponse
 	(*GetAlarmsVersionRequest)(nil),          // 164: noted.v1.GetAlarmsVersionRequest
 	(*GetAlarmsVersionResponse)(nil),         // 165: noted.v1.GetAlarmsVersionResponse
-	(*GetHolidaysRequest)(nil),               // 166: noted.v1.GetHolidaysRequest
-	(*HolidayDay)(nil),                       // 167: noted.v1.HolidayDay
-	(*GetHolidaysResponse)(nil),              // 168: noted.v1.GetHolidaysResponse
-	(*SignInWithAppleRequest)(nil),           // 169: noted.v1.SignInWithAppleRequest
-	(*SignInWithAppleResponse)(nil),          // 170: noted.v1.SignInWithAppleResponse
-	(*LinkAppleRequest)(nil),                 // 171: noted.v1.LinkAppleRequest
-	(*UnlinkAppleRequest)(nil),               // 172: noted.v1.UnlinkAppleRequest
-	(*GetAccountRequest)(nil),                // 173: noted.v1.GetAccountRequest
-	(*Account)(nil),                          // 174: noted.v1.Account
-	(*SignUpRequest)(nil),                    // 175: noted.v1.SignUpRequest
-	(*SignInRequest)(nil),                    // 176: noted.v1.SignInRequest
-	(*SignInResponse)(nil),                   // 177: noted.v1.SignInResponse
-	(*SetEmailPasswordRequest)(nil),          // 178: noted.v1.SetEmailPasswordRequest
-	(*TokenInfo)(nil),                        // 179: noted.v1.TokenInfo
-	(*CreateTokenRequest)(nil),               // 180: noted.v1.CreateTokenRequest
-	(*CreateTokenResponse)(nil),              // 181: noted.v1.CreateTokenResponse
-	(*ListTokensRequest)(nil),                // 182: noted.v1.ListTokensRequest
-	(*ListTokensResponse)(nil),               // 183: noted.v1.ListTokensResponse
-	(*RevokeTokenRequest)(nil),               // 184: noted.v1.RevokeTokenRequest
-	(*Pairing)(nil),                          // 185: noted.v1.Pairing
-	(*GetPairingRequest)(nil),                // 186: noted.v1.GetPairingRequest
-	(*ApprovePairingRequest)(nil),            // 187: noted.v1.ApprovePairingRequest
-	(*DenyPairingRequest)(nil),               // 188: noted.v1.DenyPairingRequest
-	nil,                                      // 189: noted.v1.AcceptProposalRequest.InputsEntry
-	(*timestamppb.Timestamp)(nil),            // 190: google.protobuf.Timestamp
-	(*fieldmaskpb.FieldMask)(nil),            // 191: google.protobuf.FieldMask
-	(*structpb.Struct)(nil),                  // 192: google.protobuf.Struct
-	(*emptypb.Empty)(nil),                    // 193: google.protobuf.Empty
+	(*ListFiresRequest)(nil),                 // 166: noted.v1.ListFiresRequest
+	(*Fire)(nil),                             // 167: noted.v1.Fire
+	(*ListFiresResponse)(nil),                // 168: noted.v1.ListFiresResponse
+	(*GetHolidaysRequest)(nil),               // 169: noted.v1.GetHolidaysRequest
+	(*HolidayDay)(nil),                       // 170: noted.v1.HolidayDay
+	(*GetHolidaysResponse)(nil),              // 171: noted.v1.GetHolidaysResponse
+	(*SignInWithAppleRequest)(nil),           // 172: noted.v1.SignInWithAppleRequest
+	(*SignInWithAppleResponse)(nil),          // 173: noted.v1.SignInWithAppleResponse
+	(*LinkAppleRequest)(nil),                 // 174: noted.v1.LinkAppleRequest
+	(*UnlinkAppleRequest)(nil),               // 175: noted.v1.UnlinkAppleRequest
+	(*GetAccountRequest)(nil),                // 176: noted.v1.GetAccountRequest
+	(*Account)(nil),                          // 177: noted.v1.Account
+	(*SignUpRequest)(nil),                    // 178: noted.v1.SignUpRequest
+	(*SignInRequest)(nil),                    // 179: noted.v1.SignInRequest
+	(*SignInResponse)(nil),                   // 180: noted.v1.SignInResponse
+	(*SetEmailPasswordRequest)(nil),          // 181: noted.v1.SetEmailPasswordRequest
+	(*TokenInfo)(nil),                        // 182: noted.v1.TokenInfo
+	(*CreateTokenRequest)(nil),               // 183: noted.v1.CreateTokenRequest
+	(*CreateTokenResponse)(nil),              // 184: noted.v1.CreateTokenResponse
+	(*ListTokensRequest)(nil),                // 185: noted.v1.ListTokensRequest
+	(*ListTokensResponse)(nil),               // 186: noted.v1.ListTokensResponse
+	(*RevokeTokenRequest)(nil),               // 187: noted.v1.RevokeTokenRequest
+	(*Pairing)(nil),                          // 188: noted.v1.Pairing
+	(*GetPairingRequest)(nil),                // 189: noted.v1.GetPairingRequest
+	(*ApprovePairingRequest)(nil),            // 190: noted.v1.ApprovePairingRequest
+	(*DenyPairingRequest)(nil),               // 191: noted.v1.DenyPairingRequest
+	nil,                                      // 192: noted.v1.AcceptProposalRequest.InputsEntry
+	(*timestamppb.Timestamp)(nil),            // 193: google.protobuf.Timestamp
+	(*fieldmaskpb.FieldMask)(nil),            // 194: google.protobuf.FieldMask
+	(*structpb.Struct)(nil),                  // 195: google.protobuf.Struct
+	(*emptypb.Empty)(nil),                    // 196: google.protobuf.Empty
 }
 var file_noted_v1_noted_proto_depIdxs = []int32{
-	190, // 0: noted.v1.Note.create_time:type_name -> google.protobuf.Timestamp
-	190, // 1: noted.v1.Note.update_time:type_name -> google.protobuf.Timestamp
+	193, // 0: noted.v1.Note.create_time:type_name -> google.protobuf.Timestamp
+	193, // 1: noted.v1.Note.update_time:type_name -> google.protobuf.Timestamp
 	0,   // 2: noted.v1.Note.space:type_name -> noted.v1.Space
 	7,   // 3: noted.v1.CreateNoteRequest.note:type_name -> noted.v1.Note
 	7,   // 4: noted.v1.UpdateNoteRequest.note:type_name -> noted.v1.Note
-	191, // 5: noted.v1.UpdateNoteRequest.update_mask:type_name -> google.protobuf.FieldMask
+	194, // 5: noted.v1.UpdateNoteRequest.update_mask:type_name -> google.protobuf.FieldMask
 	0,   // 6: noted.v1.ListNotesRequest.space:type_name -> noted.v1.Space
 	7,   // 7: noted.v1.ListNotesResponse.notes:type_name -> noted.v1.Note
 	0,   // 8: noted.v1.SearchNotesRequest.space:type_name -> noted.v1.Space
 	7,   // 9: noted.v1.NoteHit.note:type_name -> noted.v1.Note
 	15,  // 10: noted.v1.SearchNotesResponse.hits:type_name -> noted.v1.NoteHit
-	190, // 11: noted.v1.Event.start_time:type_name -> google.protobuf.Timestamp
-	190, // 12: noted.v1.Event.end_time:type_name -> google.protobuf.Timestamp
-	190, // 13: noted.v1.Event.create_time:type_name -> google.protobuf.Timestamp
-	190, // 14: noted.v1.Event.update_time:type_name -> google.protobuf.Timestamp
+	193, // 11: noted.v1.Event.start_time:type_name -> google.protobuf.Timestamp
+	193, // 12: noted.v1.Event.end_time:type_name -> google.protobuf.Timestamp
+	193, // 13: noted.v1.Event.create_time:type_name -> google.protobuf.Timestamp
+	193, // 14: noted.v1.Event.update_time:type_name -> google.protobuf.Timestamp
 	0,   // 15: noted.v1.Event.space:type_name -> noted.v1.Space
 	156, // 16: noted.v1.Event.alarm_schedule:type_name -> noted.v1.AlarmSchedule
 	17,  // 17: noted.v1.CreateEventRequest.event:type_name -> noted.v1.Event
 	17,  // 18: noted.v1.UpdateEventRequest.event:type_name -> noted.v1.Event
-	191, // 19: noted.v1.UpdateEventRequest.update_mask:type_name -> google.protobuf.FieldMask
-	190, // 20: noted.v1.ListEventsRequest.from:type_name -> google.protobuf.Timestamp
-	190, // 21: noted.v1.ListEventsRequest.to:type_name -> google.protobuf.Timestamp
+	194, // 19: noted.v1.UpdateEventRequest.update_mask:type_name -> google.protobuf.FieldMask
+	193, // 20: noted.v1.ListEventsRequest.from:type_name -> google.protobuf.Timestamp
+	193, // 21: noted.v1.ListEventsRequest.to:type_name -> google.protobuf.Timestamp
 	0,   // 22: noted.v1.ListEventsRequest.space:type_name -> noted.v1.Space
 	17,  // 23: noted.v1.Occurrence.event:type_name -> noted.v1.Event
-	190, // 24: noted.v1.Occurrence.start_time:type_name -> google.protobuf.Timestamp
-	190, // 25: noted.v1.Occurrence.end_time:type_name -> google.protobuf.Timestamp
+	193, // 24: noted.v1.Occurrence.start_time:type_name -> google.protobuf.Timestamp
+	193, // 25: noted.v1.Occurrence.end_time:type_name -> google.protobuf.Timestamp
 	23,  // 26: noted.v1.ListEventsResponse.occurrences:type_name -> noted.v1.Occurrence
 	25,  // 27: noted.v1.ListEventsResponse.unscheduled:type_name -> noted.v1.Task
-	190, // 28: noted.v1.Task.due_time:type_name -> google.protobuf.Timestamp
+	193, // 28: noted.v1.Task.due_time:type_name -> google.protobuf.Timestamp
 	1,   // 29: noted.v1.Task.priority:type_name -> noted.v1.Priority
-	190, // 30: noted.v1.Task.complete_time:type_name -> google.protobuf.Timestamp
-	190, // 31: noted.v1.Task.remind_time:type_name -> google.protobuf.Timestamp
-	190, // 32: noted.v1.Task.create_time:type_name -> google.protobuf.Timestamp
-	190, // 33: noted.v1.Task.update_time:type_name -> google.protobuf.Timestamp
+	193, // 30: noted.v1.Task.complete_time:type_name -> google.protobuf.Timestamp
+	193, // 31: noted.v1.Task.remind_time:type_name -> google.protobuf.Timestamp
+	193, // 32: noted.v1.Task.create_time:type_name -> google.protobuf.Timestamp
+	193, // 33: noted.v1.Task.update_time:type_name -> google.protobuf.Timestamp
 	0,   // 34: noted.v1.Task.space:type_name -> noted.v1.Space
-	190, // 35: noted.v1.Task.last_worked_time:type_name -> google.protobuf.Timestamp
-	190, // 36: noted.v1.TaskWork.time:type_name -> google.protobuf.Timestamp
+	193, // 35: noted.v1.Task.last_worked_time:type_name -> google.protobuf.Timestamp
+	193, // 36: noted.v1.TaskWork.time:type_name -> google.protobuf.Timestamp
 	25,  // 37: noted.v1.CreateTaskRequest.task:type_name -> noted.v1.Task
 	25,  // 38: noted.v1.UpdateTaskRequest.task:type_name -> noted.v1.Task
-	191, // 39: noted.v1.UpdateTaskRequest.update_mask:type_name -> google.protobuf.FieldMask
+	194, // 39: noted.v1.UpdateTaskRequest.update_mask:type_name -> google.protobuf.FieldMask
 	5,   // 40: noted.v1.ListTasksRequest.filter:type_name -> noted.v1.ListTasksRequest.Filter
-	190, // 41: noted.v1.ListTasksRequest.due_before:type_name -> google.protobuf.Timestamp
+	193, // 41: noted.v1.ListTasksRequest.due_before:type_name -> google.protobuf.Timestamp
 	0,   // 42: noted.v1.ListTasksRequest.space:type_name -> noted.v1.Space
 	25,  // 43: noted.v1.ListTasksResponse.tasks:type_name -> noted.v1.Task
-	190, // 44: noted.v1.LogTaskWorkRequest.time:type_name -> google.protobuf.Timestamp
+	193, // 44: noted.v1.LogTaskWorkRequest.time:type_name -> google.protobuf.Timestamp
 	26,  // 45: noted.v1.ListTaskWorkResponse.entries:type_name -> noted.v1.TaskWork
 	6,   // 46: noted.v1.Reminder.kind:type_name -> noted.v1.Reminder.Kind
-	190, // 47: noted.v1.Reminder.due_time:type_name -> google.protobuf.Timestamp
-	190, // 48: noted.v1.Reminder.fire_time:type_name -> google.protobuf.Timestamp
+	193, // 47: noted.v1.Reminder.due_time:type_name -> google.protobuf.Timestamp
+	193, // 48: noted.v1.Reminder.fire_time:type_name -> google.protobuf.Timestamp
 	0,   // 49: noted.v1.Reminder.space:type_name -> noted.v1.Space
 	0,   // 50: noted.v1.WatchRemindersRequest.space:type_name -> noted.v1.Space
-	190, // 51: noted.v1.ListRemindersRequest.since:type_name -> google.protobuf.Timestamp
+	193, // 51: noted.v1.ListRemindersRequest.since:type_name -> google.protobuf.Timestamp
 	0,   // 52: noted.v1.ListRemindersRequest.space:type_name -> noted.v1.Space
 	37,  // 53: noted.v1.ListRemindersResponse.reminders:type_name -> noted.v1.Reminder
 	0,   // 54: noted.v1.AskRequest.space:type_name -> noted.v1.Space
 	113, // 55: noted.v1.AskResponse.proposal:type_name -> noted.v1.Proposal
 	114, // 56: noted.v1.AskResponse.change:type_name -> noted.v1.Change
 	45,  // 57: noted.v1.AskResponse.references:type_name -> noted.v1.Reference
-	190, // 58: noted.v1.Reference.time:type_name -> google.protobuf.Timestamp
-	190, // 59: noted.v1.DailyBriefingRequest.day:type_name -> google.protobuf.Timestamp
+	193, // 58: noted.v1.Reference.time:type_name -> google.protobuf.Timestamp
+	193, // 59: noted.v1.DailyBriefingRequest.day:type_name -> google.protobuf.Timestamp
 	0,   // 60: noted.v1.DailyBriefingRequest.space:type_name -> noted.v1.Space
 	0,   // 61: noted.v1.PlanFromTextRequest.space:type_name -> noted.v1.Space
-	190, // 62: noted.v1.Milestone.done_time:type_name -> google.protobuf.Timestamp
-	190, // 63: noted.v1.Milestone.due_time:type_name -> google.protobuf.Timestamp
-	190, // 64: noted.v1.GoalProgress.period_start:type_name -> google.protobuf.Timestamp
-	190, // 65: noted.v1.GoalProgress.period_end:type_name -> google.protobuf.Timestamp
+	193, // 62: noted.v1.Milestone.done_time:type_name -> google.protobuf.Timestamp
+	193, // 63: noted.v1.Milestone.due_time:type_name -> google.protobuf.Timestamp
+	193, // 64: noted.v1.GoalProgress.period_start:type_name -> google.protobuf.Timestamp
+	193, // 65: noted.v1.GoalProgress.period_end:type_name -> google.protobuf.Timestamp
 	61,  // 66: noted.v1.GoalProgress.days:type_name -> noted.v1.DayTotal
 	61,  // 67: noted.v1.GoalProgress.recent:type_name -> noted.v1.DayTotal
 	2,   // 68: noted.v1.Goal.period:type_name -> noted.v1.GoalPeriod
 	60,  // 69: noted.v1.Goal.milestones:type_name -> noted.v1.Milestone
-	190, // 70: noted.v1.Goal.create_time:type_name -> google.protobuf.Timestamp
-	190, // 71: noted.v1.Goal.update_time:type_name -> google.protobuf.Timestamp
+	193, // 70: noted.v1.Goal.create_time:type_name -> google.protobuf.Timestamp
+	193, // 71: noted.v1.Goal.update_time:type_name -> google.protobuf.Timestamp
 	62,  // 72: noted.v1.Goal.progress:type_name -> noted.v1.GoalProgress
 	0,   // 73: noted.v1.Goal.space:type_name -> noted.v1.Space
-	190, // 74: noted.v1.CheckIn.time:type_name -> google.protobuf.Timestamp
+	193, // 74: noted.v1.CheckIn.time:type_name -> google.protobuf.Timestamp
 	63,  // 75: noted.v1.CreateGoalRequest.goal:type_name -> noted.v1.Goal
 	63,  // 76: noted.v1.UpdateGoalRequest.goal:type_name -> noted.v1.Goal
-	191, // 77: noted.v1.UpdateGoalRequest.update_mask:type_name -> google.protobuf.FieldMask
+	194, // 77: noted.v1.UpdateGoalRequest.update_mask:type_name -> google.protobuf.FieldMask
 	0,   // 78: noted.v1.ListGoalsRequest.space:type_name -> noted.v1.Space
 	63,  // 79: noted.v1.ListGoalsResponse.goals:type_name -> noted.v1.Goal
-	190, // 80: noted.v1.RecordCheckInRequest.time:type_name -> google.protobuf.Timestamp
+	193, // 80: noted.v1.RecordCheckInRequest.time:type_name -> google.protobuf.Timestamp
 	64,  // 81: noted.v1.RecordCheckInResponse.check_in:type_name -> noted.v1.CheckIn
 	63,  // 82: noted.v1.RecordCheckInResponse.goal:type_name -> noted.v1.Goal
-	190, // 83: noted.v1.ListCheckInsRequest.from:type_name -> google.protobuf.Timestamp
-	190, // 84: noted.v1.ListCheckInsRequest.to:type_name -> google.protobuf.Timestamp
+	193, // 83: noted.v1.ListCheckInsRequest.from:type_name -> google.protobuf.Timestamp
+	193, // 84: noted.v1.ListCheckInsRequest.to:type_name -> google.protobuf.Timestamp
 	64,  // 85: noted.v1.ListCheckInsResponse.check_ins:type_name -> noted.v1.CheckIn
 	0,   // 86: noted.v1.Objective.space:type_name -> noted.v1.Space
-	190, // 87: noted.v1.Objective.start_time:type_name -> google.protobuf.Timestamp
-	190, // 88: noted.v1.Objective.due_time:type_name -> google.protobuf.Timestamp
-	190, // 89: noted.v1.Objective.create_time:type_name -> google.protobuf.Timestamp
-	190, // 90: noted.v1.Objective.update_time:type_name -> google.protobuf.Timestamp
+	193, // 87: noted.v1.Objective.start_time:type_name -> google.protobuf.Timestamp
+	193, // 88: noted.v1.Objective.due_time:type_name -> google.protobuf.Timestamp
+	193, // 89: noted.v1.Objective.create_time:type_name -> google.protobuf.Timestamp
+	193, // 90: noted.v1.Objective.update_time:type_name -> google.protobuf.Timestamp
 	78,  // 91: noted.v1.Objective.progress:type_name -> noted.v1.ObjectiveProgress
 	63,  // 92: noted.v1.Objective.goals:type_name -> noted.v1.Goal
 	60,  // 93: noted.v1.Objective.milestones:type_name -> noted.v1.Milestone
-	190, // 94: noted.v1.ObjectiveProgress.last_reading_time:type_name -> google.protobuf.Timestamp
+	193, // 94: noted.v1.ObjectiveProgress.last_reading_time:type_name -> google.protobuf.Timestamp
 	60,  // 95: noted.v1.ObjectiveProgress.next_milestone:type_name -> noted.v1.Milestone
-	190, // 96: noted.v1.Measurement.time:type_name -> google.protobuf.Timestamp
+	193, // 96: noted.v1.Measurement.time:type_name -> google.protobuf.Timestamp
 	77,  // 97: noted.v1.CreateObjectiveRequest.objective:type_name -> noted.v1.Objective
 	77,  // 98: noted.v1.UpdateObjectiveRequest.objective:type_name -> noted.v1.Objective
-	191, // 99: noted.v1.UpdateObjectiveRequest.update_mask:type_name -> google.protobuf.FieldMask
+	194, // 99: noted.v1.UpdateObjectiveRequest.update_mask:type_name -> google.protobuf.FieldMask
 	0,   // 100: noted.v1.ListObjectivesRequest.space:type_name -> noted.v1.Space
 	77,  // 101: noted.v1.ListObjectivesResponse.objectives:type_name -> noted.v1.Objective
-	190, // 102: noted.v1.RecordMeasurementRequest.time:type_name -> google.protobuf.Timestamp
-	190, // 103: noted.v1.ListMeasurementsRequest.from:type_name -> google.protobuf.Timestamp
-	190, // 104: noted.v1.ListMeasurementsRequest.to:type_name -> google.protobuf.Timestamp
+	193, // 102: noted.v1.RecordMeasurementRequest.time:type_name -> google.protobuf.Timestamp
+	193, // 103: noted.v1.ListMeasurementsRequest.from:type_name -> google.protobuf.Timestamp
+	193, // 104: noted.v1.ListMeasurementsRequest.to:type_name -> google.protobuf.Timestamp
 	79,  // 105: noted.v1.ListMeasurementsResponse.measurements:type_name -> noted.v1.Measurement
-	190, // 106: noted.v1.ProjectProgress.next_time:type_name -> google.protobuf.Timestamp
-	190, // 107: noted.v1.Project.start_time:type_name -> google.protobuf.Timestamp
-	190, // 108: noted.v1.Project.due_time:type_name -> google.protobuf.Timestamp
-	190, // 109: noted.v1.Project.create_time:type_name -> google.protobuf.Timestamp
-	190, // 110: noted.v1.Project.update_time:type_name -> google.protobuf.Timestamp
+	193, // 106: noted.v1.ProjectProgress.next_time:type_name -> google.protobuf.Timestamp
+	193, // 107: noted.v1.Project.start_time:type_name -> google.protobuf.Timestamp
+	193, // 108: noted.v1.Project.due_time:type_name -> google.protobuf.Timestamp
+	193, // 109: noted.v1.Project.create_time:type_name -> google.protobuf.Timestamp
+	193, // 110: noted.v1.Project.update_time:type_name -> google.protobuf.Timestamp
 	91,  // 111: noted.v1.Project.progress:type_name -> noted.v1.ProjectProgress
 	0,   // 112: noted.v1.Project.space:type_name -> noted.v1.Space
 	92,  // 113: noted.v1.CreateProjectRequest.project:type_name -> noted.v1.Project
@@ -13669,318 +14001,329 @@ var file_noted_v1_noted_proto_depIdxs = []int32{
 	77,  // 119: noted.v1.ProjectDetail.objectives:type_name -> noted.v1.Objective
 	141, // 120: noted.v1.ProjectDetail.time_entries:type_name -> noted.v1.TimeEntry
 	92,  // 121: noted.v1.UpdateProjectRequest.project:type_name -> noted.v1.Project
-	191, // 122: noted.v1.UpdateProjectRequest.update_mask:type_name -> google.protobuf.FieldMask
+	194, // 122: noted.v1.UpdateProjectRequest.update_mask:type_name -> google.protobuf.FieldMask
 	0,   // 123: noted.v1.ListProjectsRequest.space:type_name -> noted.v1.Space
 	92,  // 124: noted.v1.ListProjectsResponse.projects:type_name -> noted.v1.Project
 	3,   // 125: noted.v1.GetFocusRequest.horizon:type_name -> noted.v1.Horizon
 	0,   // 126: noted.v1.GetFocusRequest.space:type_name -> noted.v1.Space
 	23,  // 127: noted.v1.FocusItem.event:type_name -> noted.v1.Occurrence
 	25,  // 128: noted.v1.FocusItem.task:type_name -> noted.v1.Task
-	190, // 129: noted.v1.FocusItem.sort_time:type_name -> google.protobuf.Timestamp
+	193, // 129: noted.v1.FocusItem.sort_time:type_name -> google.protobuf.Timestamp
 	3,   // 130: noted.v1.GetFocusResponse.horizon:type_name -> noted.v1.Horizon
-	190, // 131: noted.v1.GetFocusResponse.from:type_name -> google.protobuf.Timestamp
-	190, // 132: noted.v1.GetFocusResponse.to:type_name -> google.protobuf.Timestamp
+	193, // 131: noted.v1.GetFocusResponse.from:type_name -> google.protobuf.Timestamp
+	193, // 132: noted.v1.GetFocusResponse.to:type_name -> google.protobuf.Timestamp
 	101, // 133: noted.v1.GetFocusResponse.items:type_name -> noted.v1.FocusItem
 	63,  // 134: noted.v1.GetFocusResponse.goals:type_name -> noted.v1.Goal
 	92,  // 135: noted.v1.GetFocusResponse.pinned_projects:type_name -> noted.v1.Project
 	0,   // 136: noted.v1.GetFocusResponse.space:type_name -> noted.v1.Space
 	141, // 137: noted.v1.GetFocusResponse.running_timer:type_name -> noted.v1.TimeEntry
-	190, // 138: noted.v1.Preference.update_time:type_name -> google.protobuf.Timestamp
+	193, // 138: noted.v1.Preference.update_time:type_name -> google.protobuf.Timestamp
 	103, // 139: noted.v1.ListPreferencesResponse.preferences:type_name -> noted.v1.Preference
-	192, // 140: noted.v1.Operation.args:type_name -> google.protobuf.Struct
+	195, // 140: noted.v1.Operation.args:type_name -> google.protobuf.Struct
 	0,   // 141: noted.v1.Proposal.space:type_name -> noted.v1.Space
 	111, // 142: noted.v1.Proposal.operations:type_name -> noted.v1.Operation
 	112, // 143: noted.v1.Proposal.inputs:type_name -> noted.v1.ProposalInput
-	190, // 144: noted.v1.Proposal.create_time:type_name -> google.protobuf.Timestamp
-	190, // 145: noted.v1.Proposal.decide_time:type_name -> google.protobuf.Timestamp
-	190, // 146: noted.v1.Change.create_time:type_name -> google.protobuf.Timestamp
-	190, // 147: noted.v1.Change.undo_time:type_name -> google.protobuf.Timestamp
+	193, // 144: noted.v1.Proposal.create_time:type_name -> google.protobuf.Timestamp
+	193, // 145: noted.v1.Proposal.decide_time:type_name -> google.protobuf.Timestamp
+	193, // 146: noted.v1.Change.create_time:type_name -> google.protobuf.Timestamp
+	193, // 147: noted.v1.Change.undo_time:type_name -> google.protobuf.Timestamp
 	0,   // 148: noted.v1.ListProposalsRequest.space:type_name -> noted.v1.Space
 	113, // 149: noted.v1.ListProposalsResponse.proposals:type_name -> noted.v1.Proposal
-	189, // 150: noted.v1.AcceptProposalRequest.inputs:type_name -> noted.v1.AcceptProposalRequest.InputsEntry
+	192, // 150: noted.v1.AcceptProposalRequest.inputs:type_name -> noted.v1.AcceptProposalRequest.InputsEntry
 	117, // 151: noted.v1.AcceptProposalRequest.selection:type_name -> noted.v1.OperationSelection
 	113, // 152: noted.v1.AcceptProposalResponse.proposal:type_name -> noted.v1.Proposal
 	114, // 153: noted.v1.AcceptProposalResponse.change:type_name -> noted.v1.Change
-	190, // 154: noted.v1.GetWeeklyReviewRequest.week_of:type_name -> google.protobuf.Timestamp
+	193, // 154: noted.v1.GetWeeklyReviewRequest.week_of:type_name -> google.protobuf.Timestamp
 	0,   // 155: noted.v1.GetWeeklyReviewRequest.space:type_name -> noted.v1.Space
-	190, // 156: noted.v1.WeeklyReview.from:type_name -> google.protobuf.Timestamp
-	190, // 157: noted.v1.WeeklyReview.to:type_name -> google.protobuf.Timestamp
+	193, // 156: noted.v1.WeeklyReview.from:type_name -> google.protobuf.Timestamp
+	193, // 157: noted.v1.WeeklyReview.to:type_name -> google.protobuf.Timestamp
 	63,  // 158: noted.v1.WeeklyReview.goals:type_name -> noted.v1.Goal
 	25,  // 159: noted.v1.WeeklyReview.carried_tasks:type_name -> noted.v1.Task
 	113, // 160: noted.v1.WeeklyReview.next_week:type_name -> noted.v1.Proposal
 	153, // 161: noted.v1.WeeklyReview.top_activities:type_name -> noted.v1.TimeSummaryRow
 	114, // 162: noted.v1.ListChangesResponse.changes:type_name -> noted.v1.Change
-	190, // 163: noted.v1.Holding.last_price_time:type_name -> google.protobuf.Timestamp
-	190, // 164: noted.v1.Holding.create_time:type_name -> google.protobuf.Timestamp
-	190, // 165: noted.v1.Holding.update_time:type_name -> google.protobuf.Timestamp
+	193, // 163: noted.v1.Holding.last_price_time:type_name -> google.protobuf.Timestamp
+	193, // 164: noted.v1.Holding.create_time:type_name -> google.protobuf.Timestamp
+	193, // 165: noted.v1.Holding.update_time:type_name -> google.protobuf.Timestamp
 	128, // 166: noted.v1.Holding.position:type_name -> noted.v1.Position
 	129, // 167: noted.v1.Position.dca:type_name -> noted.v1.DcaStatus
-	190, // 168: noted.v1.DcaStatus.next_time:type_name -> google.protobuf.Timestamp
-	190, // 169: noted.v1.Trade.time:type_name -> google.protobuf.Timestamp
+	193, // 168: noted.v1.DcaStatus.next_time:type_name -> google.protobuf.Timestamp
+	193, // 169: noted.v1.Trade.time:type_name -> google.protobuf.Timestamp
 	127, // 170: noted.v1.CreateHoldingRequest.holding:type_name -> noted.v1.Holding
 	127, // 171: noted.v1.UpdateHoldingRequest.holding:type_name -> noted.v1.Holding
-	191, // 172: noted.v1.UpdateHoldingRequest.update_mask:type_name -> google.protobuf.FieldMask
+	194, // 172: noted.v1.UpdateHoldingRequest.update_mask:type_name -> google.protobuf.FieldMask
 	127, // 173: noted.v1.ListHoldingsResponse.holdings:type_name -> noted.v1.Holding
 	130, // 174: noted.v1.RecordTradeRequest.trade:type_name -> noted.v1.Trade
 	130, // 175: noted.v1.ListTradesResponse.trades:type_name -> noted.v1.Trade
-	190, // 176: noted.v1.TimeEntry.start_time:type_name -> google.protobuf.Timestamp
-	190, // 177: noted.v1.TimeEntry.end_time:type_name -> google.protobuf.Timestamp
+	193, // 176: noted.v1.TimeEntry.start_time:type_name -> google.protobuf.Timestamp
+	193, // 177: noted.v1.TimeEntry.end_time:type_name -> google.protobuf.Timestamp
 	0,   // 178: noted.v1.TimeEntry.space:type_name -> noted.v1.Space
-	190, // 179: noted.v1.TimeEntry.create_time:type_name -> google.protobuf.Timestamp
-	190, // 180: noted.v1.TimeEntry.update_time:type_name -> google.protobuf.Timestamp
+	193, // 179: noted.v1.TimeEntry.create_time:type_name -> google.protobuf.Timestamp
+	193, // 180: noted.v1.TimeEntry.update_time:type_name -> google.protobuf.Timestamp
 	141, // 181: noted.v1.CreateTimeEntryRequest.entry:type_name -> noted.v1.TimeEntry
 	141, // 182: noted.v1.UpdateTimeEntryRequest.entry:type_name -> noted.v1.TimeEntry
-	191, // 183: noted.v1.UpdateTimeEntryRequest.update_mask:type_name -> google.protobuf.FieldMask
-	190, // 184: noted.v1.ListTimeEntriesRequest.from:type_name -> google.protobuf.Timestamp
-	190, // 185: noted.v1.ListTimeEntriesRequest.to:type_name -> google.protobuf.Timestamp
+	194, // 183: noted.v1.UpdateTimeEntryRequest.update_mask:type_name -> google.protobuf.FieldMask
+	193, // 184: noted.v1.ListTimeEntriesRequest.from:type_name -> google.protobuf.Timestamp
+	193, // 185: noted.v1.ListTimeEntriesRequest.to:type_name -> google.protobuf.Timestamp
 	0,   // 186: noted.v1.ListTimeEntriesRequest.space:type_name -> noted.v1.Space
 	141, // 187: noted.v1.ListTimeEntriesResponse.entries:type_name -> noted.v1.TimeEntry
 	0,   // 188: noted.v1.StartTimerRequest.space:type_name -> noted.v1.Space
-	190, // 189: noted.v1.StartTimerRequest.start_time:type_name -> google.protobuf.Timestamp
-	190, // 190: noted.v1.StopTimerRequest.end_time:type_name -> google.protobuf.Timestamp
+	193, // 189: noted.v1.StartTimerRequest.start_time:type_name -> google.protobuf.Timestamp
+	193, // 190: noted.v1.StopTimerRequest.end_time:type_name -> google.protobuf.Timestamp
 	141, // 191: noted.v1.GetRunningTimerResponse.entry:type_name -> noted.v1.TimeEntry
-	190, // 192: noted.v1.SummarizeTimeRequest.from:type_name -> google.protobuf.Timestamp
-	190, // 193: noted.v1.SummarizeTimeRequest.to:type_name -> google.protobuf.Timestamp
+	193, // 192: noted.v1.SummarizeTimeRequest.from:type_name -> google.protobuf.Timestamp
+	193, // 193: noted.v1.SummarizeTimeRequest.to:type_name -> google.protobuf.Timestamp
 	4,   // 194: noted.v1.SummarizeTimeRequest.group_by:type_name -> noted.v1.TimeGroupBy
 	0,   // 195: noted.v1.SummarizeTimeRequest.space:type_name -> noted.v1.Space
-	190, // 196: noted.v1.TimeSummary.from:type_name -> google.protobuf.Timestamp
-	190, // 197: noted.v1.TimeSummary.to:type_name -> google.protobuf.Timestamp
+	193, // 196: noted.v1.TimeSummary.from:type_name -> google.protobuf.Timestamp
+	193, // 197: noted.v1.TimeSummary.to:type_name -> google.protobuf.Timestamp
 	4,   // 198: noted.v1.TimeSummary.group_by:type_name -> noted.v1.TimeGroupBy
 	153, // 199: noted.v1.TimeSummary.rows:type_name -> noted.v1.TimeSummaryRow
-	190, // 200: noted.v1.AlarmSchedule.at:type_name -> google.protobuf.Timestamp
+	193, // 200: noted.v1.AlarmSchedule.at:type_name -> google.protobuf.Timestamp
 	155, // 201: noted.v1.AlarmSchedule.recurrence:type_name -> noted.v1.AlarmRecurrence
 	156, // 202: noted.v1.Alarm.schedule:type_name -> noted.v1.AlarmSchedule
 	0,   // 203: noted.v1.Alarm.space:type_name -> noted.v1.Space
-	190, // 204: noted.v1.Alarm.create_time:type_name -> google.protobuf.Timestamp
-	190, // 205: noted.v1.Alarm.update_time:type_name -> google.protobuf.Timestamp
-	190, // 206: noted.v1.Alarm.next_fires:type_name -> google.protobuf.Timestamp
+	193, // 204: noted.v1.Alarm.create_time:type_name -> google.protobuf.Timestamp
+	193, // 205: noted.v1.Alarm.update_time:type_name -> google.protobuf.Timestamp
+	193, // 206: noted.v1.Alarm.next_fires:type_name -> google.protobuf.Timestamp
 	157, // 207: noted.v1.CreateAlarmRequest.alarm:type_name -> noted.v1.Alarm
 	157, // 208: noted.v1.UpdateAlarmRequest.alarm:type_name -> noted.v1.Alarm
-	191, // 209: noted.v1.UpdateAlarmRequest.update_mask:type_name -> google.protobuf.FieldMask
+	194, // 209: noted.v1.UpdateAlarmRequest.update_mask:type_name -> google.protobuf.FieldMask
 	0,   // 210: noted.v1.ListAlarmsRequest.space:type_name -> noted.v1.Space
 	157, // 211: noted.v1.ListAlarmsResponse.alarms:type_name -> noted.v1.Alarm
-	167, // 212: noted.v1.GetHolidaysResponse.days:type_name -> noted.v1.HolidayDay
-	190, // 213: noted.v1.TokenInfo.create_time:type_name -> google.protobuf.Timestamp
-	190, // 214: noted.v1.TokenInfo.last_used_time:type_name -> google.protobuf.Timestamp
-	179, // 215: noted.v1.CreateTokenResponse.info:type_name -> noted.v1.TokenInfo
-	179, // 216: noted.v1.ListTokensResponse.tokens:type_name -> noted.v1.TokenInfo
-	190, // 217: noted.v1.Pairing.create_time:type_name -> google.protobuf.Timestamp
-	190, // 218: noted.v1.Pairing.expire_time:type_name -> google.protobuf.Timestamp
-	8,   // 219: noted.v1.NoteService.CreateNote:input_type -> noted.v1.CreateNoteRequest
-	9,   // 220: noted.v1.NoteService.GetNote:input_type -> noted.v1.GetNoteRequest
-	10,  // 221: noted.v1.NoteService.UpdateNote:input_type -> noted.v1.UpdateNoteRequest
-	11,  // 222: noted.v1.NoteService.DeleteNote:input_type -> noted.v1.DeleteNoteRequest
-	12,  // 223: noted.v1.NoteService.ListNotes:input_type -> noted.v1.ListNotesRequest
-	14,  // 224: noted.v1.NoteService.SearchNotes:input_type -> noted.v1.SearchNotesRequest
-	18,  // 225: noted.v1.CalendarService.CreateEvent:input_type -> noted.v1.CreateEventRequest
-	19,  // 226: noted.v1.CalendarService.GetEvent:input_type -> noted.v1.GetEventRequest
-	20,  // 227: noted.v1.CalendarService.UpdateEvent:input_type -> noted.v1.UpdateEventRequest
-	21,  // 228: noted.v1.CalendarService.DeleteEvent:input_type -> noted.v1.DeleteEventRequest
-	22,  // 229: noted.v1.CalendarService.ListEvents:input_type -> noted.v1.ListEventsRequest
-	27,  // 230: noted.v1.CalendarService.CreateTask:input_type -> noted.v1.CreateTaskRequest
-	28,  // 231: noted.v1.CalendarService.GetTask:input_type -> noted.v1.GetTaskRequest
-	29,  // 232: noted.v1.CalendarService.UpdateTask:input_type -> noted.v1.UpdateTaskRequest
-	30,  // 233: noted.v1.CalendarService.DeleteTask:input_type -> noted.v1.DeleteTaskRequest
-	31,  // 234: noted.v1.CalendarService.ListTasks:input_type -> noted.v1.ListTasksRequest
-	33,  // 235: noted.v1.CalendarService.LogTaskWork:input_type -> noted.v1.LogTaskWorkRequest
-	34,  // 236: noted.v1.CalendarService.ListTaskWork:input_type -> noted.v1.ListTaskWorkRequest
-	36,  // 237: noted.v1.CalendarService.DeleteTaskWork:input_type -> noted.v1.DeleteTaskWorkRequest
-	38,  // 238: noted.v1.CalendarService.WatchReminders:input_type -> noted.v1.WatchRemindersRequest
-	39,  // 239: noted.v1.CalendarService.ListReminders:input_type -> noted.v1.ListRemindersRequest
-	41,  // 240: noted.v1.AIService.GetStatus:input_type -> noted.v1.GetStatusRequest
-	43,  // 241: noted.v1.AIService.Ask:input_type -> noted.v1.AskRequest
-	46,  // 242: noted.v1.AIService.SummarizeNote:input_type -> noted.v1.SummarizeNoteRequest
-	48,  // 243: noted.v1.AIService.SuggestTags:input_type -> noted.v1.SuggestTagsRequest
-	50,  // 244: noted.v1.AIService.DailyBriefing:input_type -> noted.v1.DailyBriefingRequest
-	58,  // 245: noted.v1.AIService.PlanFromText:input_type -> noted.v1.PlanFromTextRequest
-	59,  // 246: noted.v1.AIService.ExtractTasks:input_type -> noted.v1.ExtractTasksRequest
-	56,  // 247: noted.v1.AIService.GetAIAccess:input_type -> noted.v1.GetAIAccessRequest
-	57,  // 248: noted.v1.AIService.SetAIAccess:input_type -> noted.v1.SetAIAccessRequest
-	53,  // 249: noted.v1.AIService.GetAIFeatures:input_type -> noted.v1.GetAIFeaturesRequest
-	54,  // 250: noted.v1.AIService.SetAIFeatures:input_type -> noted.v1.SetAIFeaturesRequest
-	65,  // 251: noted.v1.GoalService.CreateGoal:input_type -> noted.v1.CreateGoalRequest
-	66,  // 252: noted.v1.GoalService.GetGoal:input_type -> noted.v1.GetGoalRequest
-	67,  // 253: noted.v1.GoalService.UpdateGoal:input_type -> noted.v1.UpdateGoalRequest
-	68,  // 254: noted.v1.GoalService.DeleteGoal:input_type -> noted.v1.DeleteGoalRequest
-	69,  // 255: noted.v1.GoalService.ListGoals:input_type -> noted.v1.ListGoalsRequest
-	71,  // 256: noted.v1.GoalService.RecordCheckIn:input_type -> noted.v1.RecordCheckInRequest
-	73,  // 257: noted.v1.GoalService.DeleteCheckIn:input_type -> noted.v1.DeleteCheckInRequest
-	74,  // 258: noted.v1.GoalService.ListCheckIns:input_type -> noted.v1.ListCheckInsRequest
-	76,  // 259: noted.v1.GoalService.SetMilestoneDone:input_type -> noted.v1.SetMilestoneDoneRequest
-	80,  // 260: noted.v1.ObjectiveService.CreateObjective:input_type -> noted.v1.CreateObjectiveRequest
-	81,  // 261: noted.v1.ObjectiveService.GetObjective:input_type -> noted.v1.GetObjectiveRequest
-	82,  // 262: noted.v1.ObjectiveService.UpdateObjective:input_type -> noted.v1.UpdateObjectiveRequest
-	83,  // 263: noted.v1.ObjectiveService.DeleteObjective:input_type -> noted.v1.DeleteObjectiveRequest
-	84,  // 264: noted.v1.ObjectiveService.ListObjectives:input_type -> noted.v1.ListObjectivesRequest
-	86,  // 265: noted.v1.ObjectiveService.RecordMeasurement:input_type -> noted.v1.RecordMeasurementRequest
-	87,  // 266: noted.v1.ObjectiveService.DeleteMeasurement:input_type -> noted.v1.DeleteMeasurementRequest
-	88,  // 267: noted.v1.ObjectiveService.ListMeasurements:input_type -> noted.v1.ListMeasurementsRequest
-	90,  // 268: noted.v1.ObjectiveService.SetObjectiveMilestoneDone:input_type -> noted.v1.SetObjectiveMilestoneDoneRequest
-	93,  // 269: noted.v1.ProjectService.CreateProject:input_type -> noted.v1.CreateProjectRequest
-	94,  // 270: noted.v1.ProjectService.GetProject:input_type -> noted.v1.GetProjectRequest
-	96,  // 271: noted.v1.ProjectService.UpdateProject:input_type -> noted.v1.UpdateProjectRequest
-	97,  // 272: noted.v1.ProjectService.DeleteProject:input_type -> noted.v1.DeleteProjectRequest
-	98,  // 273: noted.v1.ProjectService.ListProjects:input_type -> noted.v1.ListProjectsRequest
-	100, // 274: noted.v1.FocusService.GetFocus:input_type -> noted.v1.GetFocusRequest
-	104, // 275: noted.v1.PreferenceService.GetPreference:input_type -> noted.v1.GetPreferenceRequest
-	105, // 276: noted.v1.PreferenceService.SetPreference:input_type -> noted.v1.SetPreferenceRequest
-	106, // 277: noted.v1.PreferenceService.DeletePreference:input_type -> noted.v1.DeletePreferenceRequest
-	107, // 278: noted.v1.PreferenceService.ListPreferences:input_type -> noted.v1.ListPreferencesRequest
-	109, // 279: noted.v1.ExportService.Export:input_type -> noted.v1.ExportRequest
-	115, // 280: noted.v1.SuggestionService.ListProposals:input_type -> noted.v1.ListProposalsRequest
-	118, // 281: noted.v1.SuggestionService.AcceptProposal:input_type -> noted.v1.AcceptProposalRequest
-	120, // 282: noted.v1.SuggestionService.DismissProposal:input_type -> noted.v1.DismissProposalRequest
-	121, // 283: noted.v1.SuggestionService.ProposeSchedule:input_type -> noted.v1.ProposeScheduleRequest
-	122, // 284: noted.v1.SuggestionService.GetWeeklyReview:input_type -> noted.v1.GetWeeklyReviewRequest
-	124, // 285: noted.v1.SuggestionService.ListChanges:input_type -> noted.v1.ListChangesRequest
-	126, // 286: noted.v1.SuggestionService.UndoChange:input_type -> noted.v1.UndoChangeRequest
-	131, // 287: noted.v1.HoldingService.CreateHolding:input_type -> noted.v1.CreateHoldingRequest
-	132, // 288: noted.v1.HoldingService.GetHolding:input_type -> noted.v1.GetHoldingRequest
-	133, // 289: noted.v1.HoldingService.UpdateHolding:input_type -> noted.v1.UpdateHoldingRequest
-	134, // 290: noted.v1.HoldingService.DeleteHolding:input_type -> noted.v1.DeleteHoldingRequest
-	135, // 291: noted.v1.HoldingService.ListHoldings:input_type -> noted.v1.ListHoldingsRequest
-	137, // 292: noted.v1.HoldingService.RecordTrade:input_type -> noted.v1.RecordTradeRequest
-	138, // 293: noted.v1.HoldingService.DeleteTrade:input_type -> noted.v1.DeleteTradeRequest
-	139, // 294: noted.v1.HoldingService.ListTrades:input_type -> noted.v1.ListTradesRequest
-	142, // 295: noted.v1.TimeService.CreateTimeEntry:input_type -> noted.v1.CreateTimeEntryRequest
-	143, // 296: noted.v1.TimeService.GetTimeEntry:input_type -> noted.v1.GetTimeEntryRequest
-	144, // 297: noted.v1.TimeService.UpdateTimeEntry:input_type -> noted.v1.UpdateTimeEntryRequest
-	145, // 298: noted.v1.TimeService.DeleteTimeEntry:input_type -> noted.v1.DeleteTimeEntryRequest
-	146, // 299: noted.v1.TimeService.ListTimeEntries:input_type -> noted.v1.ListTimeEntriesRequest
-	148, // 300: noted.v1.TimeService.StartTimer:input_type -> noted.v1.StartTimerRequest
-	149, // 301: noted.v1.TimeService.StopTimer:input_type -> noted.v1.StopTimerRequest
-	150, // 302: noted.v1.TimeService.GetRunningTimer:input_type -> noted.v1.GetRunningTimerRequest
-	152, // 303: noted.v1.TimeService.SummarizeTime:input_type -> noted.v1.SummarizeTimeRequest
-	158, // 304: noted.v1.AlarmService.CreateAlarm:input_type -> noted.v1.CreateAlarmRequest
-	159, // 305: noted.v1.AlarmService.GetAlarm:input_type -> noted.v1.GetAlarmRequest
-	160, // 306: noted.v1.AlarmService.UpdateAlarm:input_type -> noted.v1.UpdateAlarmRequest
-	161, // 307: noted.v1.AlarmService.DeleteAlarm:input_type -> noted.v1.DeleteAlarmRequest
-	162, // 308: noted.v1.AlarmService.ListAlarms:input_type -> noted.v1.ListAlarmsRequest
-	164, // 309: noted.v1.AlarmService.GetAlarmsVersion:input_type -> noted.v1.GetAlarmsVersionRequest
-	166, // 310: noted.v1.HolidayService.GetHolidays:input_type -> noted.v1.GetHolidaysRequest
-	169, // 311: noted.v1.AccountService.SignInWithApple:input_type -> noted.v1.SignInWithAppleRequest
-	171, // 312: noted.v1.AccountService.LinkApple:input_type -> noted.v1.LinkAppleRequest
-	172, // 313: noted.v1.AccountService.UnlinkApple:input_type -> noted.v1.UnlinkAppleRequest
-	173, // 314: noted.v1.AccountService.GetAccount:input_type -> noted.v1.GetAccountRequest
-	175, // 315: noted.v1.AccountService.SignUp:input_type -> noted.v1.SignUpRequest
-	176, // 316: noted.v1.AccountService.SignIn:input_type -> noted.v1.SignInRequest
-	178, // 317: noted.v1.AccountService.SetEmailPassword:input_type -> noted.v1.SetEmailPasswordRequest
-	180, // 318: noted.v1.AccountService.CreateToken:input_type -> noted.v1.CreateTokenRequest
-	182, // 319: noted.v1.AccountService.ListTokens:input_type -> noted.v1.ListTokensRequest
-	184, // 320: noted.v1.AccountService.RevokeToken:input_type -> noted.v1.RevokeTokenRequest
-	186, // 321: noted.v1.AccountService.GetPairing:input_type -> noted.v1.GetPairingRequest
-	187, // 322: noted.v1.AccountService.ApprovePairing:input_type -> noted.v1.ApprovePairingRequest
-	188, // 323: noted.v1.AccountService.DenyPairing:input_type -> noted.v1.DenyPairingRequest
-	7,   // 324: noted.v1.NoteService.CreateNote:output_type -> noted.v1.Note
-	7,   // 325: noted.v1.NoteService.GetNote:output_type -> noted.v1.Note
-	7,   // 326: noted.v1.NoteService.UpdateNote:output_type -> noted.v1.Note
-	193, // 327: noted.v1.NoteService.DeleteNote:output_type -> google.protobuf.Empty
-	13,  // 328: noted.v1.NoteService.ListNotes:output_type -> noted.v1.ListNotesResponse
-	16,  // 329: noted.v1.NoteService.SearchNotes:output_type -> noted.v1.SearchNotesResponse
-	17,  // 330: noted.v1.CalendarService.CreateEvent:output_type -> noted.v1.Event
-	17,  // 331: noted.v1.CalendarService.GetEvent:output_type -> noted.v1.Event
-	17,  // 332: noted.v1.CalendarService.UpdateEvent:output_type -> noted.v1.Event
-	193, // 333: noted.v1.CalendarService.DeleteEvent:output_type -> google.protobuf.Empty
-	24,  // 334: noted.v1.CalendarService.ListEvents:output_type -> noted.v1.ListEventsResponse
-	25,  // 335: noted.v1.CalendarService.CreateTask:output_type -> noted.v1.Task
-	25,  // 336: noted.v1.CalendarService.GetTask:output_type -> noted.v1.Task
-	25,  // 337: noted.v1.CalendarService.UpdateTask:output_type -> noted.v1.Task
-	193, // 338: noted.v1.CalendarService.DeleteTask:output_type -> google.protobuf.Empty
-	32,  // 339: noted.v1.CalendarService.ListTasks:output_type -> noted.v1.ListTasksResponse
-	25,  // 340: noted.v1.CalendarService.LogTaskWork:output_type -> noted.v1.Task
-	35,  // 341: noted.v1.CalendarService.ListTaskWork:output_type -> noted.v1.ListTaskWorkResponse
-	25,  // 342: noted.v1.CalendarService.DeleteTaskWork:output_type -> noted.v1.Task
-	37,  // 343: noted.v1.CalendarService.WatchReminders:output_type -> noted.v1.Reminder
-	40,  // 344: noted.v1.CalendarService.ListReminders:output_type -> noted.v1.ListRemindersResponse
-	42,  // 345: noted.v1.AIService.GetStatus:output_type -> noted.v1.GetStatusResponse
-	44,  // 346: noted.v1.AIService.Ask:output_type -> noted.v1.AskResponse
-	47,  // 347: noted.v1.AIService.SummarizeNote:output_type -> noted.v1.SummarizeNoteResponse
-	49,  // 348: noted.v1.AIService.SuggestTags:output_type -> noted.v1.SuggestTagsResponse
-	51,  // 349: noted.v1.AIService.DailyBriefing:output_type -> noted.v1.DailyBriefingResponse
-	113, // 350: noted.v1.AIService.PlanFromText:output_type -> noted.v1.Proposal
-	113, // 351: noted.v1.AIService.ExtractTasks:output_type -> noted.v1.Proposal
-	55,  // 352: noted.v1.AIService.GetAIAccess:output_type -> noted.v1.AIAccess
-	55,  // 353: noted.v1.AIService.SetAIAccess:output_type -> noted.v1.AIAccess
-	52,  // 354: noted.v1.AIService.GetAIFeatures:output_type -> noted.v1.AIFeatures
-	52,  // 355: noted.v1.AIService.SetAIFeatures:output_type -> noted.v1.AIFeatures
-	63,  // 356: noted.v1.GoalService.CreateGoal:output_type -> noted.v1.Goal
-	63,  // 357: noted.v1.GoalService.GetGoal:output_type -> noted.v1.Goal
-	63,  // 358: noted.v1.GoalService.UpdateGoal:output_type -> noted.v1.Goal
-	193, // 359: noted.v1.GoalService.DeleteGoal:output_type -> google.protobuf.Empty
-	70,  // 360: noted.v1.GoalService.ListGoals:output_type -> noted.v1.ListGoalsResponse
-	72,  // 361: noted.v1.GoalService.RecordCheckIn:output_type -> noted.v1.RecordCheckInResponse
-	63,  // 362: noted.v1.GoalService.DeleteCheckIn:output_type -> noted.v1.Goal
-	75,  // 363: noted.v1.GoalService.ListCheckIns:output_type -> noted.v1.ListCheckInsResponse
-	63,  // 364: noted.v1.GoalService.SetMilestoneDone:output_type -> noted.v1.Goal
-	77,  // 365: noted.v1.ObjectiveService.CreateObjective:output_type -> noted.v1.Objective
-	77,  // 366: noted.v1.ObjectiveService.GetObjective:output_type -> noted.v1.Objective
-	77,  // 367: noted.v1.ObjectiveService.UpdateObjective:output_type -> noted.v1.Objective
-	193, // 368: noted.v1.ObjectiveService.DeleteObjective:output_type -> google.protobuf.Empty
-	85,  // 369: noted.v1.ObjectiveService.ListObjectives:output_type -> noted.v1.ListObjectivesResponse
-	77,  // 370: noted.v1.ObjectiveService.RecordMeasurement:output_type -> noted.v1.Objective
-	193, // 371: noted.v1.ObjectiveService.DeleteMeasurement:output_type -> google.protobuf.Empty
-	89,  // 372: noted.v1.ObjectiveService.ListMeasurements:output_type -> noted.v1.ListMeasurementsResponse
-	77,  // 373: noted.v1.ObjectiveService.SetObjectiveMilestoneDone:output_type -> noted.v1.Objective
-	92,  // 374: noted.v1.ProjectService.CreateProject:output_type -> noted.v1.Project
-	95,  // 375: noted.v1.ProjectService.GetProject:output_type -> noted.v1.ProjectDetail
-	92,  // 376: noted.v1.ProjectService.UpdateProject:output_type -> noted.v1.Project
-	193, // 377: noted.v1.ProjectService.DeleteProject:output_type -> google.protobuf.Empty
-	99,  // 378: noted.v1.ProjectService.ListProjects:output_type -> noted.v1.ListProjectsResponse
-	102, // 379: noted.v1.FocusService.GetFocus:output_type -> noted.v1.GetFocusResponse
-	103, // 380: noted.v1.PreferenceService.GetPreference:output_type -> noted.v1.Preference
-	103, // 381: noted.v1.PreferenceService.SetPreference:output_type -> noted.v1.Preference
-	193, // 382: noted.v1.PreferenceService.DeletePreference:output_type -> google.protobuf.Empty
-	108, // 383: noted.v1.PreferenceService.ListPreferences:output_type -> noted.v1.ListPreferencesResponse
-	110, // 384: noted.v1.ExportService.Export:output_type -> noted.v1.ExportChunk
-	116, // 385: noted.v1.SuggestionService.ListProposals:output_type -> noted.v1.ListProposalsResponse
-	119, // 386: noted.v1.SuggestionService.AcceptProposal:output_type -> noted.v1.AcceptProposalResponse
-	113, // 387: noted.v1.SuggestionService.DismissProposal:output_type -> noted.v1.Proposal
-	113, // 388: noted.v1.SuggestionService.ProposeSchedule:output_type -> noted.v1.Proposal
-	123, // 389: noted.v1.SuggestionService.GetWeeklyReview:output_type -> noted.v1.WeeklyReview
-	125, // 390: noted.v1.SuggestionService.ListChanges:output_type -> noted.v1.ListChangesResponse
-	114, // 391: noted.v1.SuggestionService.UndoChange:output_type -> noted.v1.Change
-	127, // 392: noted.v1.HoldingService.CreateHolding:output_type -> noted.v1.Holding
-	127, // 393: noted.v1.HoldingService.GetHolding:output_type -> noted.v1.Holding
-	127, // 394: noted.v1.HoldingService.UpdateHolding:output_type -> noted.v1.Holding
-	193, // 395: noted.v1.HoldingService.DeleteHolding:output_type -> google.protobuf.Empty
-	136, // 396: noted.v1.HoldingService.ListHoldings:output_type -> noted.v1.ListHoldingsResponse
-	127, // 397: noted.v1.HoldingService.RecordTrade:output_type -> noted.v1.Holding
-	193, // 398: noted.v1.HoldingService.DeleteTrade:output_type -> google.protobuf.Empty
-	140, // 399: noted.v1.HoldingService.ListTrades:output_type -> noted.v1.ListTradesResponse
-	141, // 400: noted.v1.TimeService.CreateTimeEntry:output_type -> noted.v1.TimeEntry
-	141, // 401: noted.v1.TimeService.GetTimeEntry:output_type -> noted.v1.TimeEntry
-	141, // 402: noted.v1.TimeService.UpdateTimeEntry:output_type -> noted.v1.TimeEntry
-	193, // 403: noted.v1.TimeService.DeleteTimeEntry:output_type -> google.protobuf.Empty
-	147, // 404: noted.v1.TimeService.ListTimeEntries:output_type -> noted.v1.ListTimeEntriesResponse
-	141, // 405: noted.v1.TimeService.StartTimer:output_type -> noted.v1.TimeEntry
-	141, // 406: noted.v1.TimeService.StopTimer:output_type -> noted.v1.TimeEntry
-	151, // 407: noted.v1.TimeService.GetRunningTimer:output_type -> noted.v1.GetRunningTimerResponse
-	154, // 408: noted.v1.TimeService.SummarizeTime:output_type -> noted.v1.TimeSummary
-	157, // 409: noted.v1.AlarmService.CreateAlarm:output_type -> noted.v1.Alarm
-	157, // 410: noted.v1.AlarmService.GetAlarm:output_type -> noted.v1.Alarm
-	157, // 411: noted.v1.AlarmService.UpdateAlarm:output_type -> noted.v1.Alarm
-	193, // 412: noted.v1.AlarmService.DeleteAlarm:output_type -> google.protobuf.Empty
-	163, // 413: noted.v1.AlarmService.ListAlarms:output_type -> noted.v1.ListAlarmsResponse
-	165, // 414: noted.v1.AlarmService.GetAlarmsVersion:output_type -> noted.v1.GetAlarmsVersionResponse
-	168, // 415: noted.v1.HolidayService.GetHolidays:output_type -> noted.v1.GetHolidaysResponse
-	170, // 416: noted.v1.AccountService.SignInWithApple:output_type -> noted.v1.SignInWithAppleResponse
-	174, // 417: noted.v1.AccountService.LinkApple:output_type -> noted.v1.Account
-	174, // 418: noted.v1.AccountService.UnlinkApple:output_type -> noted.v1.Account
-	174, // 419: noted.v1.AccountService.GetAccount:output_type -> noted.v1.Account
-	177, // 420: noted.v1.AccountService.SignUp:output_type -> noted.v1.SignInResponse
-	177, // 421: noted.v1.AccountService.SignIn:output_type -> noted.v1.SignInResponse
-	174, // 422: noted.v1.AccountService.SetEmailPassword:output_type -> noted.v1.Account
-	181, // 423: noted.v1.AccountService.CreateToken:output_type -> noted.v1.CreateTokenResponse
-	183, // 424: noted.v1.AccountService.ListTokens:output_type -> noted.v1.ListTokensResponse
-	193, // 425: noted.v1.AccountService.RevokeToken:output_type -> google.protobuf.Empty
-	185, // 426: noted.v1.AccountService.GetPairing:output_type -> noted.v1.Pairing
-	185, // 427: noted.v1.AccountService.ApprovePairing:output_type -> noted.v1.Pairing
-	193, // 428: noted.v1.AccountService.DenyPairing:output_type -> google.protobuf.Empty
-	324, // [324:429] is the sub-list for method output_type
-	219, // [219:324] is the sub-list for method input_type
-	219, // [219:219] is the sub-list for extension type_name
-	219, // [219:219] is the sub-list for extension extendee
-	0,   // [0:219] is the sub-list for field type_name
+	193, // 212: noted.v1.ListFiresRequest.from:type_name -> google.protobuf.Timestamp
+	193, // 213: noted.v1.ListFiresRequest.to:type_name -> google.protobuf.Timestamp
+	0,   // 214: noted.v1.ListFiresRequest.space:type_name -> noted.v1.Space
+	193, // 215: noted.v1.Fire.fire_time:type_name -> google.protobuf.Timestamp
+	193, // 216: noted.v1.Fire.at_time:type_name -> google.protobuf.Timestamp
+	0,   // 217: noted.v1.Fire.space:type_name -> noted.v1.Space
+	167, // 218: noted.v1.ListFiresResponse.fires:type_name -> noted.v1.Fire
+	193, // 219: noted.v1.ListFiresResponse.from:type_name -> google.protobuf.Timestamp
+	193, // 220: noted.v1.ListFiresResponse.to:type_name -> google.protobuf.Timestamp
+	170, // 221: noted.v1.GetHolidaysResponse.days:type_name -> noted.v1.HolidayDay
+	193, // 222: noted.v1.TokenInfo.create_time:type_name -> google.protobuf.Timestamp
+	193, // 223: noted.v1.TokenInfo.last_used_time:type_name -> google.protobuf.Timestamp
+	182, // 224: noted.v1.CreateTokenResponse.info:type_name -> noted.v1.TokenInfo
+	182, // 225: noted.v1.ListTokensResponse.tokens:type_name -> noted.v1.TokenInfo
+	193, // 226: noted.v1.Pairing.create_time:type_name -> google.protobuf.Timestamp
+	193, // 227: noted.v1.Pairing.expire_time:type_name -> google.protobuf.Timestamp
+	8,   // 228: noted.v1.NoteService.CreateNote:input_type -> noted.v1.CreateNoteRequest
+	9,   // 229: noted.v1.NoteService.GetNote:input_type -> noted.v1.GetNoteRequest
+	10,  // 230: noted.v1.NoteService.UpdateNote:input_type -> noted.v1.UpdateNoteRequest
+	11,  // 231: noted.v1.NoteService.DeleteNote:input_type -> noted.v1.DeleteNoteRequest
+	12,  // 232: noted.v1.NoteService.ListNotes:input_type -> noted.v1.ListNotesRequest
+	14,  // 233: noted.v1.NoteService.SearchNotes:input_type -> noted.v1.SearchNotesRequest
+	18,  // 234: noted.v1.CalendarService.CreateEvent:input_type -> noted.v1.CreateEventRequest
+	19,  // 235: noted.v1.CalendarService.GetEvent:input_type -> noted.v1.GetEventRequest
+	20,  // 236: noted.v1.CalendarService.UpdateEvent:input_type -> noted.v1.UpdateEventRequest
+	21,  // 237: noted.v1.CalendarService.DeleteEvent:input_type -> noted.v1.DeleteEventRequest
+	22,  // 238: noted.v1.CalendarService.ListEvents:input_type -> noted.v1.ListEventsRequest
+	27,  // 239: noted.v1.CalendarService.CreateTask:input_type -> noted.v1.CreateTaskRequest
+	28,  // 240: noted.v1.CalendarService.GetTask:input_type -> noted.v1.GetTaskRequest
+	29,  // 241: noted.v1.CalendarService.UpdateTask:input_type -> noted.v1.UpdateTaskRequest
+	30,  // 242: noted.v1.CalendarService.DeleteTask:input_type -> noted.v1.DeleteTaskRequest
+	31,  // 243: noted.v1.CalendarService.ListTasks:input_type -> noted.v1.ListTasksRequest
+	33,  // 244: noted.v1.CalendarService.LogTaskWork:input_type -> noted.v1.LogTaskWorkRequest
+	34,  // 245: noted.v1.CalendarService.ListTaskWork:input_type -> noted.v1.ListTaskWorkRequest
+	36,  // 246: noted.v1.CalendarService.DeleteTaskWork:input_type -> noted.v1.DeleteTaskWorkRequest
+	38,  // 247: noted.v1.CalendarService.WatchReminders:input_type -> noted.v1.WatchRemindersRequest
+	39,  // 248: noted.v1.CalendarService.ListReminders:input_type -> noted.v1.ListRemindersRequest
+	41,  // 249: noted.v1.AIService.GetStatus:input_type -> noted.v1.GetStatusRequest
+	43,  // 250: noted.v1.AIService.Ask:input_type -> noted.v1.AskRequest
+	46,  // 251: noted.v1.AIService.SummarizeNote:input_type -> noted.v1.SummarizeNoteRequest
+	48,  // 252: noted.v1.AIService.SuggestTags:input_type -> noted.v1.SuggestTagsRequest
+	50,  // 253: noted.v1.AIService.DailyBriefing:input_type -> noted.v1.DailyBriefingRequest
+	58,  // 254: noted.v1.AIService.PlanFromText:input_type -> noted.v1.PlanFromTextRequest
+	59,  // 255: noted.v1.AIService.ExtractTasks:input_type -> noted.v1.ExtractTasksRequest
+	56,  // 256: noted.v1.AIService.GetAIAccess:input_type -> noted.v1.GetAIAccessRequest
+	57,  // 257: noted.v1.AIService.SetAIAccess:input_type -> noted.v1.SetAIAccessRequest
+	53,  // 258: noted.v1.AIService.GetAIFeatures:input_type -> noted.v1.GetAIFeaturesRequest
+	54,  // 259: noted.v1.AIService.SetAIFeatures:input_type -> noted.v1.SetAIFeaturesRequest
+	65,  // 260: noted.v1.GoalService.CreateGoal:input_type -> noted.v1.CreateGoalRequest
+	66,  // 261: noted.v1.GoalService.GetGoal:input_type -> noted.v1.GetGoalRequest
+	67,  // 262: noted.v1.GoalService.UpdateGoal:input_type -> noted.v1.UpdateGoalRequest
+	68,  // 263: noted.v1.GoalService.DeleteGoal:input_type -> noted.v1.DeleteGoalRequest
+	69,  // 264: noted.v1.GoalService.ListGoals:input_type -> noted.v1.ListGoalsRequest
+	71,  // 265: noted.v1.GoalService.RecordCheckIn:input_type -> noted.v1.RecordCheckInRequest
+	73,  // 266: noted.v1.GoalService.DeleteCheckIn:input_type -> noted.v1.DeleteCheckInRequest
+	74,  // 267: noted.v1.GoalService.ListCheckIns:input_type -> noted.v1.ListCheckInsRequest
+	76,  // 268: noted.v1.GoalService.SetMilestoneDone:input_type -> noted.v1.SetMilestoneDoneRequest
+	80,  // 269: noted.v1.ObjectiveService.CreateObjective:input_type -> noted.v1.CreateObjectiveRequest
+	81,  // 270: noted.v1.ObjectiveService.GetObjective:input_type -> noted.v1.GetObjectiveRequest
+	82,  // 271: noted.v1.ObjectiveService.UpdateObjective:input_type -> noted.v1.UpdateObjectiveRequest
+	83,  // 272: noted.v1.ObjectiveService.DeleteObjective:input_type -> noted.v1.DeleteObjectiveRequest
+	84,  // 273: noted.v1.ObjectiveService.ListObjectives:input_type -> noted.v1.ListObjectivesRequest
+	86,  // 274: noted.v1.ObjectiveService.RecordMeasurement:input_type -> noted.v1.RecordMeasurementRequest
+	87,  // 275: noted.v1.ObjectiveService.DeleteMeasurement:input_type -> noted.v1.DeleteMeasurementRequest
+	88,  // 276: noted.v1.ObjectiveService.ListMeasurements:input_type -> noted.v1.ListMeasurementsRequest
+	90,  // 277: noted.v1.ObjectiveService.SetObjectiveMilestoneDone:input_type -> noted.v1.SetObjectiveMilestoneDoneRequest
+	93,  // 278: noted.v1.ProjectService.CreateProject:input_type -> noted.v1.CreateProjectRequest
+	94,  // 279: noted.v1.ProjectService.GetProject:input_type -> noted.v1.GetProjectRequest
+	96,  // 280: noted.v1.ProjectService.UpdateProject:input_type -> noted.v1.UpdateProjectRequest
+	97,  // 281: noted.v1.ProjectService.DeleteProject:input_type -> noted.v1.DeleteProjectRequest
+	98,  // 282: noted.v1.ProjectService.ListProjects:input_type -> noted.v1.ListProjectsRequest
+	100, // 283: noted.v1.FocusService.GetFocus:input_type -> noted.v1.GetFocusRequest
+	104, // 284: noted.v1.PreferenceService.GetPreference:input_type -> noted.v1.GetPreferenceRequest
+	105, // 285: noted.v1.PreferenceService.SetPreference:input_type -> noted.v1.SetPreferenceRequest
+	106, // 286: noted.v1.PreferenceService.DeletePreference:input_type -> noted.v1.DeletePreferenceRequest
+	107, // 287: noted.v1.PreferenceService.ListPreferences:input_type -> noted.v1.ListPreferencesRequest
+	109, // 288: noted.v1.ExportService.Export:input_type -> noted.v1.ExportRequest
+	115, // 289: noted.v1.SuggestionService.ListProposals:input_type -> noted.v1.ListProposalsRequest
+	118, // 290: noted.v1.SuggestionService.AcceptProposal:input_type -> noted.v1.AcceptProposalRequest
+	120, // 291: noted.v1.SuggestionService.DismissProposal:input_type -> noted.v1.DismissProposalRequest
+	121, // 292: noted.v1.SuggestionService.ProposeSchedule:input_type -> noted.v1.ProposeScheduleRequest
+	122, // 293: noted.v1.SuggestionService.GetWeeklyReview:input_type -> noted.v1.GetWeeklyReviewRequest
+	124, // 294: noted.v1.SuggestionService.ListChanges:input_type -> noted.v1.ListChangesRequest
+	126, // 295: noted.v1.SuggestionService.UndoChange:input_type -> noted.v1.UndoChangeRequest
+	131, // 296: noted.v1.HoldingService.CreateHolding:input_type -> noted.v1.CreateHoldingRequest
+	132, // 297: noted.v1.HoldingService.GetHolding:input_type -> noted.v1.GetHoldingRequest
+	133, // 298: noted.v1.HoldingService.UpdateHolding:input_type -> noted.v1.UpdateHoldingRequest
+	134, // 299: noted.v1.HoldingService.DeleteHolding:input_type -> noted.v1.DeleteHoldingRequest
+	135, // 300: noted.v1.HoldingService.ListHoldings:input_type -> noted.v1.ListHoldingsRequest
+	137, // 301: noted.v1.HoldingService.RecordTrade:input_type -> noted.v1.RecordTradeRequest
+	138, // 302: noted.v1.HoldingService.DeleteTrade:input_type -> noted.v1.DeleteTradeRequest
+	139, // 303: noted.v1.HoldingService.ListTrades:input_type -> noted.v1.ListTradesRequest
+	142, // 304: noted.v1.TimeService.CreateTimeEntry:input_type -> noted.v1.CreateTimeEntryRequest
+	143, // 305: noted.v1.TimeService.GetTimeEntry:input_type -> noted.v1.GetTimeEntryRequest
+	144, // 306: noted.v1.TimeService.UpdateTimeEntry:input_type -> noted.v1.UpdateTimeEntryRequest
+	145, // 307: noted.v1.TimeService.DeleteTimeEntry:input_type -> noted.v1.DeleteTimeEntryRequest
+	146, // 308: noted.v1.TimeService.ListTimeEntries:input_type -> noted.v1.ListTimeEntriesRequest
+	148, // 309: noted.v1.TimeService.StartTimer:input_type -> noted.v1.StartTimerRequest
+	149, // 310: noted.v1.TimeService.StopTimer:input_type -> noted.v1.StopTimerRequest
+	150, // 311: noted.v1.TimeService.GetRunningTimer:input_type -> noted.v1.GetRunningTimerRequest
+	152, // 312: noted.v1.TimeService.SummarizeTime:input_type -> noted.v1.SummarizeTimeRequest
+	158, // 313: noted.v1.AlarmService.CreateAlarm:input_type -> noted.v1.CreateAlarmRequest
+	159, // 314: noted.v1.AlarmService.GetAlarm:input_type -> noted.v1.GetAlarmRequest
+	160, // 315: noted.v1.AlarmService.UpdateAlarm:input_type -> noted.v1.UpdateAlarmRequest
+	161, // 316: noted.v1.AlarmService.DeleteAlarm:input_type -> noted.v1.DeleteAlarmRequest
+	162, // 317: noted.v1.AlarmService.ListAlarms:input_type -> noted.v1.ListAlarmsRequest
+	164, // 318: noted.v1.AlarmService.GetAlarmsVersion:input_type -> noted.v1.GetAlarmsVersionRequest
+	166, // 319: noted.v1.AlarmService.ListFires:input_type -> noted.v1.ListFiresRequest
+	169, // 320: noted.v1.HolidayService.GetHolidays:input_type -> noted.v1.GetHolidaysRequest
+	172, // 321: noted.v1.AccountService.SignInWithApple:input_type -> noted.v1.SignInWithAppleRequest
+	174, // 322: noted.v1.AccountService.LinkApple:input_type -> noted.v1.LinkAppleRequest
+	175, // 323: noted.v1.AccountService.UnlinkApple:input_type -> noted.v1.UnlinkAppleRequest
+	176, // 324: noted.v1.AccountService.GetAccount:input_type -> noted.v1.GetAccountRequest
+	178, // 325: noted.v1.AccountService.SignUp:input_type -> noted.v1.SignUpRequest
+	179, // 326: noted.v1.AccountService.SignIn:input_type -> noted.v1.SignInRequest
+	181, // 327: noted.v1.AccountService.SetEmailPassword:input_type -> noted.v1.SetEmailPasswordRequest
+	183, // 328: noted.v1.AccountService.CreateToken:input_type -> noted.v1.CreateTokenRequest
+	185, // 329: noted.v1.AccountService.ListTokens:input_type -> noted.v1.ListTokensRequest
+	187, // 330: noted.v1.AccountService.RevokeToken:input_type -> noted.v1.RevokeTokenRequest
+	189, // 331: noted.v1.AccountService.GetPairing:input_type -> noted.v1.GetPairingRequest
+	190, // 332: noted.v1.AccountService.ApprovePairing:input_type -> noted.v1.ApprovePairingRequest
+	191, // 333: noted.v1.AccountService.DenyPairing:input_type -> noted.v1.DenyPairingRequest
+	7,   // 334: noted.v1.NoteService.CreateNote:output_type -> noted.v1.Note
+	7,   // 335: noted.v1.NoteService.GetNote:output_type -> noted.v1.Note
+	7,   // 336: noted.v1.NoteService.UpdateNote:output_type -> noted.v1.Note
+	196, // 337: noted.v1.NoteService.DeleteNote:output_type -> google.protobuf.Empty
+	13,  // 338: noted.v1.NoteService.ListNotes:output_type -> noted.v1.ListNotesResponse
+	16,  // 339: noted.v1.NoteService.SearchNotes:output_type -> noted.v1.SearchNotesResponse
+	17,  // 340: noted.v1.CalendarService.CreateEvent:output_type -> noted.v1.Event
+	17,  // 341: noted.v1.CalendarService.GetEvent:output_type -> noted.v1.Event
+	17,  // 342: noted.v1.CalendarService.UpdateEvent:output_type -> noted.v1.Event
+	196, // 343: noted.v1.CalendarService.DeleteEvent:output_type -> google.protobuf.Empty
+	24,  // 344: noted.v1.CalendarService.ListEvents:output_type -> noted.v1.ListEventsResponse
+	25,  // 345: noted.v1.CalendarService.CreateTask:output_type -> noted.v1.Task
+	25,  // 346: noted.v1.CalendarService.GetTask:output_type -> noted.v1.Task
+	25,  // 347: noted.v1.CalendarService.UpdateTask:output_type -> noted.v1.Task
+	196, // 348: noted.v1.CalendarService.DeleteTask:output_type -> google.protobuf.Empty
+	32,  // 349: noted.v1.CalendarService.ListTasks:output_type -> noted.v1.ListTasksResponse
+	25,  // 350: noted.v1.CalendarService.LogTaskWork:output_type -> noted.v1.Task
+	35,  // 351: noted.v1.CalendarService.ListTaskWork:output_type -> noted.v1.ListTaskWorkResponse
+	25,  // 352: noted.v1.CalendarService.DeleteTaskWork:output_type -> noted.v1.Task
+	37,  // 353: noted.v1.CalendarService.WatchReminders:output_type -> noted.v1.Reminder
+	40,  // 354: noted.v1.CalendarService.ListReminders:output_type -> noted.v1.ListRemindersResponse
+	42,  // 355: noted.v1.AIService.GetStatus:output_type -> noted.v1.GetStatusResponse
+	44,  // 356: noted.v1.AIService.Ask:output_type -> noted.v1.AskResponse
+	47,  // 357: noted.v1.AIService.SummarizeNote:output_type -> noted.v1.SummarizeNoteResponse
+	49,  // 358: noted.v1.AIService.SuggestTags:output_type -> noted.v1.SuggestTagsResponse
+	51,  // 359: noted.v1.AIService.DailyBriefing:output_type -> noted.v1.DailyBriefingResponse
+	113, // 360: noted.v1.AIService.PlanFromText:output_type -> noted.v1.Proposal
+	113, // 361: noted.v1.AIService.ExtractTasks:output_type -> noted.v1.Proposal
+	55,  // 362: noted.v1.AIService.GetAIAccess:output_type -> noted.v1.AIAccess
+	55,  // 363: noted.v1.AIService.SetAIAccess:output_type -> noted.v1.AIAccess
+	52,  // 364: noted.v1.AIService.GetAIFeatures:output_type -> noted.v1.AIFeatures
+	52,  // 365: noted.v1.AIService.SetAIFeatures:output_type -> noted.v1.AIFeatures
+	63,  // 366: noted.v1.GoalService.CreateGoal:output_type -> noted.v1.Goal
+	63,  // 367: noted.v1.GoalService.GetGoal:output_type -> noted.v1.Goal
+	63,  // 368: noted.v1.GoalService.UpdateGoal:output_type -> noted.v1.Goal
+	196, // 369: noted.v1.GoalService.DeleteGoal:output_type -> google.protobuf.Empty
+	70,  // 370: noted.v1.GoalService.ListGoals:output_type -> noted.v1.ListGoalsResponse
+	72,  // 371: noted.v1.GoalService.RecordCheckIn:output_type -> noted.v1.RecordCheckInResponse
+	63,  // 372: noted.v1.GoalService.DeleteCheckIn:output_type -> noted.v1.Goal
+	75,  // 373: noted.v1.GoalService.ListCheckIns:output_type -> noted.v1.ListCheckInsResponse
+	63,  // 374: noted.v1.GoalService.SetMilestoneDone:output_type -> noted.v1.Goal
+	77,  // 375: noted.v1.ObjectiveService.CreateObjective:output_type -> noted.v1.Objective
+	77,  // 376: noted.v1.ObjectiveService.GetObjective:output_type -> noted.v1.Objective
+	77,  // 377: noted.v1.ObjectiveService.UpdateObjective:output_type -> noted.v1.Objective
+	196, // 378: noted.v1.ObjectiveService.DeleteObjective:output_type -> google.protobuf.Empty
+	85,  // 379: noted.v1.ObjectiveService.ListObjectives:output_type -> noted.v1.ListObjectivesResponse
+	77,  // 380: noted.v1.ObjectiveService.RecordMeasurement:output_type -> noted.v1.Objective
+	196, // 381: noted.v1.ObjectiveService.DeleteMeasurement:output_type -> google.protobuf.Empty
+	89,  // 382: noted.v1.ObjectiveService.ListMeasurements:output_type -> noted.v1.ListMeasurementsResponse
+	77,  // 383: noted.v1.ObjectiveService.SetObjectiveMilestoneDone:output_type -> noted.v1.Objective
+	92,  // 384: noted.v1.ProjectService.CreateProject:output_type -> noted.v1.Project
+	95,  // 385: noted.v1.ProjectService.GetProject:output_type -> noted.v1.ProjectDetail
+	92,  // 386: noted.v1.ProjectService.UpdateProject:output_type -> noted.v1.Project
+	196, // 387: noted.v1.ProjectService.DeleteProject:output_type -> google.protobuf.Empty
+	99,  // 388: noted.v1.ProjectService.ListProjects:output_type -> noted.v1.ListProjectsResponse
+	102, // 389: noted.v1.FocusService.GetFocus:output_type -> noted.v1.GetFocusResponse
+	103, // 390: noted.v1.PreferenceService.GetPreference:output_type -> noted.v1.Preference
+	103, // 391: noted.v1.PreferenceService.SetPreference:output_type -> noted.v1.Preference
+	196, // 392: noted.v1.PreferenceService.DeletePreference:output_type -> google.protobuf.Empty
+	108, // 393: noted.v1.PreferenceService.ListPreferences:output_type -> noted.v1.ListPreferencesResponse
+	110, // 394: noted.v1.ExportService.Export:output_type -> noted.v1.ExportChunk
+	116, // 395: noted.v1.SuggestionService.ListProposals:output_type -> noted.v1.ListProposalsResponse
+	119, // 396: noted.v1.SuggestionService.AcceptProposal:output_type -> noted.v1.AcceptProposalResponse
+	113, // 397: noted.v1.SuggestionService.DismissProposal:output_type -> noted.v1.Proposal
+	113, // 398: noted.v1.SuggestionService.ProposeSchedule:output_type -> noted.v1.Proposal
+	123, // 399: noted.v1.SuggestionService.GetWeeklyReview:output_type -> noted.v1.WeeklyReview
+	125, // 400: noted.v1.SuggestionService.ListChanges:output_type -> noted.v1.ListChangesResponse
+	114, // 401: noted.v1.SuggestionService.UndoChange:output_type -> noted.v1.Change
+	127, // 402: noted.v1.HoldingService.CreateHolding:output_type -> noted.v1.Holding
+	127, // 403: noted.v1.HoldingService.GetHolding:output_type -> noted.v1.Holding
+	127, // 404: noted.v1.HoldingService.UpdateHolding:output_type -> noted.v1.Holding
+	196, // 405: noted.v1.HoldingService.DeleteHolding:output_type -> google.protobuf.Empty
+	136, // 406: noted.v1.HoldingService.ListHoldings:output_type -> noted.v1.ListHoldingsResponse
+	127, // 407: noted.v1.HoldingService.RecordTrade:output_type -> noted.v1.Holding
+	196, // 408: noted.v1.HoldingService.DeleteTrade:output_type -> google.protobuf.Empty
+	140, // 409: noted.v1.HoldingService.ListTrades:output_type -> noted.v1.ListTradesResponse
+	141, // 410: noted.v1.TimeService.CreateTimeEntry:output_type -> noted.v1.TimeEntry
+	141, // 411: noted.v1.TimeService.GetTimeEntry:output_type -> noted.v1.TimeEntry
+	141, // 412: noted.v1.TimeService.UpdateTimeEntry:output_type -> noted.v1.TimeEntry
+	196, // 413: noted.v1.TimeService.DeleteTimeEntry:output_type -> google.protobuf.Empty
+	147, // 414: noted.v1.TimeService.ListTimeEntries:output_type -> noted.v1.ListTimeEntriesResponse
+	141, // 415: noted.v1.TimeService.StartTimer:output_type -> noted.v1.TimeEntry
+	141, // 416: noted.v1.TimeService.StopTimer:output_type -> noted.v1.TimeEntry
+	151, // 417: noted.v1.TimeService.GetRunningTimer:output_type -> noted.v1.GetRunningTimerResponse
+	154, // 418: noted.v1.TimeService.SummarizeTime:output_type -> noted.v1.TimeSummary
+	157, // 419: noted.v1.AlarmService.CreateAlarm:output_type -> noted.v1.Alarm
+	157, // 420: noted.v1.AlarmService.GetAlarm:output_type -> noted.v1.Alarm
+	157, // 421: noted.v1.AlarmService.UpdateAlarm:output_type -> noted.v1.Alarm
+	196, // 422: noted.v1.AlarmService.DeleteAlarm:output_type -> google.protobuf.Empty
+	163, // 423: noted.v1.AlarmService.ListAlarms:output_type -> noted.v1.ListAlarmsResponse
+	165, // 424: noted.v1.AlarmService.GetAlarmsVersion:output_type -> noted.v1.GetAlarmsVersionResponse
+	168, // 425: noted.v1.AlarmService.ListFires:output_type -> noted.v1.ListFiresResponse
+	171, // 426: noted.v1.HolidayService.GetHolidays:output_type -> noted.v1.GetHolidaysResponse
+	173, // 427: noted.v1.AccountService.SignInWithApple:output_type -> noted.v1.SignInWithAppleResponse
+	177, // 428: noted.v1.AccountService.LinkApple:output_type -> noted.v1.Account
+	177, // 429: noted.v1.AccountService.UnlinkApple:output_type -> noted.v1.Account
+	177, // 430: noted.v1.AccountService.GetAccount:output_type -> noted.v1.Account
+	180, // 431: noted.v1.AccountService.SignUp:output_type -> noted.v1.SignInResponse
+	180, // 432: noted.v1.AccountService.SignIn:output_type -> noted.v1.SignInResponse
+	177, // 433: noted.v1.AccountService.SetEmailPassword:output_type -> noted.v1.Account
+	184, // 434: noted.v1.AccountService.CreateToken:output_type -> noted.v1.CreateTokenResponse
+	186, // 435: noted.v1.AccountService.ListTokens:output_type -> noted.v1.ListTokensResponse
+	196, // 436: noted.v1.AccountService.RevokeToken:output_type -> google.protobuf.Empty
+	188, // 437: noted.v1.AccountService.GetPairing:output_type -> noted.v1.Pairing
+	188, // 438: noted.v1.AccountService.ApprovePairing:output_type -> noted.v1.Pairing
+	196, // 439: noted.v1.AccountService.DenyPairing:output_type -> google.protobuf.Empty
+	334, // [334:440] is the sub-list for method output_type
+	228, // [228:334] is the sub-list for method input_type
+	228, // [228:228] is the sub-list for extension type_name
+	228, // [228:228] is the sub-list for extension extendee
+	0,   // [0:228] is the sub-list for field type_name
 }
 
 func init() { file_noted_v1_noted_proto_init() }
@@ -14006,7 +14349,7 @@ func file_noted_v1_noted_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_noted_v1_noted_proto_rawDesc), len(file_noted_v1_noted_proto_rawDesc)),
 			NumEnums:      7,
-			NumMessages:   183,
+			NumMessages:   186,
 			NumExtensions: 0,
 			NumServices:   15,
 		},

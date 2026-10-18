@@ -4095,6 +4095,7 @@ const (
 	AlarmService_DeleteAlarm_FullMethodName      = "/noted.v1.AlarmService/DeleteAlarm"
 	AlarmService_ListAlarms_FullMethodName       = "/noted.v1.AlarmService/ListAlarms"
 	AlarmService_GetAlarmsVersion_FullMethodName = "/noted.v1.AlarmService/GetAlarmsVersion"
+	AlarmService_ListFires_FullMethodName        = "/noted.v1.AlarmService/ListFires"
 )
 
 // AlarmServiceClient is the client API for AlarmService service.
@@ -4108,6 +4109,10 @@ type AlarmServiceClient interface {
 	ListAlarms(ctx context.Context, in *ListAlarmsRequest, opts ...grpc.CallOption) (*ListAlarmsResponse, error)
 	// Cheap: lets a client skip ListAlarms when nothing changed.
 	GetAlarmsVersion(ctx context.Context, in *GetAlarmsVersionRequest, opts ...grpc.CallOption) (*GetAlarmsVersionResponse, error)
+	// What reaches the person when, and how: every fire of every schedule item
+	// that notifies (alarms, calendar events, to-dos) in a window, holiday
+	// policies and leads applied. The one feed a phone needs.
+	ListFires(ctx context.Context, in *ListFiresRequest, opts ...grpc.CallOption) (*ListFiresResponse, error)
 }
 
 type alarmServiceClient struct {
@@ -4178,6 +4183,16 @@ func (c *alarmServiceClient) GetAlarmsVersion(ctx context.Context, in *GetAlarms
 	return out, nil
 }
 
+func (c *alarmServiceClient) ListFires(ctx context.Context, in *ListFiresRequest, opts ...grpc.CallOption) (*ListFiresResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListFiresResponse)
+	err := c.cc.Invoke(ctx, AlarmService_ListFires_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AlarmServiceServer is the server API for AlarmService service.
 // All implementations must embed UnimplementedAlarmServiceServer
 // for forward compatibility.
@@ -4189,6 +4204,10 @@ type AlarmServiceServer interface {
 	ListAlarms(context.Context, *ListAlarmsRequest) (*ListAlarmsResponse, error)
 	// Cheap: lets a client skip ListAlarms when nothing changed.
 	GetAlarmsVersion(context.Context, *GetAlarmsVersionRequest) (*GetAlarmsVersionResponse, error)
+	// What reaches the person when, and how: every fire of every schedule item
+	// that notifies (alarms, calendar events, to-dos) in a window, holiday
+	// policies and leads applied. The one feed a phone needs.
+	ListFires(context.Context, *ListFiresRequest) (*ListFiresResponse, error)
 	mustEmbedUnimplementedAlarmServiceServer()
 }
 
@@ -4216,6 +4235,9 @@ func (UnimplementedAlarmServiceServer) ListAlarms(context.Context, *ListAlarmsRe
 }
 func (UnimplementedAlarmServiceServer) GetAlarmsVersion(context.Context, *GetAlarmsVersionRequest) (*GetAlarmsVersionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAlarmsVersion not implemented")
+}
+func (UnimplementedAlarmServiceServer) ListFires(context.Context, *ListFiresRequest) (*ListFiresResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListFires not implemented")
 }
 func (UnimplementedAlarmServiceServer) mustEmbedUnimplementedAlarmServiceServer() {}
 func (UnimplementedAlarmServiceServer) testEmbeddedByValue()                      {}
@@ -4346,6 +4368,24 @@ func _AlarmService_GetAlarmsVersion_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AlarmService_ListFires_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListFiresRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AlarmServiceServer).ListFires(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AlarmService_ListFires_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AlarmServiceServer).ListFires(ctx, req.(*ListFiresRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AlarmService_ServiceDesc is the grpc.ServiceDesc for AlarmService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -4376,6 +4416,10 @@ var AlarmService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetAlarmsVersion",
 			Handler:    _AlarmService_GetAlarmsVersion_Handler,
+		},
+		{
+			MethodName: "ListFires",
+			Handler:    _AlarmService_ListFires_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -14,13 +14,24 @@ import (
 	"github.com/liliang-cn/noted/internal/recur"
 )
 
-// How a schedule item tells the person when its time comes.
+// How a schedule item reaches the person when its time comes (notify).
 const (
-	NotifyAlarm    = "alarm"    // the phone rings until stopped by hand, through silent mode
-	NotifyReminder = "reminder" // a system notification that can be swiped away (the default)
-	NotifyApp      = "app"      // shown inside the app only
-	NotifyNone     = "none"
+	// NotifyAlarm rings like an alarm clock (AlarmKit, setAlarmClock):
+	// through silent mode, until stopped by hand.
+	NotifyAlarm = "alarm"
+	// NotifyReminder is a time-sensitive local notification the phone
+	// schedules for the exact moment, with snooze and done.
+	NotifyReminder = "reminder"
+	// NotifyNotification is a plain system notification that something is
+	// due, not critical to the second: the server's reminder stream (and
+	// webhook) delivers it, or a phone without that posts it locally.
+	NotifyNotification = "notification"
+	// NotifyNone puts the item on the calendar only; nobody is pinged.
+	NotifyNone = "none"
 )
+
+// Default lead of a timed calendar event created without one.
+const defaultEventLead = 10
 
 // Where a schedule item came from.
 const (
@@ -31,8 +42,8 @@ const (
 
 // Event is one schedule item (日程): a calendar event, an alarm (a rule
 // instead of start+rrule) or the time of a to-do. Notify says how the person
-// is told, RemindBefore how far ahead; without RemindBefore nothing is
-// scheduled anywhere, whatever Notify says.
+// is told (none: not at all), RemindBefore how far ahead of each occurrence
+// (nil is the same as 0, at the time itself).
 type Event struct {
 	ID           string
 	UserID       string
@@ -44,7 +55,7 @@ type Event struct {
 	AllDay       bool
 	TimeZone     string
 	RRule        string
-	RemindBefore *int // minutes; nil: no reminder. 0 is at the start, not unset
+	RemindBefore *int // minutes before each occurrence it is told; nil: at the time
 	ProjectID    string
 	Space        string
 	Created      time.Time
@@ -98,15 +109,32 @@ const (
 	maxEventText     = 2000
 )
 
-func checkNotify(v *string) error {
-	switch *v {
-	case "":
-		*v = NotifyReminder
-	case NotifyAlarm, NotifyReminder, NotifyApp, NotifyNone:
-	default:
-		return invalid("notify %q is unknown: use alarm (rings until stopped), reminder (a notification), app (in the app only) or none", *v)
+// CheckNotify reports whether v is a notify value; "" is not (defaults are
+// filled in by the kind of item first).
+func CheckNotify(v string) error {
+	switch v {
+	case NotifyAlarm, NotifyReminder, NotifyNotification, NotifyNone:
+		return nil
 	}
-	return nil
+	return invalid("notify %q is unknown: use alarm (rings like an alarm clock until stopped), reminder (a timed notification), notification (a plain system notification) or none", v)
+}
+
+// defaultEventNotify fills in how a new calendar event is told when the
+// caller did not say: with a lead given, a reminder then; an all-day event,
+// nobody; any other timed event, a reminder ten minutes before.
+func (e *Event) defaultEventNotify() {
+	if e.Notify != "" {
+		return
+	}
+	switch {
+	case e.RemindBefore != nil:
+		e.Notify = NotifyReminder
+	case e.AllDay:
+		e.Notify = NotifyNone
+	default:
+		lead := defaultEventLead
+		e.Notify, e.RemindBefore = NotifyReminder, &lead
+	}
 }
 
 // Normalize validates the event and fills defaults (zone, end time, notify,
@@ -123,7 +151,10 @@ func (e *Event) Normalize() error {
 	if utf8.RuneCountInString(e.OriginalText) > maxEventText {
 		return invalid("original_text is at most %d characters", maxEventText)
 	}
-	if err := checkNotify(&e.Notify); err != nil {
+	if e.Notify == "" {
+		e.Notify = NotifyReminder
+	}
+	if err := CheckNotify(e.Notify); err != nil {
 		return err
 	}
 	switch e.Source {
@@ -207,9 +238,25 @@ func (e Event) Schedule() alarm.Schedule {
 }
 
 // Notifies reports whether the item is told to the person at all: on, not
-// done, a notify other than none, and a reminder time.
+// done, and a notify other than none.
 func (e Event) Notifies() bool {
-	return !e.Disabled && !e.Completed && e.Notify != NotifyNone && e.RemindBefore != nil
+	return !e.Disabled && !e.Completed && e.Notify != NotifyNone
+}
+
+// Lead is how long before each occurrence the item is told.
+func (e Event) Lead() time.Duration {
+	if e.RemindBefore == nil {
+		return 0
+	}
+	return time.Duration(*e.RemindBefore) * time.Minute
+}
+
+// ServerTold reports whether the server's reminder stream (and webhook)
+// tells this item: every calendar event and to-do that notifies, as before
+// notify existed, and alarms only when they asked for a plain notification —
+// the phone rings and reminds the rest itself.
+func (e Event) ServerTold() bool {
+	return e.Notifies() && (e.Source != SourceAlarm || e.Notify == NotifyNotification)
 }
 
 // Occurrences returns the instances of e that overlap [from, to), the holiday
@@ -258,6 +305,9 @@ func (s *Store) CreateEvent(ctx context.Context, e Event) (Event, error) {
 	}
 	if e.Rule != nil && e.TimeZone == "" {
 		e.TimeZone = e.Rule.TimeZone
+	}
+	if e.Source == "" || e.Source == SourceEvent {
+		e.defaultEventNotify()
 	}
 	if err := e.Normalize(); err != nil {
 		return Event{}, err
@@ -348,7 +398,7 @@ func (s *Store) UpdateEvent(ctx context.Context, userID, id string, p EventPatch
 	if e.Source == SourceTask {
 		return s.updateTaskSchedule(ctx, userID, e, p)
 	}
-	oldStart, oldRule, oldRemind := e.Start, e.Rule, nullInt(e.RemindBefore)
+	oldStart, oldRule, oldRemind, oldNotify := e.Start, e.Rule, nullInt(e.RemindBefore), e.Notify
 	dur := e.End.Sub(e.Start)
 	if p.Title != nil {
 		e.Title = *p.Title
@@ -373,6 +423,15 @@ func (s *Store) UpdateEvent(ctx context.Context, userID, id string, p EventPatch
 	}
 	if p.RemindBefore != nil {
 		e.RemindBefore = *p.RemindBefore
+		// Without a notify of its own, a lead keeps its old meaning: setting
+		// one turns a silent item into a reminder, clearing it silences one.
+		if p.Notify == nil {
+			if e.RemindBefore == nil {
+				e.Notify = NotifyNone
+			} else if e.Notify == NotifyNone {
+				e.Notify = NotifyReminder
+			}
+		}
 	}
 	if p.Notify != nil {
 		e.Notify = *p.Notify
@@ -438,8 +497,8 @@ func (s *Store) UpdateEvent(ctx context.Context, userID, id string, p EventPatch
 	}
 	oldRuleJSON, _ := marshalRule(oldRule)
 	e.Updated = time.Now().UTC().Truncate(time.Millisecond)
-	// Rescheduling, a new rule or a new lead re-arms the reminder.
-	rearm := !e.Start.Equal(oldStart) || rule != oldRuleJSON || nullInt(e.RemindBefore) != oldRemind
+	// Rescheduling, a new rule, lead or notify re-arms the reminder.
+	rearm := !e.Start.Equal(oldStart) || rule != oldRuleJSON || nullInt(e.RemindBefore) != oldRemind || e.Notify != oldNotify
 	_, err = s.db.ExecContext(ctx, `
 		UPDATE events SET title = ?, description = ?, location = ?, start_ms = ?, end_ms = ?, all_day = ?, tz = ?,
 		                  rrule = ?, remind_before = ?, project_id = ?, space = ?, updated_ms = ?,
@@ -516,20 +575,26 @@ func (s *Store) DeleteEvent(ctx context.Context, userID, id string) error {
 	})
 }
 
-// ListEvents returns every occurrence of the events and alarms overlapping
-// [from, to), ordered by start; to-dos are left out (see ListSchedule).
+// ListEvents returns every occurrence of the calendar events overlapping
+// [from, to), ordered by start; alarms and to-dos are left out (see
+// ListSchedule), so planning and focus see the calendar as before.
 func (s *Store) ListEvents(ctx context.Context, userID string, from, to time.Time, space string) ([]Occurrence, error) {
-	sc, err := s.ListSchedule(ctx, userID, from, to, space, false)
+	sc, err := s.ListSchedule(ctx, userID, from, to, space, ScheduleOptions{})
 	if err != nil {
 		return nil, err
 	}
 	return sc.Occurrences, nil
 }
 
+// ScheduleOptions picks what ListSchedule returns besides calendar events.
+type ScheduleOptions struct {
+	Alarms bool // the items made through the alarm API
+	Tasks  bool // the schedules of to-dos in the window (done ones too), and the open to-dos with no time as Unscheduled
+}
+
 // ListSchedule returns every occurrence overlapping [from, to), ordered by
-// start, and with tasks the schedules of to-dos in the window (done ones too)
-// plus the open to-dos that have no time at all, as Unscheduled.
-func (s *Store) ListSchedule(ctx context.Context, userID string, from, to time.Time, space string, tasks bool) (Schedule, error) {
+// start: calendar events, and what the options add.
+func (s *Store) ListSchedule(ctx context.Context, userID string, from, to time.Time, space string, o ScheduleOptions) (Schedule, error) {
 	if err := checkSpaceFilter(space); err != nil {
 		return Schedule{}, err
 	}
@@ -539,39 +604,122 @@ func (s *Store) ListSchedule(ctx context.Context, userID string, from, to time.T
 	if to.Sub(from) > maxRangeDays*24*time.Hour {
 		return Schedule{}, invalid("range is longer than %d days", maxRangeDays)
 	}
-	// Recurring items can start long before the window, so they are always
-	// candidates; one-offs are pre-filtered in SQL.
-	q := `SELECT ` + eventCols + ` FROM events
-		WHERE user_id = ? AND (rule <> '' OR (start_ms < ? AND (rrule <> '' OR end_ms > ? OR (end_ms = start_ms AND start_ms >= ?))))`
-	args := []any{userID, ms(to), ms(from), ms(from)}
-	if !tasks {
-		q += ` AND task_id = ''`
+	sources := []any{SourceEvent}
+	if o.Alarms {
+		sources = append(sources, SourceAlarm)
 	}
-	q, args = spaceClause(q, args, "space", space)
-	rows, err := s.db.QueryContext(ctx, q, args...)
+	if o.Tasks {
+		sources = append(sources, SourceTask)
+	}
+	evs, err := s.scheduleCandidates(ctx, userID, from, to, space, sources)
 	if err != nil {
 		return Schedule{}, err
 	}
-	defer func() { _ = rows.Close() }()
 	out := Schedule{Occurrences: []Occurrence{}}
-	for rows.Next() {
-		e, err := scanEvent(rows)
-		if err != nil {
-			return Schedule{}, err
-		}
+	for _, e := range evs {
 		out.Occurrences = append(out.Occurrences, e.Occurrences(from, to, 1000)...)
 	}
-	if err := rows.Err(); err != nil {
-		return Schedule{}, err
-	}
 	sort.SliceStable(out.Occurrences, func(i, j int) bool { return out.Occurrences[i].Start.Before(out.Occurrences[j].Start) })
-	if tasks {
+	if o.Tasks {
 		out.Unscheduled, err = s.unscheduledTasks(ctx, userID, space)
 		if err != nil {
 			return Schedule{}, err
 		}
 	}
 	return out, nil
+}
+
+// scheduleCandidates are the items of the given sources that may have an
+// occurrence overlapping [from, to). Recurring items can start long before
+// the window, so they are always candidates; one-offs are pre-filtered.
+func (s *Store) scheduleCandidates(ctx context.Context, userID string, from, to time.Time, space string, sources []any) ([]Event, error) {
+	q := `SELECT ` + eventCols + ` FROM events
+		WHERE user_id = ? AND (rule <> '' OR (start_ms < ? AND (rrule <> '' OR end_ms > ? OR (end_ms = start_ms AND start_ms >= ?))))
+		AND source IN (?` + strings.Repeat(", ?", len(sources)-1) + `)`
+	args := append([]any{userID, ms(to), ms(from), ms(from)}, sources...)
+	q, args = spaceClause(q, args, "space", space)
+	rows, err := s.db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	var out []Event
+	for rows.Next() {
+		e, err := scanEvent(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}
+
+// Fire is one moment the person is told about a schedule item: At is the
+// occurrence (the event's start, the alarm's ring, the to-do's due time), Fire
+// that moment less the item's lead.
+type Fire struct {
+	Item Event
+	At   time.Time
+	Fire time.Time
+}
+
+// FireFilter picks the fires ListFires returns. Notify "" is every item that
+// notifies; alarm, reminder or notification only those.
+type FireFilter struct {
+	Space  string
+	Notify string
+}
+
+const maxFires = 500
+
+// ListFires answers "what reaches the person when, and how" in [from, to):
+// every fire of every schedule item that notifies — alarms, calendar events
+// and to-dos alike — with holiday policies applied, ordered by fire time,
+// and the version of the whole schedule (ListAlarms'), read together. At
+// most 500 fires; the window is at most 31 days.
+func (s *Store) ListFires(ctx context.Context, userID string, from, to time.Time, f FireFilter) ([]Fire, string, error) {
+	if err := checkSpaceFilter(f.Space); err != nil {
+		return nil, "", err
+	}
+	if f.Notify != "" {
+		if err := CheckNotify(f.Notify); err != nil || f.Notify == NotifyNone {
+			return nil, "", invalid("notify filter %q is unknown: use alarm, reminder or notification, or omit it for all three", f.Notify)
+		}
+	}
+	if !to.After(from) {
+		return nil, "", invalid("to must be after from")
+	}
+	if to.Sub(from) > 31*24*time.Hour {
+		return nil, "", invalid("the window is at most 31 days")
+	}
+	all, err := s.allSchedule(ctx, userID)
+	if err != nil {
+		return nil, "", err
+	}
+	out := []Fire{}
+	for _, e := range all {
+		if !e.Notifies() || (f.Notify != "" && e.Notify != f.Notify) || (f.Space != "" && e.Space != f.Space) {
+			continue
+		}
+		lead := e.Lead()
+		for _, o := range e.Occurrences(from.Add(lead), to.Add(lead), maxFires) {
+			fire := o.Start.Add(-lead)
+			if fire.Before(from) || !fire.Before(to) {
+				continue
+			}
+			out = append(out, Fire{Item: e, At: o.Start, Fire: fire})
+		}
+	}
+	sort.SliceStable(out, func(i, j int) bool {
+		if !out[i].Fire.Equal(out[j].Fire) {
+			return out[i].Fire.Before(out[j].Fire)
+		}
+		return out[i].Item.ID < out[j].Item.ID
+	})
+	if len(out) > maxFires {
+		out = out[:maxFires]
+	}
+	return out, scheduleVersion(all), nil
 }
 
 // AllEvents returns every calendar event of the user as stored, recurring ones

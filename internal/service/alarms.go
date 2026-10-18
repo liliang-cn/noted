@@ -87,7 +87,7 @@ func (s *Alarms) CreateAlarm(ctx context.Context, req *pb.CreateAlarmRequest) (*
 	if sc.TimeZone == "" {
 		sc.TimeZone = s.zone()
 	}
-	a := store.Alarm{UserID: u, Label: in.Label, Mode: in.Mode, Enabled: in.Enabled == nil || *in.Enabled, Schedule: sc,
+	a := store.Alarm{UserID: u, Label: in.Label, Mode: in.Mode, Notify: in.Notify, Enabled: in.Enabled == nil || *in.Enabled, Schedule: sc,
 		HolidayPolicy: in.HolidayPolicy, Note: in.Note, ProjectID: in.ProjectId, Space: spaceIn(in.Space), OriginalText: in.OriginalText}
 	if in.Region != nil {
 		a.Region = *in.Region
@@ -122,7 +122,7 @@ func (s *Alarms) UpdateAlarm(ctx context.Context, req *pb.UpdateAlarmRequest) (*
 	if in.GetId() == "" {
 		return nil, status.Error(codes.InvalidArgument, "alarm.id is required")
 	}
-	paths, err := maskPaths(req.UpdateMask, "label", "mode", "enabled", "schedule", "holiday_policy", "region", "note", "project_id", "space", "original_text")
+	paths, err := maskPaths(req.UpdateMask, "label", "mode", "notify", "enabled", "schedule", "holiday_policy", "region", "note", "project_id", "space", "original_text")
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +135,7 @@ func (s *Alarms) UpdateAlarm(ctx context.Context, req *pb.UpdateAlarmRequest) (*
 	}
 	p.Label, p.Mode, p.HolidayPolicy = str("label", in.Label), str("mode", in.Mode), str("holiday_policy", in.HolidayPolicy)
 	p.Region, p.Note, p.OriginalText = str("region", in.GetRegion()), str("note", in.Note), str("original_text", in.OriginalText)
-	p.ProjectID = str("project_id", in.ProjectId)
+	p.ProjectID, p.Notify = str("project_id", in.ProjectId), str("notify", in.Notify)
 	if paths["enabled"] {
 		v := in.GetEnabled()
 		p.Enabled = &v
@@ -185,6 +185,46 @@ func (s *Alarms) ListAlarms(ctx context.Context, req *pb.ListAlarmsRequest) (*pb
 	out := &pb.ListAlarmsResponse{Version: version}
 	for _, a := range as {
 		out.Alarms = append(out.Alarms, alarmToPB(a, now))
+	}
+	return out, nil
+}
+
+// Default and longest window of ListFires.
+const (
+	firesWindow    = 7 * 24 * time.Hour
+	maxFiresWindow = 31 * 24 * time.Hour
+)
+
+func (s *Alarms) ListFires(ctx context.Context, req *pb.ListFiresRequest) (*pb.ListFiresResponse, error) {
+	u, err := uid(ctx)
+	if err != nil {
+		return nil, err
+	}
+	from := time.Now()
+	if req.From != nil {
+		from = req.From.AsTime()
+	}
+	to := from.Add(firesWindow)
+	if req.To != nil {
+		to = req.To.AsTime()
+	}
+	if to.Sub(from) > maxFiresWindow {
+		return nil, status.Error(codes.InvalidArgument, "the window is at most 31 days")
+	}
+	fs, version, err := s.Store.ListFires(ctx, u, from, to, store.FireFilter{Space: spaceIn(req.Space), Notify: req.Notify})
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	out := &pb.ListFiresResponse{Version: version, From: timestamppb.New(from), To: timestamppb.New(to)}
+	for _, f := range fs {
+		e := f.Item
+		lead := int32(0)
+		if e.RemindBefore != nil {
+			lead = int32(*e.RemindBefore)
+		}
+		out.Fires = append(out.Fires, &pb.Fire{ItemId: e.ID, Source: e.Source, Title: e.Title, Note: e.Description, Notify: e.Notify,
+			FireTime: timestamppb.New(f.Fire), AtTime: timestamppb.New(f.At), RemindBeforeMinutes: lead, AllDay: e.AllDay,
+			Space: spaceOut(e.Space), ProjectId: e.ProjectID, Location: e.Location})
 	}
 	return out, nil
 }
