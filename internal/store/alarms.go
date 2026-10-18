@@ -75,6 +75,7 @@ type AlarmFilter struct {
 	Space     string
 	ProjectID string
 	Notify    string
+	Silent    bool // with Notify "": the alarms set to none too (export, sync)
 }
 
 const maxAlarmText = 2000
@@ -235,7 +236,7 @@ func (s *Store) ListAlarms(ctx context.Context, userID string, f AlarmFilter) ([
 		}
 		switch f.Notify {
 		case "":
-			if e.Source != SourceAlarm || e.Notify == NotifyNone {
+			if e.Source != SourceAlarm || (e.Notify == NotifyNone && !f.Silent) {
 				continue
 			}
 		case "all":

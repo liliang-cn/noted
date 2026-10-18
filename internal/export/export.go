@@ -50,6 +50,7 @@ type Event struct {
 	RemindBefore *int      `json:"remind_before_minutes,omitempty"`
 	Project      string    `json:"project_id,omitempty"`
 	Space        string    `json:"space"`
+	Notify       string    `json:"notify"` // alarm, reminder, notification or none
 }
 
 type Task struct {
@@ -68,7 +69,8 @@ type Task struct {
 	RRule     string     `json:"rrule,omitempty"` // repeats, anchored on due
 	// Occurrence is the task's 1-based place in its series; the calendar
 	// counts COUNT down by it.
-	Occurrence int `json:"-"`
+	Occurrence int    `json:"-"`
+	Notify     string `json:"notify"`
 }
 
 type Project struct {
@@ -189,6 +191,7 @@ type Alarm struct {
 	OriginalText  string         `json:"original_text,omitempty"`
 	Created       time.Time      `json:"created"`
 	Updated       time.Time      `json:"updated"`
+	Notify        string         `json:"notify"`
 }
 
 type Data struct {
@@ -229,7 +232,7 @@ func Collect(ctx context.Context, st *store.Store, userID, userName string, now 
 		return nil, err
 	}
 	for _, e := range evs {
-		d.Events = append(d.Events, Event{e.ID, e.Title, e.Description, e.Location, e.Start.UTC(), e.End.UTC(), e.AllDay, e.TimeZone, e.RRule, e.RemindBefore, e.ProjectID, e.Space})
+		d.Events = append(d.Events, Event{e.ID, e.Title, e.Description, e.Location, e.Start.UTC(), e.End.UTC(), e.AllDay, e.TimeZone, e.RRule, e.RemindBefore, e.ProjectID, e.Space, e.Notify})
 	}
 	for off := 0; ; off += pageSize {
 		ts, err := st.ListTasks(ctx, userID, store.TaskFilter{State: "all", Limit: pageSize, Offset: off})
@@ -237,7 +240,7 @@ func Collect(ctx context.Context, st *store.Store, userID, userName string, now 
 			return nil, err
 		}
 		for _, t := range ts {
-			d.Tasks = append(d.Tasks, Task{t.ID, t.Title, t.Notes, utc(t.Due), t.Priority, t.Done, utc(t.DoneAt), utc(t.Remind), nonNil(t.Tags), t.ProjectID, t.Space, t.Created.UTC(), t.RRule, t.Occurrence})
+			d.Tasks = append(d.Tasks, Task{t.ID, t.Title, t.Notes, utc(t.Due), t.Priority, t.Done, utc(t.DoneAt), utc(t.Remind), nonNil(t.Tags), t.ProjectID, t.Space, t.Created.UTC(), t.RRule, t.Occurrence, t.Notify})
 		}
 		if len(ts) < pageSize {
 			break
@@ -321,13 +324,13 @@ func Collect(ctx context.Context, st *store.Store, userID, userName string, now 
 		}
 	}
 	sort.SliceStable(d.Time, func(i, j int) bool { return d.Time[i].Start.Before(d.Time[j].Start) })
-	as, _, err := st.ListAlarms(ctx, userID, store.AlarmFilter{})
+	as, _, err := st.ListAlarms(ctx, userID, store.AlarmFilter{Silent: true})
 	if err != nil {
 		return nil, err
 	}
 	for _, a := range as {
 		d.Alarms = append(d.Alarms, Alarm{a.ID, a.Label, a.Mode, a.Enabled, a.Schedule, a.HolidayPolicy, a.Region, a.Note, a.ProjectID, a.Space,
-			a.OriginalText, a.Created.UTC(), a.Updated.UTC()})
+			a.OriginalText, a.Created.UTC(), a.Updated.UTC(), a.Notify})
 	}
 	prefs, err := st.ListPreferences(ctx, userID, "")
 	if err != nil {

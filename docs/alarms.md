@@ -20,7 +20,10 @@ exactly these; `?` marks a field left out when empty.
   "id": "8b0c…",                      // a UUID
   "link": "noted://alarm/8b0c…",
   "label": "接三宝",
-  "mode": "alarm",                    // "alarm" | "reminder"
+  "mode": "alarm",                    // "alarm" | "reminder": "alarm" only when notify is alarm (for apps that predate notify)
+  "notify": "alarm",                  // "alarm" | "reminder" | "notification" | "none" (see Notify below)
+  "remindBeforeMinutes": 0,           // lead taken off every ring; 0 for alarms, events and to-dos may have one
+  "source": "alarm",                  // "alarm" | "event" | "task": where the item came from
   "enabled": true,
   "schedule": {
     "kind": "recurring",              // "oneShot" | "recurring"
@@ -157,13 +160,39 @@ strings above. `enabled` and `region` are `optional`: unset on create means on, 
 region. Space is inherited like a task's: given, else the project's, else life. Deleting a project
 keeps its alarms and takes them out of it.
 
-MCP: `create_alarm`, `list_alarms` (`enabled` filter), `get_alarm`, `update_alarm` (incl. `enabled`;
+MCP: `create_alarm`, `list_alarms` (`enabled` and `notify` filters), `list_fires`, `get_alarm`, `update_alarm` (incl. `enabled`;
 `schedule` replaces the whole schedule), `delete_alarm` (`{deleted, kind: "alarm"}`), `get_holidays`.
 Top-level arguments are snake_case like the other tools (`holiday_policy`, `project_id`,
 `original_text`); `schedule` has exactly the shape above, so a model can copy it from `get_alarm`,
 change a field and send it back. The server resolves nothing relative: the model turns 明天 /
-下周一 into dates first. The tool descriptions steer 闹钟/叫我/准时响/必须提醒到 to `mode: alarm` and
-"只要通知" to `mode: reminder`.
+下周一 into dates first. The tool descriptions steer 闹钟/叫我/准时响/必须提醒到 to `notify: alarm`,
+提醒我/到点提醒 to `reminder` and 通知我一下 to `notification`.
+
+## Notify
+
+Alarms are one kind of schedule item; calendar events and to-dos with a time are the others, and all
+of them carry `notify`, how the item reaches the person:
+
+| notify | | how |
+| --- | --- | --- |
+| `alarm` | 闹钟 | the phone rings it like an alarm clock (AlarmKit, setAlarmClock), through silent mode, until stopped |
+| `reminder` | 提醒 | a time-sensitive local notification the phone schedules for the moment, with snooze |
+| `notification` | 通知 | a plain notification that it is due: the server's reminder stream and webhook (and SuperAI's notices) deliver it; phones do not ring it |
+| `none` | 不提醒 | on the schedule only |
+
+Defaults when it is not given: `create_alarm` takes `mode` (alarm); a timed `create_event` is a
+reminder 10 minutes before (`remind_before_minutes`), an all-day one none; a `create_task` with
+`remind_at` a reminder, else none (a notify other than none without `remind_at` is told at `due`).
+Setting a lead or remind time without notify turns a silent item into a reminder; clearing it makes
+it none. Data from before notify was migrated once (`notify_defaults`): events with a lead and to-dos
+with a remind time became reminders, the rest none; alarms kept their mode.
+
+`list_alarms` with `notify` `all` lists every item that notifies (events and to-dos as an alarm-style
+schedule, the lead in `remindBeforeMinutes`); without `notify` it lists the alarms proper as before.
+`list_fires` (gRPC `AlarmService.ListFires`) is every fire in a window of up to 31 days (default 7)
+— `fireTime` (the occurrence less the lead), `atTime`, `notify`, `itemId`, `source` — holidays and
+调休 applied. The server's reminder stream tells calendar events and to-dos that notify, as it did,
+and alarms only with notify notification.
 
 Also: the export's `noted.json` has an `alarms` list (schedule in the shape above); the CortexDB sync
 writes each alarm as kind `alarm` (entity type `noted_alarm`, `part_of` its project), its rule in

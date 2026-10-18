@@ -297,7 +297,7 @@ claude mcp add noted -e NOTED_ADDR=127.0.0.1:43872 -e NOTED_TOKEN=<token> -- /pa
 | 类别 | 工具 |
 | --- | --- |
 | 笔记 | `search_notes` `list_notes` `get_note` `create_note` `update_note` `delete_note` |
-| 日程 | `list_events` `create_event` `update_event` `delete_event` |
+| 日程 | `list_events` `create_event` `update_event` `delete_event` `list_fires`(日程、闹钟、带时间的待办在一起;每一项有 `notify`:`alarm` 闹钟、`reminder` 提醒、`notification` 通知、`none` 不提醒,`remind_before_minutes` 提前多少分钟;`list_fires` 是接下来几天什么时候、以什么方式响) |
 | 待办 | `list_tasks` `get_task` `create_task` `update_task` `complete_task` `delete_task` |
 | 待办投入 | `log_task_work` `list_task_work` `delete_task_work`(每次做了多少分钟、进度) |
 | 提醒 | `list_reminders` |
@@ -307,7 +307,7 @@ claude mcp add noted -e NOTED_ADDR=127.0.0.1:43872 -e NOTED_TOKEN=<token> -- /pa
 | 大目标 | `list_objectives` `get_objective` `create_objective` `update_objective` `delete_objective` `record_reading` `list_readings` `delete_reading` `set_objective_milestone_done`(大目标可带有序里程碑:标题、截止时间、完成标准) |
 | 时间记录 | `log_time` `start_timer` `stop_timer` `get_running_timer` `list_time_entries` `update_time_entry` `delete_time_entry` `time_summary`(游泳 30 分钟;可挂项目或目标,挂目标时自动打卡,按活动/项目/目标/天汇总) |
 | 投资 | `list_holdings` `get_holding` `create_holding` `update_holding` `delete_holding` `record_trade` `list_trades` `delete_trade` |
-| 闹钟 | `create_alarm` `list_alarms` `get_alarm` `update_alarm` `delete_alarm` `get_holidays`(叫我/闹钟用 `mode: alarm`,只要通知用 `reminder`;可跳过节假日或只在工作日响) |
+| 闹钟 | `create_alarm` `list_alarms` `get_alarm` `update_alarm` `delete_alarm` `get_holidays`(叫我/闹钟用 `notify: alarm`,到点提醒用 `reminder`,只要通知用 `notification`;可跳过节假日或只在工作日响) |
 | 建议 | `list_suggestions` `accept_suggestion` `dismiss_suggestion` `propose_schedule` `weekly_review` `list_changes` `undo_change` |
 | AI | `ask_assistant` `summarize_note` `suggest_tags` `daily_briefing` `plan_from_text` `extract_tasks`(仅服务端开了 AI 时才出现) |
 

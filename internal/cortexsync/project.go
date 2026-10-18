@@ -656,6 +656,9 @@ func (b *builder) alarm(a Alarm) {
 	if a.Schedule.Recurrence != nil {
 		meta["freq"] = a.Schedule.Recurrence.Freq
 	}
+	if a.Notify != "" {
+		meta["notify"] = a.Notify
+	}
 	next := b.l.noNext
 	if len(a.NextFires) > 0 {
 		var words, stamps []string

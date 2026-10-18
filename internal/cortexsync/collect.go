@@ -88,7 +88,7 @@ func Collect(ctx context.Context, st *store.Store, userID, userName string, loc 
 		}
 		s.Holdings = append(s.Holdings, h)
 	}
-	as, _, err := st.ListAlarms(ctx, userID, store.AlarmFilter{})
+	as, _, err := st.ListAlarms(ctx, userID, store.AlarmFilter{Silent: true})
 	if err != nil {
 		return s, err
 	}
