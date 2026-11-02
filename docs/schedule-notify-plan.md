@@ -44,6 +44,8 @@
 
 ## 结果
 
+- 命名：实现里第四档叫 `notification`（普通通知，由 SuperLeo 核心的 list_fires 监视器发出，手机不排），不是上文写的 `app`；与已部署的 noted、superai、iOS、Android 一致。上文表格里的 `app` 即 `notification`。
+
 - noted（服务端 + MCP）：完成。events 表为日程表，`notify` 四档，闹钟 API 门面，待办镜像，`list_alarms{notify:"all"}`，`list_fires`，webhook/Reminder 带 `notify`，导出与 cortex 同步带 `notify`；启动时自动迁移，新增 `noted schedule status|migrate|rollback`。
 - 迁移在每次启动自动执行（幂等）；`alarms` 表原样保留。回滚：停服务 → `noted schedule rollback` → 换回旧二进制。
 - superai：`NotedAlarms` 传 `notify:"all"`，alarmplan 认识 `notify`/`remindBeforeMinutes`，日程/待办工具调用触发版本检查，prompt 描述 notify。
