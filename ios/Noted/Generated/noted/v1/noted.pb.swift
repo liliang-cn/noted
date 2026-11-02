@@ -555,7 +555,10 @@ public nonisolated struct Noted_V1_Event: @unchecked Sendable {
     set {_uniqueStorage()._rrule = newValue}
   }
 
-  /// unset: no reminder
+  /// How far ahead of each start the person is told, in minutes; unset or 0:
+  /// at the start itself. Unset on create with notify unset keeps its old
+  /// meaning (see notify); cleared on update without notify, the item stops
+  /// notifying (notify none).
   public var remindBeforeMinutes: Int32 {
     get {_storage._remindBeforeMinutes ?? 0}
     set {_uniqueStorage()._remindBeforeMinutes = newValue}
@@ -592,6 +595,90 @@ public nonisolated struct Noted_V1_Event: @unchecked Sendable {
   public var space: Noted_V1_Space {
     get {_storage._space}
     set {_uniqueStorage()._space = newValue}
+  }
+
+  /// How the item reaches the person when its time comes:
+  ///   alarm        rings like an alarm clock (AlarmKit, setAlarmClock),
+  ///                through silent mode, until stopped by hand;
+  ///   reminder     a time-sensitive local notification at the moment (less
+  ///                remind_before_minutes), with snooze and done;
+  ///   notification a plain system notification that it is due, not critical
+  ///                to the second: the server's reminder stream and webhook
+  ///                deliver it, or a phone posts it locally;
+  ///   none         on the calendar only, nobody is pinged.
+  /// Unset on create: reminder when remind_before_minutes is set; none for an
+  /// all-day event; else reminder 10 minutes before. Items made through the
+  /// alarm API take the alarm's mode.
+  public var notify: String {
+    get {_storage._notify}
+    set {_uniqueStorage()._notify = newValue}
+  }
+
+  /// An alarm-style rule instead of start_time + rrule: the shapes of
+  /// AlarmSchedule (oneShot at / recurring anchor+time+recurrence, with
+  /// minutely/hourly/byTime/byMonthDay). Set when the item was made through
+  /// the alarm API or create_event's schedule; start_time then mirrors its first
+  /// ring and rrule is empty. Read-only once set except through update's
+  /// alarm_schedule (replaced whole).
+  public var alarmSchedule: Noted_V1_AlarmSchedule {
+    get {_storage._alarmSchedule ?? Noted_V1_AlarmSchedule()}
+    set {_uniqueStorage()._alarmSchedule = newValue}
+  }
+  /// Returns true if `alarmSchedule` has been explicitly set.
+  public var hasAlarmSchedule: Bool {_storage._alarmSchedule != nil}
+  /// Clears the value of `alarmSchedule`. Subsequent reads from it will return its default value.
+  public mutating func clearAlarmSchedule() {_uniqueStorage()._alarmSchedule = nil}
+
+  /// Holiday handling for recurring items, alarm-style or RRULE: none
+  /// (default), skipHoliday, workdayOnly or followStatutory; region CN (mainland
+  /// China's 法定节假日 and 调休) or "" (weekends only). Unset region on create:
+  /// CN when time_zone is a mainland China zone.
+  public var holidayPolicy: String {
+    get {_storage._holidayPolicy}
+    set {_uniqueStorage()._holidayPolicy = newValue}
+  }
+
+  public var region: String {
+    get {_storage._region ?? String()}
+    set {_uniqueStorage()._region = newValue}
+  }
+  /// Returns true if `region` has been explicitly set.
+  public var hasRegion: Bool {_storage._region != nil}
+  /// Clears the value of `region`. Subsequent reads from it will return its default value.
+  public mutating func clearRegion() {_uniqueStorage()._region = nil}
+
+  /// unset on create: true. false pauses it: no occurrences, no notifications
+  public var enabled: Bool {
+    get {_storage._enabled ?? false}
+    set {_uniqueStorage()._enabled = newValue}
+  }
+  /// Returns true if `enabled` has been explicitly set.
+  public var hasEnabled: Bool {_storage._enabled != nil}
+  /// Clears the value of `enabled`. Subsequent reads from it will return its default value.
+  public mutating func clearEnabled() {_uniqueStorage()._enabled = nil}
+
+  /// the words the person said, kept for reference
+  public var originalText: String {
+    get {_storage._originalText}
+    set {_uniqueStorage()._originalText = newValue}
+  }
+
+  /// Read-only. source: event, alarm (made through the alarm API or migrated
+  /// from the old alarms table) or task (the schedule of a to-do with a due
+  /// time; its id is the task's). For a task: completed mirrors the task.
+  public var source: String {
+    get {_storage._source}
+    set {_uniqueStorage()._source = newValue}
+  }
+
+  public var taskID: String {
+    get {_storage._taskID}
+    set {_uniqueStorage()._taskID = newValue}
+  }
+
+  public var completed: Bool {
+    get {_storage._completed}
+    set {_uniqueStorage()._completed = newValue}
   }
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -649,7 +736,10 @@ public nonisolated struct Noted_V1_UpdateEventRequest: Sendable {
   public mutating func clearEvent() {self._event = nil}
 
   /// title, description, location, start_time, end_time, all_day, time_zone,
-  /// rrule, remind_before_minutes, project_id, space
+  /// rrule, remind_before_minutes, project_id, space, notify, alarm_schedule,
+  /// holiday_policy, region, enabled, original_text. On a task's schedule
+  /// (source task) title, start_time, remind_before_minutes, notify, project_id
+  /// and space are applied to the task itself; the rest is refused.
   public var updateMask: SwiftProtobuf.Google_Protobuf_FieldMask {
     get {_updateMask ?? SwiftProtobuf.Google_Protobuf_FieldMask()}
     set {_updateMask = newValue}
@@ -706,6 +796,15 @@ public nonisolated struct Noted_V1_ListEventsRequest: Sendable {
 
   /// UNSPECIFIED: both
   public var space: Noted_V1_Space = .unspecified
+
+  /// Also return the schedules of to-dos with a due time in the window (source
+  /// task, completed ones included), and the open to-dos without a time as
+  /// unscheduled. Off: as before.
+  public var includeTasks: Bool = false
+
+  /// Also return the occurrences of the items made through the alarm API
+  /// (source alarm). Off: calendar events only, as before.
+  public var includeAlarms: Bool = false
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -764,6 +863,9 @@ public nonisolated struct Noted_V1_ListEventsResponse: Sendable {
 
   /// ordered by start_time
   public var occurrences: [Noted_V1_Occurrence] = []
+
+  /// include_tasks only: open to-dos with no due time, oldest first
+  public var unscheduled: [Noted_V1_Task] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -900,6 +1002,16 @@ public nonisolated struct Noted_V1_Task: @unchecked Sendable {
     set {_uniqueStorage()._rrule = newValue}
   }
 
+  /// How the to-do reaches the person at remind_time, as Event.notify. Unset
+  /// on create: reminder with a remind_time, else none. Set to anything but
+  /// none without a remind_time, it is told at due_time. Setting remind_time
+  /// on update without notify makes a silent to-do a reminder; clearing it
+  /// makes it none.
+  public var notify: String {
+    get {_storage._notify}
+    set {_uniqueStorage()._notify = newValue}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -988,7 +1100,7 @@ public nonisolated struct Noted_V1_UpdateTaskRequest: Sendable {
   public mutating func clearTask() {self._task = nil}
 
   /// title, notes, due_time, priority, completed, remind_time, tags, project_id,
-  /// space, rrule
+  /// space, rrule, notify
   public var updateMask: SwiftProtobuf.Google_Protobuf_FieldMask {
     get {_updateMask ?? SwiftProtobuf.Google_Protobuf_FieldMask()}
     set {_updateMask = newValue}
@@ -1223,6 +1335,9 @@ public nonisolated struct Noted_V1_Reminder: Sendable {
   public mutating func clearFireTime() {self._fireTime = nil}
 
   public var space: Noted_V1_Space = .unspecified
+
+  /// the item's notify: reminder or notification (alarm for an event or to-do set to ring; none never fires)
+  public var notify: String = String()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -3101,58 +3216,81 @@ public nonisolated struct Noted_V1_FocusItem: Sendable {
   fileprivate var _sortTime: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
 }
 
-public nonisolated struct Noted_V1_GetFocusResponse: Sendable {
+public nonisolated struct Noted_V1_GetFocusResponse: @unchecked Sendable {
   // SwiftProtobuf.Message conformance is added in an extension below. See the
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var horizon: Noted_V1_Horizon = .unspecified
+  public var horizon: Noted_V1_Horizon {
+    get {_storage._horizon}
+    set {_uniqueStorage()._horizon = newValue}
+  }
 
   public var from: SwiftProtobuf.Google_Protobuf_Timestamp {
-    get {_from ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
-    set {_from = newValue}
+    get {_storage._from ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_uniqueStorage()._from = newValue}
   }
   /// Returns true if `from` has been explicitly set.
-  public var hasFrom: Bool {self._from != nil}
+  public var hasFrom: Bool {_storage._from != nil}
   /// Clears the value of `from`. Subsequent reads from it will return its default value.
-  public mutating func clearFrom() {self._from = nil}
+  public mutating func clearFrom() {_uniqueStorage()._from = nil}
 
   public var to: SwiftProtobuf.Google_Protobuf_Timestamp {
-    get {_to ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
-    set {_to = newValue}
+    get {_storage._to ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_uniqueStorage()._to = newValue}
   }
   /// Returns true if `to` has been explicitly set.
-  public var hasTo: Bool {self._to != nil}
+  public var hasTo: Bool {_storage._to != nil}
   /// Clears the value of `to`. Subsequent reads from it will return its default value.
-  public mutating func clearTo() {self._to = nil}
+  public mutating func clearTo() {_uniqueStorage()._to = nil}
 
   /// events and tasks, ordered by sort_time
-  public var items: [Noted_V1_FocusItem] = []
+  public var items: [Noted_V1_FocusItem] {
+    get {_storage._items}
+    set {_uniqueStorage()._items = newValue}
+  }
 
   /// active goals, behind pace first
-  public var goals: [Noted_V1_Goal] = []
+  public var goals: [Noted_V1_Goal] {
+    get {_storage._goals}
+    set {_uniqueStorage()._goals = newValue}
+  }
 
-  public var pinnedProjects: [Noted_V1_Project] = []
+  public var pinnedProjects: [Noted_V1_Project] {
+    get {_storage._pinnedProjects}
+    set {_uniqueStorage()._pinnedProjects = newValue}
+  }
 
-  public var space: Noted_V1_Space = .unspecified
+  public var space: Noted_V1_Space {
+    get {_storage._space}
+    set {_uniqueStorage()._space = newValue}
+  }
 
   /// unset when no timer runs (or it is in the other space)
   public var runningTimer: Noted_V1_TimeEntry {
-    get {_runningTimer ?? Noted_V1_TimeEntry()}
-    set {_runningTimer = newValue}
+    get {_storage._runningTimer ?? Noted_V1_TimeEntry()}
+    set {_uniqueStorage()._runningTimer = newValue}
   }
   /// Returns true if `runningTimer` has been explicitly set.
-  public var hasRunningTimer: Bool {self._runningTimer != nil}
+  public var hasRunningTimer: Bool {_storage._runningTimer != nil}
   /// Clears the value of `runningTimer`. Subsequent reads from it will return its default value.
-  public mutating func clearRunningTimer() {self._runningTimer = nil}
+  public mutating func clearRunningTimer() {_uniqueStorage()._runningTimer = nil}
+
+  /// the compass of the space (life when unspecified); unset until one is saved
+  public var compass: Noted_V1_Compass {
+    get {_storage._compass ?? Noted_V1_Compass()}
+    set {_uniqueStorage()._compass = newValue}
+  }
+  /// Returns true if `compass` has been explicitly set.
+  public var hasCompass: Bool {_storage._compass != nil}
+  /// Clears the value of `compass`. Subsequent reads from it will return its default value.
+  public mutating func clearCompass() {_uniqueStorage()._compass = nil}
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
-  fileprivate var _from: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
-  fileprivate var _to: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
-  fileprivate var _runningTimer: Noted_V1_TimeEntry? = nil
+  fileprivate var _storage = _StorageClass.defaultInstance
 }
 
 public nonisolated struct Noted_V1_Preference: Sendable {
@@ -3594,6 +3732,27 @@ public nonisolated struct Noted_V1_WeeklyReview: @unchecked Sendable {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
+  /// Declared first so they head the JSON text of the review (field numbers
+  /// stay after the original ones).
+  public var compass: Noted_V1_Compass {
+    get {_storage._compass ?? Noted_V1_Compass()}
+    set {_uniqueStorage()._compass = newValue}
+  }
+  /// Returns true if `compass` has been explicitly set.
+  public var hasCompass: Bool {_storage._compass != nil}
+  /// Clears the value of `compass`. Subsequent reads from it will return its default value.
+  public mutating func clearCompass() {_uniqueStorage()._compass = nil}
+
+  /// what was done against what was said
+  public var behavior: Noted_V1_BehaviorReview {
+    get {_storage._behavior ?? Noted_V1_BehaviorReview()}
+    set {_uniqueStorage()._behavior = newValue}
+  }
+  /// Returns true if `behavior` has been explicitly set.
+  public var hasBehavior: Bool {_storage._behavior != nil}
+  /// Clears the value of `behavior`. Subsequent reads from it will return its default value.
+  public mutating func clearBehavior() {_uniqueStorage()._behavior = nil}
+
   public var from: SwiftProtobuf.Google_Protobuf_Timestamp {
     get {_storage._from ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
     set {_uniqueStorage()._from = newValue}
@@ -3662,6 +3821,81 @@ public nonisolated struct Noted_V1_WeeklyReview: @unchecked Sendable {
   public init() {}
 
   fileprivate var _storage = _StorageClass.defaultInstance
+}
+
+/// What the week's time, check-ins and finished tasks did for each active
+/// objective and goal, against its target. A task or time entry counts for an
+/// objective or goal through the goal_id or project_id it carries.
+public nonisolated struct Noted_V1_BehaviorRow: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// "objective" or "goal"
+  public var kind: String = String()
+
+  public var id: String = String()
+
+  public var title: String = String()
+
+  /// goal: this week's share of its target; 0 for an objective
+  public var target: Double = 0
+
+  public var unit: String = String()
+
+  /// goal: check-in amount this week; objective: sum over its goals
+  public var done: Double = 0
+
+  public var checkIns: Int32 = 0
+
+  public var timeMinutes: Int32 = 0
+
+  public var tasksDone: Int32 = 0
+
+  /// behind the target, or nothing at all was done
+  public var short: Bool = false
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+/// Time that went to something no objective or goal is linked to.
+public nonisolated struct Noted_V1_UnlinkedTime: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var title: String = String()
+
+  public var minutes: Int32 = 0
+
+  public var count: Int32 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Noted_V1_BehaviorReview: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// short sentences, e.g. "游泳 0/2 次"; first in the JSON text
+  public var mismatches: [String] = []
+
+  public var rows: [Noted_V1_BehaviorRow] = []
+
+  /// biggest first, at most five
+  public var unlinked: [Noted_V1_UnlinkedTime] = []
+
+  /// all unlinked time of the week
+  public var unlinkedMinutes: Int32 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
 }
 
 public nonisolated struct Noted_V1_ListChangesRequest: Sendable {
@@ -4654,7 +4888,10 @@ public nonisolated struct Noted_V1_Alarm: @unchecked Sendable {
     set {_uniqueStorage()._label = newValue}
   }
 
-  /// alarm (default; rings through silent mode) or reminder (a notification)
+  /// alarm (default; rings through silent mode) or reminder (a notification).
+  /// Read: alarm only when notify is alarm, else reminder, so a client that
+  /// predates notify never rings what should not ring. On write it may also
+  /// be notification or none; notify, when set, wins.
   public var mode: String {
     get {_storage._mode}
     set {_uniqueStorage()._mode = newValue}
@@ -4744,6 +4981,27 @@ public nonisolated struct Noted_V1_Alarm: @unchecked Sendable {
     set {_uniqueStorage()._nextFires = newValue}
   }
 
+  /// How it reaches the person, as Event.notify: alarm, reminder,
+  /// notification or none. Unset on create: from mode.
+  public var notify: String {
+    get {_storage._notify}
+    set {_uniqueStorage()._notify = newValue}
+  }
+
+  /// Read-only. An alarm is a schedule item (Event): remind_before_minutes is
+  /// how long before each schedule time it is told (0 for alarms; next_fires
+  /// have it taken off, schedule does not); source where the item came from:
+  /// alarm, event or task (then the id is the task's).
+  public var remindBeforeMinutes: Int32 {
+    get {_storage._remindBeforeMinutes}
+    set {_uniqueStorage()._remindBeforeMinutes = newValue}
+  }
+
+  public var source: String {
+    get {_storage._source}
+    set {_uniqueStorage()._source = newValue}
+  }
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -4798,8 +5056,8 @@ public nonisolated struct Noted_V1_UpdateAlarmRequest: Sendable {
   /// Clears the value of `alarm`. Subsequent reads from it will return its default value.
   public mutating func clearAlarm() {self._alarm = nil}
 
-  /// label, mode, enabled, schedule (replaced whole), holiday_policy, region,
-  /// note, project_id, space, original_text
+  /// label, mode, notify, enabled, schedule (replaced whole), holiday_policy,
+  /// region, note, project_id, space, original_text
   public var updateMask: SwiftProtobuf.Google_Protobuf_FieldMask {
     get {_updateMask ?? SwiftProtobuf.Google_Protobuf_FieldMask()}
     set {_updateMask = newValue}
@@ -4849,6 +5107,14 @@ public nonisolated struct Noted_V1_ListAlarmsRequest: Sendable {
 
   public var projectID: String = String()
 
+  /// Which schedule items: "" (default) the alarms proper, the items made
+  /// through the alarm API that notify at all (what phones read before notify
+  /// existed); "alarm", "reminder", "notification" or "none" every item with
+  /// that notify, calendar events and to-dos included; "all" every item that
+  /// notifies (notify not none): what a phone schedules, each with its notify
+  /// and remind_before_minutes.
+  public var notify: String = String()
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
@@ -4887,13 +5153,148 @@ public nonisolated struct Noted_V1_GetAlarmsVersionResponse: Sendable {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  /// Opaque; changes whenever any of the user's alarms is created, changed or
-  /// deleted. A client compares it with the one it last synced at.
+  /// Opaque; changes whenever any of the user's schedule items (alarms,
+  /// calendar events, to-dos with a time) is created, changed or deleted. A
+  /// client compares it with the one it last synced at.
   public var version: String = String()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
+}
+
+public nonisolated struct Noted_V1_ListFiresRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// inclusive; unset: now
+  public var from: SwiftProtobuf.Google_Protobuf_Timestamp {
+    get {_from ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_from = newValue}
+  }
+  /// Returns true if `from` has been explicitly set.
+  public var hasFrom: Bool {self._from != nil}
+  /// Clears the value of `from`. Subsequent reads from it will return its default value.
+  public mutating func clearFrom() {self._from = nil}
+
+  /// exclusive; unset: 7 days after from; at most 31 days after it
+  public var to: SwiftProtobuf.Google_Protobuf_Timestamp {
+    get {_to ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_to = newValue}
+  }
+  /// Returns true if `to` has been explicitly set.
+  public var hasTo: Bool {self._to != nil}
+  /// Clears the value of `to`. Subsequent reads from it will return its default value.
+  public mutating func clearTo() {self._to = nil}
+
+  /// UNSPECIFIED: both
+  public var space: Noted_V1_Space = .unspecified
+
+  /// "" every item that notifies; alarm, reminder or notification: only those
+  public var notify: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _from: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+  fileprivate var _to: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+}
+
+/// One moment the person is told about a schedule item.
+public nonisolated struct Noted_V1_Fire: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// the item: an alarm's, event's or task's id
+  public var itemID: String = String()
+
+  /// alarm, event or task
+  public var source: String = String()
+
+  public var title: String = String()
+
+  /// the item's description
+  public var note: String = String()
+
+  /// alarm, reminder or notification
+  public var notify: String = String()
+
+  /// when to tell: at_time less the lead
+  public var fireTime: SwiftProtobuf.Google_Protobuf_Timestamp {
+    get {_fireTime ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_fireTime = newValue}
+  }
+  /// Returns true if `fireTime` has been explicitly set.
+  public var hasFireTime: Bool {self._fireTime != nil}
+  /// Clears the value of `fireTime`. Subsequent reads from it will return its default value.
+  public mutating func clearFireTime() {self._fireTime = nil}
+
+  /// the occurrence: the event's start, the alarm's ring, the to-do's due time
+  public var atTime: SwiftProtobuf.Google_Protobuf_Timestamp {
+    get {_atTime ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_atTime = newValue}
+  }
+  /// Returns true if `atTime` has been explicitly set.
+  public var hasAtTime: Bool {self._atTime != nil}
+  /// Clears the value of `atTime`. Subsequent reads from it will return its default value.
+  public mutating func clearAtTime() {self._atTime = nil}
+
+  public var remindBeforeMinutes: Int32 = 0
+
+  public var allDay: Bool = false
+
+  public var space: Noted_V1_Space = .unspecified
+
+  public var projectID: String = String()
+
+  public var location: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _fireTime: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+  fileprivate var _atTime: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+}
+
+public nonisolated struct Noted_V1_ListFiresResponse: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// by fire_time; at most 500
+  public var fires: [Noted_V1_Fire] = []
+
+  /// as GetAlarmsVersion, read with the list
+  public var version: String = String()
+
+  public var from: SwiftProtobuf.Google_Protobuf_Timestamp {
+    get {_from ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_from = newValue}
+  }
+  /// Returns true if `from` has been explicitly set.
+  public var hasFrom: Bool {self._from != nil}
+  /// Clears the value of `from`. Subsequent reads from it will return its default value.
+  public mutating func clearFrom() {self._from = nil}
+
+  public var to: SwiftProtobuf.Google_Protobuf_Timestamp {
+    get {_to ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_to = newValue}
+  }
+  /// Returns true if `to` has been explicitly set.
+  public var hasTo: Bool {self._to != nil}
+  /// Clears the value of `to`. Subsequent reads from it will return its default value.
+  public mutating func clearTo() {self._to = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _from: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+  fileprivate var _to: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
 }
 
 /// The statutory holiday calendar alarms follow. Only CN has one.
@@ -5310,6 +5711,117 @@ public nonisolated struct Noted_V1_DenyPairingRequest: Sendable {
   // methods supported on all messages.
 
   public var code: String = String()
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Noted_V1_Compass: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  /// UNSPECIFIED reads as life
+  public var space: Noted_V1_Space = .unspecified
+
+  /// the life I refuse
+  public var antiVision: String = String()
+
+  /// what I am building toward
+  public var vision: String = String()
+
+  /// "我是那种……的人"
+  public var identity: String = String()
+
+  /// what I will not sacrifice
+  public var constraints: [String] = []
+
+  public var updateTime: SwiftProtobuf.Google_Protobuf_Timestamp {
+    get {_updateTime ?? SwiftProtobuf.Google_Protobuf_Timestamp()}
+    set {_updateTime = newValue}
+  }
+  /// Returns true if `updateTime` has been explicitly set.
+  public var hasUpdateTime: Bool {self._updateTime != nil}
+  /// Clears the value of `updateTime`. Subsequent reads from it will return its default value.
+  public mutating func clearUpdateTime() {self._updateTime = nil}
+
+  /// 0: never saved
+  public var version: Int32 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _updateTime: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+}
+
+public nonisolated struct Noted_V1_GetCompassRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var space: Noted_V1_Space = .unspecified
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Noted_V1_SetCompassRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var compass: Noted_V1_Compass {
+    get {_compass ?? Noted_V1_Compass()}
+    set {_compass = newValue}
+  }
+  /// Returns true if `compass` has been explicitly set.
+  public var hasCompass: Bool {self._compass != nil}
+  /// Clears the value of `compass`. Subsequent reads from it will return its default value.
+  public mutating func clearCompass() {self._compass = nil}
+
+  /// anti_vision, vision, identity, constraints. Fields not named keep their
+  /// current value; an empty mask names all four.
+  public var updateMask: SwiftProtobuf.Google_Protobuf_FieldMask {
+    get {_updateMask ?? SwiftProtobuf.Google_Protobuf_FieldMask()}
+    set {_updateMask = newValue}
+  }
+  /// Returns true if `updateMask` has been explicitly set.
+  public var hasUpdateMask: Bool {self._updateMask != nil}
+  /// Clears the value of `updateMask`. Subsequent reads from it will return its default value.
+  public mutating func clearUpdateMask() {self._updateMask = nil}
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+
+  fileprivate var _compass: Noted_V1_Compass? = nil
+  fileprivate var _updateMask: SwiftProtobuf.Google_Protobuf_FieldMask? = nil
+}
+
+public nonisolated struct Noted_V1_ListCompassRevisionsRequest: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var space: Noted_V1_Space = .unspecified
+
+  /// newest first; default 50, max 500
+  public var limit: Int32 = 0
+
+  public var unknownFields = SwiftProtobuf.UnknownStorage()
+
+  public init() {}
+}
+
+public nonisolated struct Noted_V1_ListCompassRevisionsResponse: Sendable {
+  // SwiftProtobuf.Message conformance is added in an extension below. See the
+  // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
+  // methods supported on all messages.
+
+  public var revisions: [Noted_V1_Compass] = []
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -5778,7 +6290,7 @@ nonisolated extension Noted_V1_SearchNotesResponse: SwiftProtobuf.Message, Swift
 
 nonisolated extension Noted_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Event"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}title\0\u{1}description\0\u{1}location\0\u{3}start_time\0\u{3}end_time\0\u{3}all_day\0\u{3}time_zone\0\u{1}rrule\0\u{3}remind_before_minutes\0\u{3}create_time\0\u{3}update_time\0\u{3}project_id\0\u{1}space\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}title\0\u{1}description\0\u{1}location\0\u{3}start_time\0\u{3}end_time\0\u{3}all_day\0\u{3}time_zone\0\u{1}rrule\0\u{3}remind_before_minutes\0\u{3}create_time\0\u{3}update_time\0\u{3}project_id\0\u{1}space\0\u{1}notify\0\u{3}alarm_schedule\0\u{3}holiday_policy\0\u{1}region\0\u{1}enabled\0\u{3}original_text\0\u{1}source\0\u{3}task_id\0\u{1}completed\0")
 
   fileprivate class _StorageClass {
     var _id: String = String()
@@ -5795,6 +6307,15 @@ nonisolated extension Noted_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Mess
     var _updateTime: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
     var _projectID: String = String()
     var _space: Noted_V1_Space = .unspecified
+    var _notify: String = String()
+    var _alarmSchedule: Noted_V1_AlarmSchedule? = nil
+    var _holidayPolicy: String = String()
+    var _region: String? = nil
+    var _enabled: Bool? = nil
+    var _originalText: String = String()
+    var _source: String = String()
+    var _taskID: String = String()
+    var _completed: Bool = false
 
       // This property is used as the initial default value for new instances of the type.
       // The type itself is protecting the reference to its storage via CoW semantics.
@@ -5819,6 +6340,15 @@ nonisolated extension Noted_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Mess
       _updateTime = source._updateTime
       _projectID = source._projectID
       _space = source._space
+      _notify = source._notify
+      _alarmSchedule = source._alarmSchedule
+      _holidayPolicy = source._holidayPolicy
+      _region = source._region
+      _enabled = source._enabled
+      _originalText = source._originalText
+      _source = source._source
+      _taskID = source._taskID
+      _completed = source._completed
     }
   }
 
@@ -5851,6 +6381,15 @@ nonisolated extension Noted_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Mess
         case 12: try { try decoder.decodeSingularMessageField(value: &_storage._updateTime) }()
         case 13: try { try decoder.decodeSingularStringField(value: &_storage._projectID) }()
         case 14: try { try decoder.decodeSingularEnumField(value: &_storage._space) }()
+        case 15: try { try decoder.decodeSingularStringField(value: &_storage._notify) }()
+        case 16: try { try decoder.decodeSingularMessageField(value: &_storage._alarmSchedule) }()
+        case 17: try { try decoder.decodeSingularStringField(value: &_storage._holidayPolicy) }()
+        case 18: try { try decoder.decodeSingularStringField(value: &_storage._region) }()
+        case 19: try { try decoder.decodeSingularBoolField(value: &_storage._enabled) }()
+        case 20: try { try decoder.decodeSingularStringField(value: &_storage._originalText) }()
+        case 21: try { try decoder.decodeSingularStringField(value: &_storage._source) }()
+        case 22: try { try decoder.decodeSingularStringField(value: &_storage._taskID) }()
+        case 23: try { try decoder.decodeSingularBoolField(value: &_storage._completed) }()
         default: break
         }
       }
@@ -5905,6 +6444,33 @@ nonisolated extension Noted_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Mess
       if _storage._space != .unspecified {
         try visitor.visitSingularEnumField(value: _storage._space, fieldNumber: 14)
       }
+      if !_storage._notify.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._notify, fieldNumber: 15)
+      }
+      try { if let v = _storage._alarmSchedule {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 16)
+      } }()
+      if !_storage._holidayPolicy.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._holidayPolicy, fieldNumber: 17)
+      }
+      try { if let v = _storage._region {
+        try visitor.visitSingularStringField(value: v, fieldNumber: 18)
+      } }()
+      try { if let v = _storage._enabled {
+        try visitor.visitSingularBoolField(value: v, fieldNumber: 19)
+      } }()
+      if !_storage._originalText.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._originalText, fieldNumber: 20)
+      }
+      if !_storage._source.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._source, fieldNumber: 21)
+      }
+      if !_storage._taskID.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._taskID, fieldNumber: 22)
+      }
+      if _storage._completed != false {
+        try visitor.visitSingularBoolField(value: _storage._completed, fieldNumber: 23)
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -5928,6 +6494,15 @@ nonisolated extension Noted_V1_Event: SwiftProtobuf.Message, SwiftProtobuf._Mess
         if _storage._updateTime != rhs_storage._updateTime {return false}
         if _storage._projectID != rhs_storage._projectID {return false}
         if _storage._space != rhs_storage._space {return false}
+        if _storage._notify != rhs_storage._notify {return false}
+        if _storage._alarmSchedule != rhs_storage._alarmSchedule {return false}
+        if _storage._holidayPolicy != rhs_storage._holidayPolicy {return false}
+        if _storage._region != rhs_storage._region {return false}
+        if _storage._enabled != rhs_storage._enabled {return false}
+        if _storage._originalText != rhs_storage._originalText {return false}
+        if _storage._source != rhs_storage._source {return false}
+        if _storage._taskID != rhs_storage._taskID {return false}
+        if _storage._completed != rhs_storage._completed {return false}
         return true
       }
       if !storagesAreEqual {return false}
@@ -6072,7 +6647,7 @@ nonisolated extension Noted_V1_DeleteEventRequest: SwiftProtobuf.Message, SwiftP
 
 nonisolated extension Noted_V1_ListEventsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ListEventsRequest"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}from\0\u{1}to\0\u{1}space\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}from\0\u{1}to\0\u{1}space\0\u{3}include_tasks\0\u{3}include_alarms\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -6083,6 +6658,8 @@ nonisolated extension Noted_V1_ListEventsRequest: SwiftProtobuf.Message, SwiftPr
       case 1: try { try decoder.decodeSingularMessageField(value: &self._from) }()
       case 2: try { try decoder.decodeSingularMessageField(value: &self._to) }()
       case 3: try { try decoder.decodeSingularEnumField(value: &self.space) }()
+      case 4: try { try decoder.decodeSingularBoolField(value: &self.includeTasks) }()
+      case 5: try { try decoder.decodeSingularBoolField(value: &self.includeAlarms) }()
       default: break
       }
     }
@@ -6102,6 +6679,12 @@ nonisolated extension Noted_V1_ListEventsRequest: SwiftProtobuf.Message, SwiftPr
     if self.space != .unspecified {
       try visitor.visitSingularEnumField(value: self.space, fieldNumber: 3)
     }
+    if self.includeTasks != false {
+      try visitor.visitSingularBoolField(value: self.includeTasks, fieldNumber: 4)
+    }
+    if self.includeAlarms != false {
+      try visitor.visitSingularBoolField(value: self.includeAlarms, fieldNumber: 5)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -6109,6 +6692,8 @@ nonisolated extension Noted_V1_ListEventsRequest: SwiftProtobuf.Message, SwiftPr
     if lhs._from != rhs._from {return false}
     if lhs._to != rhs._to {return false}
     if lhs.space != rhs.space {return false}
+    if lhs.includeTasks != rhs.includeTasks {return false}
+    if lhs.includeAlarms != rhs.includeAlarms {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -6160,7 +6745,7 @@ nonisolated extension Noted_V1_Occurrence: SwiftProtobuf.Message, SwiftProtobuf.
 
 nonisolated extension Noted_V1_ListEventsResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ListEventsResponse"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}occurrences\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}occurrences\0\u{1}unscheduled\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -6169,6 +6754,7 @@ nonisolated extension Noted_V1_ListEventsResponse: SwiftProtobuf.Message, SwiftP
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeRepeatedMessageField(value: &self.occurrences) }()
+      case 2: try { try decoder.decodeRepeatedMessageField(value: &self.unscheduled) }()
       default: break
       }
     }
@@ -6178,11 +6764,15 @@ nonisolated extension Noted_V1_ListEventsResponse: SwiftProtobuf.Message, SwiftP
     if !self.occurrences.isEmpty {
       try visitor.visitRepeatedMessageField(value: self.occurrences, fieldNumber: 1)
     }
+    if !self.unscheduled.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.unscheduled, fieldNumber: 2)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Noted_V1_ListEventsResponse, rhs: Noted_V1_ListEventsResponse) -> Bool {
     if lhs.occurrences != rhs.occurrences {return false}
+    if lhs.unscheduled != rhs.unscheduled {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -6190,7 +6780,7 @@ nonisolated extension Noted_V1_ListEventsResponse: SwiftProtobuf.Message, SwiftP
 
 nonisolated extension Noted_V1_Task: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Task"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}title\0\u{1}notes\0\u{3}due_time\0\u{1}priority\0\u{1}completed\0\u{3}complete_time\0\u{3}remind_time\0\u{1}tags\0\u{3}create_time\0\u{3}update_time\0\u{3}project_id\0\u{1}space\0\u{1}progress\0\u{3}worked_minutes\0\u{3}work_sessions\0\u{3}last_worked_time\0\u{1}rrule\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}title\0\u{1}notes\0\u{3}due_time\0\u{1}priority\0\u{1}completed\0\u{3}complete_time\0\u{3}remind_time\0\u{1}tags\0\u{3}create_time\0\u{3}update_time\0\u{3}project_id\0\u{1}space\0\u{1}progress\0\u{3}worked_minutes\0\u{3}work_sessions\0\u{3}last_worked_time\0\u{1}rrule\0\u{1}notify\0")
 
   fileprivate class _StorageClass {
     var _id: String = String()
@@ -6211,6 +6801,7 @@ nonisolated extension Noted_V1_Task: SwiftProtobuf.Message, SwiftProtobuf._Messa
     var _workSessions: Int32 = 0
     var _lastWorkedTime: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
     var _rrule: String = String()
+    var _notify: String = String()
 
       // This property is used as the initial default value for new instances of the type.
       // The type itself is protecting the reference to its storage via CoW semantics.
@@ -6239,6 +6830,7 @@ nonisolated extension Noted_V1_Task: SwiftProtobuf.Message, SwiftProtobuf._Messa
       _workSessions = source._workSessions
       _lastWorkedTime = source._lastWorkedTime
       _rrule = source._rrule
+      _notify = source._notify
     }
   }
 
@@ -6275,6 +6867,7 @@ nonisolated extension Noted_V1_Task: SwiftProtobuf.Message, SwiftProtobuf._Messa
         case 16: try { try decoder.decodeSingularInt32Field(value: &_storage._workSessions) }()
         case 17: try { try decoder.decodeSingularMessageField(value: &_storage._lastWorkedTime) }()
         case 18: try { try decoder.decodeSingularStringField(value: &_storage._rrule) }()
+        case 19: try { try decoder.decodeSingularStringField(value: &_storage._notify) }()
         default: break
         }
       }
@@ -6341,6 +6934,9 @@ nonisolated extension Noted_V1_Task: SwiftProtobuf.Message, SwiftProtobuf._Messa
       if !_storage._rrule.isEmpty {
         try visitor.visitSingularStringField(value: _storage._rrule, fieldNumber: 18)
       }
+      if !_storage._notify.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._notify, fieldNumber: 19)
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -6368,6 +6964,7 @@ nonisolated extension Noted_V1_Task: SwiftProtobuf.Message, SwiftProtobuf._Messa
         if _storage._workSessions != rhs_storage._workSessions {return false}
         if _storage._lastWorkedTime != rhs_storage._lastWorkedTime {return false}
         if _storage._rrule != rhs_storage._rrule {return false}
+        if _storage._notify != rhs_storage._notify {return false}
         return true
       }
       if !storagesAreEqual {return false}
@@ -6818,7 +7415,7 @@ nonisolated extension Noted_V1_DeleteTaskWorkRequest: SwiftProtobuf.Message, Swi
 
 nonisolated extension Noted_V1_Reminder: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Reminder"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}kind\0\u{3}ref_id\0\u{1}title\0\u{3}due_time\0\u{3}fire_time\0\u{1}space\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}kind\0\u{3}ref_id\0\u{1}title\0\u{3}due_time\0\u{3}fire_time\0\u{1}space\0\u{1}notify\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -6833,6 +7430,7 @@ nonisolated extension Noted_V1_Reminder: SwiftProtobuf.Message, SwiftProtobuf._M
       case 5: try { try decoder.decodeSingularMessageField(value: &self._dueTime) }()
       case 6: try { try decoder.decodeSingularMessageField(value: &self._fireTime) }()
       case 7: try { try decoder.decodeSingularEnumField(value: &self.space) }()
+      case 8: try { try decoder.decodeSingularStringField(value: &self.notify) }()
       default: break
       }
     }
@@ -6864,6 +7462,9 @@ nonisolated extension Noted_V1_Reminder: SwiftProtobuf.Message, SwiftProtobuf._M
     if self.space != .unspecified {
       try visitor.visitSingularEnumField(value: self.space, fieldNumber: 7)
     }
+    if !self.notify.isEmpty {
+      try visitor.visitSingularStringField(value: self.notify, fieldNumber: 8)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -6875,6 +7476,7 @@ nonisolated extension Noted_V1_Reminder: SwiftProtobuf.Message, SwiftProtobuf._M
     if lhs._dueTime != rhs._dueTime {return false}
     if lhs._fireTime != rhs._fireTime {return false}
     if lhs.space != rhs.space {return false}
+    if lhs.notify != rhs.notify {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -10116,68 +10718,125 @@ nonisolated extension Noted_V1_FocusItem: SwiftProtobuf.Message, SwiftProtobuf._
 
 nonisolated extension Noted_V1_GetFocusResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".GetFocusResponse"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}horizon\0\u{1}from\0\u{1}to\0\u{1}items\0\u{1}goals\0\u{3}pinned_projects\0\u{1}space\0\u{3}running_timer\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}horizon\0\u{1}from\0\u{1}to\0\u{1}items\0\u{1}goals\0\u{3}pinned_projects\0\u{1}space\0\u{3}running_timer\0\u{1}compass\0")
+
+  fileprivate class _StorageClass {
+    var _horizon: Noted_V1_Horizon = .unspecified
+    var _from: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+    var _to: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
+    var _items: [Noted_V1_FocusItem] = []
+    var _goals: [Noted_V1_Goal] = []
+    var _pinnedProjects: [Noted_V1_Project] = []
+    var _space: Noted_V1_Space = .unspecified
+    var _runningTimer: Noted_V1_TimeEntry? = nil
+    var _compass: Noted_V1_Compass? = nil
+
+      // This property is used as the initial default value for new instances of the type.
+      // The type itself is protecting the reference to its storage via CoW semantics.
+      // This will force a copy to be made of this reference when the first mutation occurs;
+      // hence, it is safe to mark this as `nonisolated(unsafe)`.
+      static nonisolated(unsafe) let defaultInstance = _StorageClass()
+
+    private init() {}
+
+    init(copying source: _StorageClass) {
+      _horizon = source._horizon
+      _from = source._from
+      _to = source._to
+      _items = source._items
+      _goals = source._goals
+      _pinnedProjects = source._pinnedProjects
+      _space = source._space
+      _runningTimer = source._runningTimer
+      _compass = source._compass
+    }
+  }
+
+  fileprivate mutating func _uniqueStorage() -> _StorageClass {
+    if !isKnownUniquelyReferenced(&_storage) {
+      _storage = _StorageClass(copying: _storage)
+    }
+    return _storage
+  }
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
-    while let fieldNumber = try decoder.nextFieldNumber() {
-      // The use of inline closures is to circumvent an issue where the compiler
-      // allocates stack space for every case branch when no optimizations are
-      // enabled. https://github.com/apple/swift-protobuf/issues/1034
-      switch fieldNumber {
-      case 1: try { try decoder.decodeSingularEnumField(value: &self.horizon) }()
-      case 2: try { try decoder.decodeSingularMessageField(value: &self._from) }()
-      case 3: try { try decoder.decodeSingularMessageField(value: &self._to) }()
-      case 4: try { try decoder.decodeRepeatedMessageField(value: &self.items) }()
-      case 5: try { try decoder.decodeRepeatedMessageField(value: &self.goals) }()
-      case 6: try { try decoder.decodeRepeatedMessageField(value: &self.pinnedProjects) }()
-      case 7: try { try decoder.decodeSingularEnumField(value: &self.space) }()
-      case 8: try { try decoder.decodeSingularMessageField(value: &self._runningTimer) }()
-      default: break
+    _ = _uniqueStorage()
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      while let fieldNumber = try decoder.nextFieldNumber() {
+        // The use of inline closures is to circumvent an issue where the compiler
+        // allocates stack space for every case branch when no optimizations are
+        // enabled. https://github.com/apple/swift-protobuf/issues/1034
+        switch fieldNumber {
+        case 1: try { try decoder.decodeSingularEnumField(value: &_storage._horizon) }()
+        case 2: try { try decoder.decodeSingularMessageField(value: &_storage._from) }()
+        case 3: try { try decoder.decodeSingularMessageField(value: &_storage._to) }()
+        case 4: try { try decoder.decodeRepeatedMessageField(value: &_storage._items) }()
+        case 5: try { try decoder.decodeRepeatedMessageField(value: &_storage._goals) }()
+        case 6: try { try decoder.decodeRepeatedMessageField(value: &_storage._pinnedProjects) }()
+        case 7: try { try decoder.decodeSingularEnumField(value: &_storage._space) }()
+        case 8: try { try decoder.decodeSingularMessageField(value: &_storage._runningTimer) }()
+        case 9: try { try decoder.decodeSingularMessageField(value: &_storage._compass) }()
+        default: break
+        }
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    // The use of inline closures is to circumvent an issue where the compiler
-    // allocates stack space for every if/case branch local when no optimizations
-    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
-    // https://github.com/apple/swift-protobuf/issues/1182
-    if self.horizon != .unspecified {
-      try visitor.visitSingularEnumField(value: self.horizon, fieldNumber: 1)
+    try withExtendedLifetime(_storage) { (_storage: _StorageClass) in
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every if/case branch local when no optimizations
+      // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+      // https://github.com/apple/swift-protobuf/issues/1182
+      if _storage._horizon != .unspecified {
+        try visitor.visitSingularEnumField(value: _storage._horizon, fieldNumber: 1)
+      }
+      try { if let v = _storage._from {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+      } }()
+      try { if let v = _storage._to {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+      } }()
+      if !_storage._items.isEmpty {
+        try visitor.visitRepeatedMessageField(value: _storage._items, fieldNumber: 4)
+      }
+      if !_storage._goals.isEmpty {
+        try visitor.visitRepeatedMessageField(value: _storage._goals, fieldNumber: 5)
+      }
+      if !_storage._pinnedProjects.isEmpty {
+        try visitor.visitRepeatedMessageField(value: _storage._pinnedProjects, fieldNumber: 6)
+      }
+      if _storage._space != .unspecified {
+        try visitor.visitSingularEnumField(value: _storage._space, fieldNumber: 7)
+      }
+      try { if let v = _storage._runningTimer {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
+      } }()
+      try { if let v = _storage._compass {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 9)
+      } }()
     }
-    try { if let v = self._from {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
-    } }()
-    try { if let v = self._to {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
-    } }()
-    if !self.items.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.items, fieldNumber: 4)
-    }
-    if !self.goals.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.goals, fieldNumber: 5)
-    }
-    if !self.pinnedProjects.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.pinnedProjects, fieldNumber: 6)
-    }
-    if self.space != .unspecified {
-      try visitor.visitSingularEnumField(value: self.space, fieldNumber: 7)
-    }
-    try { if let v = self._runningTimer {
-      try visitor.visitSingularMessageField(value: v, fieldNumber: 8)
-    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Noted_V1_GetFocusResponse, rhs: Noted_V1_GetFocusResponse) -> Bool {
-    if lhs.horizon != rhs.horizon {return false}
-    if lhs._from != rhs._from {return false}
-    if lhs._to != rhs._to {return false}
-    if lhs.items != rhs.items {return false}
-    if lhs.goals != rhs.goals {return false}
-    if lhs.pinnedProjects != rhs.pinnedProjects {return false}
-    if lhs.space != rhs.space {return false}
-    if lhs._runningTimer != rhs._runningTimer {return false}
+    if lhs._storage !== rhs._storage {
+      let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
+        let _storage = _args.0
+        let rhs_storage = _args.1
+        if _storage._horizon != rhs_storage._horizon {return false}
+        if _storage._from != rhs_storage._from {return false}
+        if _storage._to != rhs_storage._to {return false}
+        if _storage._items != rhs_storage._items {return false}
+        if _storage._goals != rhs_storage._goals {return false}
+        if _storage._pinnedProjects != rhs_storage._pinnedProjects {return false}
+        if _storage._space != rhs_storage._space {return false}
+        if _storage._runningTimer != rhs_storage._runningTimer {return false}
+        if _storage._compass != rhs_storage._compass {return false}
+        return true
+      }
+      if !storagesAreEqual {return false}
+    }
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -11029,9 +11688,11 @@ nonisolated extension Noted_V1_GetWeeklyReviewRequest: SwiftProtobuf.Message, Sw
 
 nonisolated extension Noted_V1_WeeklyReview: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".WeeklyReview"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}from\0\u{1}to\0\u{3}tasks_done\0\u{3}tasks_total\0\u{1}goals\0\u{3}carried_tasks\0\u{3}next_week\0\u{3}time_minutes\0\u{3}top_activities\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}from\0\u{1}to\0\u{3}tasks_done\0\u{3}tasks_total\0\u{1}goals\0\u{3}carried_tasks\0\u{3}next_week\0\u{3}time_minutes\0\u{3}top_activities\0\u{1}compass\0\u{1}behavior\0")
 
   fileprivate class _StorageClass {
+    var _compass: Noted_V1_Compass? = nil
+    var _behavior: Noted_V1_BehaviorReview? = nil
     var _from: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
     var _to: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
     var _tasksDone: Int32 = 0
@@ -11051,6 +11712,8 @@ nonisolated extension Noted_V1_WeeklyReview: SwiftProtobuf.Message, SwiftProtobu
     private init() {}
 
     init(copying source: _StorageClass) {
+      _compass = source._compass
+      _behavior = source._behavior
       _from = source._from
       _to = source._to
       _tasksDone = source._tasksDone
@@ -11087,6 +11750,8 @@ nonisolated extension Noted_V1_WeeklyReview: SwiftProtobuf.Message, SwiftProtobu
         case 7: try { try decoder.decodeSingularMessageField(value: &_storage._nextWeek) }()
         case 8: try { try decoder.decodeSingularInt32Field(value: &_storage._timeMinutes) }()
         case 9: try { try decoder.decodeRepeatedMessageField(value: &_storage._topActivities) }()
+        case 10: try { try decoder.decodeSingularMessageField(value: &_storage._compass) }()
+        case 11: try { try decoder.decodeSingularMessageField(value: &_storage._behavior) }()
         default: break
         }
       }
@@ -11126,6 +11791,12 @@ nonisolated extension Noted_V1_WeeklyReview: SwiftProtobuf.Message, SwiftProtobu
       if !_storage._topActivities.isEmpty {
         try visitor.visitRepeatedMessageField(value: _storage._topActivities, fieldNumber: 9)
       }
+      try { if let v = _storage._compass {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 10)
+      } }()
+      try { if let v = _storage._behavior {
+        try visitor.visitSingularMessageField(value: v, fieldNumber: 11)
+      } }()
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -11135,6 +11806,8 @@ nonisolated extension Noted_V1_WeeklyReview: SwiftProtobuf.Message, SwiftProtobu
       let storagesAreEqual: Bool = withExtendedLifetime((lhs._storage, rhs._storage)) { (_args: (_StorageClass, _StorageClass)) in
         let _storage = _args.0
         let rhs_storage = _args.1
+        if _storage._compass != rhs_storage._compass {return false}
+        if _storage._behavior != rhs_storage._behavior {return false}
         if _storage._from != rhs_storage._from {return false}
         if _storage._to != rhs_storage._to {return false}
         if _storage._tasksDone != rhs_storage._tasksDone {return false}
@@ -11148,6 +11821,166 @@ nonisolated extension Noted_V1_WeeklyReview: SwiftProtobuf.Message, SwiftProtobu
       }
       if !storagesAreEqual {return false}
     }
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Noted_V1_BehaviorRow: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".BehaviorRow"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}kind\0\u{1}id\0\u{1}title\0\u{1}target\0\u{1}unit\0\u{1}done\0\u{3}check_ins\0\u{3}time_minutes\0\u{3}tasks_done\0\u{1}short\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.kind) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.id) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.title) }()
+      case 4: try { try decoder.decodeSingularDoubleField(value: &self.target) }()
+      case 5: try { try decoder.decodeSingularStringField(value: &self.unit) }()
+      case 6: try { try decoder.decodeSingularDoubleField(value: &self.done) }()
+      case 7: try { try decoder.decodeSingularInt32Field(value: &self.checkIns) }()
+      case 8: try { try decoder.decodeSingularInt32Field(value: &self.timeMinutes) }()
+      case 9: try { try decoder.decodeSingularInt32Field(value: &self.tasksDone) }()
+      case 10: try { try decoder.decodeSingularBoolField(value: &self.short) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.kind.isEmpty {
+      try visitor.visitSingularStringField(value: self.kind, fieldNumber: 1)
+    }
+    if !self.id.isEmpty {
+      try visitor.visitSingularStringField(value: self.id, fieldNumber: 2)
+    }
+    if !self.title.isEmpty {
+      try visitor.visitSingularStringField(value: self.title, fieldNumber: 3)
+    }
+    if self.target.bitPattern != 0 {
+      try visitor.visitSingularDoubleField(value: self.target, fieldNumber: 4)
+    }
+    if !self.unit.isEmpty {
+      try visitor.visitSingularStringField(value: self.unit, fieldNumber: 5)
+    }
+    if self.done.bitPattern != 0 {
+      try visitor.visitSingularDoubleField(value: self.done, fieldNumber: 6)
+    }
+    if self.checkIns != 0 {
+      try visitor.visitSingularInt32Field(value: self.checkIns, fieldNumber: 7)
+    }
+    if self.timeMinutes != 0 {
+      try visitor.visitSingularInt32Field(value: self.timeMinutes, fieldNumber: 8)
+    }
+    if self.tasksDone != 0 {
+      try visitor.visitSingularInt32Field(value: self.tasksDone, fieldNumber: 9)
+    }
+    if self.short != false {
+      try visitor.visitSingularBoolField(value: self.short, fieldNumber: 10)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Noted_V1_BehaviorRow, rhs: Noted_V1_BehaviorRow) -> Bool {
+    if lhs.kind != rhs.kind {return false}
+    if lhs.id != rhs.id {return false}
+    if lhs.title != rhs.title {return false}
+    if lhs.target != rhs.target {return false}
+    if lhs.unit != rhs.unit {return false}
+    if lhs.done != rhs.done {return false}
+    if lhs.checkIns != rhs.checkIns {return false}
+    if lhs.timeMinutes != rhs.timeMinutes {return false}
+    if lhs.tasksDone != rhs.tasksDone {return false}
+    if lhs.short != rhs.short {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Noted_V1_UnlinkedTime: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".UnlinkedTime"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}title\0\u{1}minutes\0\u{1}count\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.title) }()
+      case 2: try { try decoder.decodeSingularInt32Field(value: &self.minutes) }()
+      case 3: try { try decoder.decodeSingularInt32Field(value: &self.count) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.title.isEmpty {
+      try visitor.visitSingularStringField(value: self.title, fieldNumber: 1)
+    }
+    if self.minutes != 0 {
+      try visitor.visitSingularInt32Field(value: self.minutes, fieldNumber: 2)
+    }
+    if self.count != 0 {
+      try visitor.visitSingularInt32Field(value: self.count, fieldNumber: 3)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Noted_V1_UnlinkedTime, rhs: Noted_V1_UnlinkedTime) -> Bool {
+    if lhs.title != rhs.title {return false}
+    if lhs.minutes != rhs.minutes {return false}
+    if lhs.count != rhs.count {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Noted_V1_BehaviorReview: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".BehaviorReview"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}rows\0\u{1}unlinked\0\u{3}unlinked_minutes\0\u{1}mismatches\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.rows) }()
+      case 2: try { try decoder.decodeRepeatedMessageField(value: &self.unlinked) }()
+      case 3: try { try decoder.decodeSingularInt32Field(value: &self.unlinkedMinutes) }()
+      case 4: try { try decoder.decodeRepeatedStringField(value: &self.mismatches) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.rows.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.rows, fieldNumber: 1)
+    }
+    if !self.unlinked.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.unlinked, fieldNumber: 2)
+    }
+    if self.unlinkedMinutes != 0 {
+      try visitor.visitSingularInt32Field(value: self.unlinkedMinutes, fieldNumber: 3)
+    }
+    if !self.mismatches.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.mismatches, fieldNumber: 4)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Noted_V1_BehaviorReview, rhs: Noted_V1_BehaviorReview) -> Bool {
+    if lhs.mismatches != rhs.mismatches {return false}
+    if lhs.rows != rhs.rows {return false}
+    if lhs.unlinked != rhs.unlinked {return false}
+    if lhs.unlinkedMinutes != rhs.unlinkedMinutes {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -12785,7 +13618,7 @@ nonisolated extension Noted_V1_AlarmSchedule: SwiftProtobuf.Message, SwiftProtob
 
 nonisolated extension Noted_V1_Alarm: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Alarm"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}label\0\u{1}mode\0\u{1}enabled\0\u{1}schedule\0\u{3}holiday_policy\0\u{1}region\0\u{1}note\0\u{3}project_id\0\u{1}space\0\u{3}original_text\0\u{3}create_time\0\u{3}update_time\0\u{3}next_fires\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}label\0\u{1}mode\0\u{1}enabled\0\u{1}schedule\0\u{3}holiday_policy\0\u{1}region\0\u{1}note\0\u{3}project_id\0\u{1}space\0\u{3}original_text\0\u{3}create_time\0\u{3}update_time\0\u{3}next_fires\0\u{1}notify\0\u{3}remind_before_minutes\0\u{1}source\0")
 
   fileprivate class _StorageClass {
     var _id: String = String()
@@ -12802,6 +13635,9 @@ nonisolated extension Noted_V1_Alarm: SwiftProtobuf.Message, SwiftProtobuf._Mess
     var _createTime: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
     var _updateTime: SwiftProtobuf.Google_Protobuf_Timestamp? = nil
     var _nextFires: [SwiftProtobuf.Google_Protobuf_Timestamp] = []
+    var _notify: String = String()
+    var _remindBeforeMinutes: Int32 = 0
+    var _source: String = String()
 
       // This property is used as the initial default value for new instances of the type.
       // The type itself is protecting the reference to its storage via CoW semantics.
@@ -12826,6 +13662,9 @@ nonisolated extension Noted_V1_Alarm: SwiftProtobuf.Message, SwiftProtobuf._Mess
       _createTime = source._createTime
       _updateTime = source._updateTime
       _nextFires = source._nextFires
+      _notify = source._notify
+      _remindBeforeMinutes = source._remindBeforeMinutes
+      _source = source._source
     }
   }
 
@@ -12858,6 +13697,9 @@ nonisolated extension Noted_V1_Alarm: SwiftProtobuf.Message, SwiftProtobuf._Mess
         case 12: try { try decoder.decodeSingularMessageField(value: &_storage._createTime) }()
         case 13: try { try decoder.decodeSingularMessageField(value: &_storage._updateTime) }()
         case 14: try { try decoder.decodeRepeatedMessageField(value: &_storage._nextFires) }()
+        case 15: try { try decoder.decodeSingularStringField(value: &_storage._notify) }()
+        case 16: try { try decoder.decodeSingularInt32Field(value: &_storage._remindBeforeMinutes) }()
+        case 17: try { try decoder.decodeSingularStringField(value: &_storage._source) }()
         default: break
         }
       }
@@ -12912,6 +13754,15 @@ nonisolated extension Noted_V1_Alarm: SwiftProtobuf.Message, SwiftProtobuf._Mess
       if !_storage._nextFires.isEmpty {
         try visitor.visitRepeatedMessageField(value: _storage._nextFires, fieldNumber: 14)
       }
+      if !_storage._notify.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._notify, fieldNumber: 15)
+      }
+      if _storage._remindBeforeMinutes != 0 {
+        try visitor.visitSingularInt32Field(value: _storage._remindBeforeMinutes, fieldNumber: 16)
+      }
+      if !_storage._source.isEmpty {
+        try visitor.visitSingularStringField(value: _storage._source, fieldNumber: 17)
+      }
     }
     try unknownFields.traverse(visitor: &visitor)
   }
@@ -12935,6 +13786,9 @@ nonisolated extension Noted_V1_Alarm: SwiftProtobuf.Message, SwiftProtobuf._Mess
         if _storage._createTime != rhs_storage._createTime {return false}
         if _storage._updateTime != rhs_storage._updateTime {return false}
         if _storage._nextFires != rhs_storage._nextFires {return false}
+        if _storage._notify != rhs_storage._notify {return false}
+        if _storage._remindBeforeMinutes != rhs_storage._remindBeforeMinutes {return false}
+        if _storage._source != rhs_storage._source {return false}
         return true
       }
       if !storagesAreEqual {return false}
@@ -13079,7 +13933,7 @@ nonisolated extension Noted_V1_DeleteAlarmRequest: SwiftProtobuf.Message, SwiftP
 
 nonisolated extension Noted_V1_ListAlarmsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ListAlarmsRequest"
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}enabled\0\u{1}space\0\u{3}project_id\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}enabled\0\u{1}space\0\u{3}project_id\0\u{1}notify\0")
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
@@ -13090,6 +13944,7 @@ nonisolated extension Noted_V1_ListAlarmsRequest: SwiftProtobuf.Message, SwiftPr
       case 1: try { try decoder.decodeSingularBoolField(value: &self._enabled) }()
       case 2: try { try decoder.decodeSingularEnumField(value: &self.space) }()
       case 3: try { try decoder.decodeSingularStringField(value: &self.projectID) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.notify) }()
       default: break
       }
     }
@@ -13109,6 +13964,9 @@ nonisolated extension Noted_V1_ListAlarmsRequest: SwiftProtobuf.Message, SwiftPr
     if !self.projectID.isEmpty {
       try visitor.visitSingularStringField(value: self.projectID, fieldNumber: 3)
     }
+    if !self.notify.isEmpty {
+      try visitor.visitSingularStringField(value: self.notify, fieldNumber: 4)
+    }
     try unknownFields.traverse(visitor: &visitor)
   }
 
@@ -13116,6 +13974,7 @@ nonisolated extension Noted_V1_ListAlarmsRequest: SwiftProtobuf.Message, SwiftPr
     if lhs._enabled != rhs._enabled {return false}
     if lhs.space != rhs.space {return false}
     if lhs.projectID != rhs.projectID {return false}
+    if lhs.notify != rhs.notify {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -13200,6 +14059,193 @@ nonisolated extension Noted_V1_GetAlarmsVersionResponse: SwiftProtobuf.Message, 
 
   public static func ==(lhs: Noted_V1_GetAlarmsVersionResponse, rhs: Noted_V1_GetAlarmsVersionResponse) -> Bool {
     if lhs.version != rhs.version {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Noted_V1_ListFiresRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ListFiresRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}from\0\u{1}to\0\u{1}space\0\u{1}notify\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._from) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._to) }()
+      case 3: try { try decoder.decodeSingularEnumField(value: &self.space) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.notify) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._from {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    try { if let v = self._to {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    } }()
+    if self.space != .unspecified {
+      try visitor.visitSingularEnumField(value: self.space, fieldNumber: 3)
+    }
+    if !self.notify.isEmpty {
+      try visitor.visitSingularStringField(value: self.notify, fieldNumber: 4)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Noted_V1_ListFiresRequest, rhs: Noted_V1_ListFiresRequest) -> Bool {
+    if lhs._from != rhs._from {return false}
+    if lhs._to != rhs._to {return false}
+    if lhs.space != rhs.space {return false}
+    if lhs.notify != rhs.notify {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Noted_V1_Fire: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".Fire"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}item_id\0\u{1}source\0\u{1}title\0\u{1}note\0\u{1}notify\0\u{3}fire_time\0\u{3}at_time\0\u{3}remind_before_minutes\0\u{3}all_day\0\u{1}space\0\u{3}project_id\0\u{1}location\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularStringField(value: &self.itemID) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.source) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.title) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.note) }()
+      case 5: try { try decoder.decodeSingularStringField(value: &self.notify) }()
+      case 6: try { try decoder.decodeSingularMessageField(value: &self._fireTime) }()
+      case 7: try { try decoder.decodeSingularMessageField(value: &self._atTime) }()
+      case 8: try { try decoder.decodeSingularInt32Field(value: &self.remindBeforeMinutes) }()
+      case 9: try { try decoder.decodeSingularBoolField(value: &self.allDay) }()
+      case 10: try { try decoder.decodeSingularEnumField(value: &self.space) }()
+      case 11: try { try decoder.decodeSingularStringField(value: &self.projectID) }()
+      case 12: try { try decoder.decodeSingularStringField(value: &self.location) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if !self.itemID.isEmpty {
+      try visitor.visitSingularStringField(value: self.itemID, fieldNumber: 1)
+    }
+    if !self.source.isEmpty {
+      try visitor.visitSingularStringField(value: self.source, fieldNumber: 2)
+    }
+    if !self.title.isEmpty {
+      try visitor.visitSingularStringField(value: self.title, fieldNumber: 3)
+    }
+    if !self.note.isEmpty {
+      try visitor.visitSingularStringField(value: self.note, fieldNumber: 4)
+    }
+    if !self.notify.isEmpty {
+      try visitor.visitSingularStringField(value: self.notify, fieldNumber: 5)
+    }
+    try { if let v = self._fireTime {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
+    } }()
+    try { if let v = self._atTime {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 7)
+    } }()
+    if self.remindBeforeMinutes != 0 {
+      try visitor.visitSingularInt32Field(value: self.remindBeforeMinutes, fieldNumber: 8)
+    }
+    if self.allDay != false {
+      try visitor.visitSingularBoolField(value: self.allDay, fieldNumber: 9)
+    }
+    if self.space != .unspecified {
+      try visitor.visitSingularEnumField(value: self.space, fieldNumber: 10)
+    }
+    if !self.projectID.isEmpty {
+      try visitor.visitSingularStringField(value: self.projectID, fieldNumber: 11)
+    }
+    if !self.location.isEmpty {
+      try visitor.visitSingularStringField(value: self.location, fieldNumber: 12)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Noted_V1_Fire, rhs: Noted_V1_Fire) -> Bool {
+    if lhs.itemID != rhs.itemID {return false}
+    if lhs.source != rhs.source {return false}
+    if lhs.title != rhs.title {return false}
+    if lhs.note != rhs.note {return false}
+    if lhs.notify != rhs.notify {return false}
+    if lhs._fireTime != rhs._fireTime {return false}
+    if lhs._atTime != rhs._atTime {return false}
+    if lhs.remindBeforeMinutes != rhs.remindBeforeMinutes {return false}
+    if lhs.allDay != rhs.allDay {return false}
+    if lhs.space != rhs.space {return false}
+    if lhs.projectID != rhs.projectID {return false}
+    if lhs.location != rhs.location {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Noted_V1_ListFiresResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ListFiresResponse"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}fires\0\u{1}version\0\u{1}from\0\u{1}to\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.fires) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.version) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._from) }()
+      case 4: try { try decoder.decodeSingularMessageField(value: &self._to) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if !self.fires.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.fires, fieldNumber: 1)
+    }
+    if !self.version.isEmpty {
+      try visitor.visitSingularStringField(value: self.version, fieldNumber: 2)
+    }
+    try { if let v = self._from {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    } }()
+    try { if let v = self._to {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 4)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Noted_V1_ListFiresResponse, rhs: Noted_V1_ListFiresResponse) -> Bool {
+    if lhs.fires != rhs.fires {return false}
+    if lhs.version != rhs.version {return false}
+    if lhs._from != rhs._from {return false}
+    if lhs._to != rhs._to {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }
@@ -14029,6 +15075,204 @@ nonisolated extension Noted_V1_DenyPairingRequest: SwiftProtobuf.Message, SwiftP
 
   public static func ==(lhs: Noted_V1_DenyPairingRequest, rhs: Noted_V1_DenyPairingRequest) -> Bool {
     if lhs.code != rhs.code {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Noted_V1_Compass: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".Compass"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}space\0\u{3}anti_vision\0\u{1}vision\0\u{1}identity\0\u{1}constraints\0\u{3}update_time\0\u{1}version\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularEnumField(value: &self.space) }()
+      case 2: try { try decoder.decodeSingularStringField(value: &self.antiVision) }()
+      case 3: try { try decoder.decodeSingularStringField(value: &self.vision) }()
+      case 4: try { try decoder.decodeSingularStringField(value: &self.identity) }()
+      case 5: try { try decoder.decodeRepeatedStringField(value: &self.constraints) }()
+      case 6: try { try decoder.decodeSingularMessageField(value: &self._updateTime) }()
+      case 7: try { try decoder.decodeSingularInt32Field(value: &self.version) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    if self.space != .unspecified {
+      try visitor.visitSingularEnumField(value: self.space, fieldNumber: 1)
+    }
+    if !self.antiVision.isEmpty {
+      try visitor.visitSingularStringField(value: self.antiVision, fieldNumber: 2)
+    }
+    if !self.vision.isEmpty {
+      try visitor.visitSingularStringField(value: self.vision, fieldNumber: 3)
+    }
+    if !self.identity.isEmpty {
+      try visitor.visitSingularStringField(value: self.identity, fieldNumber: 4)
+    }
+    if !self.constraints.isEmpty {
+      try visitor.visitRepeatedStringField(value: self.constraints, fieldNumber: 5)
+    }
+    try { if let v = self._updateTime {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 6)
+    } }()
+    if self.version != 0 {
+      try visitor.visitSingularInt32Field(value: self.version, fieldNumber: 7)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Noted_V1_Compass, rhs: Noted_V1_Compass) -> Bool {
+    if lhs.space != rhs.space {return false}
+    if lhs.antiVision != rhs.antiVision {return false}
+    if lhs.vision != rhs.vision {return false}
+    if lhs.identity != rhs.identity {return false}
+    if lhs.constraints != rhs.constraints {return false}
+    if lhs._updateTime != rhs._updateTime {return false}
+    if lhs.version != rhs.version {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Noted_V1_GetCompassRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".GetCompassRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}space\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularEnumField(value: &self.space) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.space != .unspecified {
+      try visitor.visitSingularEnumField(value: self.space, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Noted_V1_GetCompassRequest, rhs: Noted_V1_GetCompassRequest) -> Bool {
+    if lhs.space != rhs.space {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Noted_V1_SetCompassRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".SetCompassRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}compass\0\u{3}update_mask\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._compass) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._updateMask) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
+    try { if let v = self._compass {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    try { if let v = self._updateMask {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Noted_V1_SetCompassRequest, rhs: Noted_V1_SetCompassRequest) -> Bool {
+    if lhs._compass != rhs._compass {return false}
+    if lhs._updateMask != rhs._updateMask {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Noted_V1_ListCompassRevisionsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ListCompassRevisionsRequest"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}space\0\u{1}limit\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeSingularEnumField(value: &self.space) }()
+      case 2: try { try decoder.decodeSingularInt32Field(value: &self.limit) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.space != .unspecified {
+      try visitor.visitSingularEnumField(value: self.space, fieldNumber: 1)
+    }
+    if self.limit != 0 {
+      try visitor.visitSingularInt32Field(value: self.limit, fieldNumber: 2)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Noted_V1_ListCompassRevisionsRequest, rhs: Noted_V1_ListCompassRevisionsRequest) -> Bool {
+    if lhs.space != rhs.space {return false}
+    if lhs.limit != rhs.limit {return false}
+    if lhs.unknownFields != rhs.unknownFields {return false}
+    return true
+  }
+}
+
+nonisolated extension Noted_V1_ListCompassRevisionsResponse: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".ListCompassRevisionsResponse"
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}revisions\0")
+
+  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
+    while let fieldNumber = try decoder.nextFieldNumber() {
+      // The use of inline closures is to circumvent an issue where the compiler
+      // allocates stack space for every case branch when no optimizations are
+      // enabled. https://github.com/apple/swift-protobuf/issues/1034
+      switch fieldNumber {
+      case 1: try { try decoder.decodeRepeatedMessageField(value: &self.revisions) }()
+      default: break
+      }
+    }
+  }
+
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.revisions.isEmpty {
+      try visitor.visitRepeatedMessageField(value: self.revisions, fieldNumber: 1)
+    }
+    try unknownFields.traverse(visitor: &visitor)
+  }
+
+  public static func ==(lhs: Noted_V1_ListCompassRevisionsResponse, rhs: Noted_V1_ListCompassRevisionsResponse) -> Bool {
+    if lhs.revisions != rhs.revisions {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

@@ -35,6 +35,7 @@ final class API: Sendable {
     let account: Noted_V1_AccountService.Client<Transport>
     let objectives: Noted_V1_ObjectiveService.Client<Transport>
     let holdings: Noted_V1_HoldingService.Client<Transport>
+    let compass: Noted_V1_CompassService.Client<Transport>
     private let runner: Task<Void, Never>
 
     init(host: String, port: Int, tls: Bool, token: String) throws {
@@ -57,6 +58,7 @@ final class API: Sendable {
         account = .init(wrapping: client)
         objectives = .init(wrapping: client)
         holdings = .init(wrapping: client)
+        compass = .init(wrapping: client)
         runner = Task { try? await client.runConnections() }
     }
 

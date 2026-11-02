@@ -35,6 +35,8 @@ final class AppData {
     var goals: [Noted_V1_Goal] = []
     /// Every unarchived objective (larger goals with dimensions and a metric).
     var objectives: [Noted_V1_Objective] = []
+    /// The compass of each space (life, work), as last loaded; absent until loaded.
+    var compasses: [Noted_V1_Space: Noted_V1_Compass] = [:]
     /// Every unarchived holding.
     var holdings: [Noted_V1_Holding] = []
     /// Event occurrences of the months loaded with `loadMonth`, ordered by start.

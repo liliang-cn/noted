@@ -18419,6 +18419,19 @@ public enum Noted_V1_AlarmService: Sendable {
                 type: .unary
             )
         }
+        /// Namespace for "ListFires" metadata.
+        public enum ListFires: Sendable {
+            /// Request type for "ListFires".
+            public typealias Input = Noted_V1_ListFiresRequest
+            /// Response type for "ListFires".
+            public typealias Output = Noted_V1_ListFiresResponse
+            /// Descriptor for "ListFires".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.AlarmService"),
+                method: "ListFires",
+                type: .unary
+            )
+        }
         /// Descriptors for all methods in the "noted.v1.AlarmService" service.
         public static let descriptors: [GRPCCore.MethodDescriptor] = [
             CreateAlarm.descriptor,
@@ -18426,7 +18439,8 @@ public enum Noted_V1_AlarmService: Sendable {
             UpdateAlarm.descriptor,
             DeleteAlarm.descriptor,
             ListAlarms.descriptor,
-            GetAlarmsVersion.descriptor
+            GetAlarmsVersion.descriptor,
+            ListFires.descriptor
         ]
     }
 }
@@ -18540,6 +18554,26 @@ extension Noted_V1_AlarmService {
             request: GRPCCore.StreamingServerRequest<Noted_V1_GetAlarmsVersionRequest>,
             context: GRPCCore.ServerContext
         ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_GetAlarmsVersionResponse>
+
+        /// Handle the "ListFires" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > What reaches the person when, and how: every fire of every schedule item
+        /// > that notifies (alarms, calendar events, to-dos) in a window, holiday
+        /// > policies and leads applied. The one feed a phone needs.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListFiresRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListFiresResponse` messages.
+        func listFires(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListFiresRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListFiresResponse>
     }
 
     /// Service protocol for the "noted.v1.AlarmService" service.
@@ -18637,6 +18671,26 @@ extension Noted_V1_AlarmService {
             request: GRPCCore.ServerRequest<Noted_V1_GetAlarmsVersionRequest>,
             context: GRPCCore.ServerContext
         ) async throws -> GRPCCore.ServerResponse<Noted_V1_GetAlarmsVersionResponse>
+
+        /// Handle the "ListFires" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > What reaches the person when, and how: every fire of every schedule item
+        /// > that notifies (alarms, calendar events, to-dos) in a window, holiday
+        /// > policies and leads applied. The one feed a phone needs.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListFiresRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListFiresResponse` message.
+        func listFires(
+            request: GRPCCore.ServerRequest<Noted_V1_ListFiresRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListFiresResponse>
     }
 
     /// Simple service protocol for the "noted.v1.AlarmService" service.
@@ -18732,6 +18786,26 @@ extension Noted_V1_AlarmService {
             request: Noted_V1_GetAlarmsVersionRequest,
             context: GRPCCore.ServerContext
         ) async throws -> Noted_V1_GetAlarmsVersionResponse
+
+        /// Handle the "ListFires" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > What reaches the person when, and how: every fire of every schedule item
+        /// > that notifies (alarms, calendar events, to-dos) in a window, holiday
+        /// > policies and leads applied. The one feed a phone needs.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListFiresRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListFiresResponse` to respond with.
+        func listFires(
+            request: Noted_V1_ListFiresRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListFiresResponse
     }
 }
 
@@ -18805,6 +18879,17 @@ extension Noted_V1_AlarmService.StreamingServiceProtocol {
                 )
             }
         )
+        router.registerHandler(
+            forMethod: Noted_V1_AlarmService.Method.ListFires.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListFiresRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListFiresResponse>(),
+            handler: { request, context in
+                try await self.listFires(
+                    request: request,
+                    context: context
+                )
+            }
+        )
     }
 }
 
@@ -18871,6 +18956,17 @@ extension Noted_V1_AlarmService.ServiceProtocol {
         context: GRPCCore.ServerContext
     ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_GetAlarmsVersionResponse> {
         let response = try await self.getAlarmsVersion(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func listFires(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListFiresRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListFiresResponse> {
+        let response = try await self.listFires(
             request: GRPCCore.ServerRequest(stream: request),
             context: context
         )
@@ -18952,6 +19048,19 @@ extension Noted_V1_AlarmService.SimpleServiceProtocol {
     ) async throws -> GRPCCore.ServerResponse<Noted_V1_GetAlarmsVersionResponse> {
         return GRPCCore.ServerResponse<Noted_V1_GetAlarmsVersionResponse>(
             message: try await self.getAlarmsVersion(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func listFires(
+        request: GRPCCore.ServerRequest<Noted_V1_ListFiresRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListFiresResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListFiresResponse>(
+            message: try await self.listFires(
                 request: request.message,
                 context: context
             ),
@@ -19085,6 +19194,31 @@ extension Noted_V1_AlarmService {
             deserializer: some GRPCCore.MessageDeserializer<Noted_V1_GetAlarmsVersionResponse>,
             options: GRPCCore.CallOptions,
             onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_GetAlarmsVersionResponse>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "ListFires" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > What reaches the person when, and how: every fire of every schedule item
+        /// > that notifies (alarms, calendar events, to-dos) in a window, holiday
+        /// > policies and leads applied. The one feed a phone needs.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListFiresRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_ListFiresRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_ListFiresResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func listFires<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_ListFiresRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_ListFiresRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_ListFiresResponse>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListFiresResponse>) async throws -> Result
         ) async throws -> Result where Result: Sendable
     }
 
@@ -19287,6 +19421,42 @@ extension Noted_V1_AlarmService {
                 onResponse: handleResponse
             )
         }
+
+        /// Call the "ListFires" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > What reaches the person when, and how: every fire of every schedule item
+        /// > that notifies (alarms, calendar events, to-dos) in a window, holiday
+        /// > policies and leads applied. The one feed a phone needs.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListFiresRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_ListFiresRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_ListFiresResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func listFires<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_ListFiresRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_ListFiresRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_ListFiresResponse>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListFiresResponse>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_AlarmService.Method.ListFires.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
     }
 }
 
@@ -19442,6 +19612,37 @@ extension Noted_V1_AlarmService.ClientProtocol {
             request: request,
             serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_GetAlarmsVersionRequest>(),
             deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetAlarmsVersionResponse>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "ListFires" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > What reaches the person when, and how: every fire of every schedule item
+    /// > that notifies (alarms, calendar events, to-dos) in a window, holiday
+    /// > policies and leads applied. The one feed a phone needs.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_ListFiresRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func listFires<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_ListFiresRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListFiresResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.listFires(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListFiresRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListFiresResponse>(),
             options: options,
             onResponse: handleResponse
         )
@@ -19623,6 +19824,41 @@ extension Noted_V1_AlarmService.ClientProtocol {
             metadata: metadata
         )
         return try await self.getAlarmsVersion(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "ListFires" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > What reaches the person when, and how: every fire of every schedule item
+    /// > that notifies (alarms, calendar events, to-dos) in a window, holiday
+    /// > policies and leads applied. The one feed a phone needs.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func listFires<Result>(
+        _ message: Noted_V1_ListFiresRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListFiresResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_ListFiresRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.listFires(
             request: request,
             options: options,
             onResponse: handleResponse
@@ -22824,6 +23060,750 @@ extension Noted_V1_AccountService.ClientProtocol {
             metadata: metadata
         )
         return try await self.denyPairing(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+}
+
+// MARK: - noted.v1.CompassService
+
+/// Namespace containing generated types for the "noted.v1.CompassService" service.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+public enum Noted_V1_CompassService: Sendable {
+    /// Service descriptor for the "noted.v1.CompassService" service.
+    public static let descriptor = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.CompassService")
+    /// Namespace for method metadata.
+    public enum Method: Sendable {
+        /// Namespace for "GetCompass" metadata.
+        public enum GetCompass: Sendable {
+            /// Request type for "GetCompass".
+            public typealias Input = Noted_V1_GetCompassRequest
+            /// Response type for "GetCompass".
+            public typealias Output = Noted_V1_Compass
+            /// Descriptor for "GetCompass".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.CompassService"),
+                method: "GetCompass",
+                type: .unary
+            )
+        }
+        /// Namespace for "SetCompass" metadata.
+        public enum SetCompass: Sendable {
+            /// Request type for "SetCompass".
+            public typealias Input = Noted_V1_SetCompassRequest
+            /// Response type for "SetCompass".
+            public typealias Output = Noted_V1_Compass
+            /// Descriptor for "SetCompass".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.CompassService"),
+                method: "SetCompass",
+                type: .unary
+            )
+        }
+        /// Namespace for "ListCompassRevisions" metadata.
+        public enum ListCompassRevisions: Sendable {
+            /// Request type for "ListCompassRevisions".
+            public typealias Input = Noted_V1_ListCompassRevisionsRequest
+            /// Response type for "ListCompassRevisions".
+            public typealias Output = Noted_V1_ListCompassRevisionsResponse
+            /// Descriptor for "ListCompassRevisions".
+            public static let descriptor = GRPCCore.MethodDescriptor(
+                service: GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.CompassService"),
+                method: "ListCompassRevisions",
+                type: .unary
+            )
+        }
+        /// Descriptors for all methods in the "noted.v1.CompassService" service.
+        public static let descriptors: [GRPCCore.MethodDescriptor] = [
+            GetCompass.descriptor,
+            SetCompass.descriptor,
+            ListCompassRevisions.descriptor
+        ]
+    }
+}
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension GRPCCore.ServiceDescriptor {
+    /// Service descriptor for the "noted.v1.CompassService" service.
+    public static let noted_v1_CompassService = GRPCCore.ServiceDescriptor(fullyQualifiedService: "noted.v1.CompassService")
+}
+
+// MARK: noted.v1.CompassService (server)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_CompassService {
+    /// Streaming variant of the service protocol for the "noted.v1.CompassService" service.
+    ///
+    /// This protocol is the lowest-level of the service protocols generated for this service
+    /// giving you the most flexibility over the implementation of your service. This comes at
+    /// the cost of more verbose and less strict APIs. Each RPC requires you to implement it in
+    /// terms of a request stream and response stream. Where the RPC expects only a single
+    /// request or response message, you are responsible for ensuring your implementation
+    /// maintains this invariant.
+    ///
+    /// Where possible, prefer using the stricter, less-verbose ``ServiceProtocol``
+    /// or ``SimpleServiceProtocol`` instead.
+    public protocol StreamingServiceProtocol: GRPCCore.RegistrableRPCService {
+        /// Handle the "GetCompass" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > The current compass; an empty one (version 0) when none was saved.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_GetCompassRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Compass` messages.
+        func getCompass(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_GetCompassRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Compass>
+
+        /// Handle the "SetCompass" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Saves a new revision; saving what is already current changes nothing.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_SetCompassRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_Compass` messages.
+        func setCompass(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_SetCompassRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Compass>
+
+        /// Handle the "ListCompassRevisions" method.
+        ///
+        /// - Parameters:
+        ///   - request: A streaming request of `Noted_V1_ListCompassRevisionsRequest` messages.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A streaming response of `Noted_V1_ListCompassRevisionsResponse` messages.
+        func listCompassRevisions(
+            request: GRPCCore.StreamingServerRequest<Noted_V1_ListCompassRevisionsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListCompassRevisionsResponse>
+    }
+
+    /// Service protocol for the "noted.v1.CompassService" service.
+    ///
+    /// This protocol is higher level than ``StreamingServiceProtocol`` but lower level than
+    /// the ``SimpleServiceProtocol``, it provides access to request and response metadata and
+    /// trailing response metadata. If you don't need these then consider using
+    /// the ``SimpleServiceProtocol``. If you need fine grained control over your RPCs then
+    /// use ``StreamingServiceProtocol``.
+    public protocol ServiceProtocol: Noted_V1_CompassService.StreamingServiceProtocol {
+        /// Handle the "GetCompass" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > The current compass; an empty one (version 0) when none was saved.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetCompassRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Compass` message.
+        func getCompass(
+            request: GRPCCore.ServerRequest<Noted_V1_GetCompassRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Compass>
+
+        /// Handle the "SetCompass" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Saves a new revision; saving what is already current changes nothing.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SetCompassRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_Compass` message.
+        func setCompass(
+            request: GRPCCore.ServerRequest<Noted_V1_SetCompassRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_Compass>
+
+        /// Handle the "ListCompassRevisions" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListCompassRevisionsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A response containing a single `Noted_V1_ListCompassRevisionsResponse` message.
+        func listCompassRevisions(
+            request: GRPCCore.ServerRequest<Noted_V1_ListCompassRevisionsRequest>,
+            context: GRPCCore.ServerContext
+        ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListCompassRevisionsResponse>
+    }
+
+    /// Simple service protocol for the "noted.v1.CompassService" service.
+    ///
+    /// This is the highest level protocol for the service. The API is the easiest to use but
+    /// doesn't provide access to request or response metadata. If you need access to these
+    /// then use ``ServiceProtocol`` instead.
+    public protocol SimpleServiceProtocol: Noted_V1_CompassService.ServiceProtocol {
+        /// Handle the "GetCompass" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > The current compass; an empty one (version 0) when none was saved.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_GetCompassRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Compass` to respond with.
+        func getCompass(
+            request: Noted_V1_GetCompassRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Compass
+
+        /// Handle the "SetCompass" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Saves a new revision; saving what is already current changes nothing.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_SetCompassRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_Compass` to respond with.
+        func setCompass(
+            request: Noted_V1_SetCompassRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_Compass
+
+        /// Handle the "ListCompassRevisions" method.
+        ///
+        /// - Parameters:
+        ///   - request: A `Noted_V1_ListCompassRevisionsRequest` message.
+        ///   - context: Context providing information about the RPC.
+        /// - Throws: Any error which occurred during the processing of the request. Thrown errors
+        ///     of type `RPCError` are mapped to appropriate statuses. All other errors are converted
+        ///     to an internal error.
+        /// - Returns: A `Noted_V1_ListCompassRevisionsResponse` to respond with.
+        func listCompassRevisions(
+            request: Noted_V1_ListCompassRevisionsRequest,
+            context: GRPCCore.ServerContext
+        ) async throws -> Noted_V1_ListCompassRevisionsResponse
+    }
+}
+
+// Default implementation of 'registerMethods(with:)'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_CompassService.StreamingServiceProtocol {
+    public func registerMethods<Transport>(with router: inout GRPCCore.RPCRouter<Transport>) where Transport: GRPCCore.ServerTransport {
+        router.registerHandler(
+            forMethod: Noted_V1_CompassService.Method.GetCompass.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_GetCompassRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Compass>(),
+            handler: { request, context in
+                try await self.getCompass(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_CompassService.Method.SetCompass.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_SetCompassRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_Compass>(),
+            handler: { request, context in
+                try await self.setCompass(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+        router.registerHandler(
+            forMethod: Noted_V1_CompassService.Method.ListCompassRevisions.descriptor,
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListCompassRevisionsRequest>(),
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListCompassRevisionsResponse>(),
+            handler: { request, context in
+                try await self.listCompassRevisions(
+                    request: request,
+                    context: context
+                )
+            }
+        )
+    }
+}
+
+// Default implementation of streaming methods from 'StreamingServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_CompassService.ServiceProtocol {
+    public func getCompass(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_GetCompassRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Compass> {
+        let response = try await self.getCompass(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func setCompass(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_SetCompassRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_Compass> {
+        let response = try await self.setCompass(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+
+    public func listCompassRevisions(
+        request: GRPCCore.StreamingServerRequest<Noted_V1_ListCompassRevisionsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.StreamingServerResponse<Noted_V1_ListCompassRevisionsResponse> {
+        let response = try await self.listCompassRevisions(
+            request: GRPCCore.ServerRequest(stream: request),
+            context: context
+        )
+        return GRPCCore.StreamingServerResponse(single: response)
+    }
+}
+
+// Default implementation of methods from 'ServiceProtocol'.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_CompassService.SimpleServiceProtocol {
+    public func getCompass(
+        request: GRPCCore.ServerRequest<Noted_V1_GetCompassRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Compass> {
+        return GRPCCore.ServerResponse<Noted_V1_Compass>(
+            message: try await self.getCompass(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func setCompass(
+        request: GRPCCore.ServerRequest<Noted_V1_SetCompassRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_Compass> {
+        return GRPCCore.ServerResponse<Noted_V1_Compass>(
+            message: try await self.setCompass(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+
+    public func listCompassRevisions(
+        request: GRPCCore.ServerRequest<Noted_V1_ListCompassRevisionsRequest>,
+        context: GRPCCore.ServerContext
+    ) async throws -> GRPCCore.ServerResponse<Noted_V1_ListCompassRevisionsResponse> {
+        return GRPCCore.ServerResponse<Noted_V1_ListCompassRevisionsResponse>(
+            message: try await self.listCompassRevisions(
+                request: request.message,
+                context: context
+            ),
+            metadata: [:]
+        )
+    }
+}
+
+// MARK: noted.v1.CompassService (client)
+
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_CompassService {
+    /// Generated client protocol for the "noted.v1.CompassService" service.
+    ///
+    /// You don't need to implement this protocol directly, use the generated
+    /// implementation, ``Client``.
+    public protocol ClientProtocol: Sendable {
+        /// Call the "GetCompass" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > The current compass; an empty one (version 0) when none was saved.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetCompassRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_GetCompassRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Compass` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func getCompass<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_GetCompassRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_GetCompassRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Compass>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Compass>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "SetCompass" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Saves a new revision; saving what is already current changes nothing.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SetCompassRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_SetCompassRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Compass` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func setCompass<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_SetCompassRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_SetCompassRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Compass>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Compass>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+
+        /// Call the "ListCompassRevisions" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListCompassRevisionsRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_ListCompassRevisionsRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_ListCompassRevisionsResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        func listCompassRevisions<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_ListCompassRevisionsRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_ListCompassRevisionsRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_ListCompassRevisionsResponse>,
+            options: GRPCCore.CallOptions,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListCompassRevisionsResponse>) async throws -> Result
+        ) async throws -> Result where Result: Sendable
+    }
+
+    /// Generated client for the "noted.v1.CompassService" service.
+    ///
+    /// The ``Client`` provides an implementation of ``ClientProtocol`` which wraps
+    /// a `GRPCCore.GRPCCClient`. The underlying `GRPCClient` provides the long-lived
+    /// means of communication with the remote peer.
+    public struct Client<Transport>: ClientProtocol where Transport: GRPCCore.ClientTransport {
+        private let client: GRPCCore.GRPCClient<Transport>
+
+        /// Creates a new client wrapping the provided `GRPCCore.GRPCClient`.
+        ///
+        /// - Parameters:
+        ///   - client: A `GRPCCore.GRPCClient` providing a communication channel to the service.
+        public init(wrapping client: GRPCCore.GRPCClient<Transport>) {
+            self.client = client
+        }
+
+        /// Call the "GetCompass" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > The current compass; an empty one (version 0) when none was saved.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_GetCompassRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_GetCompassRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Compass` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func getCompass<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_GetCompassRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_GetCompassRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Compass>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Compass>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_CompassService.Method.GetCompass.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "SetCompass" method.
+        ///
+        /// > Source IDL Documentation:
+        /// >
+        /// > Saves a new revision; saving what is already current changes nothing.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_SetCompassRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_SetCompassRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_Compass` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func setCompass<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_SetCompassRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_SetCompassRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_Compass>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Compass>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_CompassService.Method.SetCompass.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+
+        /// Call the "ListCompassRevisions" method.
+        ///
+        /// - Parameters:
+        ///   - request: A request containing a single `Noted_V1_ListCompassRevisionsRequest` message.
+        ///   - serializer: A serializer for `Noted_V1_ListCompassRevisionsRequest` messages.
+        ///   - deserializer: A deserializer for `Noted_V1_ListCompassRevisionsResponse` messages.
+        ///   - options: Options to apply to this RPC.
+        ///   - handleResponse: A closure which handles the response and returns its result to
+        ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+        ///       already finished.
+        /// - Returns: The result of `handleResponse`.
+        public func listCompassRevisions<Result>(
+            request: GRPCCore.ClientRequest<Noted_V1_ListCompassRevisionsRequest>,
+            serializer: some GRPCCore.MessageSerializer<Noted_V1_ListCompassRevisionsRequest>,
+            deserializer: some GRPCCore.MessageDeserializer<Noted_V1_ListCompassRevisionsResponse>,
+            options: GRPCCore.CallOptions = .defaults,
+            onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListCompassRevisionsResponse>) async throws -> Result = { response in
+                try response.message
+            }
+        ) async throws -> Result where Result: Sendable {
+            try await self.client.unary(
+                request: request,
+                descriptor: Noted_V1_CompassService.Method.ListCompassRevisions.descriptor,
+                serializer: serializer,
+                deserializer: deserializer,
+                options: options,
+                onResponse: handleResponse
+            )
+        }
+    }
+}
+
+// Helpers providing default arguments to 'ClientProtocol' methods.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_CompassService.ClientProtocol {
+    /// Call the "GetCompass" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > The current compass; an empty one (version 0) when none was saved.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_GetCompassRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func getCompass<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_GetCompassRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Compass>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.getCompass(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_GetCompassRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_Compass>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "SetCompass" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Saves a new revision; saving what is already current changes nothing.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_SetCompassRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func setCompass<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_SetCompassRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Compass>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.setCompass(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_SetCompassRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_Compass>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "ListCompassRevisions" method.
+    ///
+    /// - Parameters:
+    ///   - request: A request containing a single `Noted_V1_ListCompassRevisionsRequest` message.
+    ///   - options: Options to apply to this RPC.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func listCompassRevisions<Result>(
+        request: GRPCCore.ClientRequest<Noted_V1_ListCompassRevisionsRequest>,
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListCompassRevisionsResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        try await self.listCompassRevisions(
+            request: request,
+            serializer: GRPCProtobuf.ProtobufSerializer<Noted_V1_ListCompassRevisionsRequest>(),
+            deserializer: GRPCProtobuf.ProtobufDeserializer<Noted_V1_ListCompassRevisionsResponse>(),
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+}
+
+// Helpers providing sugared APIs for 'ClientProtocol' methods.
+@available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, visionOS 2.0, *)
+extension Noted_V1_CompassService.ClientProtocol {
+    /// Call the "GetCompass" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > The current compass; an empty one (version 0) when none was saved.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func getCompass<Result>(
+        _ message: Noted_V1_GetCompassRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Compass>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_GetCompassRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.getCompass(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "SetCompass" method.
+    ///
+    /// > Source IDL Documentation:
+    /// >
+    /// > Saves a new revision; saving what is already current changes nothing.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func setCompass<Result>(
+        _ message: Noted_V1_SetCompassRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_Compass>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_SetCompassRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.setCompass(
+            request: request,
+            options: options,
+            onResponse: handleResponse
+        )
+    }
+
+    /// Call the "ListCompassRevisions" method.
+    ///
+    /// - Parameters:
+    ///   - message: request message to send.
+    ///   - metadata: Additional metadata to send, defaults to empty.
+    ///   - options: Options to apply to this RPC, defaults to `.defaults`.
+    ///   - handleResponse: A closure which handles the response and returns its result to
+    ///       the caller. Returning from the closure will cancel the RPC if it hasn't
+    ///       already finished.
+    /// - Returns: The result of `handleResponse`.
+    public func listCompassRevisions<Result>(
+        _ message: Noted_V1_ListCompassRevisionsRequest,
+        metadata: GRPCCore.Metadata = [:],
+        options: GRPCCore.CallOptions = .defaults,
+        onResponse handleResponse: @Sendable @escaping (GRPCCore.ClientResponse<Noted_V1_ListCompassRevisionsResponse>) async throws -> Result = { response in
+            try response.message
+        }
+    ) async throws -> Result where Result: Sendable {
+        let request = GRPCCore.ClientRequest<Noted_V1_ListCompassRevisionsRequest>(
+            message: message,
+            metadata: metadata
+        )
+        return try await self.listCompassRevisions(
             request: request,
             options: options,
             onResponse: handleResponse

@@ -21,6 +21,9 @@ struct GoalsListView: View {
         let objectives = data.visibleObjectives
         List {
             Section {
+                CompassCard().planCardRow()
+            }
+            Section {
                 if goals.isEmpty && objectives.isEmpty { EmptyState(text: "没有目标") }
                 ForEach(goals, id: \.id) { g in
                     GoalRow(goal: g)
