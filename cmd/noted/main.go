@@ -49,6 +49,7 @@ Usage:
   noted user list [-config ...]
   noted user pro <name> [on|off] [-config ...]   grant Noted Pro outside the App Store
   noted token new <user> [-label text]      issue another token for an existing user
+  noted schedule status|migrate|rollback [-config ...]   the alarms/to-dos -> schedule migration (rollback: before swapping in an older binary, with the server stopped)
   noted export <user> [-o file.zip]         write everything a user has (JSON, Markdown notes, .ics) to a zip
   noted cortex sync <user> [--dry-run] [--full]   send a user's items to the [cortexdb] brain now
   noted mcp [-addr host:port] [-token T]    MCP server on stdio, backed by a running noted server
@@ -72,6 +73,8 @@ func main() {
 		err = userCmd(os.Args[2:])
 	case "token":
 		err = tokenCmd(os.Args[2:])
+	case "schedule":
+		err = scheduleCmd(os.Args[2:])
 	case "export":
 		err = exportCmd(os.Args[2:])
 	case "cortex":
@@ -363,6 +366,40 @@ func userCmd(argv []string) error {
 	default:
 		return fmt.Errorf("unknown user command %q", pos[0])
 	}
+	return nil
+}
+
+// scheduleCmd shows, redoes or undoes the migration that folds alarms and the
+// times of to-dos into the events table. The store has already run it when
+// it was opened here, as it does at every start.
+func scheduleCmd(argv []string) error {
+	pos, flags := splitArgs(argv)
+	if len(pos) != 1 || (pos[0] != "status" && pos[0] != "migrate" && pos[0] != "rollback") {
+		return fmt.Errorf("usage: noted schedule status|migrate|rollback [-config noted.toml]")
+	}
+	st, err := openStore(flag.NewFlagSet("schedule", flag.ExitOnError), flags)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = st.Close() }()
+	ctx := context.Background()
+	switch pos[0] {
+	case "migrate":
+		if err := st.MigrateSchedule(ctx); err != nil {
+			return err
+		}
+	case "rollback":
+		if err := st.RollbackSchedule(ctx); err != nil {
+			return err
+		}
+		fmt.Println("rolled back: alarms are in the alarms table again; run the older binary now (a newer one folds them in again when it starts)")
+	}
+	s, err := st.ScheduleStatus(ctx)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("alarms migrated:   %v\nschedule items:    %d from alarms, %d from to-dos, %d events\nalarms table rows: %d\n",
+		s.AlarmsMigrated, s.Alarms, s.TaskSchedules, s.Events, s.LegacyAlarms)
 	return nil
 }
 

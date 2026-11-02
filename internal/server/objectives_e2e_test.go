@@ -70,8 +70,10 @@ func TestObjectiveCombinesDimensionsAndAMeasuredResult(t *testing.T) {
 	}
 
 	// Readings: 75 -> 72.5 is 2.5 of 7 kg.
-	for _, v := range []float64{75, 74, 72.5} {
-		if _, err := obj.RecordMeasurement(ctx, &pb.RecordMeasurementRequest{ObjectiveId: o.Id, Value: v}); err != nil {
+	for i, v := range []float64{75, 74, 72.5} {
+		// Distinct times: readings recorded in the same millisecond tie, and the latest is then random.
+		at := timestamppb.New(time.Now().Add(time.Duration(i-3) * time.Second))
+		if _, err := obj.RecordMeasurement(ctx, &pb.RecordMeasurementRequest{ObjectiveId: o.Id, Value: v, Time: at}); err != nil {
 			t.Fatal(err)
 		}
 	}
