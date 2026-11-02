@@ -91,5 +91,11 @@ func (s *Focus) GetFocus(ctx context.Context, req *pb.GetFocusRequest) (*pb.GetF
 	if sp := spaceIn(req.Space); ok && (sp == "" || sp == run.Space) {
 		resp.RunningTimer = timeEntryToPB(run, time.Now())
 	}
+	// The compass of the space asked for (life when both): above the day's list.
+	if c, err := s.Store.GetCompass(ctx, u, spaceIn(req.Space)); err != nil {
+		return nil, toStatus(err)
+	} else if c.Version > 0 {
+		resp.Compass = compassToPB(c)
+	}
 	return resp, nil
 }

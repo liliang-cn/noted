@@ -530,9 +530,12 @@ type overviewOut struct {
 	Goals          []*goalOut    `json:"goals"`
 	PinnedProjects []*projectOut `json:"pinnedProjects"`
 	RunningTimer   *timeOut      `json:"runningTimer,omitempty"`
+	Compass        *compassOut   `json:"compass,omitempty" jsonschema:"the space's compass (life when both); absent until one is written"`
 }
 
 type weeklyReviewOut struct {
+	Compass       *compassOut     `json:"compass,omitempty" jsonschema:"vision and antiVision head the review; absent until a compass is written"`
+	Behavior      *behaviorOut    `json:"behavior,omitempty" jsonschema:"what was done this week against what was said: per objective and goal, and time that went to nothing linked"`
 	From          string          `json:"from"`
 	To            string          `json:"to"`
 	TasksDone     int32           `json:"tasksDone"`
@@ -542,6 +545,32 @@ type weeklyReviewOut struct {
 	CarriedTasks  []*taskOut      `json:"carriedTasks" jsonschema:"open and due this week: they slipped"`
 	TopActivities []*timeGroupOut `json:"topActivities"`
 	NextWeek      *suggestionOut  `json:"nextWeek,omitempty" jsonschema:"a pending suggestion for next week"`
+}
+
+type behaviorRowOut struct {
+	Kind        string  `json:"kind" jsonschema:"objective or goal"`
+	ID          string  `json:"id"`
+	Title       string  `json:"title"`
+	Target      float64 `json:"target,omitempty" jsonschema:"a goal's target for this week"`
+	Unit        string  `json:"unit,omitempty"`
+	Done        float64 `json:"done" jsonschema:"check-in amount this week"`
+	CheckIns    int32   `json:"checkIns"`
+	TimeMinutes int32   `json:"timeMinutes" jsonschema:"time logged to it, through goal_id or project_id"`
+	TasksDone   int32   `json:"tasksDone" jsonschema:"tasks finished in its project"`
+	Short       bool    `json:"short" jsonschema:"behind its target, or nothing at all was done"`
+}
+
+type unlinkedTimeOut struct {
+	Title   string `json:"title"`
+	Minutes int32  `json:"minutes"`
+	Count   int32  `json:"count"`
+}
+
+type behaviorOut struct {
+	Rows            []*behaviorRowOut  `json:"rows"`
+	Unlinked        []*unlinkedTimeOut `json:"unlinked" jsonschema:"biggest places time went that no objective or goal is linked to"`
+	UnlinkedMinutes int32              `json:"unlinkedMinutes"`
+	Mismatches      []string           `json:"mismatches" jsonschema:"short sentences saying where the week and the words differ"`
 }
 
 type acceptOut struct {
@@ -880,7 +909,7 @@ func (t *tools) change(c *pb.Change) *changeOut {
 
 func (t *tools) overview(r *pb.GetFocusResponse, horizon string) *overviewOut {
 	out := &overviewOut{Horizon: horizon, From: t.ts(r.From), To: t.ts(r.To), Space: spaceName(r.Space), Items: []any{},
-		Goals: items(r.Goals, t.goal), PinnedProjects: items(r.PinnedProjects, t.project), RunningTimer: t.timeEntry(r.RunningTimer)}
+		Goals: items(r.Goals, t.goal), PinnedProjects: items(r.PinnedProjects, t.project), RunningTimer: t.timeEntry(r.RunningTimer), Compass: t.compass(r.Compass)}
 	for _, it := range r.Items {
 		switch {
 		case it.GetTask() != nil:
@@ -898,7 +927,7 @@ func (t *tools) overview(r *pb.GetFocusResponse, horizon string) *overviewOut {
 }
 
 func (t *tools) weeklyReview(w *pb.WeeklyReview) *weeklyReviewOut {
-	return &weeklyReviewOut{From: t.ts(w.From), To: t.ts(w.To), TasksDone: w.TasksDone, TasksTotal: w.TasksTotal,
+	return &weeklyReviewOut{Compass: t.compass(w.Compass), Behavior: t.behavior(w.Behavior), From: t.ts(w.From), To: t.ts(w.To), TasksDone: w.TasksDone, TasksTotal: w.TasksTotal,
 		TimeMinutes: w.TimeMinutes, Goals: items(w.Goals, t.goal), CarriedTasks: items(w.CarriedTasks, t.task),
 		TopActivities: timeGroups(w.TopActivities, pb.TimeGroupBy_TIME_GROUP_BY_TITLE), NextWeek: t.suggestion(w.NextWeek)}
 }
@@ -908,5 +937,20 @@ func (t *tools) ask(r *pb.AskResponse) *askOut {
 	for _, ref := range r.References {
 		out.References = append(out.References, referenceOut{Kind: ref.Kind, ID: ref.Id, Link: link(ref.Kind, ref.Id), Title: ref.Title, Time: t.ts(ref.Time)})
 	}
+	return out
+}
+
+func (t *tools) behavior(b *pb.BehaviorReview) *behaviorOut {
+	if b == nil {
+		return nil
+	}
+	out := &behaviorOut{UnlinkedMinutes: b.UnlinkedMinutes, Mismatches: append([]string{}, b.Mismatches...),
+		Rows: items(b.Rows, func(r *pb.BehaviorRow) *behaviorRowOut {
+			return &behaviorRowOut{Kind: r.Kind, ID: r.Id, Title: r.Title, Target: r.Target, Unit: r.Unit, Done: r.Done,
+				CheckIns: r.CheckIns, TimeMinutes: r.TimeMinutes, TasksDone: r.TasksDone, Short: r.Short}
+		}),
+		Unlinked: items(b.Unlinked, func(u *pb.UnlinkedTime) *unlinkedTimeOut {
+			return &unlinkedTimeOut{Title: u.Title, Minutes: u.Minutes, Count: u.Count}
+		})}
 	return out
 }

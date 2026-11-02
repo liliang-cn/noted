@@ -514,6 +514,9 @@ func (s *Store) migrate(ctx context.Context) error {
 	if _, err := s.db.ExecContext(ctx, `CREATE INDEX IF NOT EXISTS events_source ON events(source, task_id)`); err != nil {
 		return err
 	}
+	if err := s.migrateCompass(ctx); err != nil {
+		return err
+	}
 	if err := s.migrateTimed(ctx); err != nil {
 		return err
 	}

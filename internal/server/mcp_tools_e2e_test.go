@@ -22,6 +22,7 @@ func TestMCPOffersTheWholeSurface(t *testing.T) {
 		"delete_project", "propose_schedule",
 		"log_time", "start_timer", "stop_timer", "get_running_timer", "list_time_entries", "update_time_entry", "delete_time_entry", "time_summary",
 		"create_alarm", "list_alarms", "get_alarm", "update_alarm", "delete_alarm", "get_holidays",
+		"get_compass", "set_compass",
 	} {
 		if !names[want] {
 			t.Errorf("missing tool %s", want)

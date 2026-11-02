@@ -88,7 +88,7 @@ func (t *tools) registerSuggestions(s *mcp.Server) {
 			}
 			return reply(r, t.suggestion(r))
 		})
-	mcp.AddTool(s, &mcp.Tool{Name: "weekly_review", Description: "Look back at this week: tasks done, goals, what slipped, and a suggested plan for next week (stored as a pending suggestion).", Annotations: readOnly},
+	mcp.AddTool(s, &mcp.Tool{Name: "weekly_review", Description: "Look back at this week: the compass (vision and anti-vision) first, then tasks done, goals, what slipped, a behavior section that sets the time, check-ins and finished tasks of each objective and goal against its target and names the time that went to nothing linked, and a suggested plan for next week (stored as a pending suggestion).", Annotations: readOnly},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in weeklyIn) (*mcp.CallToolResult, *weeklyReviewOut, error) {
 			sp, err := spaceOf(in.Space)
 			if err != nil {

@@ -37,6 +37,9 @@ var texts = map[string]map[Locale]string{
 	"extract.title":  {ZH: "笔记里有 %d 件事", EN: "%d things in this note"},
 	"extract.op":     {ZH: "加入待办:%s", EN: "Add task: %s"},
 	"ask.title":      {ZH: "助手准备做 %d 项改动", EN: "The assistant would make %d changes"},
+	"behav.goal":     {ZH: "%s %s/%s %s", EN: "%s %s/%s %s"},
+	"behav.idle":     {ZH: "「%s」本周没有时间、打卡或任务", EN: "Nothing went into %q this week"},
+	"behav.unlinked": {ZH: "未关联目标的时间:%s %s", EN: "Time linked to no goal: %s %s"},
 	"week.reason":    {ZH: "本周没做完的事和没达标的目标。", EN: "What was left undone this week and the goals that fell short."},
 }
 

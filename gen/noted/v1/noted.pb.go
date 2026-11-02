@@ -1051,16 +1051,14 @@ type Event struct {
 	ProjectId           string                 `protobuf:"bytes,13,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"` // optional: the project this event belongs to
 	Space               Space                  `protobuf:"varint,14,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
 	// How the item reaches the person when its time comes:
-	//
-	//	alarm        rings like an alarm clock (AlarmKit, setAlarmClock),
-	//	             through silent mode, until stopped by hand;
-	//	reminder     a time-sensitive local notification at the moment (less
-	//	             remind_before_minutes), with snooze and done;
-	//	notification a plain system notification that it is due, not critical
-	//	             to the second: the server's reminder stream and webhook
-	//	             deliver it, or a phone posts it locally;
-	//	none         on the calendar only, nobody is pinged.
-	//
+	//   alarm        rings like an alarm clock (AlarmKit, setAlarmClock),
+	//                through silent mode, until stopped by hand;
+	//   reminder     a time-sensitive local notification at the moment (less
+	//                remind_before_minutes), with snooze and done;
+	//   notification a plain system notification that it is due, not critical
+	//                to the second: the server's reminder stream and webhook
+	//                deliver it, or a phone posts it locally;
+	//   none         on the calendar only, nobody is pinged.
 	// Unset on create: reminder when remind_before_minutes is set; none for an
 	// all-day event; else reminder 10 minutes before. Items made through the
 	// alarm API take the alarm's mode.
@@ -6803,6 +6801,7 @@ type GetFocusResponse struct {
 	PinnedProjects []*Project             `protobuf:"bytes,6,rep,name=pinned_projects,json=pinnedProjects,proto3" json:"pinned_projects,omitempty"`
 	Space          Space                  `protobuf:"varint,7,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
 	RunningTimer   *TimeEntry             `protobuf:"bytes,8,opt,name=running_timer,json=runningTimer,proto3" json:"running_timer,omitempty"` // unset when no timer runs (or it is in the other space)
+	Compass        *Compass               `protobuf:"bytes,9,opt,name=compass,proto3" json:"compass,omitempty"`                               // the compass of the space (life when unspecified); unset until one is saved
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -6889,6 +6888,13 @@ func (x *GetFocusResponse) GetSpace() Space {
 func (x *GetFocusResponse) GetRunningTimer() *TimeEntry {
 	if x != nil {
 		return x.RunningTimer
+	}
+	return nil
+}
+
+func (x *GetFocusResponse) GetCompass() *Compass {
+	if x != nil {
+		return x.Compass
 	}
 	return nil
 }
@@ -8073,7 +8079,11 @@ func (x *GetWeeklyReviewRequest) GetTimeZone() string {
 }
 
 type WeeklyReview struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Declared first so they head the JSON text of the review (field numbers
+	// stay after the original ones).
+	Compass       *Compass               `protobuf:"bytes,10,opt,name=compass,proto3" json:"compass,omitempty"`   // unset until one is saved; its vision and anti_vision head the review
+	Behavior      *BehaviorReview        `protobuf:"bytes,11,opt,name=behavior,proto3" json:"behavior,omitempty"` // what was done against what was said
 	From          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
 	To            *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
 	TasksDone     int32                  `protobuf:"varint,3,opt,name=tasks_done,json=tasksDone,proto3" json:"tasks_done,omitempty"`
@@ -8115,6 +8125,20 @@ func (x *WeeklyReview) ProtoReflect() protoreflect.Message {
 // Deprecated: Use WeeklyReview.ProtoReflect.Descriptor instead.
 func (*WeeklyReview) Descriptor() ([]byte, []int) {
 	return file_noted_v1_noted_proto_rawDescGZIP(), []int{116}
+}
+
+func (x *WeeklyReview) GetCompass() *Compass {
+	if x != nil {
+		return x.Compass
+	}
+	return nil
+}
+
+func (x *WeeklyReview) GetBehavior() *BehaviorReview {
+	if x != nil {
+		return x.Behavior
+	}
+	return nil
 }
 
 func (x *WeeklyReview) GetFrom() *timestamppb.Timestamp {
@@ -8180,6 +8204,254 @@ func (x *WeeklyReview) GetTopActivities() []*TimeSummaryRow {
 	return nil
 }
 
+// What the week's time, check-ins and finished tasks did for each active
+// objective and goal, against its target. A task or time entry counts for an
+// objective or goal through the goal_id or project_id it carries.
+type BehaviorRow struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Kind          string                 `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"` // "objective" or "goal"
+	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Target        float64                `protobuf:"fixed64,4,opt,name=target,proto3" json:"target,omitempty"` // goal: this week's share of its target; 0 for an objective
+	Unit          string                 `protobuf:"bytes,5,opt,name=unit,proto3" json:"unit,omitempty"`
+	Done          float64                `protobuf:"fixed64,6,opt,name=done,proto3" json:"done,omitempty"` // goal: check-in amount this week; objective: sum over its goals
+	CheckIns      int32                  `protobuf:"varint,7,opt,name=check_ins,json=checkIns,proto3" json:"check_ins,omitempty"`
+	TimeMinutes   int32                  `protobuf:"varint,8,opt,name=time_minutes,json=timeMinutes,proto3" json:"time_minutes,omitempty"`
+	TasksDone     int32                  `protobuf:"varint,9,opt,name=tasks_done,json=tasksDone,proto3" json:"tasks_done,omitempty"`
+	Short         bool                   `protobuf:"varint,10,opt,name=short,proto3" json:"short,omitempty"` // behind the target, or nothing at all was done
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BehaviorRow) Reset() {
+	*x = BehaviorRow{}
+	mi := &file_noted_v1_noted_proto_msgTypes[117]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BehaviorRow) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BehaviorRow) ProtoMessage() {}
+
+func (x *BehaviorRow) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[117]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BehaviorRow.ProtoReflect.Descriptor instead.
+func (*BehaviorRow) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{117}
+}
+
+func (x *BehaviorRow) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *BehaviorRow) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *BehaviorRow) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *BehaviorRow) GetTarget() float64 {
+	if x != nil {
+		return x.Target
+	}
+	return 0
+}
+
+func (x *BehaviorRow) GetUnit() string {
+	if x != nil {
+		return x.Unit
+	}
+	return ""
+}
+
+func (x *BehaviorRow) GetDone() float64 {
+	if x != nil {
+		return x.Done
+	}
+	return 0
+}
+
+func (x *BehaviorRow) GetCheckIns() int32 {
+	if x != nil {
+		return x.CheckIns
+	}
+	return 0
+}
+
+func (x *BehaviorRow) GetTimeMinutes() int32 {
+	if x != nil {
+		return x.TimeMinutes
+	}
+	return 0
+}
+
+func (x *BehaviorRow) GetTasksDone() int32 {
+	if x != nil {
+		return x.TasksDone
+	}
+	return 0
+}
+
+func (x *BehaviorRow) GetShort() bool {
+	if x != nil {
+		return x.Short
+	}
+	return false
+}
+
+// Time that went to something no objective or goal is linked to.
+type UnlinkedTime struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	Minutes       int32                  `protobuf:"varint,2,opt,name=minutes,proto3" json:"minutes,omitempty"`
+	Count         int32                  `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnlinkedTime) Reset() {
+	*x = UnlinkedTime{}
+	mi := &file_noted_v1_noted_proto_msgTypes[118]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnlinkedTime) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnlinkedTime) ProtoMessage() {}
+
+func (x *UnlinkedTime) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[118]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnlinkedTime.ProtoReflect.Descriptor instead.
+func (*UnlinkedTime) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{118}
+}
+
+func (x *UnlinkedTime) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *UnlinkedTime) GetMinutes() int32 {
+	if x != nil {
+		return x.Minutes
+	}
+	return 0
+}
+
+func (x *UnlinkedTime) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+type BehaviorReview struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Mismatches      []string               `protobuf:"bytes,4,rep,name=mismatches,proto3" json:"mismatches,omitempty"` // short sentences, e.g. "游泳 0/2 次"; first in the JSON text
+	Rows            []*BehaviorRow         `protobuf:"bytes,1,rep,name=rows,proto3" json:"rows,omitempty"`
+	Unlinked        []*UnlinkedTime        `protobuf:"bytes,2,rep,name=unlinked,proto3" json:"unlinked,omitempty"`                                       // biggest first, at most five
+	UnlinkedMinutes int32                  `protobuf:"varint,3,opt,name=unlinked_minutes,json=unlinkedMinutes,proto3" json:"unlinked_minutes,omitempty"` // all unlinked time of the week
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *BehaviorReview) Reset() {
+	*x = BehaviorReview{}
+	mi := &file_noted_v1_noted_proto_msgTypes[119]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BehaviorReview) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BehaviorReview) ProtoMessage() {}
+
+func (x *BehaviorReview) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[119]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BehaviorReview.ProtoReflect.Descriptor instead.
+func (*BehaviorReview) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{119}
+}
+
+func (x *BehaviorReview) GetMismatches() []string {
+	if x != nil {
+		return x.Mismatches
+	}
+	return nil
+}
+
+func (x *BehaviorReview) GetRows() []*BehaviorRow {
+	if x != nil {
+		return x.Rows
+	}
+	return nil
+}
+
+func (x *BehaviorReview) GetUnlinked() []*UnlinkedTime {
+	if x != nil {
+		return x.Unlinked
+	}
+	return nil
+}
+
+func (x *BehaviorReview) GetUnlinkedMinutes() int32 {
+	if x != nil {
+		return x.UnlinkedMinutes
+	}
+	return 0
+}
+
 type ListChangesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Limit         int32                  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"` // default 50, max 200
@@ -8189,7 +8461,7 @@ type ListChangesRequest struct {
 
 func (x *ListChangesRequest) Reset() {
 	*x = ListChangesRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[117]
+	mi := &file_noted_v1_noted_proto_msgTypes[120]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8201,7 +8473,7 @@ func (x *ListChangesRequest) String() string {
 func (*ListChangesRequest) ProtoMessage() {}
 
 func (x *ListChangesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[117]
+	mi := &file_noted_v1_noted_proto_msgTypes[120]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8214,7 +8486,7 @@ func (x *ListChangesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChangesRequest.ProtoReflect.Descriptor instead.
 func (*ListChangesRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{117}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{120}
 }
 
 func (x *ListChangesRequest) GetLimit() int32 {
@@ -8233,7 +8505,7 @@ type ListChangesResponse struct {
 
 func (x *ListChangesResponse) Reset() {
 	*x = ListChangesResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[118]
+	mi := &file_noted_v1_noted_proto_msgTypes[121]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8245,7 +8517,7 @@ func (x *ListChangesResponse) String() string {
 func (*ListChangesResponse) ProtoMessage() {}
 
 func (x *ListChangesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[118]
+	mi := &file_noted_v1_noted_proto_msgTypes[121]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8258,7 +8530,7 @@ func (x *ListChangesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChangesResponse.ProtoReflect.Descriptor instead.
 func (*ListChangesResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{118}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{121}
 }
 
 func (x *ListChangesResponse) GetChanges() []*Change {
@@ -8277,7 +8549,7 @@ type UndoChangeRequest struct {
 
 func (x *UndoChangeRequest) Reset() {
 	*x = UndoChangeRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[119]
+	mi := &file_noted_v1_noted_proto_msgTypes[122]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8289,7 +8561,7 @@ func (x *UndoChangeRequest) String() string {
 func (*UndoChangeRequest) ProtoMessage() {}
 
 func (x *UndoChangeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[119]
+	mi := &file_noted_v1_noted_proto_msgTypes[122]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8302,7 +8574,7 @@ func (x *UndoChangeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UndoChangeRequest.ProtoReflect.Descriptor instead.
 func (*UndoChangeRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{119}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{122}
 }
 
 func (x *UndoChangeRequest) GetId() string {
@@ -8340,7 +8612,7 @@ type Holding struct {
 
 func (x *Holding) Reset() {
 	*x = Holding{}
-	mi := &file_noted_v1_noted_proto_msgTypes[120]
+	mi := &file_noted_v1_noted_proto_msgTypes[123]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8352,7 +8624,7 @@ func (x *Holding) String() string {
 func (*Holding) ProtoMessage() {}
 
 func (x *Holding) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[120]
+	mi := &file_noted_v1_noted_proto_msgTypes[123]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8365,7 +8637,7 @@ func (x *Holding) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Holding.ProtoReflect.Descriptor instead.
 func (*Holding) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{120}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{123}
 }
 
 func (x *Holding) GetId() string {
@@ -8499,7 +8771,7 @@ type Position struct {
 
 func (x *Position) Reset() {
 	*x = Position{}
-	mi := &file_noted_v1_noted_proto_msgTypes[121]
+	mi := &file_noted_v1_noted_proto_msgTypes[124]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8511,7 +8783,7 @@ func (x *Position) String() string {
 func (*Position) ProtoMessage() {}
 
 func (x *Position) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[121]
+	mi := &file_noted_v1_noted_proto_msgTypes[124]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8524,7 +8796,7 @@ func (x *Position) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Position.ProtoReflect.Descriptor instead.
 func (*Position) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{121}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{124}
 }
 
 func (x *Position) GetShares() float64 {
@@ -8617,7 +8889,7 @@ type DcaStatus struct {
 
 func (x *DcaStatus) Reset() {
 	*x = DcaStatus{}
-	mi := &file_noted_v1_noted_proto_msgTypes[122]
+	mi := &file_noted_v1_noted_proto_msgTypes[125]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8629,7 +8901,7 @@ func (x *DcaStatus) String() string {
 func (*DcaStatus) ProtoMessage() {}
 
 func (x *DcaStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[122]
+	mi := &file_noted_v1_noted_proto_msgTypes[125]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8642,7 +8914,7 @@ func (x *DcaStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DcaStatus.ProtoReflect.Descriptor instead.
 func (*DcaStatus) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{122}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{125}
 }
 
 func (x *DcaStatus) GetActive() bool {
@@ -8696,7 +8968,7 @@ type Trade struct {
 
 func (x *Trade) Reset() {
 	*x = Trade{}
-	mi := &file_noted_v1_noted_proto_msgTypes[123]
+	mi := &file_noted_v1_noted_proto_msgTypes[126]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8708,7 +8980,7 @@ func (x *Trade) String() string {
 func (*Trade) ProtoMessage() {}
 
 func (x *Trade) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[123]
+	mi := &file_noted_v1_noted_proto_msgTypes[126]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8721,7 +8993,7 @@ func (x *Trade) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Trade.ProtoReflect.Descriptor instead.
 func (*Trade) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{123}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{126}
 }
 
 func (x *Trade) GetId() string {
@@ -8789,7 +9061,7 @@ type CreateHoldingRequest struct {
 
 func (x *CreateHoldingRequest) Reset() {
 	*x = CreateHoldingRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[124]
+	mi := &file_noted_v1_noted_proto_msgTypes[127]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8801,7 +9073,7 @@ func (x *CreateHoldingRequest) String() string {
 func (*CreateHoldingRequest) ProtoMessage() {}
 
 func (x *CreateHoldingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[124]
+	mi := &file_noted_v1_noted_proto_msgTypes[127]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8814,7 +9086,7 @@ func (x *CreateHoldingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateHoldingRequest.ProtoReflect.Descriptor instead.
 func (*CreateHoldingRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{124}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{127}
 }
 
 func (x *CreateHoldingRequest) GetHolding() *Holding {
@@ -8833,7 +9105,7 @@ type GetHoldingRequest struct {
 
 func (x *GetHoldingRequest) Reset() {
 	*x = GetHoldingRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[125]
+	mi := &file_noted_v1_noted_proto_msgTypes[128]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8845,7 +9117,7 @@ func (x *GetHoldingRequest) String() string {
 func (*GetHoldingRequest) ProtoMessage() {}
 
 func (x *GetHoldingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[125]
+	mi := &file_noted_v1_noted_proto_msgTypes[128]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8858,7 +9130,7 @@ func (x *GetHoldingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHoldingRequest.ProtoReflect.Descriptor instead.
 func (*GetHoldingRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{125}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{128}
 }
 
 func (x *GetHoldingRequest) GetId() string {
@@ -8880,7 +9152,7 @@ type UpdateHoldingRequest struct {
 
 func (x *UpdateHoldingRequest) Reset() {
 	*x = UpdateHoldingRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[126]
+	mi := &file_noted_v1_noted_proto_msgTypes[129]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8892,7 +9164,7 @@ func (x *UpdateHoldingRequest) String() string {
 func (*UpdateHoldingRequest) ProtoMessage() {}
 
 func (x *UpdateHoldingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[126]
+	mi := &file_noted_v1_noted_proto_msgTypes[129]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8905,7 +9177,7 @@ func (x *UpdateHoldingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateHoldingRequest.ProtoReflect.Descriptor instead.
 func (*UpdateHoldingRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{126}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{129}
 }
 
 func (x *UpdateHoldingRequest) GetHolding() *Holding {
@@ -8931,7 +9203,7 @@ type DeleteHoldingRequest struct {
 
 func (x *DeleteHoldingRequest) Reset() {
 	*x = DeleteHoldingRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[127]
+	mi := &file_noted_v1_noted_proto_msgTypes[130]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8943,7 +9215,7 @@ func (x *DeleteHoldingRequest) String() string {
 func (*DeleteHoldingRequest) ProtoMessage() {}
 
 func (x *DeleteHoldingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[127]
+	mi := &file_noted_v1_noted_proto_msgTypes[130]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8956,7 +9228,7 @@ func (x *DeleteHoldingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteHoldingRequest.ProtoReflect.Descriptor instead.
 func (*DeleteHoldingRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{127}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{130}
 }
 
 func (x *DeleteHoldingRequest) GetId() string {
@@ -8975,7 +9247,7 @@ type ListHoldingsRequest struct {
 
 func (x *ListHoldingsRequest) Reset() {
 	*x = ListHoldingsRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[128]
+	mi := &file_noted_v1_noted_proto_msgTypes[131]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8987,7 +9259,7 @@ func (x *ListHoldingsRequest) String() string {
 func (*ListHoldingsRequest) ProtoMessage() {}
 
 func (x *ListHoldingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[128]
+	mi := &file_noted_v1_noted_proto_msgTypes[131]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9000,7 +9272,7 @@ func (x *ListHoldingsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListHoldingsRequest.ProtoReflect.Descriptor instead.
 func (*ListHoldingsRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{128}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{131}
 }
 
 func (x *ListHoldingsRequest) GetIncludeArchived() bool {
@@ -9019,7 +9291,7 @@ type ListHoldingsResponse struct {
 
 func (x *ListHoldingsResponse) Reset() {
 	*x = ListHoldingsResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[129]
+	mi := &file_noted_v1_noted_proto_msgTypes[132]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9031,7 +9303,7 @@ func (x *ListHoldingsResponse) String() string {
 func (*ListHoldingsResponse) ProtoMessage() {}
 
 func (x *ListHoldingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[129]
+	mi := &file_noted_v1_noted_proto_msgTypes[132]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9044,7 +9316,7 @@ func (x *ListHoldingsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListHoldingsResponse.ProtoReflect.Descriptor instead.
 func (*ListHoldingsResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{129}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{132}
 }
 
 func (x *ListHoldingsResponse) GetHoldings() []*Holding {
@@ -9064,7 +9336,7 @@ type RecordTradeRequest struct {
 
 func (x *RecordTradeRequest) Reset() {
 	*x = RecordTradeRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[130]
+	mi := &file_noted_v1_noted_proto_msgTypes[133]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9076,7 +9348,7 @@ func (x *RecordTradeRequest) String() string {
 func (*RecordTradeRequest) ProtoMessage() {}
 
 func (x *RecordTradeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[130]
+	mi := &file_noted_v1_noted_proto_msgTypes[133]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9089,7 +9361,7 @@ func (x *RecordTradeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecordTradeRequest.ProtoReflect.Descriptor instead.
 func (*RecordTradeRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{130}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{133}
 }
 
 func (x *RecordTradeRequest) GetHoldingId() string {
@@ -9115,7 +9387,7 @@ type DeleteTradeRequest struct {
 
 func (x *DeleteTradeRequest) Reset() {
 	*x = DeleteTradeRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[131]
+	mi := &file_noted_v1_noted_proto_msgTypes[134]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9127,7 +9399,7 @@ func (x *DeleteTradeRequest) String() string {
 func (*DeleteTradeRequest) ProtoMessage() {}
 
 func (x *DeleteTradeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[131]
+	mi := &file_noted_v1_noted_proto_msgTypes[134]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9140,7 +9412,7 @@ func (x *DeleteTradeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteTradeRequest.ProtoReflect.Descriptor instead.
 func (*DeleteTradeRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{131}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{134}
 }
 
 func (x *DeleteTradeRequest) GetId() string {
@@ -9159,7 +9431,7 @@ type ListTradesRequest struct {
 
 func (x *ListTradesRequest) Reset() {
 	*x = ListTradesRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[132]
+	mi := &file_noted_v1_noted_proto_msgTypes[135]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9171,7 +9443,7 @@ func (x *ListTradesRequest) String() string {
 func (*ListTradesRequest) ProtoMessage() {}
 
 func (x *ListTradesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[132]
+	mi := &file_noted_v1_noted_proto_msgTypes[135]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9184,7 +9456,7 @@ func (x *ListTradesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTradesRequest.ProtoReflect.Descriptor instead.
 func (*ListTradesRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{132}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{135}
 }
 
 func (x *ListTradesRequest) GetHoldingId() string {
@@ -9203,7 +9475,7 @@ type ListTradesResponse struct {
 
 func (x *ListTradesResponse) Reset() {
 	*x = ListTradesResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[133]
+	mi := &file_noted_v1_noted_proto_msgTypes[136]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9215,7 +9487,7 @@ func (x *ListTradesResponse) String() string {
 func (*ListTradesResponse) ProtoMessage() {}
 
 func (x *ListTradesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[133]
+	mi := &file_noted_v1_noted_proto_msgTypes[136]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9228,7 +9500,7 @@ func (x *ListTradesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTradesResponse.ProtoReflect.Descriptor instead.
 func (*ListTradesResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{133}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{136}
 }
 
 func (x *ListTradesResponse) GetTrades() []*Trade {
@@ -9271,7 +9543,7 @@ type TimeEntry struct {
 
 func (x *TimeEntry) Reset() {
 	*x = TimeEntry{}
-	mi := &file_noted_v1_noted_proto_msgTypes[134]
+	mi := &file_noted_v1_noted_proto_msgTypes[137]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9283,7 +9555,7 @@ func (x *TimeEntry) String() string {
 func (*TimeEntry) ProtoMessage() {}
 
 func (x *TimeEntry) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[134]
+	mi := &file_noted_v1_noted_proto_msgTypes[137]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9296,7 +9568,7 @@ func (x *TimeEntry) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TimeEntry.ProtoReflect.Descriptor instead.
 func (*TimeEntry) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{134}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{137}
 }
 
 func (x *TimeEntry) GetId() string {
@@ -9406,7 +9678,7 @@ type CreateTimeEntryRequest struct {
 
 func (x *CreateTimeEntryRequest) Reset() {
 	*x = CreateTimeEntryRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[135]
+	mi := &file_noted_v1_noted_proto_msgTypes[138]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9418,7 +9690,7 @@ func (x *CreateTimeEntryRequest) String() string {
 func (*CreateTimeEntryRequest) ProtoMessage() {}
 
 func (x *CreateTimeEntryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[135]
+	mi := &file_noted_v1_noted_proto_msgTypes[138]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9431,7 +9703,7 @@ func (x *CreateTimeEntryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTimeEntryRequest.ProtoReflect.Descriptor instead.
 func (*CreateTimeEntryRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{135}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{138}
 }
 
 func (x *CreateTimeEntryRequest) GetEntry() *TimeEntry {
@@ -9450,7 +9722,7 @@ type GetTimeEntryRequest struct {
 
 func (x *GetTimeEntryRequest) Reset() {
 	*x = GetTimeEntryRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[136]
+	mi := &file_noted_v1_noted_proto_msgTypes[139]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9462,7 +9734,7 @@ func (x *GetTimeEntryRequest) String() string {
 func (*GetTimeEntryRequest) ProtoMessage() {}
 
 func (x *GetTimeEntryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[136]
+	mi := &file_noted_v1_noted_proto_msgTypes[139]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9475,7 +9747,7 @@ func (x *GetTimeEntryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTimeEntryRequest.ProtoReflect.Descriptor instead.
 func (*GetTimeEntryRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{136}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{139}
 }
 
 func (x *GetTimeEntryRequest) GetId() string {
@@ -9500,7 +9772,7 @@ type UpdateTimeEntryRequest struct {
 
 func (x *UpdateTimeEntryRequest) Reset() {
 	*x = UpdateTimeEntryRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[137]
+	mi := &file_noted_v1_noted_proto_msgTypes[140]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9512,7 +9784,7 @@ func (x *UpdateTimeEntryRequest) String() string {
 func (*UpdateTimeEntryRequest) ProtoMessage() {}
 
 func (x *UpdateTimeEntryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[137]
+	mi := &file_noted_v1_noted_proto_msgTypes[140]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9525,7 +9797,7 @@ func (x *UpdateTimeEntryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateTimeEntryRequest.ProtoReflect.Descriptor instead.
 func (*UpdateTimeEntryRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{137}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{140}
 }
 
 func (x *UpdateTimeEntryRequest) GetEntry() *TimeEntry {
@@ -9551,7 +9823,7 @@ type DeleteTimeEntryRequest struct {
 
 func (x *DeleteTimeEntryRequest) Reset() {
 	*x = DeleteTimeEntryRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[138]
+	mi := &file_noted_v1_noted_proto_msgTypes[141]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9563,7 +9835,7 @@ func (x *DeleteTimeEntryRequest) String() string {
 func (*DeleteTimeEntryRequest) ProtoMessage() {}
 
 func (x *DeleteTimeEntryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[138]
+	mi := &file_noted_v1_noted_proto_msgTypes[141]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9576,7 +9848,7 @@ func (x *DeleteTimeEntryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteTimeEntryRequest.ProtoReflect.Descriptor instead.
 func (*DeleteTimeEntryRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{138}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{141}
 }
 
 func (x *DeleteTimeEntryRequest) GetId() string {
@@ -9602,7 +9874,7 @@ type ListTimeEntriesRequest struct {
 
 func (x *ListTimeEntriesRequest) Reset() {
 	*x = ListTimeEntriesRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[139]
+	mi := &file_noted_v1_noted_proto_msgTypes[142]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9614,7 +9886,7 @@ func (x *ListTimeEntriesRequest) String() string {
 func (*ListTimeEntriesRequest) ProtoMessage() {}
 
 func (x *ListTimeEntriesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[139]
+	mi := &file_noted_v1_noted_proto_msgTypes[142]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9627,7 +9899,7 @@ func (x *ListTimeEntriesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTimeEntriesRequest.ProtoReflect.Descriptor instead.
 func (*ListTimeEntriesRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{139}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{142}
 }
 
 func (x *ListTimeEntriesRequest) GetPageSize() int32 {
@@ -9696,7 +9968,7 @@ type ListTimeEntriesResponse struct {
 
 func (x *ListTimeEntriesResponse) Reset() {
 	*x = ListTimeEntriesResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[140]
+	mi := &file_noted_v1_noted_proto_msgTypes[143]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9708,7 +9980,7 @@ func (x *ListTimeEntriesResponse) String() string {
 func (*ListTimeEntriesResponse) ProtoMessage() {}
 
 func (x *ListTimeEntriesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[140]
+	mi := &file_noted_v1_noted_proto_msgTypes[143]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9721,7 +9993,7 @@ func (x *ListTimeEntriesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTimeEntriesResponse.ProtoReflect.Descriptor instead.
 func (*ListTimeEntriesResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{140}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{143}
 }
 
 func (x *ListTimeEntriesResponse) GetEntries() []*TimeEntry {
@@ -9752,7 +10024,7 @@ type StartTimerRequest struct {
 
 func (x *StartTimerRequest) Reset() {
 	*x = StartTimerRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[141]
+	mi := &file_noted_v1_noted_proto_msgTypes[144]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9764,7 +10036,7 @@ func (x *StartTimerRequest) String() string {
 func (*StartTimerRequest) ProtoMessage() {}
 
 func (x *StartTimerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[141]
+	mi := &file_noted_v1_noted_proto_msgTypes[144]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9777,7 +10049,7 @@ func (x *StartTimerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartTimerRequest.ProtoReflect.Descriptor instead.
 func (*StartTimerRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{141}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{144}
 }
 
 func (x *StartTimerRequest) GetTitle() string {
@@ -9832,7 +10104,7 @@ type StopTimerRequest struct {
 
 func (x *StopTimerRequest) Reset() {
 	*x = StopTimerRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[142]
+	mi := &file_noted_v1_noted_proto_msgTypes[145]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9844,7 +10116,7 @@ func (x *StopTimerRequest) String() string {
 func (*StopTimerRequest) ProtoMessage() {}
 
 func (x *StopTimerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[142]
+	mi := &file_noted_v1_noted_proto_msgTypes[145]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9857,7 +10129,7 @@ func (x *StopTimerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StopTimerRequest.ProtoReflect.Descriptor instead.
 func (*StopTimerRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{142}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{145}
 }
 
 func (x *StopTimerRequest) GetEndTime() *timestamppb.Timestamp {
@@ -9875,7 +10147,7 @@ type GetRunningTimerRequest struct {
 
 func (x *GetRunningTimerRequest) Reset() {
 	*x = GetRunningTimerRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[143]
+	mi := &file_noted_v1_noted_proto_msgTypes[146]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9887,7 +10159,7 @@ func (x *GetRunningTimerRequest) String() string {
 func (*GetRunningTimerRequest) ProtoMessage() {}
 
 func (x *GetRunningTimerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[143]
+	mi := &file_noted_v1_noted_proto_msgTypes[146]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9900,7 +10172,7 @@ func (x *GetRunningTimerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRunningTimerRequest.ProtoReflect.Descriptor instead.
 func (*GetRunningTimerRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{143}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{146}
 }
 
 type GetRunningTimerResponse struct {
@@ -9912,7 +10184,7 @@ type GetRunningTimerResponse struct {
 
 func (x *GetRunningTimerResponse) Reset() {
 	*x = GetRunningTimerResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[144]
+	mi := &file_noted_v1_noted_proto_msgTypes[147]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9924,7 +10196,7 @@ func (x *GetRunningTimerResponse) String() string {
 func (*GetRunningTimerResponse) ProtoMessage() {}
 
 func (x *GetRunningTimerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[144]
+	mi := &file_noted_v1_noted_proto_msgTypes[147]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9937,7 +10209,7 @@ func (x *GetRunningTimerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetRunningTimerResponse.ProtoReflect.Descriptor instead.
 func (*GetRunningTimerResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{144}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{147}
 }
 
 func (x *GetRunningTimerResponse) GetEntry() *TimeEntry {
@@ -9962,7 +10234,7 @@ type SummarizeTimeRequest struct {
 
 func (x *SummarizeTimeRequest) Reset() {
 	*x = SummarizeTimeRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[145]
+	mi := &file_noted_v1_noted_proto_msgTypes[148]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9974,7 +10246,7 @@ func (x *SummarizeTimeRequest) String() string {
 func (*SummarizeTimeRequest) ProtoMessage() {}
 
 func (x *SummarizeTimeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[145]
+	mi := &file_noted_v1_noted_proto_msgTypes[148]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9987,7 +10259,7 @@ func (x *SummarizeTimeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SummarizeTimeRequest.ProtoReflect.Descriptor instead.
 func (*SummarizeTimeRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{145}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{148}
 }
 
 func (x *SummarizeTimeRequest) GetFrom() *timestamppb.Timestamp {
@@ -10053,7 +10325,7 @@ type TimeSummaryRow struct {
 
 func (x *TimeSummaryRow) Reset() {
 	*x = TimeSummaryRow{}
-	mi := &file_noted_v1_noted_proto_msgTypes[146]
+	mi := &file_noted_v1_noted_proto_msgTypes[149]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10065,7 +10337,7 @@ func (x *TimeSummaryRow) String() string {
 func (*TimeSummaryRow) ProtoMessage() {}
 
 func (x *TimeSummaryRow) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[146]
+	mi := &file_noted_v1_noted_proto_msgTypes[149]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10078,7 +10350,7 @@ func (x *TimeSummaryRow) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TimeSummaryRow.ProtoReflect.Descriptor instead.
 func (*TimeSummaryRow) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{146}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{149}
 }
 
 func (x *TimeSummaryRow) GetKey() string {
@@ -10124,7 +10396,7 @@ type TimeSummary struct {
 
 func (x *TimeSummary) Reset() {
 	*x = TimeSummary{}
-	mi := &file_noted_v1_noted_proto_msgTypes[147]
+	mi := &file_noted_v1_noted_proto_msgTypes[150]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10136,7 +10408,7 @@ func (x *TimeSummary) String() string {
 func (*TimeSummary) ProtoMessage() {}
 
 func (x *TimeSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[147]
+	mi := &file_noted_v1_noted_proto_msgTypes[150]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10149,7 +10421,7 @@ func (x *TimeSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TimeSummary.ProtoReflect.Descriptor instead.
 func (*TimeSummary) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{147}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{150}
 }
 
 func (x *TimeSummary) GetFrom() *timestamppb.Timestamp {
@@ -10212,7 +10484,7 @@ type AlarmRecurrence struct {
 
 func (x *AlarmRecurrence) Reset() {
 	*x = AlarmRecurrence{}
-	mi := &file_noted_v1_noted_proto_msgTypes[148]
+	mi := &file_noted_v1_noted_proto_msgTypes[151]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10224,7 +10496,7 @@ func (x *AlarmRecurrence) String() string {
 func (*AlarmRecurrence) ProtoMessage() {}
 
 func (x *AlarmRecurrence) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[148]
+	mi := &file_noted_v1_noted_proto_msgTypes[151]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10237,7 +10509,7 @@ func (x *AlarmRecurrence) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AlarmRecurrence.ProtoReflect.Descriptor instead.
 func (*AlarmRecurrence) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{148}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{151}
 }
 
 func (x *AlarmRecurrence) GetFreq() string {
@@ -10310,7 +10582,7 @@ type AlarmSchedule struct {
 
 func (x *AlarmSchedule) Reset() {
 	*x = AlarmSchedule{}
-	mi := &file_noted_v1_noted_proto_msgTypes[149]
+	mi := &file_noted_v1_noted_proto_msgTypes[152]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10322,7 +10594,7 @@ func (x *AlarmSchedule) String() string {
 func (*AlarmSchedule) ProtoMessage() {}
 
 func (x *AlarmSchedule) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[149]
+	mi := &file_noted_v1_noted_proto_msgTypes[152]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10335,7 +10607,7 @@ func (x *AlarmSchedule) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AlarmSchedule.ProtoReflect.Descriptor instead.
 func (*AlarmSchedule) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{149}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{152}
 }
 
 func (x *AlarmSchedule) GetKind() string {
@@ -10420,7 +10692,7 @@ type Alarm struct {
 
 func (x *Alarm) Reset() {
 	*x = Alarm{}
-	mi := &file_noted_v1_noted_proto_msgTypes[150]
+	mi := &file_noted_v1_noted_proto_msgTypes[153]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10432,7 +10704,7 @@ func (x *Alarm) String() string {
 func (*Alarm) ProtoMessage() {}
 
 func (x *Alarm) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[150]
+	mi := &file_noted_v1_noted_proto_msgTypes[153]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10445,7 +10717,7 @@ func (x *Alarm) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Alarm.ProtoReflect.Descriptor instead.
 func (*Alarm) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{150}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{153}
 }
 
 func (x *Alarm) GetId() string {
@@ -10576,7 +10848,7 @@ type CreateAlarmRequest struct {
 
 func (x *CreateAlarmRequest) Reset() {
 	*x = CreateAlarmRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[151]
+	mi := &file_noted_v1_noted_proto_msgTypes[154]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10588,7 +10860,7 @@ func (x *CreateAlarmRequest) String() string {
 func (*CreateAlarmRequest) ProtoMessage() {}
 
 func (x *CreateAlarmRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[151]
+	mi := &file_noted_v1_noted_proto_msgTypes[154]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10601,7 +10873,7 @@ func (x *CreateAlarmRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateAlarmRequest.ProtoReflect.Descriptor instead.
 func (*CreateAlarmRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{151}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{154}
 }
 
 func (x *CreateAlarmRequest) GetAlarm() *Alarm {
@@ -10620,7 +10892,7 @@ type GetAlarmRequest struct {
 
 func (x *GetAlarmRequest) Reset() {
 	*x = GetAlarmRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[152]
+	mi := &file_noted_v1_noted_proto_msgTypes[155]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10632,7 +10904,7 @@ func (x *GetAlarmRequest) String() string {
 func (*GetAlarmRequest) ProtoMessage() {}
 
 func (x *GetAlarmRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[152]
+	mi := &file_noted_v1_noted_proto_msgTypes[155]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10645,7 +10917,7 @@ func (x *GetAlarmRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAlarmRequest.ProtoReflect.Descriptor instead.
 func (*GetAlarmRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{152}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{155}
 }
 
 func (x *GetAlarmRequest) GetId() string {
@@ -10667,7 +10939,7 @@ type UpdateAlarmRequest struct {
 
 func (x *UpdateAlarmRequest) Reset() {
 	*x = UpdateAlarmRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[153]
+	mi := &file_noted_v1_noted_proto_msgTypes[156]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10679,7 +10951,7 @@ func (x *UpdateAlarmRequest) String() string {
 func (*UpdateAlarmRequest) ProtoMessage() {}
 
 func (x *UpdateAlarmRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[153]
+	mi := &file_noted_v1_noted_proto_msgTypes[156]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10692,7 +10964,7 @@ func (x *UpdateAlarmRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateAlarmRequest.ProtoReflect.Descriptor instead.
 func (*UpdateAlarmRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{153}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{156}
 }
 
 func (x *UpdateAlarmRequest) GetAlarm() *Alarm {
@@ -10718,7 +10990,7 @@ type DeleteAlarmRequest struct {
 
 func (x *DeleteAlarmRequest) Reset() {
 	*x = DeleteAlarmRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[154]
+	mi := &file_noted_v1_noted_proto_msgTypes[157]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10730,7 +11002,7 @@ func (x *DeleteAlarmRequest) String() string {
 func (*DeleteAlarmRequest) ProtoMessage() {}
 
 func (x *DeleteAlarmRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[154]
+	mi := &file_noted_v1_noted_proto_msgTypes[157]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10743,7 +11015,7 @@ func (x *DeleteAlarmRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteAlarmRequest.ProtoReflect.Descriptor instead.
 func (*DeleteAlarmRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{154}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{157}
 }
 
 func (x *DeleteAlarmRequest) GetId() string {
@@ -10771,7 +11043,7 @@ type ListAlarmsRequest struct {
 
 func (x *ListAlarmsRequest) Reset() {
 	*x = ListAlarmsRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[155]
+	mi := &file_noted_v1_noted_proto_msgTypes[158]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10783,7 +11055,7 @@ func (x *ListAlarmsRequest) String() string {
 func (*ListAlarmsRequest) ProtoMessage() {}
 
 func (x *ListAlarmsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[155]
+	mi := &file_noted_v1_noted_proto_msgTypes[158]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10796,7 +11068,7 @@ func (x *ListAlarmsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAlarmsRequest.ProtoReflect.Descriptor instead.
 func (*ListAlarmsRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{155}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{158}
 }
 
 func (x *ListAlarmsRequest) GetEnabled() bool {
@@ -10837,7 +11109,7 @@ type ListAlarmsResponse struct {
 
 func (x *ListAlarmsResponse) Reset() {
 	*x = ListAlarmsResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[156]
+	mi := &file_noted_v1_noted_proto_msgTypes[159]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10849,7 +11121,7 @@ func (x *ListAlarmsResponse) String() string {
 func (*ListAlarmsResponse) ProtoMessage() {}
 
 func (x *ListAlarmsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[156]
+	mi := &file_noted_v1_noted_proto_msgTypes[159]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10862,7 +11134,7 @@ func (x *ListAlarmsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAlarmsResponse.ProtoReflect.Descriptor instead.
 func (*ListAlarmsResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{156}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{159}
 }
 
 func (x *ListAlarmsResponse) GetAlarms() []*Alarm {
@@ -10887,7 +11159,7 @@ type GetAlarmsVersionRequest struct {
 
 func (x *GetAlarmsVersionRequest) Reset() {
 	*x = GetAlarmsVersionRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[157]
+	mi := &file_noted_v1_noted_proto_msgTypes[160]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10899,7 +11171,7 @@ func (x *GetAlarmsVersionRequest) String() string {
 func (*GetAlarmsVersionRequest) ProtoMessage() {}
 
 func (x *GetAlarmsVersionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[157]
+	mi := &file_noted_v1_noted_proto_msgTypes[160]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10912,7 +11184,7 @@ func (x *GetAlarmsVersionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAlarmsVersionRequest.ProtoReflect.Descriptor instead.
 func (*GetAlarmsVersionRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{157}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{160}
 }
 
 type GetAlarmsVersionResponse struct {
@@ -10927,7 +11199,7 @@ type GetAlarmsVersionResponse struct {
 
 func (x *GetAlarmsVersionResponse) Reset() {
 	*x = GetAlarmsVersionResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[158]
+	mi := &file_noted_v1_noted_proto_msgTypes[161]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10939,7 +11211,7 @@ func (x *GetAlarmsVersionResponse) String() string {
 func (*GetAlarmsVersionResponse) ProtoMessage() {}
 
 func (x *GetAlarmsVersionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[158]
+	mi := &file_noted_v1_noted_proto_msgTypes[161]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10952,7 +11224,7 @@ func (x *GetAlarmsVersionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAlarmsVersionResponse.ProtoReflect.Descriptor instead.
 func (*GetAlarmsVersionResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{158}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{161}
 }
 
 func (x *GetAlarmsVersionResponse) GetVersion() string {
@@ -10974,7 +11246,7 @@ type ListFiresRequest struct {
 
 func (x *ListFiresRequest) Reset() {
 	*x = ListFiresRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[159]
+	mi := &file_noted_v1_noted_proto_msgTypes[162]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10986,7 +11258,7 @@ func (x *ListFiresRequest) String() string {
 func (*ListFiresRequest) ProtoMessage() {}
 
 func (x *ListFiresRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[159]
+	mi := &file_noted_v1_noted_proto_msgTypes[162]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10999,7 +11271,7 @@ func (x *ListFiresRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListFiresRequest.ProtoReflect.Descriptor instead.
 func (*ListFiresRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{159}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{162}
 }
 
 func (x *ListFiresRequest) GetFrom() *timestamppb.Timestamp {
@@ -11051,7 +11323,7 @@ type Fire struct {
 
 func (x *Fire) Reset() {
 	*x = Fire{}
-	mi := &file_noted_v1_noted_proto_msgTypes[160]
+	mi := &file_noted_v1_noted_proto_msgTypes[163]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11063,7 +11335,7 @@ func (x *Fire) String() string {
 func (*Fire) ProtoMessage() {}
 
 func (x *Fire) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[160]
+	mi := &file_noted_v1_noted_proto_msgTypes[163]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11076,7 +11348,7 @@ func (x *Fire) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Fire.ProtoReflect.Descriptor instead.
 func (*Fire) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{160}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{163}
 }
 
 func (x *Fire) GetItemId() string {
@@ -11175,7 +11447,7 @@ type ListFiresResponse struct {
 
 func (x *ListFiresResponse) Reset() {
 	*x = ListFiresResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[161]
+	mi := &file_noted_v1_noted_proto_msgTypes[164]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11187,7 +11459,7 @@ func (x *ListFiresResponse) String() string {
 func (*ListFiresResponse) ProtoMessage() {}
 
 func (x *ListFiresResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[161]
+	mi := &file_noted_v1_noted_proto_msgTypes[164]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11200,7 +11472,7 @@ func (x *ListFiresResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListFiresResponse.ProtoReflect.Descriptor instead.
 func (*ListFiresResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{161}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{164}
 }
 
 func (x *ListFiresResponse) GetFires() []*Fire {
@@ -11242,7 +11514,7 @@ type GetHolidaysRequest struct {
 
 func (x *GetHolidaysRequest) Reset() {
 	*x = GetHolidaysRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[162]
+	mi := &file_noted_v1_noted_proto_msgTypes[165]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11254,7 +11526,7 @@ func (x *GetHolidaysRequest) String() string {
 func (*GetHolidaysRequest) ProtoMessage() {}
 
 func (x *GetHolidaysRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[162]
+	mi := &file_noted_v1_noted_proto_msgTypes[165]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11267,7 +11539,7 @@ func (x *GetHolidaysRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHolidaysRequest.ProtoReflect.Descriptor instead.
 func (*GetHolidaysRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{162}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{165}
 }
 
 func (x *GetHolidaysRequest) GetYear() int32 {
@@ -11295,7 +11567,7 @@ type HolidayDay struct {
 
 func (x *HolidayDay) Reset() {
 	*x = HolidayDay{}
-	mi := &file_noted_v1_noted_proto_msgTypes[163]
+	mi := &file_noted_v1_noted_proto_msgTypes[166]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11307,7 +11579,7 @@ func (x *HolidayDay) String() string {
 func (*HolidayDay) ProtoMessage() {}
 
 func (x *HolidayDay) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[163]
+	mi := &file_noted_v1_noted_proto_msgTypes[166]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11320,7 +11592,7 @@ func (x *HolidayDay) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HolidayDay.ProtoReflect.Descriptor instead.
 func (*HolidayDay) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{163}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{166}
 }
 
 func (x *HolidayDay) GetDate() string {
@@ -11357,7 +11629,7 @@ type GetHolidaysResponse struct {
 
 func (x *GetHolidaysResponse) Reset() {
 	*x = GetHolidaysResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[164]
+	mi := &file_noted_v1_noted_proto_msgTypes[167]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11369,7 +11641,7 @@ func (x *GetHolidaysResponse) String() string {
 func (*GetHolidaysResponse) ProtoMessage() {}
 
 func (x *GetHolidaysResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[164]
+	mi := &file_noted_v1_noted_proto_msgTypes[167]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11382,7 +11654,7 @@ func (x *GetHolidaysResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHolidaysResponse.ProtoReflect.Descriptor instead.
 func (*GetHolidaysResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{164}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{167}
 }
 
 func (x *GetHolidaysResponse) GetYear() int32 {
@@ -11436,7 +11708,7 @@ type SignInWithAppleRequest struct {
 
 func (x *SignInWithAppleRequest) Reset() {
 	*x = SignInWithAppleRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[165]
+	mi := &file_noted_v1_noted_proto_msgTypes[168]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11448,7 +11720,7 @@ func (x *SignInWithAppleRequest) String() string {
 func (*SignInWithAppleRequest) ProtoMessage() {}
 
 func (x *SignInWithAppleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[165]
+	mi := &file_noted_v1_noted_proto_msgTypes[168]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11461,7 +11733,7 @@ func (x *SignInWithAppleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignInWithAppleRequest.ProtoReflect.Descriptor instead.
 func (*SignInWithAppleRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{165}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{168}
 }
 
 func (x *SignInWithAppleRequest) GetIdentityToken() string {
@@ -11495,7 +11767,7 @@ type SignInWithAppleResponse struct {
 
 func (x *SignInWithAppleResponse) Reset() {
 	*x = SignInWithAppleResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[166]
+	mi := &file_noted_v1_noted_proto_msgTypes[169]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11507,7 +11779,7 @@ func (x *SignInWithAppleResponse) String() string {
 func (*SignInWithAppleResponse) ProtoMessage() {}
 
 func (x *SignInWithAppleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[166]
+	mi := &file_noted_v1_noted_proto_msgTypes[169]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11520,7 +11792,7 @@ func (x *SignInWithAppleResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignInWithAppleResponse.ProtoReflect.Descriptor instead.
 func (*SignInWithAppleResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{166}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{169}
 }
 
 func (x *SignInWithAppleResponse) GetToken() string {
@@ -11547,7 +11819,7 @@ type LinkAppleRequest struct {
 
 func (x *LinkAppleRequest) Reset() {
 	*x = LinkAppleRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[167]
+	mi := &file_noted_v1_noted_proto_msgTypes[170]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11559,7 +11831,7 @@ func (x *LinkAppleRequest) String() string {
 func (*LinkAppleRequest) ProtoMessage() {}
 
 func (x *LinkAppleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[167]
+	mi := &file_noted_v1_noted_proto_msgTypes[170]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11572,7 +11844,7 @@ func (x *LinkAppleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LinkAppleRequest.ProtoReflect.Descriptor instead.
 func (*LinkAppleRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{167}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{170}
 }
 
 func (x *LinkAppleRequest) GetIdentityToken() string {
@@ -11597,7 +11869,7 @@ type UnlinkAppleRequest struct {
 
 func (x *UnlinkAppleRequest) Reset() {
 	*x = UnlinkAppleRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[168]
+	mi := &file_noted_v1_noted_proto_msgTypes[171]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11609,7 +11881,7 @@ func (x *UnlinkAppleRequest) String() string {
 func (*UnlinkAppleRequest) ProtoMessage() {}
 
 func (x *UnlinkAppleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[168]
+	mi := &file_noted_v1_noted_proto_msgTypes[171]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11622,7 +11894,7 @@ func (x *UnlinkAppleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnlinkAppleRequest.ProtoReflect.Descriptor instead.
 func (*UnlinkAppleRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{168}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{171}
 }
 
 type GetAccountRequest struct {
@@ -11633,7 +11905,7 @@ type GetAccountRequest struct {
 
 func (x *GetAccountRequest) Reset() {
 	*x = GetAccountRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[169]
+	mi := &file_noted_v1_noted_proto_msgTypes[172]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11645,7 +11917,7 @@ func (x *GetAccountRequest) String() string {
 func (*GetAccountRequest) ProtoMessage() {}
 
 func (x *GetAccountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[169]
+	mi := &file_noted_v1_noted_proto_msgTypes[172]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11658,7 +11930,7 @@ func (x *GetAccountRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAccountRequest.ProtoReflect.Descriptor instead.
 func (*GetAccountRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{169}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{172}
 }
 
 type Account struct {
@@ -11674,7 +11946,7 @@ type Account struct {
 
 func (x *Account) Reset() {
 	*x = Account{}
-	mi := &file_noted_v1_noted_proto_msgTypes[170]
+	mi := &file_noted_v1_noted_proto_msgTypes[173]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11686,7 +11958,7 @@ func (x *Account) String() string {
 func (*Account) ProtoMessage() {}
 
 func (x *Account) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[170]
+	mi := &file_noted_v1_noted_proto_msgTypes[173]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11699,7 +11971,7 @@ func (x *Account) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Account.ProtoReflect.Descriptor instead.
 func (*Account) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{170}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{173}
 }
 
 func (x *Account) GetUserName() string {
@@ -11752,7 +12024,7 @@ type SignUpRequest struct {
 
 func (x *SignUpRequest) Reset() {
 	*x = SignUpRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[171]
+	mi := &file_noted_v1_noted_proto_msgTypes[174]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11764,7 +12036,7 @@ func (x *SignUpRequest) String() string {
 func (*SignUpRequest) ProtoMessage() {}
 
 func (x *SignUpRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[171]
+	mi := &file_noted_v1_noted_proto_msgTypes[174]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11777,7 +12049,7 @@ func (x *SignUpRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignUpRequest.ProtoReflect.Descriptor instead.
 func (*SignUpRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{171}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{174}
 }
 
 func (x *SignUpRequest) GetEmail() string {
@@ -11812,7 +12084,7 @@ type SignInRequest struct {
 
 func (x *SignInRequest) Reset() {
 	*x = SignInRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[172]
+	mi := &file_noted_v1_noted_proto_msgTypes[175]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11824,7 +12096,7 @@ func (x *SignInRequest) String() string {
 func (*SignInRequest) ProtoMessage() {}
 
 func (x *SignInRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[172]
+	mi := &file_noted_v1_noted_proto_msgTypes[175]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11837,7 +12109,7 @@ func (x *SignInRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignInRequest.ProtoReflect.Descriptor instead.
 func (*SignInRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{172}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{175}
 }
 
 func (x *SignInRequest) GetEmail() string {
@@ -11871,7 +12143,7 @@ type SignInResponse struct {
 
 func (x *SignInResponse) Reset() {
 	*x = SignInResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[173]
+	mi := &file_noted_v1_noted_proto_msgTypes[176]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11883,7 +12155,7 @@ func (x *SignInResponse) String() string {
 func (*SignInResponse) ProtoMessage() {}
 
 func (x *SignInResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[173]
+	mi := &file_noted_v1_noted_proto_msgTypes[176]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11896,7 +12168,7 @@ func (x *SignInResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SignInResponse.ProtoReflect.Descriptor instead.
 func (*SignInResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{173}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{176}
 }
 
 func (x *SignInResponse) GetToken() string {
@@ -11924,7 +12196,7 @@ type SetEmailPasswordRequest struct {
 
 func (x *SetEmailPasswordRequest) Reset() {
 	*x = SetEmailPasswordRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[174]
+	mi := &file_noted_v1_noted_proto_msgTypes[177]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11936,7 +12208,7 @@ func (x *SetEmailPasswordRequest) String() string {
 func (*SetEmailPasswordRequest) ProtoMessage() {}
 
 func (x *SetEmailPasswordRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[174]
+	mi := &file_noted_v1_noted_proto_msgTypes[177]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11949,7 +12221,7 @@ func (x *SetEmailPasswordRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetEmailPasswordRequest.ProtoReflect.Descriptor instead.
 func (*SetEmailPasswordRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{174}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{177}
 }
 
 func (x *SetEmailPasswordRequest) GetEmail() string {
@@ -11989,7 +12261,7 @@ type TokenInfo struct {
 
 func (x *TokenInfo) Reset() {
 	*x = TokenInfo{}
-	mi := &file_noted_v1_noted_proto_msgTypes[175]
+	mi := &file_noted_v1_noted_proto_msgTypes[178]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12001,7 +12273,7 @@ func (x *TokenInfo) String() string {
 func (*TokenInfo) ProtoMessage() {}
 
 func (x *TokenInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[175]
+	mi := &file_noted_v1_noted_proto_msgTypes[178]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12014,7 +12286,7 @@ func (x *TokenInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TokenInfo.ProtoReflect.Descriptor instead.
 func (*TokenInfo) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{175}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{178}
 }
 
 func (x *TokenInfo) GetId() string {
@@ -12061,7 +12333,7 @@ type CreateTokenRequest struct {
 
 func (x *CreateTokenRequest) Reset() {
 	*x = CreateTokenRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[176]
+	mi := &file_noted_v1_noted_proto_msgTypes[179]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12073,7 +12345,7 @@ func (x *CreateTokenRequest) String() string {
 func (*CreateTokenRequest) ProtoMessage() {}
 
 func (x *CreateTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[176]
+	mi := &file_noted_v1_noted_proto_msgTypes[179]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12086,7 +12358,7 @@ func (x *CreateTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTokenRequest.ProtoReflect.Descriptor instead.
 func (*CreateTokenRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{176}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{179}
 }
 
 func (x *CreateTokenRequest) GetLabel() string {
@@ -12106,7 +12378,7 @@ type CreateTokenResponse struct {
 
 func (x *CreateTokenResponse) Reset() {
 	*x = CreateTokenResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[177]
+	mi := &file_noted_v1_noted_proto_msgTypes[180]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12118,7 +12390,7 @@ func (x *CreateTokenResponse) String() string {
 func (*CreateTokenResponse) ProtoMessage() {}
 
 func (x *CreateTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[177]
+	mi := &file_noted_v1_noted_proto_msgTypes[180]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12131,7 +12403,7 @@ func (x *CreateTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTokenResponse.ProtoReflect.Descriptor instead.
 func (*CreateTokenResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{177}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{180}
 }
 
 func (x *CreateTokenResponse) GetToken() string {
@@ -12156,7 +12428,7 @@ type ListTokensRequest struct {
 
 func (x *ListTokensRequest) Reset() {
 	*x = ListTokensRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[178]
+	mi := &file_noted_v1_noted_proto_msgTypes[181]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12168,7 +12440,7 @@ func (x *ListTokensRequest) String() string {
 func (*ListTokensRequest) ProtoMessage() {}
 
 func (x *ListTokensRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[178]
+	mi := &file_noted_v1_noted_proto_msgTypes[181]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12181,7 +12453,7 @@ func (x *ListTokensRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTokensRequest.ProtoReflect.Descriptor instead.
 func (*ListTokensRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{178}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{181}
 }
 
 type ListTokensResponse struct {
@@ -12193,7 +12465,7 @@ type ListTokensResponse struct {
 
 func (x *ListTokensResponse) Reset() {
 	*x = ListTokensResponse{}
-	mi := &file_noted_v1_noted_proto_msgTypes[179]
+	mi := &file_noted_v1_noted_proto_msgTypes[182]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12205,7 +12477,7 @@ func (x *ListTokensResponse) String() string {
 func (*ListTokensResponse) ProtoMessage() {}
 
 func (x *ListTokensResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[179]
+	mi := &file_noted_v1_noted_proto_msgTypes[182]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12218,7 +12490,7 @@ func (x *ListTokensResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTokensResponse.ProtoReflect.Descriptor instead.
 func (*ListTokensResponse) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{179}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{182}
 }
 
 func (x *ListTokensResponse) GetTokens() []*TokenInfo {
@@ -12237,7 +12509,7 @@ type RevokeTokenRequest struct {
 
 func (x *RevokeTokenRequest) Reset() {
 	*x = RevokeTokenRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[180]
+	mi := &file_noted_v1_noted_proto_msgTypes[183]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12249,7 +12521,7 @@ func (x *RevokeTokenRequest) String() string {
 func (*RevokeTokenRequest) ProtoMessage() {}
 
 func (x *RevokeTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[180]
+	mi := &file_noted_v1_noted_proto_msgTypes[183]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12262,7 +12534,7 @@ func (x *RevokeTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeTokenRequest.ProtoReflect.Descriptor instead.
 func (*RevokeTokenRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{180}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{183}
 }
 
 func (x *RevokeTokenRequest) GetId() string {
@@ -12285,7 +12557,7 @@ type Pairing struct {
 
 func (x *Pairing) Reset() {
 	*x = Pairing{}
-	mi := &file_noted_v1_noted_proto_msgTypes[181]
+	mi := &file_noted_v1_noted_proto_msgTypes[184]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12297,7 +12569,7 @@ func (x *Pairing) String() string {
 func (*Pairing) ProtoMessage() {}
 
 func (x *Pairing) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[181]
+	mi := &file_noted_v1_noted_proto_msgTypes[184]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12310,7 +12582,7 @@ func (x *Pairing) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Pairing.ProtoReflect.Descriptor instead.
 func (*Pairing) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{181}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{184}
 }
 
 func (x *Pairing) GetCode() string {
@@ -12357,7 +12629,7 @@ type GetPairingRequest struct {
 
 func (x *GetPairingRequest) Reset() {
 	*x = GetPairingRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[182]
+	mi := &file_noted_v1_noted_proto_msgTypes[185]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12369,7 +12641,7 @@ func (x *GetPairingRequest) String() string {
 func (*GetPairingRequest) ProtoMessage() {}
 
 func (x *GetPairingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[182]
+	mi := &file_noted_v1_noted_proto_msgTypes[185]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12382,7 +12654,7 @@ func (x *GetPairingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPairingRequest.ProtoReflect.Descriptor instead.
 func (*GetPairingRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{182}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{185}
 }
 
 func (x *GetPairingRequest) GetCode() string {
@@ -12402,7 +12674,7 @@ type ApprovePairingRequest struct {
 
 func (x *ApprovePairingRequest) Reset() {
 	*x = ApprovePairingRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[183]
+	mi := &file_noted_v1_noted_proto_msgTypes[186]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12414,7 +12686,7 @@ func (x *ApprovePairingRequest) String() string {
 func (*ApprovePairingRequest) ProtoMessage() {}
 
 func (x *ApprovePairingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[183]
+	mi := &file_noted_v1_noted_proto_msgTypes[186]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12427,7 +12699,7 @@ func (x *ApprovePairingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApprovePairingRequest.ProtoReflect.Descriptor instead.
 func (*ApprovePairingRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{183}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{186}
 }
 
 func (x *ApprovePairingRequest) GetCode() string {
@@ -12453,7 +12725,7 @@ type DenyPairingRequest struct {
 
 func (x *DenyPairingRequest) Reset() {
 	*x = DenyPairingRequest{}
-	mi := &file_noted_v1_noted_proto_msgTypes[184]
+	mi := &file_noted_v1_noted_proto_msgTypes[187]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12465,7 +12737,7 @@ func (x *DenyPairingRequest) String() string {
 func (*DenyPairingRequest) ProtoMessage() {}
 
 func (x *DenyPairingRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_noted_v1_noted_proto_msgTypes[184]
+	mi := &file_noted_v1_noted_proto_msgTypes[187]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12478,7 +12750,7 @@ func (x *DenyPairingRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DenyPairingRequest.ProtoReflect.Descriptor instead.
 func (*DenyPairingRequest) Descriptor() ([]byte, []int) {
-	return file_noted_v1_noted_proto_rawDescGZIP(), []int{184}
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{187}
 }
 
 func (x *DenyPairingRequest) GetCode() string {
@@ -12486,6 +12758,292 @@ func (x *DenyPairingRequest) GetCode() string {
 		return x.Code
 	}
 	return ""
+}
+
+type Compass struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Space         Space                  `protobuf:"varint,1,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`        // UNSPECIFIED reads as life
+	AntiVision    string                 `protobuf:"bytes,2,opt,name=anti_vision,json=antiVision,proto3" json:"anti_vision,omitempty"` // the life I refuse
+	Vision        string                 `protobuf:"bytes,3,opt,name=vision,proto3" json:"vision,omitempty"`                           // what I am building toward
+	Identity      string                 `protobuf:"bytes,4,opt,name=identity,proto3" json:"identity,omitempty"`                       // "我是那种……的人"
+	Constraints   []string               `protobuf:"bytes,5,rep,name=constraints,proto3" json:"constraints,omitempty"`                 // what I will not sacrifice
+	UpdateTime    *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	Version       int32                  `protobuf:"varint,7,opt,name=version,proto3" json:"version,omitempty"` // 0: never saved
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Compass) Reset() {
+	*x = Compass{}
+	mi := &file_noted_v1_noted_proto_msgTypes[188]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Compass) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Compass) ProtoMessage() {}
+
+func (x *Compass) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[188]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Compass.ProtoReflect.Descriptor instead.
+func (*Compass) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{188}
+}
+
+func (x *Compass) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+func (x *Compass) GetAntiVision() string {
+	if x != nil {
+		return x.AntiVision
+	}
+	return ""
+}
+
+func (x *Compass) GetVision() string {
+	if x != nil {
+		return x.Vision
+	}
+	return ""
+}
+
+func (x *Compass) GetIdentity() string {
+	if x != nil {
+		return x.Identity
+	}
+	return ""
+}
+
+func (x *Compass) GetConstraints() []string {
+	if x != nil {
+		return x.Constraints
+	}
+	return nil
+}
+
+func (x *Compass) GetUpdateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdateTime
+	}
+	return nil
+}
+
+func (x *Compass) GetVersion() int32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+type GetCompassRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Space         Space                  `protobuf:"varint,1,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetCompassRequest) Reset() {
+	*x = GetCompassRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[189]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCompassRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCompassRequest) ProtoMessage() {}
+
+func (x *GetCompassRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[189]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCompassRequest.ProtoReflect.Descriptor instead.
+func (*GetCompassRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{189}
+}
+
+func (x *GetCompassRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+type SetCompassRequest struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Compass *Compass               `protobuf:"bytes,1,opt,name=compass,proto3" json:"compass,omitempty"`
+	// anti_vision, vision, identity, constraints. Fields not named keep their
+	// current value; an empty mask names all four.
+	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetCompassRequest) Reset() {
+	*x = SetCompassRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[190]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetCompassRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetCompassRequest) ProtoMessage() {}
+
+func (x *SetCompassRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[190]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetCompassRequest.ProtoReflect.Descriptor instead.
+func (*SetCompassRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{190}
+}
+
+func (x *SetCompassRequest) GetCompass() *Compass {
+	if x != nil {
+		return x.Compass
+	}
+	return nil
+}
+
+func (x *SetCompassRequest) GetUpdateMask() *fieldmaskpb.FieldMask {
+	if x != nil {
+		return x.UpdateMask
+	}
+	return nil
+}
+
+type ListCompassRevisionsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Space         Space                  `protobuf:"varint,1,opt,name=space,proto3,enum=noted.v1.Space" json:"space,omitempty"`
+	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"` // newest first; default 50, max 500
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCompassRevisionsRequest) Reset() {
+	*x = ListCompassRevisionsRequest{}
+	mi := &file_noted_v1_noted_proto_msgTypes[191]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCompassRevisionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCompassRevisionsRequest) ProtoMessage() {}
+
+func (x *ListCompassRevisionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[191]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCompassRevisionsRequest.ProtoReflect.Descriptor instead.
+func (*ListCompassRevisionsRequest) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{191}
+}
+
+func (x *ListCompassRevisionsRequest) GetSpace() Space {
+	if x != nil {
+		return x.Space
+	}
+	return Space_SPACE_UNSPECIFIED
+}
+
+func (x *ListCompassRevisionsRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+type ListCompassRevisionsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Revisions     []*Compass             `protobuf:"bytes,1,rep,name=revisions,proto3" json:"revisions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCompassRevisionsResponse) Reset() {
+	*x = ListCompassRevisionsResponse{}
+	mi := &file_noted_v1_noted_proto_msgTypes[192]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCompassRevisionsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCompassRevisionsResponse) ProtoMessage() {}
+
+func (x *ListCompassRevisionsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_noted_v1_noted_proto_msgTypes[192]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCompassRevisionsResponse.ProtoReflect.Descriptor instead.
+func (*ListCompassRevisionsResponse) Descriptor() ([]byte, []int) {
+	return file_noted_v1_noted_proto_rawDescGZIP(), []int{192}
+}
+
+func (x *ListCompassRevisionsResponse) GetRevisions() []*Compass {
+	if x != nil {
+		return x.Revisions
+	}
+	return nil
 }
 
 var File_noted_v1_noted_proto protoreflect.FileDescriptor
@@ -13041,7 +13599,7 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\n" +
 	"project_id\x18\x05 \x01(\tR\tprojectId\x12#\n" +
 	"\rproject_title\x18\x06 \x01(\tR\fprojectTitleB\x06\n" +
-	"\x04item\"\x89\x03\n" +
+	"\x04item\"\xb6\x03\n" +
 	"\x10GetFocusResponse\x12+\n" +
 	"\ahorizon\x18\x01 \x01(\x0e2\x11.noted.v1.HorizonR\ahorizon\x12.\n" +
 	"\x04from\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
@@ -13050,7 +13608,8 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\x05goals\x18\x05 \x03(\v2\x0e.noted.v1.GoalR\x05goals\x12:\n" +
 	"\x0fpinned_projects\x18\x06 \x03(\v2\x11.noted.v1.ProjectR\x0epinnedProjects\x12%\n" +
 	"\x05space\x18\a \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x128\n" +
-	"\rrunning_timer\x18\b \x01(\v2\x13.noted.v1.TimeEntryR\frunningTimer\"\x8b\x01\n" +
+	"\rrunning_timer\x18\b \x01(\v2\x13.noted.v1.TimeEntryR\frunningTimer\x12+\n" +
+	"\acompass\x18\t \x01(\v2\x11.noted.v1.CompassR\acompass\"\x8b\x01\n" +
 	"\n" +
 	"Preference\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -13141,8 +13700,11 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\x16GetWeeklyReviewRequest\x123\n" +
 	"\aweek_of\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x06weekOf\x12%\n" +
 	"\x05space\x18\x02 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12\x1b\n" +
-	"\ttime_zone\x18\x03 \x01(\tR\btimeZone\"\x9a\x03\n" +
-	"\fWeeklyReview\x12.\n" +
+	"\ttime_zone\x18\x03 \x01(\tR\btimeZone\"\xfd\x03\n" +
+	"\fWeeklyReview\x12+\n" +
+	"\acompass\x18\n" +
+	" \x01(\v2\x11.noted.v1.CompassR\acompass\x124\n" +
+	"\bbehavior\x18\v \x01(\v2\x18.noted.v1.BehaviorReviewR\bbehavior\x12.\n" +
 	"\x04from\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04from\x12*\n" +
 	"\x02to\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x02to\x12\x1d\n" +
 	"\n" +
@@ -13153,7 +13715,31 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\rcarried_tasks\x18\x06 \x03(\v2\x0e.noted.v1.TaskR\fcarriedTasks\x12/\n" +
 	"\tnext_week\x18\a \x01(\v2\x12.noted.v1.ProposalR\bnextWeek\x12!\n" +
 	"\ftime_minutes\x18\b \x01(\x05R\vtimeMinutes\x12?\n" +
-	"\x0etop_activities\x18\t \x03(\v2\x18.noted.v1.TimeSummaryRowR\rtopActivities\"*\n" +
+	"\x0etop_activities\x18\t \x03(\v2\x18.noted.v1.TimeSummaryRowR\rtopActivities\"\xfc\x01\n" +
+	"\vBehaviorRow\x12\x12\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x0e\n" +
+	"\x02id\x18\x02 \x01(\tR\x02id\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\x12\x16\n" +
+	"\x06target\x18\x04 \x01(\x01R\x06target\x12\x12\n" +
+	"\x04unit\x18\x05 \x01(\tR\x04unit\x12\x12\n" +
+	"\x04done\x18\x06 \x01(\x01R\x04done\x12\x1b\n" +
+	"\tcheck_ins\x18\a \x01(\x05R\bcheckIns\x12!\n" +
+	"\ftime_minutes\x18\b \x01(\x05R\vtimeMinutes\x12\x1d\n" +
+	"\n" +
+	"tasks_done\x18\t \x01(\x05R\ttasksDone\x12\x14\n" +
+	"\x05short\x18\n" +
+	" \x01(\bR\x05short\"T\n" +
+	"\fUnlinkedTime\x12\x14\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x18\n" +
+	"\aminutes\x18\x02 \x01(\x05R\aminutes\x12\x14\n" +
+	"\x05count\x18\x03 \x01(\x05R\x05count\"\xba\x01\n" +
+	"\x0eBehaviorReview\x12\x1e\n" +
+	"\n" +
+	"mismatches\x18\x04 \x03(\tR\n" +
+	"mismatches\x12)\n" +
+	"\x04rows\x18\x01 \x03(\v2\x15.noted.v1.BehaviorRowR\x04rows\x122\n" +
+	"\bunlinked\x18\x02 \x03(\v2\x16.noted.v1.UnlinkedTimeR\bunlinked\x12)\n" +
+	"\x10unlinked_minutes\x18\x03 \x01(\x05R\x0funlinkedMinutes\"*\n" +
 	"\x12ListChangesRequest\x12\x14\n" +
 	"\x05limit\x18\x01 \x01(\x05R\x05limit\"A\n" +
 	"\x13ListChangesResponse\x12*\n" +
@@ -13492,7 +14078,28 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x14\n" +
 	"\x05label\x18\x02 \x01(\tR\x05label\"(\n" +
 	"\x12DenyPairingRequest\x12\x12\n" +
-	"\x04code\x18\x01 \x01(\tR\x04code*>\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\"\xfe\x01\n" +
+	"\aCompass\x12%\n" +
+	"\x05space\x18\x01 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12\x1f\n" +
+	"\vanti_vision\x18\x02 \x01(\tR\n" +
+	"antiVision\x12\x16\n" +
+	"\x06vision\x18\x03 \x01(\tR\x06vision\x12\x1a\n" +
+	"\bidentity\x18\x04 \x01(\tR\bidentity\x12 \n" +
+	"\vconstraints\x18\x05 \x03(\tR\vconstraints\x12;\n" +
+	"\vupdate_time\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"updateTime\x12\x18\n" +
+	"\aversion\x18\a \x01(\x05R\aversion\":\n" +
+	"\x11GetCompassRequest\x12%\n" +
+	"\x05space\x18\x01 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\"}\n" +
+	"\x11SetCompassRequest\x12+\n" +
+	"\acompass\x18\x01 \x01(\v2\x11.noted.v1.CompassR\acompass\x12;\n" +
+	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
+	"updateMask\"Z\n" +
+	"\x1bListCompassRevisionsRequest\x12%\n" +
+	"\x05space\x18\x01 \x01(\x0e2\x0f.noted.v1.SpaceR\x05space\x12\x14\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\"O\n" +
+	"\x1cListCompassRevisionsResponse\x12/\n" +
+	"\trevisions\x18\x01 \x03(\v2\x11.noted.v1.CompassR\trevisions*>\n" +
 	"\x05Space\x12\x15\n" +
 	"\x11SPACE_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -13661,7 +14268,13 @@ const file_noted_v1_noted_proto_rawDesc = "" +
 	"\n" +
 	"GetPairing\x12\x1b.noted.v1.GetPairingRequest\x1a\x11.noted.v1.Pairing\x12D\n" +
 	"\x0eApprovePairing\x12\x1f.noted.v1.ApprovePairingRequest\x1a\x11.noted.v1.Pairing\x12C\n" +
-	"\vDenyPairing\x12\x1c.noted.v1.DenyPairingRequest\x1a\x16.google.protobuf.EmptyB\x8d\x01\n" +
+	"\vDenyPairing\x12\x1c.noted.v1.DenyPairingRequest\x1a\x16.google.protobuf.Empty2\xf3\x01\n" +
+	"\x0eCompassService\x12<\n" +
+	"\n" +
+	"GetCompass\x12\x1b.noted.v1.GetCompassRequest\x1a\x11.noted.v1.Compass\x12<\n" +
+	"\n" +
+	"SetCompass\x12\x1b.noted.v1.SetCompassRequest\x1a\x11.noted.v1.Compass\x12e\n" +
+	"\x14ListCompassRevisions\x12%.noted.v1.ListCompassRevisionsRequest\x1a&.noted.v1.ListCompassRevisionsResponseB\x8d\x01\n" +
 	"\fcom.noted.v1B\n" +
 	"NotedProtoP\x01Z0github.com/liliang-cn/noted/gen/noted/v1;notedv1\xa2\x02\x03NXX\xaa\x02\bNoted.V1\xca\x02\bNoted\\V1\xe2\x02\x14Noted\\V1\\GPBMetadata\xea\x02\tNoted::V1b\x06proto3"
 
@@ -13678,7 +14291,7 @@ func file_noted_v1_noted_proto_rawDescGZIP() []byte {
 }
 
 var file_noted_v1_noted_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
-var file_noted_v1_noted_proto_msgTypes = make([]protoimpl.MessageInfo, 186)
+var file_noted_v1_noted_proto_msgTypes = make([]protoimpl.MessageInfo, 194)
 var file_noted_v1_noted_proto_goTypes = []any{
 	(Space)(0),                               // 0: noted.v1.Space
 	(Priority)(0),                            // 1: noted.v1.Priority
@@ -13804,192 +14417,200 @@ var file_noted_v1_noted_proto_goTypes = []any{
 	(*ProposeScheduleRequest)(nil),           // 121: noted.v1.ProposeScheduleRequest
 	(*GetWeeklyReviewRequest)(nil),           // 122: noted.v1.GetWeeklyReviewRequest
 	(*WeeklyReview)(nil),                     // 123: noted.v1.WeeklyReview
-	(*ListChangesRequest)(nil),               // 124: noted.v1.ListChangesRequest
-	(*ListChangesResponse)(nil),              // 125: noted.v1.ListChangesResponse
-	(*UndoChangeRequest)(nil),                // 126: noted.v1.UndoChangeRequest
-	(*Holding)(nil),                          // 127: noted.v1.Holding
-	(*Position)(nil),                         // 128: noted.v1.Position
-	(*DcaStatus)(nil),                        // 129: noted.v1.DcaStatus
-	(*Trade)(nil),                            // 130: noted.v1.Trade
-	(*CreateHoldingRequest)(nil),             // 131: noted.v1.CreateHoldingRequest
-	(*GetHoldingRequest)(nil),                // 132: noted.v1.GetHoldingRequest
-	(*UpdateHoldingRequest)(nil),             // 133: noted.v1.UpdateHoldingRequest
-	(*DeleteHoldingRequest)(nil),             // 134: noted.v1.DeleteHoldingRequest
-	(*ListHoldingsRequest)(nil),              // 135: noted.v1.ListHoldingsRequest
-	(*ListHoldingsResponse)(nil),             // 136: noted.v1.ListHoldingsResponse
-	(*RecordTradeRequest)(nil),               // 137: noted.v1.RecordTradeRequest
-	(*DeleteTradeRequest)(nil),               // 138: noted.v1.DeleteTradeRequest
-	(*ListTradesRequest)(nil),                // 139: noted.v1.ListTradesRequest
-	(*ListTradesResponse)(nil),               // 140: noted.v1.ListTradesResponse
-	(*TimeEntry)(nil),                        // 141: noted.v1.TimeEntry
-	(*CreateTimeEntryRequest)(nil),           // 142: noted.v1.CreateTimeEntryRequest
-	(*GetTimeEntryRequest)(nil),              // 143: noted.v1.GetTimeEntryRequest
-	(*UpdateTimeEntryRequest)(nil),           // 144: noted.v1.UpdateTimeEntryRequest
-	(*DeleteTimeEntryRequest)(nil),           // 145: noted.v1.DeleteTimeEntryRequest
-	(*ListTimeEntriesRequest)(nil),           // 146: noted.v1.ListTimeEntriesRequest
-	(*ListTimeEntriesResponse)(nil),          // 147: noted.v1.ListTimeEntriesResponse
-	(*StartTimerRequest)(nil),                // 148: noted.v1.StartTimerRequest
-	(*StopTimerRequest)(nil),                 // 149: noted.v1.StopTimerRequest
-	(*GetRunningTimerRequest)(nil),           // 150: noted.v1.GetRunningTimerRequest
-	(*GetRunningTimerResponse)(nil),          // 151: noted.v1.GetRunningTimerResponse
-	(*SummarizeTimeRequest)(nil),             // 152: noted.v1.SummarizeTimeRequest
-	(*TimeSummaryRow)(nil),                   // 153: noted.v1.TimeSummaryRow
-	(*TimeSummary)(nil),                      // 154: noted.v1.TimeSummary
-	(*AlarmRecurrence)(nil),                  // 155: noted.v1.AlarmRecurrence
-	(*AlarmSchedule)(nil),                    // 156: noted.v1.AlarmSchedule
-	(*Alarm)(nil),                            // 157: noted.v1.Alarm
-	(*CreateAlarmRequest)(nil),               // 158: noted.v1.CreateAlarmRequest
-	(*GetAlarmRequest)(nil),                  // 159: noted.v1.GetAlarmRequest
-	(*UpdateAlarmRequest)(nil),               // 160: noted.v1.UpdateAlarmRequest
-	(*DeleteAlarmRequest)(nil),               // 161: noted.v1.DeleteAlarmRequest
-	(*ListAlarmsRequest)(nil),                // 162: noted.v1.ListAlarmsRequest
-	(*ListAlarmsResponse)(nil),               // 163: noted.v1.ListAlarmsResponse
-	(*GetAlarmsVersionRequest)(nil),          // 164: noted.v1.GetAlarmsVersionRequest
-	(*GetAlarmsVersionResponse)(nil),         // 165: noted.v1.GetAlarmsVersionResponse
-	(*ListFiresRequest)(nil),                 // 166: noted.v1.ListFiresRequest
-	(*Fire)(nil),                             // 167: noted.v1.Fire
-	(*ListFiresResponse)(nil),                // 168: noted.v1.ListFiresResponse
-	(*GetHolidaysRequest)(nil),               // 169: noted.v1.GetHolidaysRequest
-	(*HolidayDay)(nil),                       // 170: noted.v1.HolidayDay
-	(*GetHolidaysResponse)(nil),              // 171: noted.v1.GetHolidaysResponse
-	(*SignInWithAppleRequest)(nil),           // 172: noted.v1.SignInWithAppleRequest
-	(*SignInWithAppleResponse)(nil),          // 173: noted.v1.SignInWithAppleResponse
-	(*LinkAppleRequest)(nil),                 // 174: noted.v1.LinkAppleRequest
-	(*UnlinkAppleRequest)(nil),               // 175: noted.v1.UnlinkAppleRequest
-	(*GetAccountRequest)(nil),                // 176: noted.v1.GetAccountRequest
-	(*Account)(nil),                          // 177: noted.v1.Account
-	(*SignUpRequest)(nil),                    // 178: noted.v1.SignUpRequest
-	(*SignInRequest)(nil),                    // 179: noted.v1.SignInRequest
-	(*SignInResponse)(nil),                   // 180: noted.v1.SignInResponse
-	(*SetEmailPasswordRequest)(nil),          // 181: noted.v1.SetEmailPasswordRequest
-	(*TokenInfo)(nil),                        // 182: noted.v1.TokenInfo
-	(*CreateTokenRequest)(nil),               // 183: noted.v1.CreateTokenRequest
-	(*CreateTokenResponse)(nil),              // 184: noted.v1.CreateTokenResponse
-	(*ListTokensRequest)(nil),                // 185: noted.v1.ListTokensRequest
-	(*ListTokensResponse)(nil),               // 186: noted.v1.ListTokensResponse
-	(*RevokeTokenRequest)(nil),               // 187: noted.v1.RevokeTokenRequest
-	(*Pairing)(nil),                          // 188: noted.v1.Pairing
-	(*GetPairingRequest)(nil),                // 189: noted.v1.GetPairingRequest
-	(*ApprovePairingRequest)(nil),            // 190: noted.v1.ApprovePairingRequest
-	(*DenyPairingRequest)(nil),               // 191: noted.v1.DenyPairingRequest
-	nil,                                      // 192: noted.v1.AcceptProposalRequest.InputsEntry
-	(*timestamppb.Timestamp)(nil),            // 193: google.protobuf.Timestamp
-	(*fieldmaskpb.FieldMask)(nil),            // 194: google.protobuf.FieldMask
-	(*structpb.Struct)(nil),                  // 195: google.protobuf.Struct
-	(*emptypb.Empty)(nil),                    // 196: google.protobuf.Empty
+	(*BehaviorRow)(nil),                      // 124: noted.v1.BehaviorRow
+	(*UnlinkedTime)(nil),                     // 125: noted.v1.UnlinkedTime
+	(*BehaviorReview)(nil),                   // 126: noted.v1.BehaviorReview
+	(*ListChangesRequest)(nil),               // 127: noted.v1.ListChangesRequest
+	(*ListChangesResponse)(nil),              // 128: noted.v1.ListChangesResponse
+	(*UndoChangeRequest)(nil),                // 129: noted.v1.UndoChangeRequest
+	(*Holding)(nil),                          // 130: noted.v1.Holding
+	(*Position)(nil),                         // 131: noted.v1.Position
+	(*DcaStatus)(nil),                        // 132: noted.v1.DcaStatus
+	(*Trade)(nil),                            // 133: noted.v1.Trade
+	(*CreateHoldingRequest)(nil),             // 134: noted.v1.CreateHoldingRequest
+	(*GetHoldingRequest)(nil),                // 135: noted.v1.GetHoldingRequest
+	(*UpdateHoldingRequest)(nil),             // 136: noted.v1.UpdateHoldingRequest
+	(*DeleteHoldingRequest)(nil),             // 137: noted.v1.DeleteHoldingRequest
+	(*ListHoldingsRequest)(nil),              // 138: noted.v1.ListHoldingsRequest
+	(*ListHoldingsResponse)(nil),             // 139: noted.v1.ListHoldingsResponse
+	(*RecordTradeRequest)(nil),               // 140: noted.v1.RecordTradeRequest
+	(*DeleteTradeRequest)(nil),               // 141: noted.v1.DeleteTradeRequest
+	(*ListTradesRequest)(nil),                // 142: noted.v1.ListTradesRequest
+	(*ListTradesResponse)(nil),               // 143: noted.v1.ListTradesResponse
+	(*TimeEntry)(nil),                        // 144: noted.v1.TimeEntry
+	(*CreateTimeEntryRequest)(nil),           // 145: noted.v1.CreateTimeEntryRequest
+	(*GetTimeEntryRequest)(nil),              // 146: noted.v1.GetTimeEntryRequest
+	(*UpdateTimeEntryRequest)(nil),           // 147: noted.v1.UpdateTimeEntryRequest
+	(*DeleteTimeEntryRequest)(nil),           // 148: noted.v1.DeleteTimeEntryRequest
+	(*ListTimeEntriesRequest)(nil),           // 149: noted.v1.ListTimeEntriesRequest
+	(*ListTimeEntriesResponse)(nil),          // 150: noted.v1.ListTimeEntriesResponse
+	(*StartTimerRequest)(nil),                // 151: noted.v1.StartTimerRequest
+	(*StopTimerRequest)(nil),                 // 152: noted.v1.StopTimerRequest
+	(*GetRunningTimerRequest)(nil),           // 153: noted.v1.GetRunningTimerRequest
+	(*GetRunningTimerResponse)(nil),          // 154: noted.v1.GetRunningTimerResponse
+	(*SummarizeTimeRequest)(nil),             // 155: noted.v1.SummarizeTimeRequest
+	(*TimeSummaryRow)(nil),                   // 156: noted.v1.TimeSummaryRow
+	(*TimeSummary)(nil),                      // 157: noted.v1.TimeSummary
+	(*AlarmRecurrence)(nil),                  // 158: noted.v1.AlarmRecurrence
+	(*AlarmSchedule)(nil),                    // 159: noted.v1.AlarmSchedule
+	(*Alarm)(nil),                            // 160: noted.v1.Alarm
+	(*CreateAlarmRequest)(nil),               // 161: noted.v1.CreateAlarmRequest
+	(*GetAlarmRequest)(nil),                  // 162: noted.v1.GetAlarmRequest
+	(*UpdateAlarmRequest)(nil),               // 163: noted.v1.UpdateAlarmRequest
+	(*DeleteAlarmRequest)(nil),               // 164: noted.v1.DeleteAlarmRequest
+	(*ListAlarmsRequest)(nil),                // 165: noted.v1.ListAlarmsRequest
+	(*ListAlarmsResponse)(nil),               // 166: noted.v1.ListAlarmsResponse
+	(*GetAlarmsVersionRequest)(nil),          // 167: noted.v1.GetAlarmsVersionRequest
+	(*GetAlarmsVersionResponse)(nil),         // 168: noted.v1.GetAlarmsVersionResponse
+	(*ListFiresRequest)(nil),                 // 169: noted.v1.ListFiresRequest
+	(*Fire)(nil),                             // 170: noted.v1.Fire
+	(*ListFiresResponse)(nil),                // 171: noted.v1.ListFiresResponse
+	(*GetHolidaysRequest)(nil),               // 172: noted.v1.GetHolidaysRequest
+	(*HolidayDay)(nil),                       // 173: noted.v1.HolidayDay
+	(*GetHolidaysResponse)(nil),              // 174: noted.v1.GetHolidaysResponse
+	(*SignInWithAppleRequest)(nil),           // 175: noted.v1.SignInWithAppleRequest
+	(*SignInWithAppleResponse)(nil),          // 176: noted.v1.SignInWithAppleResponse
+	(*LinkAppleRequest)(nil),                 // 177: noted.v1.LinkAppleRequest
+	(*UnlinkAppleRequest)(nil),               // 178: noted.v1.UnlinkAppleRequest
+	(*GetAccountRequest)(nil),                // 179: noted.v1.GetAccountRequest
+	(*Account)(nil),                          // 180: noted.v1.Account
+	(*SignUpRequest)(nil),                    // 181: noted.v1.SignUpRequest
+	(*SignInRequest)(nil),                    // 182: noted.v1.SignInRequest
+	(*SignInResponse)(nil),                   // 183: noted.v1.SignInResponse
+	(*SetEmailPasswordRequest)(nil),          // 184: noted.v1.SetEmailPasswordRequest
+	(*TokenInfo)(nil),                        // 185: noted.v1.TokenInfo
+	(*CreateTokenRequest)(nil),               // 186: noted.v1.CreateTokenRequest
+	(*CreateTokenResponse)(nil),              // 187: noted.v1.CreateTokenResponse
+	(*ListTokensRequest)(nil),                // 188: noted.v1.ListTokensRequest
+	(*ListTokensResponse)(nil),               // 189: noted.v1.ListTokensResponse
+	(*RevokeTokenRequest)(nil),               // 190: noted.v1.RevokeTokenRequest
+	(*Pairing)(nil),                          // 191: noted.v1.Pairing
+	(*GetPairingRequest)(nil),                // 192: noted.v1.GetPairingRequest
+	(*ApprovePairingRequest)(nil),            // 193: noted.v1.ApprovePairingRequest
+	(*DenyPairingRequest)(nil),               // 194: noted.v1.DenyPairingRequest
+	(*Compass)(nil),                          // 195: noted.v1.Compass
+	(*GetCompassRequest)(nil),                // 196: noted.v1.GetCompassRequest
+	(*SetCompassRequest)(nil),                // 197: noted.v1.SetCompassRequest
+	(*ListCompassRevisionsRequest)(nil),      // 198: noted.v1.ListCompassRevisionsRequest
+	(*ListCompassRevisionsResponse)(nil),     // 199: noted.v1.ListCompassRevisionsResponse
+	nil,                                      // 200: noted.v1.AcceptProposalRequest.InputsEntry
+	(*timestamppb.Timestamp)(nil),            // 201: google.protobuf.Timestamp
+	(*fieldmaskpb.FieldMask)(nil),            // 202: google.protobuf.FieldMask
+	(*structpb.Struct)(nil),                  // 203: google.protobuf.Struct
+	(*emptypb.Empty)(nil),                    // 204: google.protobuf.Empty
 }
 var file_noted_v1_noted_proto_depIdxs = []int32{
-	193, // 0: noted.v1.Note.create_time:type_name -> google.protobuf.Timestamp
-	193, // 1: noted.v1.Note.update_time:type_name -> google.protobuf.Timestamp
+	201, // 0: noted.v1.Note.create_time:type_name -> google.protobuf.Timestamp
+	201, // 1: noted.v1.Note.update_time:type_name -> google.protobuf.Timestamp
 	0,   // 2: noted.v1.Note.space:type_name -> noted.v1.Space
 	7,   // 3: noted.v1.CreateNoteRequest.note:type_name -> noted.v1.Note
 	7,   // 4: noted.v1.UpdateNoteRequest.note:type_name -> noted.v1.Note
-	194, // 5: noted.v1.UpdateNoteRequest.update_mask:type_name -> google.protobuf.FieldMask
+	202, // 5: noted.v1.UpdateNoteRequest.update_mask:type_name -> google.protobuf.FieldMask
 	0,   // 6: noted.v1.ListNotesRequest.space:type_name -> noted.v1.Space
 	7,   // 7: noted.v1.ListNotesResponse.notes:type_name -> noted.v1.Note
 	0,   // 8: noted.v1.SearchNotesRequest.space:type_name -> noted.v1.Space
 	7,   // 9: noted.v1.NoteHit.note:type_name -> noted.v1.Note
 	15,  // 10: noted.v1.SearchNotesResponse.hits:type_name -> noted.v1.NoteHit
-	193, // 11: noted.v1.Event.start_time:type_name -> google.protobuf.Timestamp
-	193, // 12: noted.v1.Event.end_time:type_name -> google.protobuf.Timestamp
-	193, // 13: noted.v1.Event.create_time:type_name -> google.protobuf.Timestamp
-	193, // 14: noted.v1.Event.update_time:type_name -> google.protobuf.Timestamp
+	201, // 11: noted.v1.Event.start_time:type_name -> google.protobuf.Timestamp
+	201, // 12: noted.v1.Event.end_time:type_name -> google.protobuf.Timestamp
+	201, // 13: noted.v1.Event.create_time:type_name -> google.protobuf.Timestamp
+	201, // 14: noted.v1.Event.update_time:type_name -> google.protobuf.Timestamp
 	0,   // 15: noted.v1.Event.space:type_name -> noted.v1.Space
-	156, // 16: noted.v1.Event.alarm_schedule:type_name -> noted.v1.AlarmSchedule
+	159, // 16: noted.v1.Event.alarm_schedule:type_name -> noted.v1.AlarmSchedule
 	17,  // 17: noted.v1.CreateEventRequest.event:type_name -> noted.v1.Event
 	17,  // 18: noted.v1.UpdateEventRequest.event:type_name -> noted.v1.Event
-	194, // 19: noted.v1.UpdateEventRequest.update_mask:type_name -> google.protobuf.FieldMask
-	193, // 20: noted.v1.ListEventsRequest.from:type_name -> google.protobuf.Timestamp
-	193, // 21: noted.v1.ListEventsRequest.to:type_name -> google.protobuf.Timestamp
+	202, // 19: noted.v1.UpdateEventRequest.update_mask:type_name -> google.protobuf.FieldMask
+	201, // 20: noted.v1.ListEventsRequest.from:type_name -> google.protobuf.Timestamp
+	201, // 21: noted.v1.ListEventsRequest.to:type_name -> google.protobuf.Timestamp
 	0,   // 22: noted.v1.ListEventsRequest.space:type_name -> noted.v1.Space
 	17,  // 23: noted.v1.Occurrence.event:type_name -> noted.v1.Event
-	193, // 24: noted.v1.Occurrence.start_time:type_name -> google.protobuf.Timestamp
-	193, // 25: noted.v1.Occurrence.end_time:type_name -> google.protobuf.Timestamp
+	201, // 24: noted.v1.Occurrence.start_time:type_name -> google.protobuf.Timestamp
+	201, // 25: noted.v1.Occurrence.end_time:type_name -> google.protobuf.Timestamp
 	23,  // 26: noted.v1.ListEventsResponse.occurrences:type_name -> noted.v1.Occurrence
 	25,  // 27: noted.v1.ListEventsResponse.unscheduled:type_name -> noted.v1.Task
-	193, // 28: noted.v1.Task.due_time:type_name -> google.protobuf.Timestamp
+	201, // 28: noted.v1.Task.due_time:type_name -> google.protobuf.Timestamp
 	1,   // 29: noted.v1.Task.priority:type_name -> noted.v1.Priority
-	193, // 30: noted.v1.Task.complete_time:type_name -> google.protobuf.Timestamp
-	193, // 31: noted.v1.Task.remind_time:type_name -> google.protobuf.Timestamp
-	193, // 32: noted.v1.Task.create_time:type_name -> google.protobuf.Timestamp
-	193, // 33: noted.v1.Task.update_time:type_name -> google.protobuf.Timestamp
+	201, // 30: noted.v1.Task.complete_time:type_name -> google.protobuf.Timestamp
+	201, // 31: noted.v1.Task.remind_time:type_name -> google.protobuf.Timestamp
+	201, // 32: noted.v1.Task.create_time:type_name -> google.protobuf.Timestamp
+	201, // 33: noted.v1.Task.update_time:type_name -> google.protobuf.Timestamp
 	0,   // 34: noted.v1.Task.space:type_name -> noted.v1.Space
-	193, // 35: noted.v1.Task.last_worked_time:type_name -> google.protobuf.Timestamp
-	193, // 36: noted.v1.TaskWork.time:type_name -> google.protobuf.Timestamp
+	201, // 35: noted.v1.Task.last_worked_time:type_name -> google.protobuf.Timestamp
+	201, // 36: noted.v1.TaskWork.time:type_name -> google.protobuf.Timestamp
 	25,  // 37: noted.v1.CreateTaskRequest.task:type_name -> noted.v1.Task
 	25,  // 38: noted.v1.UpdateTaskRequest.task:type_name -> noted.v1.Task
-	194, // 39: noted.v1.UpdateTaskRequest.update_mask:type_name -> google.protobuf.FieldMask
+	202, // 39: noted.v1.UpdateTaskRequest.update_mask:type_name -> google.protobuf.FieldMask
 	5,   // 40: noted.v1.ListTasksRequest.filter:type_name -> noted.v1.ListTasksRequest.Filter
-	193, // 41: noted.v1.ListTasksRequest.due_before:type_name -> google.protobuf.Timestamp
+	201, // 41: noted.v1.ListTasksRequest.due_before:type_name -> google.protobuf.Timestamp
 	0,   // 42: noted.v1.ListTasksRequest.space:type_name -> noted.v1.Space
 	25,  // 43: noted.v1.ListTasksResponse.tasks:type_name -> noted.v1.Task
-	193, // 44: noted.v1.LogTaskWorkRequest.time:type_name -> google.protobuf.Timestamp
+	201, // 44: noted.v1.LogTaskWorkRequest.time:type_name -> google.protobuf.Timestamp
 	26,  // 45: noted.v1.ListTaskWorkResponse.entries:type_name -> noted.v1.TaskWork
 	6,   // 46: noted.v1.Reminder.kind:type_name -> noted.v1.Reminder.Kind
-	193, // 47: noted.v1.Reminder.due_time:type_name -> google.protobuf.Timestamp
-	193, // 48: noted.v1.Reminder.fire_time:type_name -> google.protobuf.Timestamp
+	201, // 47: noted.v1.Reminder.due_time:type_name -> google.protobuf.Timestamp
+	201, // 48: noted.v1.Reminder.fire_time:type_name -> google.protobuf.Timestamp
 	0,   // 49: noted.v1.Reminder.space:type_name -> noted.v1.Space
 	0,   // 50: noted.v1.WatchRemindersRequest.space:type_name -> noted.v1.Space
-	193, // 51: noted.v1.ListRemindersRequest.since:type_name -> google.protobuf.Timestamp
+	201, // 51: noted.v1.ListRemindersRequest.since:type_name -> google.protobuf.Timestamp
 	0,   // 52: noted.v1.ListRemindersRequest.space:type_name -> noted.v1.Space
 	37,  // 53: noted.v1.ListRemindersResponse.reminders:type_name -> noted.v1.Reminder
 	0,   // 54: noted.v1.AskRequest.space:type_name -> noted.v1.Space
 	113, // 55: noted.v1.AskResponse.proposal:type_name -> noted.v1.Proposal
 	114, // 56: noted.v1.AskResponse.change:type_name -> noted.v1.Change
 	45,  // 57: noted.v1.AskResponse.references:type_name -> noted.v1.Reference
-	193, // 58: noted.v1.Reference.time:type_name -> google.protobuf.Timestamp
-	193, // 59: noted.v1.DailyBriefingRequest.day:type_name -> google.protobuf.Timestamp
+	201, // 58: noted.v1.Reference.time:type_name -> google.protobuf.Timestamp
+	201, // 59: noted.v1.DailyBriefingRequest.day:type_name -> google.protobuf.Timestamp
 	0,   // 60: noted.v1.DailyBriefingRequest.space:type_name -> noted.v1.Space
 	0,   // 61: noted.v1.PlanFromTextRequest.space:type_name -> noted.v1.Space
-	193, // 62: noted.v1.Milestone.done_time:type_name -> google.protobuf.Timestamp
-	193, // 63: noted.v1.Milestone.due_time:type_name -> google.protobuf.Timestamp
-	193, // 64: noted.v1.GoalProgress.period_start:type_name -> google.protobuf.Timestamp
-	193, // 65: noted.v1.GoalProgress.period_end:type_name -> google.protobuf.Timestamp
+	201, // 62: noted.v1.Milestone.done_time:type_name -> google.protobuf.Timestamp
+	201, // 63: noted.v1.Milestone.due_time:type_name -> google.protobuf.Timestamp
+	201, // 64: noted.v1.GoalProgress.period_start:type_name -> google.protobuf.Timestamp
+	201, // 65: noted.v1.GoalProgress.period_end:type_name -> google.protobuf.Timestamp
 	61,  // 66: noted.v1.GoalProgress.days:type_name -> noted.v1.DayTotal
 	61,  // 67: noted.v1.GoalProgress.recent:type_name -> noted.v1.DayTotal
 	2,   // 68: noted.v1.Goal.period:type_name -> noted.v1.GoalPeriod
 	60,  // 69: noted.v1.Goal.milestones:type_name -> noted.v1.Milestone
-	193, // 70: noted.v1.Goal.create_time:type_name -> google.protobuf.Timestamp
-	193, // 71: noted.v1.Goal.update_time:type_name -> google.protobuf.Timestamp
+	201, // 70: noted.v1.Goal.create_time:type_name -> google.protobuf.Timestamp
+	201, // 71: noted.v1.Goal.update_time:type_name -> google.protobuf.Timestamp
 	62,  // 72: noted.v1.Goal.progress:type_name -> noted.v1.GoalProgress
 	0,   // 73: noted.v1.Goal.space:type_name -> noted.v1.Space
-	193, // 74: noted.v1.CheckIn.time:type_name -> google.protobuf.Timestamp
+	201, // 74: noted.v1.CheckIn.time:type_name -> google.protobuf.Timestamp
 	63,  // 75: noted.v1.CreateGoalRequest.goal:type_name -> noted.v1.Goal
 	63,  // 76: noted.v1.UpdateGoalRequest.goal:type_name -> noted.v1.Goal
-	194, // 77: noted.v1.UpdateGoalRequest.update_mask:type_name -> google.protobuf.FieldMask
+	202, // 77: noted.v1.UpdateGoalRequest.update_mask:type_name -> google.protobuf.FieldMask
 	0,   // 78: noted.v1.ListGoalsRequest.space:type_name -> noted.v1.Space
 	63,  // 79: noted.v1.ListGoalsResponse.goals:type_name -> noted.v1.Goal
-	193, // 80: noted.v1.RecordCheckInRequest.time:type_name -> google.protobuf.Timestamp
+	201, // 80: noted.v1.RecordCheckInRequest.time:type_name -> google.protobuf.Timestamp
 	64,  // 81: noted.v1.RecordCheckInResponse.check_in:type_name -> noted.v1.CheckIn
 	63,  // 82: noted.v1.RecordCheckInResponse.goal:type_name -> noted.v1.Goal
-	193, // 83: noted.v1.ListCheckInsRequest.from:type_name -> google.protobuf.Timestamp
-	193, // 84: noted.v1.ListCheckInsRequest.to:type_name -> google.protobuf.Timestamp
+	201, // 83: noted.v1.ListCheckInsRequest.from:type_name -> google.protobuf.Timestamp
+	201, // 84: noted.v1.ListCheckInsRequest.to:type_name -> google.protobuf.Timestamp
 	64,  // 85: noted.v1.ListCheckInsResponse.check_ins:type_name -> noted.v1.CheckIn
 	0,   // 86: noted.v1.Objective.space:type_name -> noted.v1.Space
-	193, // 87: noted.v1.Objective.start_time:type_name -> google.protobuf.Timestamp
-	193, // 88: noted.v1.Objective.due_time:type_name -> google.protobuf.Timestamp
-	193, // 89: noted.v1.Objective.create_time:type_name -> google.protobuf.Timestamp
-	193, // 90: noted.v1.Objective.update_time:type_name -> google.protobuf.Timestamp
+	201, // 87: noted.v1.Objective.start_time:type_name -> google.protobuf.Timestamp
+	201, // 88: noted.v1.Objective.due_time:type_name -> google.protobuf.Timestamp
+	201, // 89: noted.v1.Objective.create_time:type_name -> google.protobuf.Timestamp
+	201, // 90: noted.v1.Objective.update_time:type_name -> google.protobuf.Timestamp
 	78,  // 91: noted.v1.Objective.progress:type_name -> noted.v1.ObjectiveProgress
 	63,  // 92: noted.v1.Objective.goals:type_name -> noted.v1.Goal
 	60,  // 93: noted.v1.Objective.milestones:type_name -> noted.v1.Milestone
-	193, // 94: noted.v1.ObjectiveProgress.last_reading_time:type_name -> google.protobuf.Timestamp
+	201, // 94: noted.v1.ObjectiveProgress.last_reading_time:type_name -> google.protobuf.Timestamp
 	60,  // 95: noted.v1.ObjectiveProgress.next_milestone:type_name -> noted.v1.Milestone
-	193, // 96: noted.v1.Measurement.time:type_name -> google.protobuf.Timestamp
+	201, // 96: noted.v1.Measurement.time:type_name -> google.protobuf.Timestamp
 	77,  // 97: noted.v1.CreateObjectiveRequest.objective:type_name -> noted.v1.Objective
 	77,  // 98: noted.v1.UpdateObjectiveRequest.objective:type_name -> noted.v1.Objective
-	194, // 99: noted.v1.UpdateObjectiveRequest.update_mask:type_name -> google.protobuf.FieldMask
+	202, // 99: noted.v1.UpdateObjectiveRequest.update_mask:type_name -> google.protobuf.FieldMask
 	0,   // 100: noted.v1.ListObjectivesRequest.space:type_name -> noted.v1.Space
 	77,  // 101: noted.v1.ListObjectivesResponse.objectives:type_name -> noted.v1.Objective
-	193, // 102: noted.v1.RecordMeasurementRequest.time:type_name -> google.protobuf.Timestamp
-	193, // 103: noted.v1.ListMeasurementsRequest.from:type_name -> google.protobuf.Timestamp
-	193, // 104: noted.v1.ListMeasurementsRequest.to:type_name -> google.protobuf.Timestamp
+	201, // 102: noted.v1.RecordMeasurementRequest.time:type_name -> google.protobuf.Timestamp
+	201, // 103: noted.v1.ListMeasurementsRequest.from:type_name -> google.protobuf.Timestamp
+	201, // 104: noted.v1.ListMeasurementsRequest.to:type_name -> google.protobuf.Timestamp
 	79,  // 105: noted.v1.ListMeasurementsResponse.measurements:type_name -> noted.v1.Measurement
-	193, // 106: noted.v1.ProjectProgress.next_time:type_name -> google.protobuf.Timestamp
-	193, // 107: noted.v1.Project.start_time:type_name -> google.protobuf.Timestamp
-	193, // 108: noted.v1.Project.due_time:type_name -> google.protobuf.Timestamp
-	193, // 109: noted.v1.Project.create_time:type_name -> google.protobuf.Timestamp
-	193, // 110: noted.v1.Project.update_time:type_name -> google.protobuf.Timestamp
+	201, // 106: noted.v1.ProjectProgress.next_time:type_name -> google.protobuf.Timestamp
+	201, // 107: noted.v1.Project.start_time:type_name -> google.protobuf.Timestamp
+	201, // 108: noted.v1.Project.due_time:type_name -> google.protobuf.Timestamp
+	201, // 109: noted.v1.Project.create_time:type_name -> google.protobuf.Timestamp
+	201, // 110: noted.v1.Project.update_time:type_name -> google.protobuf.Timestamp
 	91,  // 111: noted.v1.Project.progress:type_name -> noted.v1.ProjectProgress
 	0,   // 112: noted.v1.Project.space:type_name -> noted.v1.Space
 	92,  // 113: noted.v1.CreateProjectRequest.project:type_name -> noted.v1.Project
@@ -13999,331 +14620,349 @@ var file_noted_v1_noted_proto_depIdxs = []int32{
 	7,   // 117: noted.v1.ProjectDetail.notes:type_name -> noted.v1.Note
 	63,  // 118: noted.v1.ProjectDetail.goals:type_name -> noted.v1.Goal
 	77,  // 119: noted.v1.ProjectDetail.objectives:type_name -> noted.v1.Objective
-	141, // 120: noted.v1.ProjectDetail.time_entries:type_name -> noted.v1.TimeEntry
+	144, // 120: noted.v1.ProjectDetail.time_entries:type_name -> noted.v1.TimeEntry
 	92,  // 121: noted.v1.UpdateProjectRequest.project:type_name -> noted.v1.Project
-	194, // 122: noted.v1.UpdateProjectRequest.update_mask:type_name -> google.protobuf.FieldMask
+	202, // 122: noted.v1.UpdateProjectRequest.update_mask:type_name -> google.protobuf.FieldMask
 	0,   // 123: noted.v1.ListProjectsRequest.space:type_name -> noted.v1.Space
 	92,  // 124: noted.v1.ListProjectsResponse.projects:type_name -> noted.v1.Project
 	3,   // 125: noted.v1.GetFocusRequest.horizon:type_name -> noted.v1.Horizon
 	0,   // 126: noted.v1.GetFocusRequest.space:type_name -> noted.v1.Space
 	23,  // 127: noted.v1.FocusItem.event:type_name -> noted.v1.Occurrence
 	25,  // 128: noted.v1.FocusItem.task:type_name -> noted.v1.Task
-	193, // 129: noted.v1.FocusItem.sort_time:type_name -> google.protobuf.Timestamp
+	201, // 129: noted.v1.FocusItem.sort_time:type_name -> google.protobuf.Timestamp
 	3,   // 130: noted.v1.GetFocusResponse.horizon:type_name -> noted.v1.Horizon
-	193, // 131: noted.v1.GetFocusResponse.from:type_name -> google.protobuf.Timestamp
-	193, // 132: noted.v1.GetFocusResponse.to:type_name -> google.protobuf.Timestamp
+	201, // 131: noted.v1.GetFocusResponse.from:type_name -> google.protobuf.Timestamp
+	201, // 132: noted.v1.GetFocusResponse.to:type_name -> google.protobuf.Timestamp
 	101, // 133: noted.v1.GetFocusResponse.items:type_name -> noted.v1.FocusItem
 	63,  // 134: noted.v1.GetFocusResponse.goals:type_name -> noted.v1.Goal
 	92,  // 135: noted.v1.GetFocusResponse.pinned_projects:type_name -> noted.v1.Project
 	0,   // 136: noted.v1.GetFocusResponse.space:type_name -> noted.v1.Space
-	141, // 137: noted.v1.GetFocusResponse.running_timer:type_name -> noted.v1.TimeEntry
-	193, // 138: noted.v1.Preference.update_time:type_name -> google.protobuf.Timestamp
-	103, // 139: noted.v1.ListPreferencesResponse.preferences:type_name -> noted.v1.Preference
-	195, // 140: noted.v1.Operation.args:type_name -> google.protobuf.Struct
-	0,   // 141: noted.v1.Proposal.space:type_name -> noted.v1.Space
-	111, // 142: noted.v1.Proposal.operations:type_name -> noted.v1.Operation
-	112, // 143: noted.v1.Proposal.inputs:type_name -> noted.v1.ProposalInput
-	193, // 144: noted.v1.Proposal.create_time:type_name -> google.protobuf.Timestamp
-	193, // 145: noted.v1.Proposal.decide_time:type_name -> google.protobuf.Timestamp
-	193, // 146: noted.v1.Change.create_time:type_name -> google.protobuf.Timestamp
-	193, // 147: noted.v1.Change.undo_time:type_name -> google.protobuf.Timestamp
-	0,   // 148: noted.v1.ListProposalsRequest.space:type_name -> noted.v1.Space
-	113, // 149: noted.v1.ListProposalsResponse.proposals:type_name -> noted.v1.Proposal
-	192, // 150: noted.v1.AcceptProposalRequest.inputs:type_name -> noted.v1.AcceptProposalRequest.InputsEntry
-	117, // 151: noted.v1.AcceptProposalRequest.selection:type_name -> noted.v1.OperationSelection
-	113, // 152: noted.v1.AcceptProposalResponse.proposal:type_name -> noted.v1.Proposal
-	114, // 153: noted.v1.AcceptProposalResponse.change:type_name -> noted.v1.Change
-	193, // 154: noted.v1.GetWeeklyReviewRequest.week_of:type_name -> google.protobuf.Timestamp
-	0,   // 155: noted.v1.GetWeeklyReviewRequest.space:type_name -> noted.v1.Space
-	193, // 156: noted.v1.WeeklyReview.from:type_name -> google.protobuf.Timestamp
-	193, // 157: noted.v1.WeeklyReview.to:type_name -> google.protobuf.Timestamp
-	63,  // 158: noted.v1.WeeklyReview.goals:type_name -> noted.v1.Goal
-	25,  // 159: noted.v1.WeeklyReview.carried_tasks:type_name -> noted.v1.Task
-	113, // 160: noted.v1.WeeklyReview.next_week:type_name -> noted.v1.Proposal
-	153, // 161: noted.v1.WeeklyReview.top_activities:type_name -> noted.v1.TimeSummaryRow
-	114, // 162: noted.v1.ListChangesResponse.changes:type_name -> noted.v1.Change
-	193, // 163: noted.v1.Holding.last_price_time:type_name -> google.protobuf.Timestamp
-	193, // 164: noted.v1.Holding.create_time:type_name -> google.protobuf.Timestamp
-	193, // 165: noted.v1.Holding.update_time:type_name -> google.protobuf.Timestamp
-	128, // 166: noted.v1.Holding.position:type_name -> noted.v1.Position
-	129, // 167: noted.v1.Position.dca:type_name -> noted.v1.DcaStatus
-	193, // 168: noted.v1.DcaStatus.next_time:type_name -> google.protobuf.Timestamp
-	193, // 169: noted.v1.Trade.time:type_name -> google.protobuf.Timestamp
-	127, // 170: noted.v1.CreateHoldingRequest.holding:type_name -> noted.v1.Holding
-	127, // 171: noted.v1.UpdateHoldingRequest.holding:type_name -> noted.v1.Holding
-	194, // 172: noted.v1.UpdateHoldingRequest.update_mask:type_name -> google.protobuf.FieldMask
-	127, // 173: noted.v1.ListHoldingsResponse.holdings:type_name -> noted.v1.Holding
-	130, // 174: noted.v1.RecordTradeRequest.trade:type_name -> noted.v1.Trade
-	130, // 175: noted.v1.ListTradesResponse.trades:type_name -> noted.v1.Trade
-	193, // 176: noted.v1.TimeEntry.start_time:type_name -> google.protobuf.Timestamp
-	193, // 177: noted.v1.TimeEntry.end_time:type_name -> google.protobuf.Timestamp
-	0,   // 178: noted.v1.TimeEntry.space:type_name -> noted.v1.Space
-	193, // 179: noted.v1.TimeEntry.create_time:type_name -> google.protobuf.Timestamp
-	193, // 180: noted.v1.TimeEntry.update_time:type_name -> google.protobuf.Timestamp
-	141, // 181: noted.v1.CreateTimeEntryRequest.entry:type_name -> noted.v1.TimeEntry
-	141, // 182: noted.v1.UpdateTimeEntryRequest.entry:type_name -> noted.v1.TimeEntry
-	194, // 183: noted.v1.UpdateTimeEntryRequest.update_mask:type_name -> google.protobuf.FieldMask
-	193, // 184: noted.v1.ListTimeEntriesRequest.from:type_name -> google.protobuf.Timestamp
-	193, // 185: noted.v1.ListTimeEntriesRequest.to:type_name -> google.protobuf.Timestamp
-	0,   // 186: noted.v1.ListTimeEntriesRequest.space:type_name -> noted.v1.Space
-	141, // 187: noted.v1.ListTimeEntriesResponse.entries:type_name -> noted.v1.TimeEntry
-	0,   // 188: noted.v1.StartTimerRequest.space:type_name -> noted.v1.Space
-	193, // 189: noted.v1.StartTimerRequest.start_time:type_name -> google.protobuf.Timestamp
-	193, // 190: noted.v1.StopTimerRequest.end_time:type_name -> google.protobuf.Timestamp
-	141, // 191: noted.v1.GetRunningTimerResponse.entry:type_name -> noted.v1.TimeEntry
-	193, // 192: noted.v1.SummarizeTimeRequest.from:type_name -> google.protobuf.Timestamp
-	193, // 193: noted.v1.SummarizeTimeRequest.to:type_name -> google.protobuf.Timestamp
-	4,   // 194: noted.v1.SummarizeTimeRequest.group_by:type_name -> noted.v1.TimeGroupBy
-	0,   // 195: noted.v1.SummarizeTimeRequest.space:type_name -> noted.v1.Space
-	193, // 196: noted.v1.TimeSummary.from:type_name -> google.protobuf.Timestamp
-	193, // 197: noted.v1.TimeSummary.to:type_name -> google.protobuf.Timestamp
-	4,   // 198: noted.v1.TimeSummary.group_by:type_name -> noted.v1.TimeGroupBy
-	153, // 199: noted.v1.TimeSummary.rows:type_name -> noted.v1.TimeSummaryRow
-	193, // 200: noted.v1.AlarmSchedule.at:type_name -> google.protobuf.Timestamp
-	155, // 201: noted.v1.AlarmSchedule.recurrence:type_name -> noted.v1.AlarmRecurrence
-	156, // 202: noted.v1.Alarm.schedule:type_name -> noted.v1.AlarmSchedule
-	0,   // 203: noted.v1.Alarm.space:type_name -> noted.v1.Space
-	193, // 204: noted.v1.Alarm.create_time:type_name -> google.protobuf.Timestamp
-	193, // 205: noted.v1.Alarm.update_time:type_name -> google.protobuf.Timestamp
-	193, // 206: noted.v1.Alarm.next_fires:type_name -> google.protobuf.Timestamp
-	157, // 207: noted.v1.CreateAlarmRequest.alarm:type_name -> noted.v1.Alarm
-	157, // 208: noted.v1.UpdateAlarmRequest.alarm:type_name -> noted.v1.Alarm
-	194, // 209: noted.v1.UpdateAlarmRequest.update_mask:type_name -> google.protobuf.FieldMask
-	0,   // 210: noted.v1.ListAlarmsRequest.space:type_name -> noted.v1.Space
-	157, // 211: noted.v1.ListAlarmsResponse.alarms:type_name -> noted.v1.Alarm
-	193, // 212: noted.v1.ListFiresRequest.from:type_name -> google.protobuf.Timestamp
-	193, // 213: noted.v1.ListFiresRequest.to:type_name -> google.protobuf.Timestamp
-	0,   // 214: noted.v1.ListFiresRequest.space:type_name -> noted.v1.Space
-	193, // 215: noted.v1.Fire.fire_time:type_name -> google.protobuf.Timestamp
-	193, // 216: noted.v1.Fire.at_time:type_name -> google.protobuf.Timestamp
-	0,   // 217: noted.v1.Fire.space:type_name -> noted.v1.Space
-	167, // 218: noted.v1.ListFiresResponse.fires:type_name -> noted.v1.Fire
-	193, // 219: noted.v1.ListFiresResponse.from:type_name -> google.protobuf.Timestamp
-	193, // 220: noted.v1.ListFiresResponse.to:type_name -> google.protobuf.Timestamp
-	170, // 221: noted.v1.GetHolidaysResponse.days:type_name -> noted.v1.HolidayDay
-	193, // 222: noted.v1.TokenInfo.create_time:type_name -> google.protobuf.Timestamp
-	193, // 223: noted.v1.TokenInfo.last_used_time:type_name -> google.protobuf.Timestamp
-	182, // 224: noted.v1.CreateTokenResponse.info:type_name -> noted.v1.TokenInfo
-	182, // 225: noted.v1.ListTokensResponse.tokens:type_name -> noted.v1.TokenInfo
-	193, // 226: noted.v1.Pairing.create_time:type_name -> google.protobuf.Timestamp
-	193, // 227: noted.v1.Pairing.expire_time:type_name -> google.protobuf.Timestamp
-	8,   // 228: noted.v1.NoteService.CreateNote:input_type -> noted.v1.CreateNoteRequest
-	9,   // 229: noted.v1.NoteService.GetNote:input_type -> noted.v1.GetNoteRequest
-	10,  // 230: noted.v1.NoteService.UpdateNote:input_type -> noted.v1.UpdateNoteRequest
-	11,  // 231: noted.v1.NoteService.DeleteNote:input_type -> noted.v1.DeleteNoteRequest
-	12,  // 232: noted.v1.NoteService.ListNotes:input_type -> noted.v1.ListNotesRequest
-	14,  // 233: noted.v1.NoteService.SearchNotes:input_type -> noted.v1.SearchNotesRequest
-	18,  // 234: noted.v1.CalendarService.CreateEvent:input_type -> noted.v1.CreateEventRequest
-	19,  // 235: noted.v1.CalendarService.GetEvent:input_type -> noted.v1.GetEventRequest
-	20,  // 236: noted.v1.CalendarService.UpdateEvent:input_type -> noted.v1.UpdateEventRequest
-	21,  // 237: noted.v1.CalendarService.DeleteEvent:input_type -> noted.v1.DeleteEventRequest
-	22,  // 238: noted.v1.CalendarService.ListEvents:input_type -> noted.v1.ListEventsRequest
-	27,  // 239: noted.v1.CalendarService.CreateTask:input_type -> noted.v1.CreateTaskRequest
-	28,  // 240: noted.v1.CalendarService.GetTask:input_type -> noted.v1.GetTaskRequest
-	29,  // 241: noted.v1.CalendarService.UpdateTask:input_type -> noted.v1.UpdateTaskRequest
-	30,  // 242: noted.v1.CalendarService.DeleteTask:input_type -> noted.v1.DeleteTaskRequest
-	31,  // 243: noted.v1.CalendarService.ListTasks:input_type -> noted.v1.ListTasksRequest
-	33,  // 244: noted.v1.CalendarService.LogTaskWork:input_type -> noted.v1.LogTaskWorkRequest
-	34,  // 245: noted.v1.CalendarService.ListTaskWork:input_type -> noted.v1.ListTaskWorkRequest
-	36,  // 246: noted.v1.CalendarService.DeleteTaskWork:input_type -> noted.v1.DeleteTaskWorkRequest
-	38,  // 247: noted.v1.CalendarService.WatchReminders:input_type -> noted.v1.WatchRemindersRequest
-	39,  // 248: noted.v1.CalendarService.ListReminders:input_type -> noted.v1.ListRemindersRequest
-	41,  // 249: noted.v1.AIService.GetStatus:input_type -> noted.v1.GetStatusRequest
-	43,  // 250: noted.v1.AIService.Ask:input_type -> noted.v1.AskRequest
-	46,  // 251: noted.v1.AIService.SummarizeNote:input_type -> noted.v1.SummarizeNoteRequest
-	48,  // 252: noted.v1.AIService.SuggestTags:input_type -> noted.v1.SuggestTagsRequest
-	50,  // 253: noted.v1.AIService.DailyBriefing:input_type -> noted.v1.DailyBriefingRequest
-	58,  // 254: noted.v1.AIService.PlanFromText:input_type -> noted.v1.PlanFromTextRequest
-	59,  // 255: noted.v1.AIService.ExtractTasks:input_type -> noted.v1.ExtractTasksRequest
-	56,  // 256: noted.v1.AIService.GetAIAccess:input_type -> noted.v1.GetAIAccessRequest
-	57,  // 257: noted.v1.AIService.SetAIAccess:input_type -> noted.v1.SetAIAccessRequest
-	53,  // 258: noted.v1.AIService.GetAIFeatures:input_type -> noted.v1.GetAIFeaturesRequest
-	54,  // 259: noted.v1.AIService.SetAIFeatures:input_type -> noted.v1.SetAIFeaturesRequest
-	65,  // 260: noted.v1.GoalService.CreateGoal:input_type -> noted.v1.CreateGoalRequest
-	66,  // 261: noted.v1.GoalService.GetGoal:input_type -> noted.v1.GetGoalRequest
-	67,  // 262: noted.v1.GoalService.UpdateGoal:input_type -> noted.v1.UpdateGoalRequest
-	68,  // 263: noted.v1.GoalService.DeleteGoal:input_type -> noted.v1.DeleteGoalRequest
-	69,  // 264: noted.v1.GoalService.ListGoals:input_type -> noted.v1.ListGoalsRequest
-	71,  // 265: noted.v1.GoalService.RecordCheckIn:input_type -> noted.v1.RecordCheckInRequest
-	73,  // 266: noted.v1.GoalService.DeleteCheckIn:input_type -> noted.v1.DeleteCheckInRequest
-	74,  // 267: noted.v1.GoalService.ListCheckIns:input_type -> noted.v1.ListCheckInsRequest
-	76,  // 268: noted.v1.GoalService.SetMilestoneDone:input_type -> noted.v1.SetMilestoneDoneRequest
-	80,  // 269: noted.v1.ObjectiveService.CreateObjective:input_type -> noted.v1.CreateObjectiveRequest
-	81,  // 270: noted.v1.ObjectiveService.GetObjective:input_type -> noted.v1.GetObjectiveRequest
-	82,  // 271: noted.v1.ObjectiveService.UpdateObjective:input_type -> noted.v1.UpdateObjectiveRequest
-	83,  // 272: noted.v1.ObjectiveService.DeleteObjective:input_type -> noted.v1.DeleteObjectiveRequest
-	84,  // 273: noted.v1.ObjectiveService.ListObjectives:input_type -> noted.v1.ListObjectivesRequest
-	86,  // 274: noted.v1.ObjectiveService.RecordMeasurement:input_type -> noted.v1.RecordMeasurementRequest
-	87,  // 275: noted.v1.ObjectiveService.DeleteMeasurement:input_type -> noted.v1.DeleteMeasurementRequest
-	88,  // 276: noted.v1.ObjectiveService.ListMeasurements:input_type -> noted.v1.ListMeasurementsRequest
-	90,  // 277: noted.v1.ObjectiveService.SetObjectiveMilestoneDone:input_type -> noted.v1.SetObjectiveMilestoneDoneRequest
-	93,  // 278: noted.v1.ProjectService.CreateProject:input_type -> noted.v1.CreateProjectRequest
-	94,  // 279: noted.v1.ProjectService.GetProject:input_type -> noted.v1.GetProjectRequest
-	96,  // 280: noted.v1.ProjectService.UpdateProject:input_type -> noted.v1.UpdateProjectRequest
-	97,  // 281: noted.v1.ProjectService.DeleteProject:input_type -> noted.v1.DeleteProjectRequest
-	98,  // 282: noted.v1.ProjectService.ListProjects:input_type -> noted.v1.ListProjectsRequest
-	100, // 283: noted.v1.FocusService.GetFocus:input_type -> noted.v1.GetFocusRequest
-	104, // 284: noted.v1.PreferenceService.GetPreference:input_type -> noted.v1.GetPreferenceRequest
-	105, // 285: noted.v1.PreferenceService.SetPreference:input_type -> noted.v1.SetPreferenceRequest
-	106, // 286: noted.v1.PreferenceService.DeletePreference:input_type -> noted.v1.DeletePreferenceRequest
-	107, // 287: noted.v1.PreferenceService.ListPreferences:input_type -> noted.v1.ListPreferencesRequest
-	109, // 288: noted.v1.ExportService.Export:input_type -> noted.v1.ExportRequest
-	115, // 289: noted.v1.SuggestionService.ListProposals:input_type -> noted.v1.ListProposalsRequest
-	118, // 290: noted.v1.SuggestionService.AcceptProposal:input_type -> noted.v1.AcceptProposalRequest
-	120, // 291: noted.v1.SuggestionService.DismissProposal:input_type -> noted.v1.DismissProposalRequest
-	121, // 292: noted.v1.SuggestionService.ProposeSchedule:input_type -> noted.v1.ProposeScheduleRequest
-	122, // 293: noted.v1.SuggestionService.GetWeeklyReview:input_type -> noted.v1.GetWeeklyReviewRequest
-	124, // 294: noted.v1.SuggestionService.ListChanges:input_type -> noted.v1.ListChangesRequest
-	126, // 295: noted.v1.SuggestionService.UndoChange:input_type -> noted.v1.UndoChangeRequest
-	131, // 296: noted.v1.HoldingService.CreateHolding:input_type -> noted.v1.CreateHoldingRequest
-	132, // 297: noted.v1.HoldingService.GetHolding:input_type -> noted.v1.GetHoldingRequest
-	133, // 298: noted.v1.HoldingService.UpdateHolding:input_type -> noted.v1.UpdateHoldingRequest
-	134, // 299: noted.v1.HoldingService.DeleteHolding:input_type -> noted.v1.DeleteHoldingRequest
-	135, // 300: noted.v1.HoldingService.ListHoldings:input_type -> noted.v1.ListHoldingsRequest
-	137, // 301: noted.v1.HoldingService.RecordTrade:input_type -> noted.v1.RecordTradeRequest
-	138, // 302: noted.v1.HoldingService.DeleteTrade:input_type -> noted.v1.DeleteTradeRequest
-	139, // 303: noted.v1.HoldingService.ListTrades:input_type -> noted.v1.ListTradesRequest
-	142, // 304: noted.v1.TimeService.CreateTimeEntry:input_type -> noted.v1.CreateTimeEntryRequest
-	143, // 305: noted.v1.TimeService.GetTimeEntry:input_type -> noted.v1.GetTimeEntryRequest
-	144, // 306: noted.v1.TimeService.UpdateTimeEntry:input_type -> noted.v1.UpdateTimeEntryRequest
-	145, // 307: noted.v1.TimeService.DeleteTimeEntry:input_type -> noted.v1.DeleteTimeEntryRequest
-	146, // 308: noted.v1.TimeService.ListTimeEntries:input_type -> noted.v1.ListTimeEntriesRequest
-	148, // 309: noted.v1.TimeService.StartTimer:input_type -> noted.v1.StartTimerRequest
-	149, // 310: noted.v1.TimeService.StopTimer:input_type -> noted.v1.StopTimerRequest
-	150, // 311: noted.v1.TimeService.GetRunningTimer:input_type -> noted.v1.GetRunningTimerRequest
-	152, // 312: noted.v1.TimeService.SummarizeTime:input_type -> noted.v1.SummarizeTimeRequest
-	158, // 313: noted.v1.AlarmService.CreateAlarm:input_type -> noted.v1.CreateAlarmRequest
-	159, // 314: noted.v1.AlarmService.GetAlarm:input_type -> noted.v1.GetAlarmRequest
-	160, // 315: noted.v1.AlarmService.UpdateAlarm:input_type -> noted.v1.UpdateAlarmRequest
-	161, // 316: noted.v1.AlarmService.DeleteAlarm:input_type -> noted.v1.DeleteAlarmRequest
-	162, // 317: noted.v1.AlarmService.ListAlarms:input_type -> noted.v1.ListAlarmsRequest
-	164, // 318: noted.v1.AlarmService.GetAlarmsVersion:input_type -> noted.v1.GetAlarmsVersionRequest
-	166, // 319: noted.v1.AlarmService.ListFires:input_type -> noted.v1.ListFiresRequest
-	169, // 320: noted.v1.HolidayService.GetHolidays:input_type -> noted.v1.GetHolidaysRequest
-	172, // 321: noted.v1.AccountService.SignInWithApple:input_type -> noted.v1.SignInWithAppleRequest
-	174, // 322: noted.v1.AccountService.LinkApple:input_type -> noted.v1.LinkAppleRequest
-	175, // 323: noted.v1.AccountService.UnlinkApple:input_type -> noted.v1.UnlinkAppleRequest
-	176, // 324: noted.v1.AccountService.GetAccount:input_type -> noted.v1.GetAccountRequest
-	178, // 325: noted.v1.AccountService.SignUp:input_type -> noted.v1.SignUpRequest
-	179, // 326: noted.v1.AccountService.SignIn:input_type -> noted.v1.SignInRequest
-	181, // 327: noted.v1.AccountService.SetEmailPassword:input_type -> noted.v1.SetEmailPasswordRequest
-	183, // 328: noted.v1.AccountService.CreateToken:input_type -> noted.v1.CreateTokenRequest
-	185, // 329: noted.v1.AccountService.ListTokens:input_type -> noted.v1.ListTokensRequest
-	187, // 330: noted.v1.AccountService.RevokeToken:input_type -> noted.v1.RevokeTokenRequest
-	189, // 331: noted.v1.AccountService.GetPairing:input_type -> noted.v1.GetPairingRequest
-	190, // 332: noted.v1.AccountService.ApprovePairing:input_type -> noted.v1.ApprovePairingRequest
-	191, // 333: noted.v1.AccountService.DenyPairing:input_type -> noted.v1.DenyPairingRequest
-	7,   // 334: noted.v1.NoteService.CreateNote:output_type -> noted.v1.Note
-	7,   // 335: noted.v1.NoteService.GetNote:output_type -> noted.v1.Note
-	7,   // 336: noted.v1.NoteService.UpdateNote:output_type -> noted.v1.Note
-	196, // 337: noted.v1.NoteService.DeleteNote:output_type -> google.protobuf.Empty
-	13,  // 338: noted.v1.NoteService.ListNotes:output_type -> noted.v1.ListNotesResponse
-	16,  // 339: noted.v1.NoteService.SearchNotes:output_type -> noted.v1.SearchNotesResponse
-	17,  // 340: noted.v1.CalendarService.CreateEvent:output_type -> noted.v1.Event
-	17,  // 341: noted.v1.CalendarService.GetEvent:output_type -> noted.v1.Event
-	17,  // 342: noted.v1.CalendarService.UpdateEvent:output_type -> noted.v1.Event
-	196, // 343: noted.v1.CalendarService.DeleteEvent:output_type -> google.protobuf.Empty
-	24,  // 344: noted.v1.CalendarService.ListEvents:output_type -> noted.v1.ListEventsResponse
-	25,  // 345: noted.v1.CalendarService.CreateTask:output_type -> noted.v1.Task
-	25,  // 346: noted.v1.CalendarService.GetTask:output_type -> noted.v1.Task
-	25,  // 347: noted.v1.CalendarService.UpdateTask:output_type -> noted.v1.Task
-	196, // 348: noted.v1.CalendarService.DeleteTask:output_type -> google.protobuf.Empty
-	32,  // 349: noted.v1.CalendarService.ListTasks:output_type -> noted.v1.ListTasksResponse
-	25,  // 350: noted.v1.CalendarService.LogTaskWork:output_type -> noted.v1.Task
-	35,  // 351: noted.v1.CalendarService.ListTaskWork:output_type -> noted.v1.ListTaskWorkResponse
-	25,  // 352: noted.v1.CalendarService.DeleteTaskWork:output_type -> noted.v1.Task
-	37,  // 353: noted.v1.CalendarService.WatchReminders:output_type -> noted.v1.Reminder
-	40,  // 354: noted.v1.CalendarService.ListReminders:output_type -> noted.v1.ListRemindersResponse
-	42,  // 355: noted.v1.AIService.GetStatus:output_type -> noted.v1.GetStatusResponse
-	44,  // 356: noted.v1.AIService.Ask:output_type -> noted.v1.AskResponse
-	47,  // 357: noted.v1.AIService.SummarizeNote:output_type -> noted.v1.SummarizeNoteResponse
-	49,  // 358: noted.v1.AIService.SuggestTags:output_type -> noted.v1.SuggestTagsResponse
-	51,  // 359: noted.v1.AIService.DailyBriefing:output_type -> noted.v1.DailyBriefingResponse
-	113, // 360: noted.v1.AIService.PlanFromText:output_type -> noted.v1.Proposal
-	113, // 361: noted.v1.AIService.ExtractTasks:output_type -> noted.v1.Proposal
-	55,  // 362: noted.v1.AIService.GetAIAccess:output_type -> noted.v1.AIAccess
-	55,  // 363: noted.v1.AIService.SetAIAccess:output_type -> noted.v1.AIAccess
-	52,  // 364: noted.v1.AIService.GetAIFeatures:output_type -> noted.v1.AIFeatures
-	52,  // 365: noted.v1.AIService.SetAIFeatures:output_type -> noted.v1.AIFeatures
-	63,  // 366: noted.v1.GoalService.CreateGoal:output_type -> noted.v1.Goal
-	63,  // 367: noted.v1.GoalService.GetGoal:output_type -> noted.v1.Goal
-	63,  // 368: noted.v1.GoalService.UpdateGoal:output_type -> noted.v1.Goal
-	196, // 369: noted.v1.GoalService.DeleteGoal:output_type -> google.protobuf.Empty
-	70,  // 370: noted.v1.GoalService.ListGoals:output_type -> noted.v1.ListGoalsResponse
-	72,  // 371: noted.v1.GoalService.RecordCheckIn:output_type -> noted.v1.RecordCheckInResponse
-	63,  // 372: noted.v1.GoalService.DeleteCheckIn:output_type -> noted.v1.Goal
-	75,  // 373: noted.v1.GoalService.ListCheckIns:output_type -> noted.v1.ListCheckInsResponse
-	63,  // 374: noted.v1.GoalService.SetMilestoneDone:output_type -> noted.v1.Goal
-	77,  // 375: noted.v1.ObjectiveService.CreateObjective:output_type -> noted.v1.Objective
-	77,  // 376: noted.v1.ObjectiveService.GetObjective:output_type -> noted.v1.Objective
-	77,  // 377: noted.v1.ObjectiveService.UpdateObjective:output_type -> noted.v1.Objective
-	196, // 378: noted.v1.ObjectiveService.DeleteObjective:output_type -> google.protobuf.Empty
-	85,  // 379: noted.v1.ObjectiveService.ListObjectives:output_type -> noted.v1.ListObjectivesResponse
-	77,  // 380: noted.v1.ObjectiveService.RecordMeasurement:output_type -> noted.v1.Objective
-	196, // 381: noted.v1.ObjectiveService.DeleteMeasurement:output_type -> google.protobuf.Empty
-	89,  // 382: noted.v1.ObjectiveService.ListMeasurements:output_type -> noted.v1.ListMeasurementsResponse
-	77,  // 383: noted.v1.ObjectiveService.SetObjectiveMilestoneDone:output_type -> noted.v1.Objective
-	92,  // 384: noted.v1.ProjectService.CreateProject:output_type -> noted.v1.Project
-	95,  // 385: noted.v1.ProjectService.GetProject:output_type -> noted.v1.ProjectDetail
-	92,  // 386: noted.v1.ProjectService.UpdateProject:output_type -> noted.v1.Project
-	196, // 387: noted.v1.ProjectService.DeleteProject:output_type -> google.protobuf.Empty
-	99,  // 388: noted.v1.ProjectService.ListProjects:output_type -> noted.v1.ListProjectsResponse
-	102, // 389: noted.v1.FocusService.GetFocus:output_type -> noted.v1.GetFocusResponse
-	103, // 390: noted.v1.PreferenceService.GetPreference:output_type -> noted.v1.Preference
-	103, // 391: noted.v1.PreferenceService.SetPreference:output_type -> noted.v1.Preference
-	196, // 392: noted.v1.PreferenceService.DeletePreference:output_type -> google.protobuf.Empty
-	108, // 393: noted.v1.PreferenceService.ListPreferences:output_type -> noted.v1.ListPreferencesResponse
-	110, // 394: noted.v1.ExportService.Export:output_type -> noted.v1.ExportChunk
-	116, // 395: noted.v1.SuggestionService.ListProposals:output_type -> noted.v1.ListProposalsResponse
-	119, // 396: noted.v1.SuggestionService.AcceptProposal:output_type -> noted.v1.AcceptProposalResponse
-	113, // 397: noted.v1.SuggestionService.DismissProposal:output_type -> noted.v1.Proposal
-	113, // 398: noted.v1.SuggestionService.ProposeSchedule:output_type -> noted.v1.Proposal
-	123, // 399: noted.v1.SuggestionService.GetWeeklyReview:output_type -> noted.v1.WeeklyReview
-	125, // 400: noted.v1.SuggestionService.ListChanges:output_type -> noted.v1.ListChangesResponse
-	114, // 401: noted.v1.SuggestionService.UndoChange:output_type -> noted.v1.Change
-	127, // 402: noted.v1.HoldingService.CreateHolding:output_type -> noted.v1.Holding
-	127, // 403: noted.v1.HoldingService.GetHolding:output_type -> noted.v1.Holding
-	127, // 404: noted.v1.HoldingService.UpdateHolding:output_type -> noted.v1.Holding
-	196, // 405: noted.v1.HoldingService.DeleteHolding:output_type -> google.protobuf.Empty
-	136, // 406: noted.v1.HoldingService.ListHoldings:output_type -> noted.v1.ListHoldingsResponse
-	127, // 407: noted.v1.HoldingService.RecordTrade:output_type -> noted.v1.Holding
-	196, // 408: noted.v1.HoldingService.DeleteTrade:output_type -> google.protobuf.Empty
-	140, // 409: noted.v1.HoldingService.ListTrades:output_type -> noted.v1.ListTradesResponse
-	141, // 410: noted.v1.TimeService.CreateTimeEntry:output_type -> noted.v1.TimeEntry
-	141, // 411: noted.v1.TimeService.GetTimeEntry:output_type -> noted.v1.TimeEntry
-	141, // 412: noted.v1.TimeService.UpdateTimeEntry:output_type -> noted.v1.TimeEntry
-	196, // 413: noted.v1.TimeService.DeleteTimeEntry:output_type -> google.protobuf.Empty
-	147, // 414: noted.v1.TimeService.ListTimeEntries:output_type -> noted.v1.ListTimeEntriesResponse
-	141, // 415: noted.v1.TimeService.StartTimer:output_type -> noted.v1.TimeEntry
-	141, // 416: noted.v1.TimeService.StopTimer:output_type -> noted.v1.TimeEntry
-	151, // 417: noted.v1.TimeService.GetRunningTimer:output_type -> noted.v1.GetRunningTimerResponse
-	154, // 418: noted.v1.TimeService.SummarizeTime:output_type -> noted.v1.TimeSummary
-	157, // 419: noted.v1.AlarmService.CreateAlarm:output_type -> noted.v1.Alarm
-	157, // 420: noted.v1.AlarmService.GetAlarm:output_type -> noted.v1.Alarm
-	157, // 421: noted.v1.AlarmService.UpdateAlarm:output_type -> noted.v1.Alarm
-	196, // 422: noted.v1.AlarmService.DeleteAlarm:output_type -> google.protobuf.Empty
-	163, // 423: noted.v1.AlarmService.ListAlarms:output_type -> noted.v1.ListAlarmsResponse
-	165, // 424: noted.v1.AlarmService.GetAlarmsVersion:output_type -> noted.v1.GetAlarmsVersionResponse
-	168, // 425: noted.v1.AlarmService.ListFires:output_type -> noted.v1.ListFiresResponse
-	171, // 426: noted.v1.HolidayService.GetHolidays:output_type -> noted.v1.GetHolidaysResponse
-	173, // 427: noted.v1.AccountService.SignInWithApple:output_type -> noted.v1.SignInWithAppleResponse
-	177, // 428: noted.v1.AccountService.LinkApple:output_type -> noted.v1.Account
-	177, // 429: noted.v1.AccountService.UnlinkApple:output_type -> noted.v1.Account
-	177, // 430: noted.v1.AccountService.GetAccount:output_type -> noted.v1.Account
-	180, // 431: noted.v1.AccountService.SignUp:output_type -> noted.v1.SignInResponse
-	180, // 432: noted.v1.AccountService.SignIn:output_type -> noted.v1.SignInResponse
-	177, // 433: noted.v1.AccountService.SetEmailPassword:output_type -> noted.v1.Account
-	184, // 434: noted.v1.AccountService.CreateToken:output_type -> noted.v1.CreateTokenResponse
-	186, // 435: noted.v1.AccountService.ListTokens:output_type -> noted.v1.ListTokensResponse
-	196, // 436: noted.v1.AccountService.RevokeToken:output_type -> google.protobuf.Empty
-	188, // 437: noted.v1.AccountService.GetPairing:output_type -> noted.v1.Pairing
-	188, // 438: noted.v1.AccountService.ApprovePairing:output_type -> noted.v1.Pairing
-	196, // 439: noted.v1.AccountService.DenyPairing:output_type -> google.protobuf.Empty
-	334, // [334:440] is the sub-list for method output_type
-	228, // [228:334] is the sub-list for method input_type
-	228, // [228:228] is the sub-list for extension type_name
-	228, // [228:228] is the sub-list for extension extendee
-	0,   // [0:228] is the sub-list for field type_name
+	144, // 137: noted.v1.GetFocusResponse.running_timer:type_name -> noted.v1.TimeEntry
+	195, // 138: noted.v1.GetFocusResponse.compass:type_name -> noted.v1.Compass
+	201, // 139: noted.v1.Preference.update_time:type_name -> google.protobuf.Timestamp
+	103, // 140: noted.v1.ListPreferencesResponse.preferences:type_name -> noted.v1.Preference
+	203, // 141: noted.v1.Operation.args:type_name -> google.protobuf.Struct
+	0,   // 142: noted.v1.Proposal.space:type_name -> noted.v1.Space
+	111, // 143: noted.v1.Proposal.operations:type_name -> noted.v1.Operation
+	112, // 144: noted.v1.Proposal.inputs:type_name -> noted.v1.ProposalInput
+	201, // 145: noted.v1.Proposal.create_time:type_name -> google.protobuf.Timestamp
+	201, // 146: noted.v1.Proposal.decide_time:type_name -> google.protobuf.Timestamp
+	201, // 147: noted.v1.Change.create_time:type_name -> google.protobuf.Timestamp
+	201, // 148: noted.v1.Change.undo_time:type_name -> google.protobuf.Timestamp
+	0,   // 149: noted.v1.ListProposalsRequest.space:type_name -> noted.v1.Space
+	113, // 150: noted.v1.ListProposalsResponse.proposals:type_name -> noted.v1.Proposal
+	200, // 151: noted.v1.AcceptProposalRequest.inputs:type_name -> noted.v1.AcceptProposalRequest.InputsEntry
+	117, // 152: noted.v1.AcceptProposalRequest.selection:type_name -> noted.v1.OperationSelection
+	113, // 153: noted.v1.AcceptProposalResponse.proposal:type_name -> noted.v1.Proposal
+	114, // 154: noted.v1.AcceptProposalResponse.change:type_name -> noted.v1.Change
+	201, // 155: noted.v1.GetWeeklyReviewRequest.week_of:type_name -> google.protobuf.Timestamp
+	0,   // 156: noted.v1.GetWeeklyReviewRequest.space:type_name -> noted.v1.Space
+	195, // 157: noted.v1.WeeklyReview.compass:type_name -> noted.v1.Compass
+	126, // 158: noted.v1.WeeklyReview.behavior:type_name -> noted.v1.BehaviorReview
+	201, // 159: noted.v1.WeeklyReview.from:type_name -> google.protobuf.Timestamp
+	201, // 160: noted.v1.WeeklyReview.to:type_name -> google.protobuf.Timestamp
+	63,  // 161: noted.v1.WeeklyReview.goals:type_name -> noted.v1.Goal
+	25,  // 162: noted.v1.WeeklyReview.carried_tasks:type_name -> noted.v1.Task
+	113, // 163: noted.v1.WeeklyReview.next_week:type_name -> noted.v1.Proposal
+	156, // 164: noted.v1.WeeklyReview.top_activities:type_name -> noted.v1.TimeSummaryRow
+	124, // 165: noted.v1.BehaviorReview.rows:type_name -> noted.v1.BehaviorRow
+	125, // 166: noted.v1.BehaviorReview.unlinked:type_name -> noted.v1.UnlinkedTime
+	114, // 167: noted.v1.ListChangesResponse.changes:type_name -> noted.v1.Change
+	201, // 168: noted.v1.Holding.last_price_time:type_name -> google.protobuf.Timestamp
+	201, // 169: noted.v1.Holding.create_time:type_name -> google.protobuf.Timestamp
+	201, // 170: noted.v1.Holding.update_time:type_name -> google.protobuf.Timestamp
+	131, // 171: noted.v1.Holding.position:type_name -> noted.v1.Position
+	132, // 172: noted.v1.Position.dca:type_name -> noted.v1.DcaStatus
+	201, // 173: noted.v1.DcaStatus.next_time:type_name -> google.protobuf.Timestamp
+	201, // 174: noted.v1.Trade.time:type_name -> google.protobuf.Timestamp
+	130, // 175: noted.v1.CreateHoldingRequest.holding:type_name -> noted.v1.Holding
+	130, // 176: noted.v1.UpdateHoldingRequest.holding:type_name -> noted.v1.Holding
+	202, // 177: noted.v1.UpdateHoldingRequest.update_mask:type_name -> google.protobuf.FieldMask
+	130, // 178: noted.v1.ListHoldingsResponse.holdings:type_name -> noted.v1.Holding
+	133, // 179: noted.v1.RecordTradeRequest.trade:type_name -> noted.v1.Trade
+	133, // 180: noted.v1.ListTradesResponse.trades:type_name -> noted.v1.Trade
+	201, // 181: noted.v1.TimeEntry.start_time:type_name -> google.protobuf.Timestamp
+	201, // 182: noted.v1.TimeEntry.end_time:type_name -> google.protobuf.Timestamp
+	0,   // 183: noted.v1.TimeEntry.space:type_name -> noted.v1.Space
+	201, // 184: noted.v1.TimeEntry.create_time:type_name -> google.protobuf.Timestamp
+	201, // 185: noted.v1.TimeEntry.update_time:type_name -> google.protobuf.Timestamp
+	144, // 186: noted.v1.CreateTimeEntryRequest.entry:type_name -> noted.v1.TimeEntry
+	144, // 187: noted.v1.UpdateTimeEntryRequest.entry:type_name -> noted.v1.TimeEntry
+	202, // 188: noted.v1.UpdateTimeEntryRequest.update_mask:type_name -> google.protobuf.FieldMask
+	201, // 189: noted.v1.ListTimeEntriesRequest.from:type_name -> google.protobuf.Timestamp
+	201, // 190: noted.v1.ListTimeEntriesRequest.to:type_name -> google.protobuf.Timestamp
+	0,   // 191: noted.v1.ListTimeEntriesRequest.space:type_name -> noted.v1.Space
+	144, // 192: noted.v1.ListTimeEntriesResponse.entries:type_name -> noted.v1.TimeEntry
+	0,   // 193: noted.v1.StartTimerRequest.space:type_name -> noted.v1.Space
+	201, // 194: noted.v1.StartTimerRequest.start_time:type_name -> google.protobuf.Timestamp
+	201, // 195: noted.v1.StopTimerRequest.end_time:type_name -> google.protobuf.Timestamp
+	144, // 196: noted.v1.GetRunningTimerResponse.entry:type_name -> noted.v1.TimeEntry
+	201, // 197: noted.v1.SummarizeTimeRequest.from:type_name -> google.protobuf.Timestamp
+	201, // 198: noted.v1.SummarizeTimeRequest.to:type_name -> google.protobuf.Timestamp
+	4,   // 199: noted.v1.SummarizeTimeRequest.group_by:type_name -> noted.v1.TimeGroupBy
+	0,   // 200: noted.v1.SummarizeTimeRequest.space:type_name -> noted.v1.Space
+	201, // 201: noted.v1.TimeSummary.from:type_name -> google.protobuf.Timestamp
+	201, // 202: noted.v1.TimeSummary.to:type_name -> google.protobuf.Timestamp
+	4,   // 203: noted.v1.TimeSummary.group_by:type_name -> noted.v1.TimeGroupBy
+	156, // 204: noted.v1.TimeSummary.rows:type_name -> noted.v1.TimeSummaryRow
+	201, // 205: noted.v1.AlarmSchedule.at:type_name -> google.protobuf.Timestamp
+	158, // 206: noted.v1.AlarmSchedule.recurrence:type_name -> noted.v1.AlarmRecurrence
+	159, // 207: noted.v1.Alarm.schedule:type_name -> noted.v1.AlarmSchedule
+	0,   // 208: noted.v1.Alarm.space:type_name -> noted.v1.Space
+	201, // 209: noted.v1.Alarm.create_time:type_name -> google.protobuf.Timestamp
+	201, // 210: noted.v1.Alarm.update_time:type_name -> google.protobuf.Timestamp
+	201, // 211: noted.v1.Alarm.next_fires:type_name -> google.protobuf.Timestamp
+	160, // 212: noted.v1.CreateAlarmRequest.alarm:type_name -> noted.v1.Alarm
+	160, // 213: noted.v1.UpdateAlarmRequest.alarm:type_name -> noted.v1.Alarm
+	202, // 214: noted.v1.UpdateAlarmRequest.update_mask:type_name -> google.protobuf.FieldMask
+	0,   // 215: noted.v1.ListAlarmsRequest.space:type_name -> noted.v1.Space
+	160, // 216: noted.v1.ListAlarmsResponse.alarms:type_name -> noted.v1.Alarm
+	201, // 217: noted.v1.ListFiresRequest.from:type_name -> google.protobuf.Timestamp
+	201, // 218: noted.v1.ListFiresRequest.to:type_name -> google.protobuf.Timestamp
+	0,   // 219: noted.v1.ListFiresRequest.space:type_name -> noted.v1.Space
+	201, // 220: noted.v1.Fire.fire_time:type_name -> google.protobuf.Timestamp
+	201, // 221: noted.v1.Fire.at_time:type_name -> google.protobuf.Timestamp
+	0,   // 222: noted.v1.Fire.space:type_name -> noted.v1.Space
+	170, // 223: noted.v1.ListFiresResponse.fires:type_name -> noted.v1.Fire
+	201, // 224: noted.v1.ListFiresResponse.from:type_name -> google.protobuf.Timestamp
+	201, // 225: noted.v1.ListFiresResponse.to:type_name -> google.protobuf.Timestamp
+	173, // 226: noted.v1.GetHolidaysResponse.days:type_name -> noted.v1.HolidayDay
+	201, // 227: noted.v1.TokenInfo.create_time:type_name -> google.protobuf.Timestamp
+	201, // 228: noted.v1.TokenInfo.last_used_time:type_name -> google.protobuf.Timestamp
+	185, // 229: noted.v1.CreateTokenResponse.info:type_name -> noted.v1.TokenInfo
+	185, // 230: noted.v1.ListTokensResponse.tokens:type_name -> noted.v1.TokenInfo
+	201, // 231: noted.v1.Pairing.create_time:type_name -> google.protobuf.Timestamp
+	201, // 232: noted.v1.Pairing.expire_time:type_name -> google.protobuf.Timestamp
+	0,   // 233: noted.v1.Compass.space:type_name -> noted.v1.Space
+	201, // 234: noted.v1.Compass.update_time:type_name -> google.protobuf.Timestamp
+	0,   // 235: noted.v1.GetCompassRequest.space:type_name -> noted.v1.Space
+	195, // 236: noted.v1.SetCompassRequest.compass:type_name -> noted.v1.Compass
+	202, // 237: noted.v1.SetCompassRequest.update_mask:type_name -> google.protobuf.FieldMask
+	0,   // 238: noted.v1.ListCompassRevisionsRequest.space:type_name -> noted.v1.Space
+	195, // 239: noted.v1.ListCompassRevisionsResponse.revisions:type_name -> noted.v1.Compass
+	8,   // 240: noted.v1.NoteService.CreateNote:input_type -> noted.v1.CreateNoteRequest
+	9,   // 241: noted.v1.NoteService.GetNote:input_type -> noted.v1.GetNoteRequest
+	10,  // 242: noted.v1.NoteService.UpdateNote:input_type -> noted.v1.UpdateNoteRequest
+	11,  // 243: noted.v1.NoteService.DeleteNote:input_type -> noted.v1.DeleteNoteRequest
+	12,  // 244: noted.v1.NoteService.ListNotes:input_type -> noted.v1.ListNotesRequest
+	14,  // 245: noted.v1.NoteService.SearchNotes:input_type -> noted.v1.SearchNotesRequest
+	18,  // 246: noted.v1.CalendarService.CreateEvent:input_type -> noted.v1.CreateEventRequest
+	19,  // 247: noted.v1.CalendarService.GetEvent:input_type -> noted.v1.GetEventRequest
+	20,  // 248: noted.v1.CalendarService.UpdateEvent:input_type -> noted.v1.UpdateEventRequest
+	21,  // 249: noted.v1.CalendarService.DeleteEvent:input_type -> noted.v1.DeleteEventRequest
+	22,  // 250: noted.v1.CalendarService.ListEvents:input_type -> noted.v1.ListEventsRequest
+	27,  // 251: noted.v1.CalendarService.CreateTask:input_type -> noted.v1.CreateTaskRequest
+	28,  // 252: noted.v1.CalendarService.GetTask:input_type -> noted.v1.GetTaskRequest
+	29,  // 253: noted.v1.CalendarService.UpdateTask:input_type -> noted.v1.UpdateTaskRequest
+	30,  // 254: noted.v1.CalendarService.DeleteTask:input_type -> noted.v1.DeleteTaskRequest
+	31,  // 255: noted.v1.CalendarService.ListTasks:input_type -> noted.v1.ListTasksRequest
+	33,  // 256: noted.v1.CalendarService.LogTaskWork:input_type -> noted.v1.LogTaskWorkRequest
+	34,  // 257: noted.v1.CalendarService.ListTaskWork:input_type -> noted.v1.ListTaskWorkRequest
+	36,  // 258: noted.v1.CalendarService.DeleteTaskWork:input_type -> noted.v1.DeleteTaskWorkRequest
+	38,  // 259: noted.v1.CalendarService.WatchReminders:input_type -> noted.v1.WatchRemindersRequest
+	39,  // 260: noted.v1.CalendarService.ListReminders:input_type -> noted.v1.ListRemindersRequest
+	41,  // 261: noted.v1.AIService.GetStatus:input_type -> noted.v1.GetStatusRequest
+	43,  // 262: noted.v1.AIService.Ask:input_type -> noted.v1.AskRequest
+	46,  // 263: noted.v1.AIService.SummarizeNote:input_type -> noted.v1.SummarizeNoteRequest
+	48,  // 264: noted.v1.AIService.SuggestTags:input_type -> noted.v1.SuggestTagsRequest
+	50,  // 265: noted.v1.AIService.DailyBriefing:input_type -> noted.v1.DailyBriefingRequest
+	58,  // 266: noted.v1.AIService.PlanFromText:input_type -> noted.v1.PlanFromTextRequest
+	59,  // 267: noted.v1.AIService.ExtractTasks:input_type -> noted.v1.ExtractTasksRequest
+	56,  // 268: noted.v1.AIService.GetAIAccess:input_type -> noted.v1.GetAIAccessRequest
+	57,  // 269: noted.v1.AIService.SetAIAccess:input_type -> noted.v1.SetAIAccessRequest
+	53,  // 270: noted.v1.AIService.GetAIFeatures:input_type -> noted.v1.GetAIFeaturesRequest
+	54,  // 271: noted.v1.AIService.SetAIFeatures:input_type -> noted.v1.SetAIFeaturesRequest
+	65,  // 272: noted.v1.GoalService.CreateGoal:input_type -> noted.v1.CreateGoalRequest
+	66,  // 273: noted.v1.GoalService.GetGoal:input_type -> noted.v1.GetGoalRequest
+	67,  // 274: noted.v1.GoalService.UpdateGoal:input_type -> noted.v1.UpdateGoalRequest
+	68,  // 275: noted.v1.GoalService.DeleteGoal:input_type -> noted.v1.DeleteGoalRequest
+	69,  // 276: noted.v1.GoalService.ListGoals:input_type -> noted.v1.ListGoalsRequest
+	71,  // 277: noted.v1.GoalService.RecordCheckIn:input_type -> noted.v1.RecordCheckInRequest
+	73,  // 278: noted.v1.GoalService.DeleteCheckIn:input_type -> noted.v1.DeleteCheckInRequest
+	74,  // 279: noted.v1.GoalService.ListCheckIns:input_type -> noted.v1.ListCheckInsRequest
+	76,  // 280: noted.v1.GoalService.SetMilestoneDone:input_type -> noted.v1.SetMilestoneDoneRequest
+	80,  // 281: noted.v1.ObjectiveService.CreateObjective:input_type -> noted.v1.CreateObjectiveRequest
+	81,  // 282: noted.v1.ObjectiveService.GetObjective:input_type -> noted.v1.GetObjectiveRequest
+	82,  // 283: noted.v1.ObjectiveService.UpdateObjective:input_type -> noted.v1.UpdateObjectiveRequest
+	83,  // 284: noted.v1.ObjectiveService.DeleteObjective:input_type -> noted.v1.DeleteObjectiveRequest
+	84,  // 285: noted.v1.ObjectiveService.ListObjectives:input_type -> noted.v1.ListObjectivesRequest
+	86,  // 286: noted.v1.ObjectiveService.RecordMeasurement:input_type -> noted.v1.RecordMeasurementRequest
+	87,  // 287: noted.v1.ObjectiveService.DeleteMeasurement:input_type -> noted.v1.DeleteMeasurementRequest
+	88,  // 288: noted.v1.ObjectiveService.ListMeasurements:input_type -> noted.v1.ListMeasurementsRequest
+	90,  // 289: noted.v1.ObjectiveService.SetObjectiveMilestoneDone:input_type -> noted.v1.SetObjectiveMilestoneDoneRequest
+	93,  // 290: noted.v1.ProjectService.CreateProject:input_type -> noted.v1.CreateProjectRequest
+	94,  // 291: noted.v1.ProjectService.GetProject:input_type -> noted.v1.GetProjectRequest
+	96,  // 292: noted.v1.ProjectService.UpdateProject:input_type -> noted.v1.UpdateProjectRequest
+	97,  // 293: noted.v1.ProjectService.DeleteProject:input_type -> noted.v1.DeleteProjectRequest
+	98,  // 294: noted.v1.ProjectService.ListProjects:input_type -> noted.v1.ListProjectsRequest
+	100, // 295: noted.v1.FocusService.GetFocus:input_type -> noted.v1.GetFocusRequest
+	104, // 296: noted.v1.PreferenceService.GetPreference:input_type -> noted.v1.GetPreferenceRequest
+	105, // 297: noted.v1.PreferenceService.SetPreference:input_type -> noted.v1.SetPreferenceRequest
+	106, // 298: noted.v1.PreferenceService.DeletePreference:input_type -> noted.v1.DeletePreferenceRequest
+	107, // 299: noted.v1.PreferenceService.ListPreferences:input_type -> noted.v1.ListPreferencesRequest
+	109, // 300: noted.v1.ExportService.Export:input_type -> noted.v1.ExportRequest
+	115, // 301: noted.v1.SuggestionService.ListProposals:input_type -> noted.v1.ListProposalsRequest
+	118, // 302: noted.v1.SuggestionService.AcceptProposal:input_type -> noted.v1.AcceptProposalRequest
+	120, // 303: noted.v1.SuggestionService.DismissProposal:input_type -> noted.v1.DismissProposalRequest
+	121, // 304: noted.v1.SuggestionService.ProposeSchedule:input_type -> noted.v1.ProposeScheduleRequest
+	122, // 305: noted.v1.SuggestionService.GetWeeklyReview:input_type -> noted.v1.GetWeeklyReviewRequest
+	127, // 306: noted.v1.SuggestionService.ListChanges:input_type -> noted.v1.ListChangesRequest
+	129, // 307: noted.v1.SuggestionService.UndoChange:input_type -> noted.v1.UndoChangeRequest
+	134, // 308: noted.v1.HoldingService.CreateHolding:input_type -> noted.v1.CreateHoldingRequest
+	135, // 309: noted.v1.HoldingService.GetHolding:input_type -> noted.v1.GetHoldingRequest
+	136, // 310: noted.v1.HoldingService.UpdateHolding:input_type -> noted.v1.UpdateHoldingRequest
+	137, // 311: noted.v1.HoldingService.DeleteHolding:input_type -> noted.v1.DeleteHoldingRequest
+	138, // 312: noted.v1.HoldingService.ListHoldings:input_type -> noted.v1.ListHoldingsRequest
+	140, // 313: noted.v1.HoldingService.RecordTrade:input_type -> noted.v1.RecordTradeRequest
+	141, // 314: noted.v1.HoldingService.DeleteTrade:input_type -> noted.v1.DeleteTradeRequest
+	142, // 315: noted.v1.HoldingService.ListTrades:input_type -> noted.v1.ListTradesRequest
+	145, // 316: noted.v1.TimeService.CreateTimeEntry:input_type -> noted.v1.CreateTimeEntryRequest
+	146, // 317: noted.v1.TimeService.GetTimeEntry:input_type -> noted.v1.GetTimeEntryRequest
+	147, // 318: noted.v1.TimeService.UpdateTimeEntry:input_type -> noted.v1.UpdateTimeEntryRequest
+	148, // 319: noted.v1.TimeService.DeleteTimeEntry:input_type -> noted.v1.DeleteTimeEntryRequest
+	149, // 320: noted.v1.TimeService.ListTimeEntries:input_type -> noted.v1.ListTimeEntriesRequest
+	151, // 321: noted.v1.TimeService.StartTimer:input_type -> noted.v1.StartTimerRequest
+	152, // 322: noted.v1.TimeService.StopTimer:input_type -> noted.v1.StopTimerRequest
+	153, // 323: noted.v1.TimeService.GetRunningTimer:input_type -> noted.v1.GetRunningTimerRequest
+	155, // 324: noted.v1.TimeService.SummarizeTime:input_type -> noted.v1.SummarizeTimeRequest
+	161, // 325: noted.v1.AlarmService.CreateAlarm:input_type -> noted.v1.CreateAlarmRequest
+	162, // 326: noted.v1.AlarmService.GetAlarm:input_type -> noted.v1.GetAlarmRequest
+	163, // 327: noted.v1.AlarmService.UpdateAlarm:input_type -> noted.v1.UpdateAlarmRequest
+	164, // 328: noted.v1.AlarmService.DeleteAlarm:input_type -> noted.v1.DeleteAlarmRequest
+	165, // 329: noted.v1.AlarmService.ListAlarms:input_type -> noted.v1.ListAlarmsRequest
+	167, // 330: noted.v1.AlarmService.GetAlarmsVersion:input_type -> noted.v1.GetAlarmsVersionRequest
+	169, // 331: noted.v1.AlarmService.ListFires:input_type -> noted.v1.ListFiresRequest
+	172, // 332: noted.v1.HolidayService.GetHolidays:input_type -> noted.v1.GetHolidaysRequest
+	175, // 333: noted.v1.AccountService.SignInWithApple:input_type -> noted.v1.SignInWithAppleRequest
+	177, // 334: noted.v1.AccountService.LinkApple:input_type -> noted.v1.LinkAppleRequest
+	178, // 335: noted.v1.AccountService.UnlinkApple:input_type -> noted.v1.UnlinkAppleRequest
+	179, // 336: noted.v1.AccountService.GetAccount:input_type -> noted.v1.GetAccountRequest
+	181, // 337: noted.v1.AccountService.SignUp:input_type -> noted.v1.SignUpRequest
+	182, // 338: noted.v1.AccountService.SignIn:input_type -> noted.v1.SignInRequest
+	184, // 339: noted.v1.AccountService.SetEmailPassword:input_type -> noted.v1.SetEmailPasswordRequest
+	186, // 340: noted.v1.AccountService.CreateToken:input_type -> noted.v1.CreateTokenRequest
+	188, // 341: noted.v1.AccountService.ListTokens:input_type -> noted.v1.ListTokensRequest
+	190, // 342: noted.v1.AccountService.RevokeToken:input_type -> noted.v1.RevokeTokenRequest
+	192, // 343: noted.v1.AccountService.GetPairing:input_type -> noted.v1.GetPairingRequest
+	193, // 344: noted.v1.AccountService.ApprovePairing:input_type -> noted.v1.ApprovePairingRequest
+	194, // 345: noted.v1.AccountService.DenyPairing:input_type -> noted.v1.DenyPairingRequest
+	196, // 346: noted.v1.CompassService.GetCompass:input_type -> noted.v1.GetCompassRequest
+	197, // 347: noted.v1.CompassService.SetCompass:input_type -> noted.v1.SetCompassRequest
+	198, // 348: noted.v1.CompassService.ListCompassRevisions:input_type -> noted.v1.ListCompassRevisionsRequest
+	7,   // 349: noted.v1.NoteService.CreateNote:output_type -> noted.v1.Note
+	7,   // 350: noted.v1.NoteService.GetNote:output_type -> noted.v1.Note
+	7,   // 351: noted.v1.NoteService.UpdateNote:output_type -> noted.v1.Note
+	204, // 352: noted.v1.NoteService.DeleteNote:output_type -> google.protobuf.Empty
+	13,  // 353: noted.v1.NoteService.ListNotes:output_type -> noted.v1.ListNotesResponse
+	16,  // 354: noted.v1.NoteService.SearchNotes:output_type -> noted.v1.SearchNotesResponse
+	17,  // 355: noted.v1.CalendarService.CreateEvent:output_type -> noted.v1.Event
+	17,  // 356: noted.v1.CalendarService.GetEvent:output_type -> noted.v1.Event
+	17,  // 357: noted.v1.CalendarService.UpdateEvent:output_type -> noted.v1.Event
+	204, // 358: noted.v1.CalendarService.DeleteEvent:output_type -> google.protobuf.Empty
+	24,  // 359: noted.v1.CalendarService.ListEvents:output_type -> noted.v1.ListEventsResponse
+	25,  // 360: noted.v1.CalendarService.CreateTask:output_type -> noted.v1.Task
+	25,  // 361: noted.v1.CalendarService.GetTask:output_type -> noted.v1.Task
+	25,  // 362: noted.v1.CalendarService.UpdateTask:output_type -> noted.v1.Task
+	204, // 363: noted.v1.CalendarService.DeleteTask:output_type -> google.protobuf.Empty
+	32,  // 364: noted.v1.CalendarService.ListTasks:output_type -> noted.v1.ListTasksResponse
+	25,  // 365: noted.v1.CalendarService.LogTaskWork:output_type -> noted.v1.Task
+	35,  // 366: noted.v1.CalendarService.ListTaskWork:output_type -> noted.v1.ListTaskWorkResponse
+	25,  // 367: noted.v1.CalendarService.DeleteTaskWork:output_type -> noted.v1.Task
+	37,  // 368: noted.v1.CalendarService.WatchReminders:output_type -> noted.v1.Reminder
+	40,  // 369: noted.v1.CalendarService.ListReminders:output_type -> noted.v1.ListRemindersResponse
+	42,  // 370: noted.v1.AIService.GetStatus:output_type -> noted.v1.GetStatusResponse
+	44,  // 371: noted.v1.AIService.Ask:output_type -> noted.v1.AskResponse
+	47,  // 372: noted.v1.AIService.SummarizeNote:output_type -> noted.v1.SummarizeNoteResponse
+	49,  // 373: noted.v1.AIService.SuggestTags:output_type -> noted.v1.SuggestTagsResponse
+	51,  // 374: noted.v1.AIService.DailyBriefing:output_type -> noted.v1.DailyBriefingResponse
+	113, // 375: noted.v1.AIService.PlanFromText:output_type -> noted.v1.Proposal
+	113, // 376: noted.v1.AIService.ExtractTasks:output_type -> noted.v1.Proposal
+	55,  // 377: noted.v1.AIService.GetAIAccess:output_type -> noted.v1.AIAccess
+	55,  // 378: noted.v1.AIService.SetAIAccess:output_type -> noted.v1.AIAccess
+	52,  // 379: noted.v1.AIService.GetAIFeatures:output_type -> noted.v1.AIFeatures
+	52,  // 380: noted.v1.AIService.SetAIFeatures:output_type -> noted.v1.AIFeatures
+	63,  // 381: noted.v1.GoalService.CreateGoal:output_type -> noted.v1.Goal
+	63,  // 382: noted.v1.GoalService.GetGoal:output_type -> noted.v1.Goal
+	63,  // 383: noted.v1.GoalService.UpdateGoal:output_type -> noted.v1.Goal
+	204, // 384: noted.v1.GoalService.DeleteGoal:output_type -> google.protobuf.Empty
+	70,  // 385: noted.v1.GoalService.ListGoals:output_type -> noted.v1.ListGoalsResponse
+	72,  // 386: noted.v1.GoalService.RecordCheckIn:output_type -> noted.v1.RecordCheckInResponse
+	63,  // 387: noted.v1.GoalService.DeleteCheckIn:output_type -> noted.v1.Goal
+	75,  // 388: noted.v1.GoalService.ListCheckIns:output_type -> noted.v1.ListCheckInsResponse
+	63,  // 389: noted.v1.GoalService.SetMilestoneDone:output_type -> noted.v1.Goal
+	77,  // 390: noted.v1.ObjectiveService.CreateObjective:output_type -> noted.v1.Objective
+	77,  // 391: noted.v1.ObjectiveService.GetObjective:output_type -> noted.v1.Objective
+	77,  // 392: noted.v1.ObjectiveService.UpdateObjective:output_type -> noted.v1.Objective
+	204, // 393: noted.v1.ObjectiveService.DeleteObjective:output_type -> google.protobuf.Empty
+	85,  // 394: noted.v1.ObjectiveService.ListObjectives:output_type -> noted.v1.ListObjectivesResponse
+	77,  // 395: noted.v1.ObjectiveService.RecordMeasurement:output_type -> noted.v1.Objective
+	204, // 396: noted.v1.ObjectiveService.DeleteMeasurement:output_type -> google.protobuf.Empty
+	89,  // 397: noted.v1.ObjectiveService.ListMeasurements:output_type -> noted.v1.ListMeasurementsResponse
+	77,  // 398: noted.v1.ObjectiveService.SetObjectiveMilestoneDone:output_type -> noted.v1.Objective
+	92,  // 399: noted.v1.ProjectService.CreateProject:output_type -> noted.v1.Project
+	95,  // 400: noted.v1.ProjectService.GetProject:output_type -> noted.v1.ProjectDetail
+	92,  // 401: noted.v1.ProjectService.UpdateProject:output_type -> noted.v1.Project
+	204, // 402: noted.v1.ProjectService.DeleteProject:output_type -> google.protobuf.Empty
+	99,  // 403: noted.v1.ProjectService.ListProjects:output_type -> noted.v1.ListProjectsResponse
+	102, // 404: noted.v1.FocusService.GetFocus:output_type -> noted.v1.GetFocusResponse
+	103, // 405: noted.v1.PreferenceService.GetPreference:output_type -> noted.v1.Preference
+	103, // 406: noted.v1.PreferenceService.SetPreference:output_type -> noted.v1.Preference
+	204, // 407: noted.v1.PreferenceService.DeletePreference:output_type -> google.protobuf.Empty
+	108, // 408: noted.v1.PreferenceService.ListPreferences:output_type -> noted.v1.ListPreferencesResponse
+	110, // 409: noted.v1.ExportService.Export:output_type -> noted.v1.ExportChunk
+	116, // 410: noted.v1.SuggestionService.ListProposals:output_type -> noted.v1.ListProposalsResponse
+	119, // 411: noted.v1.SuggestionService.AcceptProposal:output_type -> noted.v1.AcceptProposalResponse
+	113, // 412: noted.v1.SuggestionService.DismissProposal:output_type -> noted.v1.Proposal
+	113, // 413: noted.v1.SuggestionService.ProposeSchedule:output_type -> noted.v1.Proposal
+	123, // 414: noted.v1.SuggestionService.GetWeeklyReview:output_type -> noted.v1.WeeklyReview
+	128, // 415: noted.v1.SuggestionService.ListChanges:output_type -> noted.v1.ListChangesResponse
+	114, // 416: noted.v1.SuggestionService.UndoChange:output_type -> noted.v1.Change
+	130, // 417: noted.v1.HoldingService.CreateHolding:output_type -> noted.v1.Holding
+	130, // 418: noted.v1.HoldingService.GetHolding:output_type -> noted.v1.Holding
+	130, // 419: noted.v1.HoldingService.UpdateHolding:output_type -> noted.v1.Holding
+	204, // 420: noted.v1.HoldingService.DeleteHolding:output_type -> google.protobuf.Empty
+	139, // 421: noted.v1.HoldingService.ListHoldings:output_type -> noted.v1.ListHoldingsResponse
+	130, // 422: noted.v1.HoldingService.RecordTrade:output_type -> noted.v1.Holding
+	204, // 423: noted.v1.HoldingService.DeleteTrade:output_type -> google.protobuf.Empty
+	143, // 424: noted.v1.HoldingService.ListTrades:output_type -> noted.v1.ListTradesResponse
+	144, // 425: noted.v1.TimeService.CreateTimeEntry:output_type -> noted.v1.TimeEntry
+	144, // 426: noted.v1.TimeService.GetTimeEntry:output_type -> noted.v1.TimeEntry
+	144, // 427: noted.v1.TimeService.UpdateTimeEntry:output_type -> noted.v1.TimeEntry
+	204, // 428: noted.v1.TimeService.DeleteTimeEntry:output_type -> google.protobuf.Empty
+	150, // 429: noted.v1.TimeService.ListTimeEntries:output_type -> noted.v1.ListTimeEntriesResponse
+	144, // 430: noted.v1.TimeService.StartTimer:output_type -> noted.v1.TimeEntry
+	144, // 431: noted.v1.TimeService.StopTimer:output_type -> noted.v1.TimeEntry
+	154, // 432: noted.v1.TimeService.GetRunningTimer:output_type -> noted.v1.GetRunningTimerResponse
+	157, // 433: noted.v1.TimeService.SummarizeTime:output_type -> noted.v1.TimeSummary
+	160, // 434: noted.v1.AlarmService.CreateAlarm:output_type -> noted.v1.Alarm
+	160, // 435: noted.v1.AlarmService.GetAlarm:output_type -> noted.v1.Alarm
+	160, // 436: noted.v1.AlarmService.UpdateAlarm:output_type -> noted.v1.Alarm
+	204, // 437: noted.v1.AlarmService.DeleteAlarm:output_type -> google.protobuf.Empty
+	166, // 438: noted.v1.AlarmService.ListAlarms:output_type -> noted.v1.ListAlarmsResponse
+	168, // 439: noted.v1.AlarmService.GetAlarmsVersion:output_type -> noted.v1.GetAlarmsVersionResponse
+	171, // 440: noted.v1.AlarmService.ListFires:output_type -> noted.v1.ListFiresResponse
+	174, // 441: noted.v1.HolidayService.GetHolidays:output_type -> noted.v1.GetHolidaysResponse
+	176, // 442: noted.v1.AccountService.SignInWithApple:output_type -> noted.v1.SignInWithAppleResponse
+	180, // 443: noted.v1.AccountService.LinkApple:output_type -> noted.v1.Account
+	180, // 444: noted.v1.AccountService.UnlinkApple:output_type -> noted.v1.Account
+	180, // 445: noted.v1.AccountService.GetAccount:output_type -> noted.v1.Account
+	183, // 446: noted.v1.AccountService.SignUp:output_type -> noted.v1.SignInResponse
+	183, // 447: noted.v1.AccountService.SignIn:output_type -> noted.v1.SignInResponse
+	180, // 448: noted.v1.AccountService.SetEmailPassword:output_type -> noted.v1.Account
+	187, // 449: noted.v1.AccountService.CreateToken:output_type -> noted.v1.CreateTokenResponse
+	189, // 450: noted.v1.AccountService.ListTokens:output_type -> noted.v1.ListTokensResponse
+	204, // 451: noted.v1.AccountService.RevokeToken:output_type -> google.protobuf.Empty
+	191, // 452: noted.v1.AccountService.GetPairing:output_type -> noted.v1.Pairing
+	191, // 453: noted.v1.AccountService.ApprovePairing:output_type -> noted.v1.Pairing
+	204, // 454: noted.v1.AccountService.DenyPairing:output_type -> google.protobuf.Empty
+	195, // 455: noted.v1.CompassService.GetCompass:output_type -> noted.v1.Compass
+	195, // 456: noted.v1.CompassService.SetCompass:output_type -> noted.v1.Compass
+	199, // 457: noted.v1.CompassService.ListCompassRevisions:output_type -> noted.v1.ListCompassRevisionsResponse
+	349, // [349:458] is the sub-list for method output_type
+	240, // [240:349] is the sub-list for method input_type
+	240, // [240:240] is the sub-list for extension type_name
+	240, // [240:240] is the sub-list for extension extendee
+	0,   // [0:240] is the sub-list for field type_name
 }
 
 func init() { file_noted_v1_noted_proto_init() }
@@ -14340,18 +14979,18 @@ func file_noted_v1_noted_proto_init() {
 		(*FocusItem_Task)(nil),
 	}
 	file_noted_v1_noted_proto_msgTypes[98].OneofWrappers = []any{}
-	file_noted_v1_noted_proto_msgTypes[120].OneofWrappers = []any{}
-	file_noted_v1_noted_proto_msgTypes[150].OneofWrappers = []any{}
-	file_noted_v1_noted_proto_msgTypes[155].OneofWrappers = []any{}
+	file_noted_v1_noted_proto_msgTypes[123].OneofWrappers = []any{}
+	file_noted_v1_noted_proto_msgTypes[153].OneofWrappers = []any{}
+	file_noted_v1_noted_proto_msgTypes[158].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_noted_v1_noted_proto_rawDesc), len(file_noted_v1_noted_proto_rawDesc)),
 			NumEnums:      7,
-			NumMessages:   186,
+			NumMessages:   194,
 			NumExtensions: 0,
-			NumServices:   15,
+			NumServices:   16,
 		},
 		GoTypes:           file_noted_v1_noted_proto_goTypes,
 		DependencyIndexes: file_noted_v1_noted_proto_depIdxs,

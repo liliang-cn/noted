@@ -908,6 +908,7 @@ message GetFocusResponse {
   repeated Project pinned_projects = 6;
   Space space = 7;
   TimeEntry running_timer = 8; // unset when no timer runs (or it is in the other space)
+  Compass compass = 9;         // the compass of the space (life when unspecified); unset until one is saved
 }
 
 service FocusService {
@@ -1070,6 +1071,10 @@ message GetWeeklyReviewRequest {
 }
 
 message WeeklyReview {
+  // Declared first so they head the JSON text of the review (field numbers
+  // stay after the original ones).
+  Compass compass = 10;            // unset until one is saved; its vision and anti_vision head the review
+  BehaviorReview behavior = 11;    // what was done against what was said
   google.protobuf.Timestamp from = 1;
   google.protobuf.Timestamp to = 2;
   int32 tasks_done = 3;
@@ -1079,6 +1084,36 @@ message WeeklyReview {
   Proposal next_week = 7;          // stored as pending; unset when there is nothing to suggest
   int32 time_minutes = 8;          // time entries that started this week
   repeated TimeSummaryRow top_activities = 9; // the week's five biggest activities by minutes
+}
+
+// What the week's time, check-ins and finished tasks did for each active
+// objective and goal, against its target. A task or time entry counts for an
+// objective or goal through the goal_id or project_id it carries.
+message BehaviorRow {
+  string kind = 1;        // "objective" or "goal"
+  string id = 2;
+  string title = 3;
+  double target = 4;      // goal: this week's share of its target; 0 for an objective
+  string unit = 5;
+  double done = 6;        // goal: check-in amount this week; objective: sum over its goals
+  int32 check_ins = 7;
+  int32 time_minutes = 8;
+  int32 tasks_done = 9;
+  bool short = 10;        // behind the target, or nothing at all was done
+}
+
+// Time that went to something no objective or goal is linked to.
+message UnlinkedTime {
+  string title = 1;
+  int32 minutes = 2;
+  int32 count = 3;
+}
+
+message BehaviorReview {
+  repeated string mismatches = 4;       // short sentences, e.g. "游泳 0/2 次"; first in the JSON text
+  repeated BehaviorRow rows = 1;
+  repeated UnlinkedTime unlinked = 2;   // biggest first, at most five
+  int32 unlinked_minutes = 3;           // all unlinked time of the week
 }
 
 message ListChangesRequest {
@@ -1623,4 +1658,40 @@ message ApprovePairingRequest {
 }
 message DenyPairingRequest {
   string code = 1;
+}
+
+// -------------------------------------------------------------- compass ----
+//
+// The compass sits above objectives and goals: one per user per space. Every
+// save appends a revision, so it can change over time without losing history.
+
+message Compass {
+  Space space = 1;                  // UNSPECIFIED reads as life
+  string anti_vision = 2;           // the life I refuse
+  string vision = 3;                // what I am building toward
+  string identity = 4;              // "我是那种……的人"
+  repeated string constraints = 5;  // what I will not sacrifice
+  google.protobuf.Timestamp update_time = 6;
+  int32 version = 7;                // 0: never saved
+}
+
+message GetCompassRequest { Space space = 1; }
+message SetCompassRequest {
+  Compass compass = 1;
+  // anti_vision, vision, identity, constraints. Fields not named keep their
+  // current value; an empty mask names all four.
+  google.protobuf.FieldMask update_mask = 2;
+}
+message ListCompassRevisionsRequest {
+  Space space = 1;
+  int32 limit = 2; // newest first; default 50, max 500
+}
+message ListCompassRevisionsResponse { repeated Compass revisions = 1; }
+
+service CompassService {
+  // The current compass; an empty one (version 0) when none was saved.
+  rpc GetCompass(GetCompassRequest) returns (Compass);
+  // Saves a new revision; saving what is already current changes nothing.
+  rpc SetCompass(SetCompassRequest) returns (Compass);
+  rpc ListCompassRevisions(ListCompassRevisionsRequest) returns (ListCompassRevisionsResponse);
 }

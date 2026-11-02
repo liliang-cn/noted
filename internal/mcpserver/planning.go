@@ -65,7 +65,7 @@ type checkInIn struct {
 }
 
 func (t *tools) registerPlanning(s *mcp.Server) {
-	mcp.AddTool(s, &mcp.Tool{Name: "get_overview", Description: "What needs attention: events and tasks for today, the next 14 days, this week or this month, plus goals and pinned projects. The best first call for \"what's on\".", Annotations: readOnly, OutputSchema: overviewSchema},
+	mcp.AddTool(s, &mcp.Tool{Name: "get_overview", Description: "What needs attention: events and tasks for today, the next 14 days, this week or this month, plus goals, pinned projects and the compass (罗盘: vision, anti-vision, identity, constraints). The best first call for \"what's on\".", Annotations: readOnly, OutputSchema: overviewSchema},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in overviewIn) (*mcp.CallToolResult, *overviewOut, error) {
 			h := pb.Horizon_HORIZON_TODAY
 			switch in.Horizon {

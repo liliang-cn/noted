@@ -5121,3 +5121,185 @@ var AccountService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "noted/v1/noted.proto",
 }
+
+const (
+	CompassService_GetCompass_FullMethodName           = "/noted.v1.CompassService/GetCompass"
+	CompassService_SetCompass_FullMethodName           = "/noted.v1.CompassService/SetCompass"
+	CompassService_ListCompassRevisions_FullMethodName = "/noted.v1.CompassService/ListCompassRevisions"
+)
+
+// CompassServiceClient is the client API for CompassService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type CompassServiceClient interface {
+	// The current compass; an empty one (version 0) when none was saved.
+	GetCompass(ctx context.Context, in *GetCompassRequest, opts ...grpc.CallOption) (*Compass, error)
+	// Saves a new revision; saving what is already current changes nothing.
+	SetCompass(ctx context.Context, in *SetCompassRequest, opts ...grpc.CallOption) (*Compass, error)
+	ListCompassRevisions(ctx context.Context, in *ListCompassRevisionsRequest, opts ...grpc.CallOption) (*ListCompassRevisionsResponse, error)
+}
+
+type compassServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewCompassServiceClient(cc grpc.ClientConnInterface) CompassServiceClient {
+	return &compassServiceClient{cc}
+}
+
+func (c *compassServiceClient) GetCompass(ctx context.Context, in *GetCompassRequest, opts ...grpc.CallOption) (*Compass, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Compass)
+	err := c.cc.Invoke(ctx, CompassService_GetCompass_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *compassServiceClient) SetCompass(ctx context.Context, in *SetCompassRequest, opts ...grpc.CallOption) (*Compass, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Compass)
+	err := c.cc.Invoke(ctx, CompassService_SetCompass_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *compassServiceClient) ListCompassRevisions(ctx context.Context, in *ListCompassRevisionsRequest, opts ...grpc.CallOption) (*ListCompassRevisionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCompassRevisionsResponse)
+	err := c.cc.Invoke(ctx, CompassService_ListCompassRevisions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// CompassServiceServer is the server API for CompassService service.
+// All implementations must embed UnimplementedCompassServiceServer
+// for forward compatibility.
+type CompassServiceServer interface {
+	// The current compass; an empty one (version 0) when none was saved.
+	GetCompass(context.Context, *GetCompassRequest) (*Compass, error)
+	// Saves a new revision; saving what is already current changes nothing.
+	SetCompass(context.Context, *SetCompassRequest) (*Compass, error)
+	ListCompassRevisions(context.Context, *ListCompassRevisionsRequest) (*ListCompassRevisionsResponse, error)
+	mustEmbedUnimplementedCompassServiceServer()
+}
+
+// UnimplementedCompassServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedCompassServiceServer struct{}
+
+func (UnimplementedCompassServiceServer) GetCompass(context.Context, *GetCompassRequest) (*Compass, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCompass not implemented")
+}
+func (UnimplementedCompassServiceServer) SetCompass(context.Context, *SetCompassRequest) (*Compass, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetCompass not implemented")
+}
+func (UnimplementedCompassServiceServer) ListCompassRevisions(context.Context, *ListCompassRevisionsRequest) (*ListCompassRevisionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListCompassRevisions not implemented")
+}
+func (UnimplementedCompassServiceServer) mustEmbedUnimplementedCompassServiceServer() {}
+func (UnimplementedCompassServiceServer) testEmbeddedByValue()                        {}
+
+// UnsafeCompassServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to CompassServiceServer will
+// result in compilation errors.
+type UnsafeCompassServiceServer interface {
+	mustEmbedUnimplementedCompassServiceServer()
+}
+
+func RegisterCompassServiceServer(s grpc.ServiceRegistrar, srv CompassServiceServer) {
+	// If the following call pancis, it indicates UnimplementedCompassServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&CompassService_ServiceDesc, srv)
+}
+
+func _CompassService_GetCompass_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCompassRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CompassServiceServer).GetCompass(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CompassService_GetCompass_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CompassServiceServer).GetCompass(ctx, req.(*GetCompassRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CompassService_SetCompass_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetCompassRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CompassServiceServer).SetCompass(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CompassService_SetCompass_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CompassServiceServer).SetCompass(ctx, req.(*SetCompassRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CompassService_ListCompassRevisions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCompassRevisionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CompassServiceServer).ListCompassRevisions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CompassService_ListCompassRevisions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CompassServiceServer).ListCompassRevisions(ctx, req.(*ListCompassRevisionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// CompassService_ServiceDesc is the grpc.ServiceDesc for CompassService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var CompassService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "noted.v1.CompassService",
+	HandlerType: (*CompassServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetCompass",
+			Handler:    _CompassService_GetCompass_Handler,
+		},
+		{
+			MethodName: "SetCompass",
+			Handler:    _CompassService_SetCompass_Handler,
+		},
+		{
+			MethodName: "ListCompassRevisions",
+			Handler:    _CompassService_ListCompassRevisions_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "noted/v1/noted.proto",
+}

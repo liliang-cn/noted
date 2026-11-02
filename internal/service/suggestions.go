@@ -300,6 +300,12 @@ func (s *Suggestions) GetWeeklyReview(ctx context.Context, req *pb.GetWeeklyRevi
 	for _, row := range r.TopActivities {
 		out.TopActivities = append(out.TopActivities, timeRowToPB(row))
 	}
+	out.Behavior = behaviorToPB(r.Behavior)
+	if c, err := s.Store.GetCompass(ctx, u, spaceIn(req.Space)); err != nil {
+		return nil, toStatus(err)
+	} else if c.Version > 0 {
+		out.Compass = compassToPB(c)
+	}
 	for _, g := range r.Goals {
 		out.Goals = append(out.Goals, goalToPB(g))
 	}
@@ -367,4 +373,16 @@ func (s *Suggestions) UndoChange(ctx context.Context, req *pb.UndoChangeRequest)
 		return nil, toStatus(err)
 	}
 	return changeToPB(c), nil
+}
+
+func behaviorToPB(b plan.Behavior) *pb.BehaviorReview {
+	out := &pb.BehaviorReview{UnlinkedMinutes: int32(b.UnlinkedMinutes), Mismatches: b.Mismatches}
+	for _, r := range b.Rows {
+		out.Rows = append(out.Rows, &pb.BehaviorRow{Kind: r.Kind, Id: r.ID, Title: r.Title, Target: r.Target, Unit: r.Unit, Done: r.Done,
+			CheckIns: int32(r.CheckIns), TimeMinutes: int32(r.TimeMinutes), TasksDone: int32(r.TasksDone), Short: r.Short})
+	}
+	for _, u := range b.Unlinked {
+		out.Unlinked = append(out.Unlinked, &pb.UnlinkedTime{Title: u.Title, Minutes: int32(u.Minutes), Count: int32(u.Count)})
+	}
+	return out
 }

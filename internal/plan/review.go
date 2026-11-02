@@ -19,6 +19,8 @@ type Review struct {
 	// Time entries that started this week: the total, and the biggest activities.
 	TimeMinutes   int
 	TopActivities []store.TimeRow
+	// What was done against what was said: per objective and goal, against its target.
+	Behavior Behavior
 }
 
 // topActivities is how many activities a review lists.
@@ -72,6 +74,10 @@ func (s Suggester) WeeklyReview(ctx context.Context, userID string, weekOf time.
 		return r, err
 	}
 	r.TimeMinutes, r.TopActivities = spent.Minutes, spent.Rows[:min(len(spent.Rows), topActivities)]
+
+	if r.Behavior, err = s.behavior(ctx, userID, from, to, asOf, space); err != nil {
+		return r, err
+	}
 
 	// Next week: carry the slipped tasks to Monday morning, and find a slot for each goal that fell short.
 	next := Draft{Kind: KindWeekly, Title: lc.t("week.title"), Reason: lc.t("week.reason"), Space: space,
